@@ -212,42 +212,6 @@ Example
    print(f"Session ID: {session.session_id}")
 
 
-ToolsAPI
---------
-
-API client for tool operations.
-
-.. autoclass:: honeyhive.api.client.ToolsAPI
-   :members:
-   :undoc-members:
-   :show-inheritance:
-   :no-index:
-
-Example
-~~~~~~~
-
-.. code-block:: python
-
-   from honeyhive import HoneyHive
-   from honeyhive.models import CreateToolRequest
-   
-   client = HoneyHive(api_key="your-api-key")
-   
-   # Create a tool
-   tool = client.tools.create(
-       CreateToolRequest(
-           name="calculator",
-           description="Performs mathematical calculations",
-           parameters={
-               "type": "object",
-               "properties": {
-                   "operation": {"type": "string"},
-                   "a": {"type": "number"},
-                   "b": {"type": "number"}
-               }
-           }
-       )
-   )
    
    # List all tools
    tools = client.tools.list()

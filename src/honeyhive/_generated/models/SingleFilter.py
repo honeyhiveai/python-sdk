@@ -16,6 +16,6 @@ class SingleFilter(BaseModel):
 
     operator: Union[str, str, str, str] = Field(validation_alias="operator")
 
-    value: Union[str, float, bool, None, None] = Field(validation_alias="value")
+    value: Union[str, float, bool, None] = Field(validation_alias="value")
 
     type: FilterFieldType = Field(validation_alias="type")

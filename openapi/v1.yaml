@@ -90,7 +90,30 @@ paths:
         - Events
       operationId: createEvent
       summary: Create a new event
-      description: Please refer to our instrumentation guide for detailed information. The event field should contain a JSON-encoded event object as a string.
+      description: |
+        Create a new event (span) within a session trace. The request body wraps the event in a JSON-encoded string under the `event` key.
+        **Required properties** within the JSON-encoded event string:
+        - `event_type` (string) — Must be one of: `chain`, `model`, `tool`, `session`.
+        - `inputs` (object) — Input data for the event.
+        **Auto-generated properties** (provided by the server when omitted):
+        - `event_id` (string, UUID) — Unique identifier for the event.
+        - `session_id` (string, UUID) — Session/trace identifier.
+        - `parent_id` (string, UUID) — Parent event ID. Defaults to `session_id`.
+        **Optional properties with defaults:**
+        - `event_name` (string) — Name of the event. Defaults to `"unknown"`.
+        - `source` (string) — Source of the event (e.g. `sdk-python`). Defaults to `"unknown"`.
+        **Optional properties:**
+        - `config` (object) — Configuration data (e.g. model parameters, prompt templates).
+        - `outputs` (object) — Output data from the event.
+        - `error` (string or null) — Error message if the event failed.
+        - `children_ids` (array of strings) — IDs of child events.
+        - `duration` (number) — Duration of the event in milliseconds.
+        - `start_time` (number) — Unix timestamp in milliseconds for event start.
+        - `end_time` (number) — Unix timestamp in milliseconds for event end.
+        - `metadata` (object) — Additional metadata (e.g. token counts, cost).
+        - `metrics` (object) — Custom metrics.
+        - `feedback` (object) — Feedback data (e.g. ratings, ground truth).
+        - `user_properties` (object) — User properties associated with the event.
       requestBody:
         required: true
         content:
@@ -102,7 +125,10 @@ paths:
               properties:
                 event:
                   type: string
-                  description: JSON-encoded event object containing event properties (event_id, session_id, event_type, event_name, inputs, outputs, etc.)
+                  description: |
+                    JSON-encoded event object string. Must be valid JSON containing at minimum `event_type` (one of: `chain`, `model`, `tool`, `session`) and `inputs` (object). Fields like `event_id` and `session_id` are auto-generated if not provided.
+            example:
+              event: '{"event_type":"model","event_name":"llm_call","inputs":{"prompt":"hello"},"outputs":{"response":"hi"},"config":{"model":"gpt-4","temperature":0.7},"metadata":{"cost":0.00008,"completion_tokens":23,"prompt_tokens":35},"source":"sdk-python","duration":1500,"start_time":1700000000000,"end_time":1700000001500}'
       responses:
         '200':
           description: Event created successfully
@@ -667,75 +693,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RunMetricResponse'
-  /v1/tools:
-    get:
-      tags:
-        - Tools
-      summary: Retrieve a list of tools
-      operationId: getTools
-      responses:
-        '200':
-          description: Successfully retrieved the list of tools
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/GetToolsResponse'
-    post:
-      tags:
-        - Tools
-      summary: Create a new tool
-      operationId: createTool
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateToolRequest'
-      responses:
-        '200':
-          description: Tool successfully created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CreateToolResponse'
-    put:
-      tags:
-        - Tools
-      summary: Update an existing tool
-      operationId: updateTool
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateToolRequest'
-      responses:
-        '200':
-          description: Successfully updated the tool
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UpdateToolResponse'
-    delete:
-      tags:
-        - Tools
-      summary: Delete a tool
-      operationId: deleteTool
-      parameters:
-        - name: function_id
-          in: query
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Successfully deleted the tool
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DeleteToolResponse'
   /v1/datapoints:
     get:
       summary: Retrieve a list of datapoints
@@ -1720,6 +1677,57 @@ components:
       required:
         - call_type
         - model
+    ConfigurationItem:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+        name:
+          type: string
+        type:
+          type: string
+          enum:
+            - LLM
+            - pipeline
+          default: LLM
+        provider:
+          type: string
+        parameters:
+          $ref: '#/components/schemas/ConfigurationParameters'
+        env:
+          type: array
+          items:
+            type: string
+            enum:
+              - dev
+              - staging
+              - prod
+        tags:
+          type: array
+          items:
+            type: string
+        user_properties:
+          type:
+            - object
+            - 'null'
+          additionalProperties: {}
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+      required:
+        - id
+        - name
+        - provider
+        - parameters
+        - env
+        - tags
+        - created_at
     CreateConfigurationRequest:
       type: object
       properties:
@@ -1728,7 +1736,7 @@ components:
           maxLength: 200
         type:
           type: string
-          enum: &ref_0
+          enum:
             - LLM
             - pipeline
           default: LLM
@@ -1741,7 +1749,7 @@ components:
           type: array
           items:
             type: string
-            enum: &ref_1
+            enum:
               - dev
               - staging
               - prod
@@ -1767,7 +1775,9 @@ components:
           maxLength: 200
         type:
           type: string
-          enum: *ref_0
+          enum:
+            - LLM
+            - pipeline
           default: LLM
         provider:
           type: string
@@ -1778,7 +1788,10 @@ components:
           type: array
           items:
             type: string
-            enum: *ref_1
+            enum:
+              - dev
+              - staging
+              - prod
         tags:
           type: array
           items:
@@ -1844,49 +1857,7 @@ components:
     GetConfigurationsResponse:
       type: array
       items:
-        type: object
-        properties:
-          id:
-            type: string
-            minLength: 1
-          name:
-            type: string
-          type:
-            type: string
-            enum: *ref_0
-            default: LLM
-          provider:
-            type: string
-          parameters:
-            $ref: '#/components/schemas/ConfigurationParameters'
-          env:
-            type: array
-            items:
-              type: string
-              enum: *ref_1
-          tags:
-            type: array
-            items:
-              type: string
-          user_properties:
-            type:
-              - object
-              - 'null'
-            additionalProperties: {}
-          created_at:
-            type: string
-          updated_at:
-            type:
-              - string
-              - 'null'
-        required:
-          - id
-          - name
-          - provider
-          - parameters
-          - env
-          - tags
-          - created_at
+        $ref: '#/components/schemas/ConfigurationItem'
     DatapointMapping:
       type: object
       properties:
@@ -1925,29 +1896,28 @@ components:
         inputs:
           type: object
           additionalProperties: {}
-          default: &ref_2 {}
+          default: {}
         history:
           type: array
           items:
             type: object
             additionalProperties: {}
-            default: *ref_2
+            default: {}
         ground_truth:
           type:
             - object
             - 'null'
           additionalProperties: {}
-          default: *ref_2
+          default: {}
         metadata:
           type:
             - object
             - 'null'
           additionalProperties: {}
-          default: *ref_2
+          default: {}
         linked_event:
           anyOf:
             - type: string
-            - type: 'null'
             - type: 'null'
         created_at:
           type: string
@@ -1962,7 +1932,6 @@ components:
         - history
         - linked_event
         - created_at
-        - updated_at
     GetDatapointsQuery:
       type: object
       properties:
@@ -1989,22 +1958,22 @@ components:
         inputs:
           type: object
           additionalProperties: {}
-          default: *ref_2
+          default: {}
         history:
           type: array
           items:
             type: object
             additionalProperties: {}
-            default: *ref_2
+            default: {}
           default: []
         ground_truth:
           type: object
           additionalProperties: {}
-          default: *ref_2
+          default: {}
         metadata:
           type: object
           additionalProperties: {}
-          default: *ref_2
+          default: {}
         linked_event:
           type: string
         linked_datasets:
@@ -2019,21 +1988,21 @@ components:
         inputs:
           type: object
           additionalProperties: {}
-          default: *ref_2
+          default: {}
         history:
           type: array
           items:
             type: object
             additionalProperties: {}
-            default: *ref_2
+            default: {}
         ground_truth:
           type: object
           additionalProperties: {}
-          default: *ref_2
+          default: {}
         metadata:
           type: object
           additionalProperties: {}
-          default: *ref_2
+          default: {}
         linked_event:
           type: string
         linked_datasets:
@@ -2071,12 +2040,12 @@ components:
           anyOf:
             - type: object
               additionalProperties: {}
-              default: *ref_2
+              default: {}
             - type: array
               items:
                 type: object
                 additionalProperties: {}
-                default: *ref_2
+                default: {}
         dateRange:
           $ref: '#/components/schemas/BatchDateRange'
         checkState:
@@ -2189,7 +2158,7 @@ components:
         name:
           type: string
           maxLength: 200
-          default: Dataset 1/15
+          default: Untitled Dataset
         description:
           type: string
         datapoints:
@@ -2198,8 +2167,6 @@ components:
             type: string
             minLength: 1
           default: []
-      required:
-        - name
     UpdateDatasetRequest:
       type: object
       properties:
@@ -2247,7 +2214,7 @@ components:
           items:
             type: object
             additionalProperties: {}
-            default: *ref_2
+            default: {}
           minItems: 1
         mapping:
           $ref: '#/components/schemas/DatapointMapping'
@@ -2266,14 +2233,6 @@ components:
       required:
         - dataset_id
         - datapoint_id
-    InsertResult:
-      type: object
-      properties:
-        insertedId:
-          type: string
-          minLength: 1
-      required:
-        - insertedId
     CreateDatasetResponse:
       type: object
       properties:
@@ -2284,6 +2243,14 @@ components:
       required:
         - inserted
         - result
+    InsertResult:
+      type: object
+      properties:
+        insertedId:
+          type: string
+          minLength: 1
+      required:
+        - insertedId
     UpdateDatasetResponse:
       type: object
       properties:
@@ -2300,6 +2267,13 @@ components:
             $ref: '#/components/schemas/Dataset'
       required:
         - datasets
+    DeleteDatasetResponse:
+      type: object
+      properties:
+        result:
+          $ref: '#/components/schemas/DeleteResult'
+      required:
+        - result
     DeleteResult:
       type: object
       properties:
@@ -2308,13 +2282,6 @@ components:
           minLength: 1
       required:
         - id
-    DeleteDatasetResponse:
-      type: object
-      properties:
-        result:
-          $ref: '#/components/schemas/DeleteResult'
-      required:
-        - result
     AddDatapointsResponse:
       type: object
       properties:
@@ -2387,7 +2354,6 @@ components:
             - type: number
             - type: boolean
             - type: 'null'
-            - type: 'null'
         type:
           $ref: '#/components/schemas/FilterFieldType'
       required:
@@ -2426,6 +2392,7 @@ components:
         - event_id
         - project_id
         - tenant
+      additionalProperties: {}
     LegacyEvent:
       type: object
       properties:
@@ -2443,7 +2410,7 @@ components:
           description: Name of the event
         event_type:
           type: string
-          enum: &ref_3
+          enum:
             - model
             - tool
             - chain
@@ -2491,6 +2458,7 @@ components:
           additionalProperties: {}
       required:
         - project
+      additionalProperties: {}
       description: Full event object for legacy event creation endpoints
     SessionProperties:
       type: object
@@ -2503,6 +2471,7 @@ components:
         metadata:
           type: object
           additionalProperties: {}
+      additionalProperties: {}
       description: Session properties for batch event creation
     PostEventRequest:
       type: object
@@ -2534,6 +2503,7 @@ components:
             - event_id
             - project_id
             - tenant
+          additionalProperties: {}
       required:
         - event
       description: Request to create a new event
@@ -2594,7 +2564,11 @@ components:
               description: Name of the event
             event_type:
               type: string
-              enum: *ref_3
+              enum:
+                - model
+                - tool
+                - chain
+                - session
             event_id:
               type: string
             session_id:
@@ -2638,6 +2612,7 @@ components:
               additionalProperties: {}
           required:
             - project
+          additionalProperties: {}
           description: Full event object for legacy event creation endpoints
       required:
         - model_event
@@ -2664,7 +2639,11 @@ components:
                 description: Name of the event
               event_type:
                 type: string
-                enum: *ref_3
+                enum:
+                  - model
+                  - tool
+                  - chain
+                  - session
               event_id:
                 type: string
               session_id:
@@ -2708,6 +2687,7 @@ components:
                 additionalProperties: {}
             required:
               - project
+            additionalProperties: {}
             description: Full event object for legacy event creation endpoints
           description: Array of events to create
         is_single_session:
@@ -2724,6 +2704,7 @@ components:
             metadata:
               type: object
               additionalProperties: {}
+          additionalProperties: {}
           description: Session properties for batch event creation
       required:
         - events
@@ -2750,7 +2731,11 @@ components:
                 description: Name of the event
               event_type:
                 type: string
-                enum: *ref_3
+                enum:
+                  - model
+                  - tool
+                  - chain
+                  - session
               event_id:
                 type: string
               session_id:
@@ -2794,6 +2779,7 @@ components:
                 additionalProperties: {}
             required:
               - project
+            additionalProperties: {}
             description: Full event object for legacy event creation endpoints
           description: Array of model events to create
         is_single_session:
@@ -2810,10 +2796,35 @@ components:
             metadata:
               type: object
               additionalProperties: {}
+          additionalProperties: {}
           description: Session properties for batch event creation
       required:
         - model_events
       description: Request body for POST /events/model/batch
+    GetEventsQuery:
+      type: object
+      properties:
+        dateRange:
+          $ref: '#/components/schemas/DateRange'
+        filters:
+          $ref: '#/components/schemas/FiltersArray'
+        projections:
+          type: array
+          items:
+            type: string
+        ignore_order:
+          type: boolean
+        limit:
+          type: number
+        page:
+          type: number
+        evaluation_id:
+          type: string
+      description: Query parameters for GET /events
+    DateRange:
+      anyOf:
+        - $ref: '#/components/schemas/RelativeDateRange'
+        - $ref: '#/components/schemas/AbsoluteDateRange'
     RelativeDateRange:
       type: object
       properties:
@@ -2836,30 +2847,6 @@ components:
       required:
         - $gte
         - $lte
-    DateRange:
-      anyOf:
-        - $ref: '#/components/schemas/RelativeDateRange'
-        - $ref: '#/components/schemas/AbsoluteDateRange'
-    GetEventsQuery:
-      type: object
-      properties:
-        dateRange:
-          $ref: '#/components/schemas/DateRange'
-        filters:
-          $ref: '#/components/schemas/FiltersArray'
-        projections:
-          type: array
-          items:
-            type: string
-        ignore_order:
-          type: boolean
-        limit:
-          type: number
-        page:
-          type: number
-        evaluation_id:
-          type: string
-      description: Query parameters for GET /events
     GetEventsChartQuery:
       type: object
       properties:
@@ -2939,7 +2926,11 @@ components:
                 description: Name of the event
               event_type:
                 type: string
-                enum: *ref_3
+                enum:
+                  - model
+                  - tool
+                  - chain
+                  - session
               event_id:
                 type: string
               session_id:
@@ -2983,6 +2974,7 @@ components:
                 additionalProperties: {}
             required:
               - project
+            additionalProperties: {}
             description: Full event object for legacy event creation endpoints
         totalEvents:
           type: number
@@ -3009,7 +3001,7 @@ components:
           type: string
         event_type:
           type: string
-          enum: &ref_7
+          enum:
             - session
             - model
             - chain
@@ -3047,6 +3039,7 @@ components:
               properties:
                 name:
                   type: string
+          additionalProperties: {}
         parent_id:
           type: string
         session_id:
@@ -3082,6 +3075,7 @@ components:
         - metadata
         - org_id
         - project_id
+      additionalProperties: {}
       description: Event node in session tree with nested children
     DeleteEventResponse:
       type: object
@@ -3299,10 +3293,12 @@ components:
           anyOf:
             - type: string
             - type: string
+              format: date-time
         updated_at:
           anyOf:
             - type: string
             - type: string
+              format: date-time
             - type: 'null'
         scope_type:
           type: string
@@ -3371,11 +3367,11 @@ components:
         metadata:
           type: object
           additionalProperties: {}
-          default: *ref_2
+          default: {}
         results:
           type: object
           additionalProperties: {}
-          default: *ref_2
+          default: {}
         dataset_id:
           type:
             - string
@@ -3388,7 +3384,7 @@ components:
         configuration:
           type: object
           additionalProperties: {}
-          default: *ref_2
+          default: {}
         evaluators:
           type: array
           items: {}
@@ -3426,11 +3422,11 @@ components:
         metadata:
           type: object
           additionalProperties: {}
-          default: *ref_2
+          default: {}
         results:
           type: object
           additionalProperties: {}
-          default: *ref_2
+          default: {}
         event_ids:
           type: array
           items:
@@ -3438,7 +3434,7 @@ components:
         configuration:
           type: object
           additionalProperties: {}
-          default: *ref_2
+          default: {}
         evaluators:
           type: array
           items: {}
@@ -3725,7 +3721,7 @@ components:
       required:
         - id
         - deleted
-    CreateMetricRequest:
+    MetricItem:
       type: object
       properties:
         name:
@@ -3746,7 +3742,7 @@ components:
           default: ''
         return_type:
           type: string
-          enum: &ref_4
+          enum:
             - float
             - boolean
             - string
@@ -3845,17 +3841,31 @@ components:
           properties:
             filterArray:
               $ref: '#/components/schemas/FiltersArray'
-          default: &ref_5
-            filterArray: []
+          default:
+            filterArray: &ref_0 []
           required:
             - filterArray
           additionalProperties: false
+        id:
+          type: string
+          minLength: 1
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
       required:
         - name
         - type
         - criteria
+        - id
+        - created_at
+        - updated_at
       additionalProperties: false
-    UpdateMetricRequest:
+    CreateMetricRequest:
       type: object
       properties:
         name:
@@ -3876,7 +3886,11 @@ components:
           default: ''
         return_type:
           type: string
-          enum: *ref_4
+          enum:
+            - float
+            - boolean
+            - string
+            - categorical
           default: float
         enabled_in_prod:
           type: boolean
@@ -3971,7 +3985,138 @@ components:
           properties:
             filterArray:
               $ref: '#/components/schemas/FiltersArray'
-          default: *ref_5
+          default:
+            filterArray: *ref_0
+          required:
+            - filterArray
+          additionalProperties: false
+      required:
+        - name
+        - type
+        - criteria
+      additionalProperties: false
+    UpdateMetricRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        type:
+          type: string
+          enum:
+            - PYTHON
+            - LLM
+            - HUMAN
+            - COMPOSITE
+        criteria:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          default: ''
+        return_type:
+          type: string
+          enum:
+            - float
+            - boolean
+            - string
+            - categorical
+          default: float
+        enabled_in_prod:
+          type: boolean
+          default: false
+        needs_ground_truth:
+          type: boolean
+          default: false
+        sampling_percentage:
+          type: number
+          minimum: 0
+          maximum: 100
+          default: 100
+        model_provider:
+          type:
+            - string
+            - 'null'
+        model_name:
+          type:
+            - string
+            - 'null'
+        scale:
+          type:
+            - integer
+            - 'null'
+          exclusiveMinimum: 0
+        threshold:
+          type:
+            - object
+            - 'null'
+          properties:
+            min:
+              type: number
+            max:
+              type: number
+            pass_when:
+              anyOf:
+                - type: boolean
+                - type: number
+            passing_categories:
+              type: array
+              items:
+                type: string
+                maxLength: 200
+              minItems: 1
+          additionalProperties: false
+        categories:
+          type:
+            - array
+            - 'null'
+          items:
+            type: object
+            properties:
+              category:
+                type: string
+                maxLength: 200
+              score:
+                type:
+                  - number
+                  - 'null'
+            required:
+              - category
+              - score
+            additionalProperties: false
+          minItems: 1
+        child_metrics:
+          type:
+            - array
+            - 'null'
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                minLength: 1
+              name:
+                type: string
+                maxLength: 200
+              weight:
+                type: number
+              scale:
+                type:
+                  - integer
+                  - 'null'
+                exclusiveMinimum: 0
+            required:
+              - name
+              - weight
+            additionalProperties: false
+          minItems: 1
+        filters:
+          type: object
+          properties:
+            filterArray:
+              $ref: '#/components/schemas/FiltersArray'
+          default:
+            filterArray: *ref_0
           required:
             - filterArray
           additionalProperties: false
@@ -4021,7 +4166,11 @@ components:
               default: ''
             return_type:
               type: string
-              enum: *ref_4
+              enum:
+                - float
+                - boolean
+                - string
+                - categorical
               default: float
             enabled_in_prod:
               type: boolean
@@ -4116,7 +4265,8 @@ components:
               properties:
                 filterArray:
                   $ref: '#/components/schemas/FiltersArray'
-              default: *ref_5
+              default:
+                filterArray: *ref_0
               required:
                 - filterArray
               additionalProperties: false
@@ -4131,144 +4281,7 @@ components:
     GetMetricsResponse:
       type: array
       items:
-        type: object
-        properties:
-          name:
-            type: string
-            maxLength: 200
-          type:
-            type: string
-            enum:
-              - PYTHON
-              - LLM
-              - HUMAN
-              - COMPOSITE
-          criteria:
-            type: string
-            minLength: 1
-          description:
-            type: string
-            default: ''
-          return_type:
-            type: string
-            enum: *ref_4
-            default: float
-          enabled_in_prod:
-            type: boolean
-            default: false
-          needs_ground_truth:
-            type: boolean
-            default: false
-          sampling_percentage:
-            type: number
-            minimum: 0
-            maximum: 100
-            default: 100
-          model_provider:
-            type:
-              - string
-              - 'null'
-          model_name:
-            type:
-              - string
-              - 'null'
-          scale:
-            type:
-              - integer
-              - 'null'
-            exclusiveMinimum: 0
-          threshold:
-            type:
-              - object
-              - 'null'
-            properties:
-              min:
-                type: number
-              max:
-                type: number
-              pass_when:
-                anyOf:
-                  - type: boolean
-                  - type: number
-              passing_categories:
-                type: array
-                items:
-                  type: string
-                  maxLength: 200
-                minItems: 1
-            additionalProperties: false
-          categories:
-            type:
-              - array
-              - 'null'
-            items:
-              type: object
-              properties:
-                category:
-                  type: string
-                  maxLength: 200
-                score:
-                  type:
-                    - number
-                    - 'null'
-              required:
-                - category
-                - score
-              additionalProperties: false
-            minItems: 1
-          child_metrics:
-            type:
-              - array
-              - 'null'
-            items:
-              type: object
-              properties:
-                id:
-                  type: string
-                  minLength: 1
-                name:
-                  type: string
-                  maxLength: 200
-                weight:
-                  type: number
-                scale:
-                  type:
-                    - integer
-                    - 'null'
-                  exclusiveMinimum: 0
-              required:
-                - name
-                - weight
-              additionalProperties: false
-            minItems: 1
-          filters:
-            type: object
-            properties:
-              filterArray:
-                $ref: '#/components/schemas/FiltersArray'
-            default: *ref_5
-            required:
-              - filterArray
-            additionalProperties: false
-          id:
-            type: string
-            minLength: 1
-          created_at:
-            type: string
-            format: date-time
-          updated_at:
-            type:
-              - string
-              - 'null'
-            format: date-time
-        required:
-          - name
-          - type
-          - criteria
-          - id
-          - created_at
-          - updated_at
-        additionalProperties: false
+        $ref: '#/components/schemas/MetricItem'
     CreateMetricResponse:
       type: object
       properties:
@@ -4295,7 +4308,7 @@ components:
       required:
         - deleted
     RunMetricResponse: {}
-    Project:
+    ProjectItem:
       type: object
       properties:
         id:
@@ -4310,7 +4323,7 @@ components:
           description: Project description
         type:
           type: string
-          enum: &ref_6
+          enum:
             - evaluation
             - completion
           description: Project type
@@ -4327,6 +4340,7 @@ components:
         - id
         - name
         - org_id
+      additionalProperties: {}
       description: Project object
     PostProjectRequest:
       type: object
@@ -4372,36 +4386,7 @@ components:
     GetProjectsResponse:
       type: array
       items:
-        type: object
-        properties:
-          id:
-            type: string
-            minLength: 1
-          name:
-            type: string
-            minLength: 1
-            description: Project name
-          description:
-            type: string
-            description: Project description
-          type:
-            type: string
-            enum: *ref_6
-            description: Project type
-          org_id:
-            type: string
-            description: Organization ID
-          created_at:
-            type: string
-            format: date-time
-          updated_at:
-            type: string
-            format: date-time
-        required:
-          - id
-          - name
-          - org_id
-        description: Project object
+        $ref: '#/components/schemas/ProjectItem'
       description: Array of projects
     PostProjectResponse:
       type: object
@@ -4418,7 +4403,9 @@ components:
           description: Project description
         type:
           type: string
-          enum: *ref_6
+          enum:
+            - evaluation
+            - completion
           description: Project type
         org_id:
           type: string
@@ -4433,6 +4420,7 @@ components:
         - id
         - name
         - org_id
+      additionalProperties: {}
       description: Created project
     PostSessionRequest:
       type: object
@@ -4461,6 +4449,7 @@ components:
         - event_id
         - project_id
         - tenant
+      additionalProperties: {}
     PostSessionStartResponse:
       type: object
       properties:
@@ -4526,6 +4515,7 @@ components:
         - org_id
         - workspace_id
         - project_id
+      additionalProperties: {}
       description: Full session event object returned after starting a new session
     GetSessionResponse:
       type: object
@@ -4534,7 +4524,11 @@ components:
           type: string
         event_type:
           type: string
-          enum: *ref_7
+          enum:
+            - session
+            - model
+            - chain
+            - tool
         event_name:
           type: string
         children:
@@ -4568,6 +4562,7 @@ components:
               properties:
                 name:
                   type: string
+          additionalProperties: {}
         parent_id:
           type: string
         session_id:
@@ -4603,6 +4598,7 @@ components:
         - metadata
         - org_id
         - project_id
+      additionalProperties: {}
       description: Event node in session tree with nested children
     DeleteSessionResponse:
       type: object
@@ -4615,172 +4611,6 @@ components:
         - success
         - deleted
       description: Confirmation of session deletion
-    CreateToolRequest:
-      type: object
-      properties:
-        name:
-          type: string
-          maxLength: 200
-        description:
-          type: string
-        parameters: {}
-        tool_type:
-          type: string
-          enum: &ref_8
-            - function
-            - tool
-      required:
-        - name
-      additionalProperties: false
-    UpdateToolRequest:
-      type: object
-      properties:
-        name:
-          type: string
-          maxLength: 200
-        description:
-          type: string
-        parameters: {}
-        tool_type:
-          type: string
-          enum: *ref_8
-        id:
-          type: string
-          minLength: 1
-      required:
-        - id
-      additionalProperties: false
-    DeleteToolQuery:
-      type: object
-      properties:
-        id:
-          type: string
-          minLength: 1
-      required:
-        - id
-      additionalProperties: false
-    GetToolsResponse:
-      type: array
-      items:
-        type: object
-        properties:
-          id:
-            type: string
-            minLength: 1
-          name:
-            type: string
-          description:
-            type: string
-          parameters: {}
-          tool_type:
-            type: string
-            enum: *ref_8
-          created_at:
-            type: string
-          updated_at:
-            type:
-              - string
-              - 'null'
-        required:
-          - id
-          - name
-          - created_at
-    CreateToolResponse:
-      type: object
-      properties:
-        inserted:
-          type: boolean
-        result:
-          type: object
-          properties:
-            id:
-              type: string
-              minLength: 1
-            name:
-              type: string
-            description:
-              type: string
-            parameters: {}
-            tool_type:
-              type: string
-              enum: *ref_8
-            created_at:
-              type: string
-            updated_at:
-              type:
-                - string
-                - 'null'
-          required:
-            - id
-            - name
-            - created_at
-      required:
-        - inserted
-        - result
-    UpdateToolResponse:
-      type: object
-      properties:
-        updated:
-          type: boolean
-        result:
-          type: object
-          properties:
-            id:
-              type: string
-              minLength: 1
-            name:
-              type: string
-            description:
-              type: string
-            parameters: {}
-            tool_type:
-              type: string
-              enum: *ref_8
-            created_at:
-              type: string
-            updated_at:
-              type:
-                - string
-                - 'null'
-          required:
-            - id
-            - name
-            - created_at
-      required:
-        - updated
-        - result
-    DeleteToolResponse:
-      type: object
-      properties:
-        deleted:
-          type: boolean
-        result:
-          type: object
-          properties:
-            id:
-              type: string
-              minLength: 1
-            name:
-              type: string
-            description:
-              type: string
-            parameters: {}
-            tool_type:
-              type: string
-              enum: *ref_8
-            created_at:
-              type: string
-            updated_at:
-              type:
-                - string
-                - 'null'
-          required:
-            - id
-            - name
-            - created_at
-      required:
-        - deleted
-        - result
     TODOSchema:
       type: object
       properties:

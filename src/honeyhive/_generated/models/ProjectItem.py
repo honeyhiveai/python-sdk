@@ -3,9 +3,9 @@ from typing import *
 from pydantic import BaseModel, Field
 
 
-class Project(BaseModel):
+class ProjectItem(BaseModel):
     """
-    Project model
+    ProjectItem model
         Project object
     """
 

@@ -32,7 +32,6 @@ All request and response models are re-exported from ``honeyhive.models``.
    - ``CreateDatasetRequest`` - Create datasets
    - ``CreateDatapointRequest`` - Create datapoints
    - ``CreateMetricRequest`` - Create metrics
-   - ``CreateToolRequest`` - Create tools
    - ``PostEventRequest`` - Post events
    - ``PostSessionRequest`` - Create sessions
    - ``PostExperimentRunRequest`` - Create experiment runs
