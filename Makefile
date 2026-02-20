@@ -1,7 +1,7 @@
 .PHONY: help install install-dev test test-all test-unit test-integration check-integration lint format check check-format check-lint typecheck check-docs check-docs-compliance check-feature-sync check-tracer-patterns check-no-mocks docs docs-serve docs-clean generate generate-sdk compare-sdk clean clean-all build build-bundled publish publish-bundled
 
-# Use the venv python when available, otherwise fall back to system python (e.g. CI)
-PYTHON := $(shell if [ -x .venv/bin/python ]; then echo .venv/bin/python; else echo python; fi)
+# Use the venv python so make recipes get venv site-packages
+PYTHON := .venv/bin/python
 
 # Default target
 help:
