@@ -126,12 +126,14 @@ jobs:
           tox -e py${{ matrix.python-version == '3.12' && '312' || '313' }}
         env:
           HH_API_KEY: ${{ secrets.HH_API_KEY || env.HH_API_KEY }}
+          PYTEST_XDIST_AUTO_NUM_WORKERS: 4
 
       - name: Run verified tests (tests_v2)
         run: |
           tox -e unit-v2
         env:
           HH_API_KEY: ${{ secrets.HH_API_KEY || env.HH_API_KEY }}
+          PYTEST_XDIST_AUTO_NUM_WORKERS: 4
 
       - name: Upload coverage reports
         if: inputs.upload_coverage != false
