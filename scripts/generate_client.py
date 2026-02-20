@@ -52,7 +52,9 @@ def run_generator(spec_path: Path, temp_dir: Path) -> bool:
     Returns True if successful, False otherwise.
     """
     cmd = [
-        "openapi-python-generator",
+        sys.executable,
+        "-m",
+        "openapi_python_generator",
         str(spec_path),
         str(temp_dir),
         "--library",
