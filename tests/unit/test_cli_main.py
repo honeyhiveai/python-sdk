@@ -47,9 +47,6 @@ from honeyhive.cli.main import (
 # Justification: Unit tests need to verify private method behavior
 
 
-
-
-
 class TestCLIMain:
     """Test suite for CLI main entry point."""
 
