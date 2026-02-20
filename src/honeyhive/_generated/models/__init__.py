@@ -5,6 +5,7 @@ from .BatchCreateDatapointsRequest import *
 from .BatchCreateDatapointsResponse import *
 from .BatchDateRange import *
 from .CheckState import *
+from .ConfigurationItem import *
 from .ConfigurationParameters import *
 from .CreateConfigurationRequest import *
 from .CreateConfigurationResponse import *
@@ -14,8 +15,6 @@ from .CreateDatasetRequest import *
 from .CreateDatasetResponse import *
 from .CreateMetricRequest import *
 from .CreateMetricResponse import *
-from .CreateToolRequest import *
-from .CreateToolResponse import *
 from .Datapoint import *
 from .DatapointMapping import *
 from .DatapointResult import *
@@ -34,8 +33,6 @@ from .DeleteMetricQuery import *
 from .DeleteMetricResponse import *
 from .DeleteResult import *
 from .DeleteSessionResponse import *
-from .DeleteToolQuery import *
-from .DeleteToolResponse import *
 from .Event import *
 from .EventComparisonDetail import *
 from .EventDetail import *
@@ -77,12 +74,12 @@ from .GetMetricsQuery import *
 from .GetMetricsResponse import *
 from .GetProjectsResponse import *
 from .GetSessionResponse import *
-from .GetToolsResponse import *
 from .InsertResult import *
 from .LegacyEvent import *
 from .MetricComparison import *
 from .MetricDatapoints import *
 from .MetricDetail import *
+from .MetricItem import *
 from .MetricsAggregation import *
 from .Pagination import *
 from .PassingRange import *
@@ -98,7 +95,7 @@ from .PostProjectRequest import *
 from .PostProjectResponse import *
 from .PostSessionRequest import *
 from .PostSessionStartResponse import *
-from .Project import *
+from .ProjectItem import *
 from .PutExperimentRunRequest import *
 from .PutExperimentRunResponse import *
 from .PutProjectRequest import *
@@ -122,5 +119,3 @@ from .UpdateDatasetRequest import *
 from .UpdateDatasetResponse import *
 from .UpdateMetricRequest import *
 from .UpdateMetricResponse import *
-from .UpdateToolRequest import *
-from .UpdateToolResponse import *

@@ -17,7 +17,6 @@ from .client import (
     MetricsAPI,
     ProjectsAPI,
     SessionsAPI,
-    ToolsAPI,
 )
 
 # Backwards compatible aliases
@@ -35,7 +34,6 @@ __all__ = [
     "MetricsAPI",
     "ProjectsAPI",
     "SessionsAPI",
-    "ToolsAPI",
     # Backwards compatible aliases
     "EvaluationsAPI",
     "SessionAPI",

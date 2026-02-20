@@ -10,7 +10,7 @@ class CreateDatasetRequest(BaseModel):
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
-    name: str = Field(validation_alias="name")
+    name: Optional[str] = Field(validation_alias="name", default=None)
 
     description: Optional[str] = Field(validation_alias="description", default=None)
 

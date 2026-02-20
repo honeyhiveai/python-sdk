@@ -36,15 +36,12 @@ from honeyhive._generated.models import (
     CreateDatasetResponse,
     CreateMetricRequest,
     CreateMetricResponse,
-    CreateToolRequest,
-    CreateToolResponse,
     DeleteConfigurationResponse,
     DeleteDatapointResponse,
     DeleteDatasetResponse,
     DeleteExperimentRunResponse,
     DeleteMetricResponse,
     DeleteSessionResponse,
-    DeleteToolResponse,
     GetConfigurationsResponse,
     GetDatapointResponse,
     GetDatapointsResponse,
@@ -57,7 +54,6 @@ from honeyhive._generated.models import (
     GetExperimentRunsSchemaResponse,
     GetMetricsResponse,
     GetSessionResponse,
-    GetToolsResponse,
     PostEventRequest,
     PostEventResponse,
     PostExperimentRunRequest,
@@ -74,8 +70,6 @@ from honeyhive._generated.models import (
     UpdateDatasetResponse,
     UpdateMetricRequest,
     UpdateMetricResponse,
-    UpdateToolRequest,
-    UpdateToolResponse,
 )
 
 # Import async services
@@ -89,7 +83,6 @@ from honeyhive._generated.services import Metrics_service as metrics_svc
 from honeyhive._generated.services import Projects_service as projects_svc
 from honeyhive._generated.services import Session_service as session_svc
 from honeyhive._generated.services import Sessions_service as sessions_svc
-from honeyhive._generated.services import Tools_service as tools_svc
 from honeyhive._generated.services import (
     async_Configurations_service as configs_svc_async,
 )
@@ -105,7 +98,6 @@ from honeyhive._generated.services import async_Metrics_service as metrics_svc_a
 from honeyhive._generated.services import async_Projects_service as projects_svc_async
 from honeyhive._generated.services import async_Session_service as session_svc_async
 from honeyhive._generated.services import async_Sessions_service as sessions_svc_async
-from honeyhive._generated.services import async_Tools_service as tools_svc_async
 from honeyhive.models import EventExportRequest, EventExportResponse, EventFilter
 from honeyhive.utils.retry import RetryConfig
 
@@ -1589,65 +1581,6 @@ class SessionsAPI(BaseAPI):
         return self.delete(session_id)
 
 
-class ToolsAPI(BaseAPI):
-    """Tools API."""
-
-    # Sync methods
-    def list(self) -> List[GetToolsResponse]:
-        """List tools."""
-        return tools_svc.getTools(self._api_config)
-
-    def create(self, request: CreateToolRequest) -> CreateToolResponse:
-        """Create a tool."""
-        return tools_svc.createTool(self._api_config, data=request)
-
-    def update(self, request: UpdateToolRequest) -> UpdateToolResponse:
-        """Update a tool."""
-        return tools_svc.updateTool(self._api_config, data=request)
-
-    def delete(self, id: str) -> DeleteToolResponse:
-        """Delete a tool."""
-        return tools_svc.deleteTool(self._api_config, tool_id=id)
-
-    # Async methods
-    async def list_async(self) -> List[GetToolsResponse]:
-        """List tools asynchronously."""
-        return await tools_svc_async.getTools(self._api_config)
-
-    async def create_async(self, request: CreateToolRequest) -> CreateToolResponse:
-        """Create a tool asynchronously."""
-        return await tools_svc_async.createTool(self._api_config, data=request)
-
-    async def update_async(self, request: UpdateToolRequest) -> UpdateToolResponse:
-        """Update a tool asynchronously."""
-        return await tools_svc_async.updateTool(self._api_config, data=request)
-
-    async def delete_async(self, id: str) -> DeleteToolResponse:
-        """Delete a tool asynchronously."""
-        return await tools_svc_async.deleteTool(self._api_config, tool_id=id)
-
-    # Backwards compatible aliases
-    def get_tool(self, id: str) -> List[GetToolsResponse]:
-        """Get a tool (backwards compatible alias)."""
-        return self.list()  # No single-get endpoint
-
-    def create_tool(self, request: CreateToolRequest) -> CreateToolResponse:
-        """Create a tool (backwards compatible alias)."""
-        return self.create(request)
-
-    def update_tool(self, request: UpdateToolRequest) -> UpdateToolResponse:
-        """Update a tool (backwards compatible alias)."""
-        return self.update(request)
-
-    def delete_tool(self, id: str) -> DeleteToolResponse:
-        """Delete a tool (backwards compatible alias)."""
-        return self.delete(id)
-
-    def list_tools(self) -> List[GetToolsResponse]:
-        """List tools (backwards compatible alias)."""
-        return self.list()
-
-
 class HoneyHive:
     """Main HoneyHive API client.
 
@@ -1673,7 +1606,6 @@ class HoneyHive:
         metrics: API for managing metrics.
         projects: API for managing projects.
         sessions: API for managing sessions.
-        tools: API for managing tools.
     """
 
     def __init__(
@@ -1759,7 +1691,6 @@ class HoneyHive:
         self.metrics = MetricsAPI(self._api_config)
         self.projects = ProjectsAPI(self._api_config)
         self.sessions = SessionsAPI(self._api_config)
-        self.tools = ToolsAPI(self._api_config)
 
         # Alias for backwards compatibility
         self.evaluations = self.experiments

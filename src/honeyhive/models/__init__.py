@@ -186,8 +186,6 @@ from honeyhive._generated.models import (
     CreateDatasetResponse,
     CreateMetricRequest,
     CreateMetricResponse,
-    CreateToolRequest,
-    CreateToolResponse,
     DatapointMapping,
     DeleteConfigurationResponse,
     DeleteDatapointParams,
@@ -201,8 +199,6 @@ from honeyhive._generated.models import (
     DeleteMetricQuery,
     DeleteMetricResponse,
     DeleteSessionResponse,
-    DeleteToolQuery,
-    DeleteToolResponse,
     Event,
     GetConfigurationsQuery,
     GetConfigurationsResponse,
@@ -232,7 +228,6 @@ from honeyhive._generated.models import (
     GetMetricsQuery,
     GetMetricsResponse,
     GetSessionResponse,
-    GetToolsResponse,
     PostEventRequest,
     PostEventResponse,
     PostExperimentRunRequest,
@@ -255,8 +250,6 @@ from honeyhive._generated.models import (
     UpdateDatasetResponse,
     UpdateMetricRequest,
     UpdateMetricResponse,
-    UpdateToolRequest,
-    UpdateToolResponse,
 )
 
 __all__ = [
@@ -342,14 +335,6 @@ __all__ = [
     "GetSessionResponse",
     "PostSessionRequest",
     "PostSessionStartResponse",
-    # Tool models
-    "CreateToolRequest",
-    "CreateToolResponse",
-    "DeleteToolQuery",
-    "DeleteToolResponse",
-    "GetToolsResponse",
-    "UpdateToolRequest",
-    "UpdateToolResponse",
     # Other
     "TODOSchema",
     # Enums

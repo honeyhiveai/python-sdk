@@ -24,11 +24,11 @@ class Datapoint(BaseModel):
         validation_alias="metadata", default=None
     )
 
-    linked_event: Union[str, None, None] = Field(validation_alias="linked_event")
+    linked_event: Union[str, None] = Field(validation_alias="linked_event")
 
     created_at: str = Field(validation_alias="created_at")
 
-    updated_at: str = Field(validation_alias="updated_at")
+    updated_at: Optional[str] = Field(validation_alias="updated_at", default=None)
 
     linked_datasets: Optional[List[str]] = Field(
         validation_alias="linked_datasets", default=None
