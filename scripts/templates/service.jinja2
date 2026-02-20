@@ -1,3 +1,20 @@
+{#
+  Forked from openapi-python-generator's default template:
+  https://github.com/MarcoMuellner/openapi-python-generator/blob/f356cf073d26636e29b2cf317e61e17855dcac3f/src/openapi_python_generator/language_converters/python/templates/service.jinja2
+
+  Changes from upstream:
+  - Removed import {{ library_import }} (httpx is no longer used directly in service files)
+  - Added conditional import of _make_request or _make_request_async from api_config
+
+  Line-by-line annotations:
+    from typing import *          — UNMODIFIED
+    orjson/UUID imports            — UNMODIFIED
+    from ..models import *        — UNMODIFIED
+    from ..api_config import ...  — MODIFIED: upstream has `import {{ library_import }}` and imports only
+                                    APIConfig, HTTPException. We removed the direct httpx import and
+                                    added _make_request/_make_request_async.
+    {{ content | safe }}          — UNMODIFIED
+#}
 from typing import *
 
 {% if use_orjson %}

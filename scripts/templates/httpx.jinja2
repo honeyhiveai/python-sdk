@@ -1,3 +1,26 @@
+{#
+  Forked from openapi-python-generator's default template:
+  https://github.com/MarcoMuellner/openapi-python-generator/blob/f356cf073d26636e29b2cf317e61e17855dcac3f/src/openapi_python_generator/language_converters/python/templates/httpx.jinja2
+
+  Changes from upstream:
+  - Replaced inline httpx.Client/AsyncClient usage with _make_request/_make_request_async helpers from api_config
+  - Removed base_path local variable (helpers handle base URL internally)
+  - Replaced data.dict() with data.model_dump(exclude_none=True) for Pydantic v2 compatibility
+  - Simplified 204 status code handling to an explicit if/else block to avoid `200 == 204` checks (which make no sense)
+
+  Line-by-line annotations:
+    function signature + api_config setup — UNMODIFIED
+    path = f'...'                         — MODIFIED: removed `base_path = api_config.base_path` (helpers handle it)
+    headers block                         — UNMODIFIED
+    query_params block                    — UNMODIFIED
+    response = _make_request(...)         — MODIFIED: upstream creates inline httpx.Client/AsyncClient;
+                                            we delegate to helpers for centralized retry logic.
+                                            Also replaced data.dict() with data.model_dump(exclude_none=True)
+    error handling (status_code check)    — UNMODIFIED
+    body parsing (204 check)              — MODIFIED: upstream uses `body = None if status == 204 else .json()`
+                                            which evaluates e.g. `200 == 204` at runtime. Replaced with if/else.
+    return value construction             — UNMODIFIED
+#}
 {%  if async_client %}async {% endif %}def {{ operation_id }}(api_config_override : Optional[APIConfig] = None{% if params.strip() %}, *, {{ params.rstrip(', ') }}{% endif %}) -> {% if return_type.type is none or return_type.type.converted_type is none %}None{% else %}{{ return_type.type.converted_type}}{% endif %}:
     api_config = api_config_override if api_config_override else APIConfig()
 

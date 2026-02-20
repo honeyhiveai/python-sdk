@@ -1,3 +1,32 @@
+{#
+  Forked from openapi-python-generator's default template:
+  https://github.com/MarcoMuellner/openapi-python-generator/blob/f356cf073d26636e29b2cf317e61e17855dcac3f/src/openapi_python_generator/language_converters/python/templates/apiconfig_pydantic_2.jinja2
+
+  Changes from upstream:
+  - Removed env_token_name conditional branches (hardcoded to the non-env-token path)
+  - Added import time and typing imports (Any, Dict)
+  - Added timeout and max_retries fields to APIConfig
+  - Added return type annotations to get_access_token, set_access_token, and HTTPException.__str__
+  - Added _make_request() sync helper with retry logic for 5xx errors (linear backoff)
+  - Added _make_request_async() async helper with same retry logic
+
+  Line-by-line annotations:
+    import time as _time              — NEW: for retry backoff delays
+    from typing import Any, Dict, ... — MODIFIED: added Any, Dict to upstream's Optional, Union
+    import httpx                      — NEW: upstream doesn't import httpx here; needed for _make_request helpers
+    APIConfig.model_config            — UNMODIFIED
+    APIConfig.base_path               — UNMODIFIED
+    APIConfig.verify                  — UNMODIFIED
+    APIConfig.access_token            — MODIFIED: upstream wraps in env_token_name conditional; we always include it
+    APIConfig.timeout                 — NEW: configurable timeout for _make_request helpers
+    APIConfig.max_retries             — NEW: configurable retry count for _make_request helpers
+    APIConfig.get_access_token()      — MODIFIED: removed env_token_name branches, added return type
+    APIConfig.set_access_token()      — MODIFIED: removed env_token_name branches, added return type
+    HTTPException.__init__()          — UNMODIFIED
+    HTTPException.__str__()           — MODIFIED: added return type annotation
+    _make_request()                   — NEW: centralized sync request helper with retry logic for 5xx errors
+    _make_request_async()             — NEW: async counterpart with same retry logic
+#}
 import time as _time
 from typing import Any, Dict, Optional, Union
 
