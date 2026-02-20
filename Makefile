@@ -1,4 +1,4 @@
-.PHONY: help install install-dev test test-all test-unit test-integration check-integration lint format check check-format check-lint typecheck check-docs check-docs-compliance check-feature-sync check-tracer-patterns check-no-mocks docs docs-serve docs-clean generate generate-sdk compare-sdk clean clean-all build build-bundled publish publish-bundled
+.PHONY: help install install-dev test test-all test-unit test-integration check-integration format check check-format check-typecheck typecheck check-docs check-docs-compliance check-feature-sync check-tracer-patterns check-no-mocks docs docs-serve docs-clean generate generate-sdk compare-sdk clean clean-all build build-bundled publish publish-bundled
 
 # Use the venv python so make recipes get venv site-packages
 PYTHON := .venv/bin/python
@@ -21,13 +21,12 @@ help:
 	@echo ""
 	@echo "Code Quality:"
 	@echo "  make format          - Format code with black and isort"
-	@echo "  make lint            - Run linting checks"
 	@echo "  make typecheck       - Run mypy type checking"
 	@echo "  make check           - Run ALL checks"
 	@echo ""
 	@echo "Individual Checks (for granular control):"
-	@echo "  make check-format    - Check code formatting only"
-	@echo "  make check-lint      - Check linting only"
+	@echo "  make check-format    - Check code formatting only (via tox)"
+	@echo "  make check-typecheck - Check type checking only (via tox)"
 	@echo "  make check-integration - Integration test validation"
 	@echo "  make check-docs      - Build and validate documentation"
 	@echo "  make check-docs-compliance - Check documentation compliance"
@@ -90,20 +89,17 @@ format:
 	$(PYTHON) -m black src tests examples scripts
 	$(PYTHON) -m isort src tests examples scripts
 
-lint:
-	tox -e lint
-
 typecheck:
 	mypy src
 
 check-format:
 	tox -e format
 
-check-lint:
-	tox -e lint
+check-typecheck:
+	tox -e typecheck
 
 # Comprehensive check - runs all quality checks
-check: check-format check-lint test-unit check-no-mocks check-integration check-docs check-docs-compliance check-feature-sync check-tracer-patterns
+check: check-format check-typecheck test-unit check-no-mocks check-integration check-docs check-docs-compliance check-feature-sync check-tracer-patterns
 	@echo ""
 	@echo "✅ All checks passed!"
 

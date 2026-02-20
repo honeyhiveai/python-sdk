@@ -440,7 +440,7 @@ class TracerContextMixin(TracerContextInterface):
 
             # Create session via API
             response = self.client.sessions.start(data=session_params)
-            new_session_id = response.session_id
+            new_session_id: Optional[str] = response.session_id
 
             # Set session_id in baggage (ContextVar-based, request-scoped)
             # CRITICAL: Do NOT set self._session_id - that would break concurrency
@@ -579,7 +579,7 @@ class TracerContextMixin(TracerContextInterface):
 
             # Create session via async API
             response = await self.client.sessions.start_async(data=session_params)
-            new_session_id = response.session_id
+            new_session_id: Optional[str] = response.session_id
 
             # Set session_id in baggage (ContextVar-based, request-scoped)
             current_ctx = context.get_current()

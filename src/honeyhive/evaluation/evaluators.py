@@ -16,8 +16,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from honeyhive.api.client import HoneyHive
-from honeyhive.experiments.models import ExperimentResultSummary
-from honeyhive.models import PostExperimentRunRequest
+from honeyhive.models import CreateRunResponse, PostExperimentRunRequest
 
 # Config import removed - not used in this module
 
@@ -754,7 +753,7 @@ def create_evaluation_run(
     _results: List[EvaluationResult],
     metadata: Optional[Dict[str, Any]] = None,
     client: Optional[HoneyHive] = None,
-) -> Optional[ExperimentResultSummary]:
+) -> Optional[CreateRunResponse]:
     """Create an evaluation run in HoneyHive.
 
     Args:
