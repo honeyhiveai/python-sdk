@@ -68,21 +68,15 @@ def get_git_context(cwd: Optional[str] = None) -> Dict[str, Any]:
     if branch:
         context["branch"] = branch
 
-    commit_message = _run_git_command(
-        ["log", "-1", "--format=%s"], cwd=cwd
-    )
+    commit_message = _run_git_command(["log", "-1", "--format=%s"], cwd=cwd)
     if commit_message:
         context["commit_message"] = commit_message
 
-    author_name = _run_git_command(
-        ["log", "-1", "--format=%an"], cwd=cwd
-    )
+    author_name = _run_git_command(["log", "-1", "--format=%an"], cwd=cwd)
     if author_name:
         context["author_name"] = author_name
 
-    author_email = _run_git_command(
-        ["log", "-1", "--format=%ae"], cwd=cwd
-    )
+    author_email = _run_git_command(["log", "-1", "--format=%ae"], cwd=cwd)
     if author_email:
         context["author_email"] = author_email
 

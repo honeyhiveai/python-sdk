@@ -13,7 +13,9 @@ TODO: Update tests to match current tracer core base implementation.
 import pytest
 
 # Skip entire module - tests need to be updated to match current implementation
-pytestmark = pytest.mark.skip(reason="Tests need update to match current tracer core base implementation")
+pytestmark = pytest.mark.skip(
+    reason="Tests need update to match current tracer core base implementation"
+)
 
 # pylint: disable=protected-access,too-many-lines,redefined-outer-name,unused-argument
 # pylint: disable=too-few-public-methods,unused-variable,import-outside-toplevel

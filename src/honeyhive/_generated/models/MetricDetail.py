@@ -25,6 +25,10 @@ class MetricDetail(BaseModel):
 
     values: Optional[List[float]] = Field(validation_alias="values", default=None)
 
-    passing_range: Optional[Tuple[PassingRange, Any]] = Field(validation_alias="passing_range", default=None)
+    passing_range: Optional[Tuple[PassingRange, Any]] = Field(
+        validation_alias="passing_range", default=None
+    )
 
-    datapoints: Optional[Tuple[MetricDatapoints, Any]] = Field(validation_alias="datapoints", default=None)
+    datapoints: Optional[Tuple[MetricDatapoints, Any]] = Field(
+        validation_alias="datapoints", default=None
+    )

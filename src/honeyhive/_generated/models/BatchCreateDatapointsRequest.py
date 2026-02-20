@@ -16,13 +16,21 @@ class BatchCreateDatapointsRequest(BaseModel):
 
     events: Optional[List[str]] = Field(validation_alias="events", default=None)
 
-    mapping: Optional[DatapointMapping] = Field(validation_alias="mapping", default=None)
+    mapping: Optional[DatapointMapping] = Field(
+        validation_alias="mapping", default=None
+    )
 
-    filters: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]] = Field(validation_alias="filters", default=None)
+    filters: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]] = Field(
+        validation_alias="filters", default=None
+    )
 
-    dateRange: Optional[BatchDateRange] = Field(validation_alias="dateRange", default=None)
+    dateRange: Optional[BatchDateRange] = Field(
+        validation_alias="dateRange", default=None
+    )
 
-    checkState: Optional[CheckState] = Field(validation_alias="checkState", default=None)
+    checkState: Optional[CheckState] = Field(
+        validation_alias="checkState", default=None
+    )
 
     selectAll: Optional[bool] = Field(validation_alias="selectAll", default=None)
 

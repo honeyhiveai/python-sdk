@@ -63,7 +63,9 @@ try:
 
     print(f"\nFound {len(response.events)} events (total: {response.total_events}):")
     for event in response.events:
-        print(f"  - {event.get('event_name', 'N/A')} (type: {event.get('event_type', 'N/A')})")
+        print(
+            f"  - {event.get('event_name', 'N/A')} (type: {event.get('event_type', 'N/A')})"
+        )
 
     # Alternative: Use backwards-compatible list_events() alias
     # response = client.events.list_events(

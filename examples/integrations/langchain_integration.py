@@ -13,10 +13,12 @@ Environment variables:
 """
 
 import os
-from honeyhive import HoneyHiveTracer
+
 from langchain.agents import create_agent
 from langchain.tools import tool
 from openinference.instrumentation.langchain import LangChainInstrumentor
+
+from honeyhive import HoneyHiveTracer
 
 # --- HoneyHive setup (add these 3 lines to any LangChain app) ---
 
@@ -29,10 +31,12 @@ LangChainInstrumentor().instrument(tracer_provider=tracer.provider)
 
 # --- Tools ---
 
+
 @tool
 def calculator(expression: str) -> str:
     """Evaluate a basic arithmetic expression."""
     return str(eval(expression, {"__builtins__": {}}, {}))
+
 
 @tool
 def policy_lookup(topic: str) -> str:
@@ -43,6 +47,7 @@ def policy_lookup(topic: str) -> str:
     }
     return policies.get(topic.lower(), "No policy found.")
 
+
 # --- Pattern 1: Single agent with tools ---
 
 agent = create_agent(
@@ -52,7 +57,14 @@ agent = create_agent(
 )
 
 result = agent.invoke(
-    {"messages": [{"role": "user", "content": "What is 17 * 3 + 5? Also summarize our SOC2 policy."}]}
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "What is 17 * 3 + 5? Also summarize our SOC2 policy.",
+            }
+        ]
+    }
 )
 print(result["messages"][-1].content)
 
@@ -70,15 +82,18 @@ policy_agent = create_agent(
     system_prompt="You are a compliance specialist. Use policy_lookup for questions.",
 )
 
+
 @tool("math_expert", description="Solve math and arithmetic problems")
 def call_math_agent(query: str) -> str:
     result = math_agent.invoke({"messages": [{"role": "user", "content": query}]})
     return result["messages"][-1].content
 
+
 @tool("policy_expert", description="Answer questions about company policies")
 def call_policy_agent(query: str) -> str:
     result = policy_agent.invoke({"messages": [{"role": "user", "content": query}]})
     return result["messages"][-1].content
+
 
 supervisor = create_agent(
     model="openai:gpt-4o-mini",
@@ -87,6 +102,13 @@ supervisor = create_agent(
 )
 
 result = supervisor.invoke(
-    {"messages": [{"role": "user", "content": "What is 24 * 7? And what's our retention policy?"}]}
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "What is 24 * 7? And what's our retention policy?",
+            }
+        ]
+    }
 )
 print(result["messages"][-1].content)

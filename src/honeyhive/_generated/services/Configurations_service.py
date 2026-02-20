@@ -24,7 +24,9 @@ def getConfigurations(
     }
     query_params: Dict[str, Any] = {"name": name, "env": env, "tags": tags}
 
-    query_params = {key: value for (key, value) in query_params.items() if value is not None}
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
 
     with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
         response = client.request(
@@ -35,7 +37,10 @@ def getConfigurations(
         )
 
     if response.status_code != 200:
-        raise HTTPException(response.status_code, f"getConfigurations failed with status code: {response.status_code}")
+        raise HTTPException(
+            response.status_code,
+            f"getConfigurations failed with status code: {response.status_code}",
+        )
     else:
         body = None if 200 == 204 else response.json()
 
@@ -56,23 +61,39 @@ def createConfiguration(
     }
     query_params: Dict[str, Any] = {}
 
-    query_params = {key: value for (key, value) in query_params.items() if value is not None}
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
 
     with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
-        response = client.request("post", httpx.URL(path), headers=headers, params=query_params, json=data.model_dump(exclude_none=True))
+        response = client.request(
+            "post",
+            httpx.URL(path),
+            headers=headers,
+            params=query_params,
+            json=data.model_dump(exclude_none=True),
+        )
 
     if response.status_code != 200:
         raise HTTPException(
-            response.status_code, f"createConfiguration failed with status code: {response.status_code}"
+            response.status_code,
+            f"createConfiguration failed with status code: {response.status_code}",
         )
     else:
         body = None if 200 == 204 else response.json()
 
-    return CreateConfigurationResponse(**body) if body is not None else CreateConfigurationResponse()
+    return (
+        CreateConfigurationResponse(**body)
+        if body is not None
+        else CreateConfigurationResponse()
+    )
 
 
 def updateConfiguration(
-    api_config_override: Optional[APIConfig] = None, *, id: str, data: UpdateConfigurationRequest
+    api_config_override: Optional[APIConfig] = None,
+    *,
+    id: str,
+    data: UpdateConfigurationRequest,
 ) -> UpdateConfigurationResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
@@ -85,22 +106,37 @@ def updateConfiguration(
     }
     query_params: Dict[str, Any] = {}
 
-    query_params = {key: value for (key, value) in query_params.items() if value is not None}
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
 
     with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
-        response = client.request("put", httpx.URL(path), headers=headers, params=query_params, json=data.model_dump(exclude_none=True))
+        response = client.request(
+            "put",
+            httpx.URL(path),
+            headers=headers,
+            params=query_params,
+            json=data.model_dump(exclude_none=True),
+        )
 
     if response.status_code != 200:
         raise HTTPException(
-            response.status_code, f"updateConfiguration failed with status code: {response.status_code}"
+            response.status_code,
+            f"updateConfiguration failed with status code: {response.status_code}",
         )
     else:
         body = None if 200 == 204 else response.json()
 
-    return UpdateConfigurationResponse(**body) if body is not None else UpdateConfigurationResponse()
+    return (
+        UpdateConfigurationResponse(**body)
+        if body is not None
+        else UpdateConfigurationResponse()
+    )
 
 
-def deleteConfiguration(api_config_override: Optional[APIConfig] = None, *, id: str) -> DeleteConfigurationResponse:
+def deleteConfiguration(
+    api_config_override: Optional[APIConfig] = None, *, id: str
+) -> DeleteConfigurationResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
@@ -112,7 +148,9 @@ def deleteConfiguration(api_config_override: Optional[APIConfig] = None, *, id: 
     }
     query_params: Dict[str, Any] = {}
 
-    query_params = {key: value for (key, value) in query_params.items() if value is not None}
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
 
     with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
         response = client.request(
@@ -124,9 +162,14 @@ def deleteConfiguration(api_config_override: Optional[APIConfig] = None, *, id: 
 
     if response.status_code != 200:
         raise HTTPException(
-            response.status_code, f"deleteConfiguration failed with status code: {response.status_code}"
+            response.status_code,
+            f"deleteConfiguration failed with status code: {response.status_code}",
         )
     else:
         body = None if 200 == 204 else response.json()
 
-    return DeleteConfigurationResponse(**body) if body is not None else DeleteConfigurationResponse()
+    return (
+        DeleteConfigurationResponse(**body)
+        if body is not None
+        else DeleteConfigurationResponse()
+    )

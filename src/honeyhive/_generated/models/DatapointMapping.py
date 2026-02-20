@@ -14,4 +14,6 @@ class DatapointMapping(BaseModel):
 
     history: Optional[List[str]] = Field(validation_alias="history", default=None)
 
-    ground_truth: Optional[List[str]] = Field(validation_alias="ground_truth", default=None)
+    ground_truth: Optional[List[str]] = Field(
+        validation_alias="ground_truth", default=None
+    )

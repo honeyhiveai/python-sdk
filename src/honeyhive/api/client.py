@@ -22,10 +22,7 @@ from typing import Any, Dict, List, Optional, Union
 
 import httpx
 
-from honeyhive.utils.retry import RetryConfig
-
 from honeyhive._generated.api_config import APIConfig
-from honeyhive.models import EventFilter, EventExportRequest, EventExportResponse
 
 # Import models used in type hints
 from honeyhive._generated.models import (
@@ -109,6 +106,8 @@ from honeyhive._generated.services import async_Projects_service as projects_svc
 from honeyhive._generated.services import async_Session_service as session_svc_async
 from honeyhive._generated.services import async_Sessions_service as sessions_svc_async
 from honeyhive._generated.services import async_Tools_service as tools_svc_async
+from honeyhive.models import EventExportRequest, EventExportResponse, EventFilter
+from honeyhive.utils.retry import RetryConfig
 
 from ._base import BaseAPI
 
@@ -357,7 +356,9 @@ class DatasetsAPI(BaseAPI):
             self._api_config, dataset_id=dataset_id, data=request
         )
 
-    def remove_datapoint(self, dataset_id: str, datapoint_id: str) -> RemoveDatapointResponse:
+    def remove_datapoint(
+        self, dataset_id: str, datapoint_id: str
+    ) -> RemoveDatapointResponse:
         """Remove a datapoint from a dataset.
 
         Args:
@@ -499,9 +500,7 @@ class EventsAPI(BaseAPI):
         )
 
     # Sync methods
-    def list(
-        self, query: Union[GetEventsQuery, Dict[str, Any]]
-    ) -> GetEventsResponse:
+    def list(self, query: Union[GetEventsQuery, Dict[str, Any]]) -> GetEventsResponse:
         """Get events (uses Control Plane endpoint).
 
         Args:
@@ -704,7 +703,9 @@ class EventsAPI(BaseAPI):
 
         for attempt in range(retry_config.max_retries + 1):
             try:
-                with httpx.Client(base_url=base_path, verify=self._api_config.verify) as client:
+                with httpx.Client(
+                    base_url=base_path, verify=self._api_config.verify
+                ) as client:
                     response = client.request(
                         "POST",
                         "/v1/events/export",
@@ -761,7 +762,9 @@ class EventsAPI(BaseAPI):
             total_events=data.get("totalEvents", data.get("count", 0)),
         )
 
-    def _sort_events_by_time(self, events: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _sort_events_by_time(
+        self, events: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """Sort events by start_time in chronological order.
 
         Args:
@@ -774,7 +777,11 @@ class EventsAPI(BaseAPI):
         def get_start_time(event: Dict[str, Any]) -> float:
             """Extract start_time from event, handling various formats."""
             # Try different possible field names for start time
-            start_time = event.get("start_time") or event.get("startTime") or event.get("created_at")
+            start_time = (
+                event.get("start_time")
+                or event.get("startTime")
+                or event.get("created_at")
+            )
             if start_time is None:
                 return 0.0
             # Handle both numeric timestamps and ISO string formats

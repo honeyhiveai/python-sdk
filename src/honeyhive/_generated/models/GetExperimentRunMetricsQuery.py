@@ -12,4 +12,6 @@ class GetExperimentRunMetricsQuery(BaseModel):
 
     dateRange: Optional[str] = Field(validation_alias="dateRange", default=None)
 
-    filters: Optional[Union[str, List[Any]]] = Field(validation_alias="filters", default=None)
+    filters: Optional[Union[str, List[Any]]] = Field(
+        validation_alias="filters", default=None
+    )

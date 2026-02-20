@@ -20,19 +20,25 @@ class ExperimentRunObject(BaseModel):
 
     status: Optional[str] = Field(validation_alias="status", default=None)
 
-    metadata: Optional[Dict[str, Any]] = Field(validation_alias="metadata", default=None)
+    metadata: Optional[Dict[str, Any]] = Field(
+        validation_alias="metadata", default=None
+    )
 
     results: Optional[Dict[str, Any]] = Field(validation_alias="results", default=None)
 
     event_ids: Optional[List[str]] = Field(validation_alias="event_ids", default=None)
 
-    configuration: Optional[Dict[str, Any]] = Field(validation_alias="configuration", default=None)
+    configuration: Optional[Dict[str, Any]] = Field(
+        validation_alias="configuration", default=None
+    )
 
     is_active: Optional[bool] = Field(validation_alias="is_active", default=None)
 
     created_at: Union[str, str] = Field(validation_alias="created_at")
 
-    updated_at: Optional[Union[str, str, None]] = Field(validation_alias="updated_at", default=None)
+    updated_at: Optional[Union[str, str, None]] = Field(
+        validation_alias="updated_at", default=None
+    )
 
     scope_type: str = Field(validation_alias="scope_type")
 

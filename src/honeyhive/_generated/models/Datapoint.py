@@ -16,9 +16,13 @@ class Datapoint(BaseModel):
 
     history: List[Dict[str, Any]] = Field(validation_alias="history")
 
-    ground_truth: Optional[Dict[str, Any]] = Field(validation_alias="ground_truth", default=None)
+    ground_truth: Optional[Dict[str, Any]] = Field(
+        validation_alias="ground_truth", default=None
+    )
 
-    metadata: Optional[Dict[str, Any]] = Field(validation_alias="metadata", default=None)
+    metadata: Optional[Dict[str, Any]] = Field(
+        validation_alias="metadata", default=None
+    )
 
     linked_event: Union[str, None, None] = Field(validation_alias="linked_event")
 
@@ -26,4 +30,6 @@ class Datapoint(BaseModel):
 
     updated_at: str = Field(validation_alias="updated_at")
 
-    linked_datasets: Optional[List[str]] = Field(validation_alias="linked_datasets", default=None)
+    linked_datasets: Optional[List[str]] = Field(
+        validation_alias="linked_datasets", default=None
+    )

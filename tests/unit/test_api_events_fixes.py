@@ -239,7 +239,10 @@ class TestProjectDeprecationWarning:
                     if issubclass(warning.category, DeprecationWarning)
                 ]
                 assert len(deprecation_warnings) >= 1
-                assert any("project" in str(warning.message) for warning in deprecation_warnings)
+                assert any(
+                    "project" in str(warning.message)
+                    for warning in deprecation_warnings
+                )
 
     def test_get_by_session_id_without_project_no_deprecation_warning(self) -> None:
         """Test that get_by_session_id() without project doesn't show warning."""

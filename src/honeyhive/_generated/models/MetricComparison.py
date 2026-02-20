@@ -14,10 +14,16 @@ class MetricComparison(BaseModel):
 
     metric_type: Optional[str] = Field(validation_alias="metric_type", default=None)
 
-    old_aggregate: Optional[float] = Field(validation_alias="old_aggregate", default=None)
+    old_aggregate: Optional[float] = Field(
+        validation_alias="old_aggregate", default=None
+    )
 
-    new_aggregate: Optional[float] = Field(validation_alias="new_aggregate", default=None)
+    new_aggregate: Optional[float] = Field(
+        validation_alias="new_aggregate", default=None
+    )
 
     difference: Optional[float] = Field(validation_alias="difference", default=None)
 
-    percentage_change: Optional[float] = Field(validation_alias="percentage_change", default=None)
+    percentage_change: Optional[float] = Field(
+        validation_alias="percentage_change", default=None
+    )

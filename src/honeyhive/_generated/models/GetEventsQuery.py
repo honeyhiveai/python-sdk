@@ -18,7 +18,9 @@ class GetEventsQuery(BaseModel):
 
     filters: Optional[FiltersArray] = Field(validation_alias="filters", default=None)
 
-    projections: Optional[List[str]] = Field(validation_alias="projections", default=None)
+    projections: Optional[List[str]] = Field(
+        validation_alias="projections", default=None
+    )
 
     ignore_order: Optional[bool] = Field(validation_alias="ignore_order", default=None)
 

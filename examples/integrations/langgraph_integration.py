@@ -16,13 +16,14 @@ import operator
 import os
 from typing import Annotated, Literal, TypedDict
 
-from honeyhive import HoneyHiveTracer
 from langchain.messages import AnyMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain.tools import tool
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
 from openinference.instrumentation.langchain import LangChainInstrumentor
 from pydantic import BaseModel, Field
+
+from honeyhive import HoneyHiveTracer
 
 # --- HoneyHive setup (add these 3 lines to any LangGraph app) ---
 
@@ -47,8 +48,12 @@ def calculator(a: float, b: float, operation: str) -> str:
         b: Second number
         operation: One of 'add', 'subtract', 'multiply', 'divide'
     """
-    ops = {"add": lambda x, y: x + y, "subtract": lambda x, y: x - y,
-           "multiply": lambda x, y: x * y, "divide": lambda x, y: x / y if y else "err"}
+    ops = {
+        "add": lambda x, y: x + y,
+        "subtract": lambda x, y: x - y,
+        "multiply": lambda x, y: x * y,
+        "divide": lambda x, y: x / y if y else "err",
+    }
     fn = ops.get(operation)
     return str(fn(a, b)) if fn else f"Unknown operation: {operation}"
 
@@ -85,10 +90,18 @@ class AgentState(TypedDict):
 
 def llm_call(state: AgentState):
     """LLM decides whether to call a tool or respond."""
-    return {"messages": [model_with_tools.invoke(
-        [SystemMessage(content="You are a helpful assistant. Use tools when needed.")]
-        + state["messages"]
-    )]}
+    return {
+        "messages": [
+            model_with_tools.invoke(
+                [
+                    SystemMessage(
+                        content="You are a helpful assistant. Use tools when needed."
+                    )
+                ]
+                + state["messages"]
+            )
+        ]
+    }
 
 
 def tool_node(state: AgentState):
@@ -143,10 +156,12 @@ router_llm = model.with_structured_output(Route)
 
 
 def classify(state: RouterState):
-    result = router_llm.invoke([
-        SystemMessage(content="Classify as 'math', 'knowledge', or 'general'."),
-        HumanMessage(content=state["question"]),
-    ])
+    result = router_llm.invoke(
+        [
+            SystemMessage(content="Classify as 'math', 'knowledge', or 'general'."),
+            HumanMessage(content=state["question"]),
+        ]
+    )
     return {"category": result.category}
 
 
@@ -158,7 +173,9 @@ def handle_math(state: RouterState):
 def handle_knowledge(state: RouterState):
     # Use tool directly for lookup, then summarize
     result = knowledge_base.invoke(state["question"])
-    response = model.invoke(f"Question: {state['question']}\nFacts: {result}\nBrief answer.")
+    response = model.invoke(
+        f"Question: {state['question']}\nFacts: {result}\nBrief answer."
+    )
     return {"answer": response.content}
 
 
@@ -185,8 +202,12 @@ router = (
     .compile()
 )
 
-result = router.invoke({"question": "What is 42 times 15?", "category": "", "answer": ""})
+result = router.invoke(
+    {"question": "What is 42 times 15?", "category": "", "answer": ""}
+)
 print(f"Route: {result['category']} | {result['answer']}")
 
-result = router.invoke({"question": "Tell me about machine learning", "category": "", "answer": ""})
+result = router.invoke(
+    {"question": "Tell me about machine learning", "category": "", "answer": ""}
+)
 print(f"Route: {result['category']} | {result['answer']}")

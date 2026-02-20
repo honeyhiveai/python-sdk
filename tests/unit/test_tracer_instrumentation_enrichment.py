@@ -925,7 +925,9 @@ class TestBackwardsCompatibility:
         update_event_id = "evt_123"
 
         result = enrich_span_core(
-            error=error, update_event_id=update_event_id, tracer_instance=honeyhive_tracer
+            error=error,
+            update_event_id=update_event_id,
+            tracer_instance=honeyhive_tracer,
         )
 
         assert result["success"] is True

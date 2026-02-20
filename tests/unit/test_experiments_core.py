@@ -19,7 +19,9 @@ TODO: Update tests to match current experiments core implementation.
 import pytest
 
 # Skip entire module - tests need to be updated to match current implementation
-pytestmark = pytest.mark.skip(reason="Tests need update to match current experiments core implementation")
+pytestmark = pytest.mark.skip(
+    reason="Tests need update to match current experiments core implementation"
+)
 
 # pylint: disable=R0801
 # Justification: Shared test patterns with experiment integration and performance tests

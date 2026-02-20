@@ -13,6 +13,10 @@ class PostModelEventBatchRequest(BaseModel):
 
     model_events: List[Dict[str, Any]] = Field(validation_alias="model_events")
 
-    is_single_session: Optional[bool] = Field(validation_alias="is_single_session", default=None)
+    is_single_session: Optional[bool] = Field(
+        validation_alias="is_single_session", default=None
+    )
 
-    session_properties: Optional[Dict[str, Any]] = Field(validation_alias="session_properties", default=None)
+    session_properties: Optional[Dict[str, Any]] = Field(
+        validation_alias="session_properties", default=None
+    )

@@ -28,4 +28,6 @@ class GetEventsChartQuery(BaseModel):
 
     evaluation_id: Optional[str] = Field(validation_alias="evaluation_id", default=None)
 
-    only_experiments: Optional[bool] = Field(validation_alias="only_experiments", default=None)
+    only_experiments: Optional[bool] = Field(
+        validation_alias="only_experiments", default=None
+    )

@@ -13,7 +13,7 @@ import asyncio
 
 import pytest
 
-from honeyhive.experiments.evaluators import aevaluator, evaluator, EvalResult
+from honeyhive.experiments.evaluators import EvalResult, aevaluator, evaluator
 
 
 @pytest.mark.integration

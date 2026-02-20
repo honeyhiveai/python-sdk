@@ -101,7 +101,11 @@ def _enrich_existing_event_via_api(
                 "No API client available to update event by event_id",
                 honeyhive_data={"event_id": event_id},
             )
-            return {"success": False, "error": "No API client available", "event_id": event_id}
+            return {
+                "success": False,
+                "error": "No API client available",
+                "event_id": event_id,
+            }
 
         client = getattr(tracer_instance, "client", None)
         if client is None:
@@ -111,7 +115,11 @@ def _enrich_existing_event_via_api(
                 "Tracer client is None, cannot update event",
                 honeyhive_data={"event_id": event_id},
             )
-            return {"success": False, "error": "Tracer client is None", "event_id": event_id}
+            return {
+                "success": False,
+                "error": "Tracer client is None",
+                "event_id": event_id,
+            }
 
         # Build update data for the event
         update_data: Dict[str, Any] = {"event_id": event_id}
@@ -166,7 +174,11 @@ def _enrich_existing_event_via_api(
                 "Events API update method not available",
                 honeyhive_data={"event_id": event_id},
             )
-            return {"success": False, "error": "Events API not available", "event_id": event_id}
+            return {
+                "success": False,
+                "error": "Events API not available",
+                "event_id": event_id,
+            }
 
     except Exception as e:
         safe_log(
@@ -175,7 +187,12 @@ def _enrich_existing_event_via_api(
             f"Failed to update event {event_id}: {e}",
             honeyhive_data={"event_id": event_id, "error_type": type(e).__name__},
         )
-        return {"success": False, "error": str(e), "event_id": event_id, "span": NoOpSpan()}
+        return {
+            "success": False,
+            "error": str(e),
+            "event_id": event_id,
+            "span": NoOpSpan(),
+        }
 
 
 # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-branches
