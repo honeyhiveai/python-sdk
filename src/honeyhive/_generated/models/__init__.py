@@ -38,6 +38,7 @@ from .GetEventsRequest import *
 from .GetEventsResponse import *
 from .GetRunResponse import *
 from .GetRunsResponse import *
+from .InsertResult import *
 from .Metric import *
 from .MetricEdit import *
 from .PostConfigurationRequest import *

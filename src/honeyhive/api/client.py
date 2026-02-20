@@ -549,18 +549,18 @@ class EventsAPI(BaseAPI):
         """Get events (backwards compatible alias for list())."""
         return self.list(query)
 
-    def get_by_session_id(self, session_id: str) -> Dict[str, Any]:
+    def get_by_session_id(self, session_id: str) -> GetEventsResponse:
         """Get session event by session ID (GET /session/{session_id}).
 
-        Returns a dict with 'events' key containing the session event.
+        Returns a GetEventsResponse with the session event in the 'events' list.
         """
         result = session_svc.getSession(self._api_config, session_id=session_id)
-        # getSession returns an Event object; wrap in standard dict format
+        # getSession returns an Event object; wrap in GetEventsResponse
         if hasattr(result, "model_dump"):
-            return {"events": [result.model_dump()]}
+            return GetEventsResponse(events=[result])
         elif isinstance(result, dict):
-            return {"events": [result]}
-        return {"events": [result]}
+            return GetEventsResponse(events=[Event(**result)])
+        return GetEventsResponse(events=[result])
 
 
 class ExperimentsAPI(BaseAPI):

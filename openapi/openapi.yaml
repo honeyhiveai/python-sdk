@@ -3047,14 +3047,16 @@ components:
             type: string
         success:
           type: boolean
+    InsertResult:
+      type: object
+      properties:
+        insertedId:
+          type: string
     CreateToolResponse:
       type: object
       properties:
         result:
-          type: object
-          properties:
-            insertedId:
-              type: string
+          $ref: '#/components/schemas/InsertResult'
     GetDatapointsResponse:
       type: object
       properties:
@@ -3066,10 +3068,7 @@ components:
       type: object
       properties:
         result:
-          type: object
-          properties:
-            insertedId:
-              type: string
+          $ref: '#/components/schemas/InsertResult'
     GetDatapointResponse:
       type: object
       properties:
@@ -3095,11 +3094,7 @@ components:
         inserted:
           type: boolean
         result:
-          type: object
-          properties:
-            insertedId:
-              type: string
-              description: UUID for the created dataset
+          $ref: '#/components/schemas/InsertResult'
     AddDatapointsRequest:
       type: object
       properties:
