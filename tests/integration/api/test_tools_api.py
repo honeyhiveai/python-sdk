@@ -48,8 +48,8 @@ class TestToolsAPI:
         if result is None and isinstance(response, dict):
             result = response.get("result")
         assert result is not None
-        # Tools API returns id directly in result
-        tool_id = result.get("id") or result.get("_id")
+        # Tools API returns InsertResult with insertedId
+        tool_id = getattr(result, "insertedId", None) or getattr(result, "id", None)
         assert tool_id is not None
 
         # Note: Cleanup removed - tools.delete() has a bug where client wrapper

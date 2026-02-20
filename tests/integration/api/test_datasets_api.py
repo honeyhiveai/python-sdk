@@ -15,7 +15,9 @@ def _get_dataset_id(response: Any) -> str:
     if result is None and isinstance(response, dict):
         result = response.get("result")
     assert result is not None, f"Missing result in response: {response}"
-    dataset_id = result.get("insertedId")
+    dataset_id = getattr(result, "insertedId", None) or (
+        result.get("insertedId") if isinstance(result, dict) else None
+    )
     assert dataset_id is not None, f"Missing insertedId in result: {result}"
     return dataset_id
 

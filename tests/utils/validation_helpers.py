@@ -82,19 +82,15 @@ def verify_datapoint_creation(
         ):
             raise ValidationError("Datapoint creation failed - missing result field")
 
-        # Try insertedId first (single value), then insertedIds (dict or list)
-        created_id = datapoint_response.result.get("insertedId")
+        # result is an InsertResult model with insertedId attribute
+        result = datapoint_response.result
+        created_id = getattr(result, "insertedId", None) or (
+            result.get("insertedId") if isinstance(result, dict) else None
+        )
         if not created_id:
-            inserted_ids = datapoint_response.result.get("insertedIds")
-            if not inserted_ids or len(inserted_ids) == 0:
-                raise ValidationError(
-                    "Datapoint creation failed - missing insertedIds in result"
-                )
-            # insertedIds may be a dict with string keys {'0': 'id'} or a list
-            if isinstance(inserted_ids, dict):
-                created_id = list(inserted_ids.values())[0]
-            else:
-                created_id = inserted_ids[0]
+            raise ValidationError(
+                "Datapoint creation failed - missing insertedId in result"
+            )
         logger.debug(f"✅ Datapoint created with ID: {created_id}")
 
         # Step 2: Wait for data propagation
