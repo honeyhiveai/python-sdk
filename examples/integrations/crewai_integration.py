@@ -16,11 +16,12 @@ Environment variables:
 
 import os
 
-from honeyhive import HoneyHiveTracer
-from crewai import Agent, Task, Crew, Process
+from crewai import Agent, Crew, Process, Task
 from crewai.tools import tool
 from openinference.instrumentation.crewai import CrewAIInstrumentor
 from openinference.instrumentation.litellm import LiteLLMInstrumentor
+
+from honeyhive import HoneyHiveTracer
 
 # --- HoneyHive setup (add these 3 lines to any CrewAI app) ---
 
@@ -96,6 +97,7 @@ print(result)
 # https://docs.crewai.com/learn/hierarchical-process
 # https://docs.crewai.com/learn/create-custom-tools
 
+
 @tool("Calculator")
 def calculator(expression: str) -> str:
     """Evaluate a basic arithmetic expression like '17 * 3 + 5'."""
@@ -116,7 +118,9 @@ def policy_lookup(topic: str) -> str:
         "pii": "PII must be redacted before sharing with external systems. Retain per data policy.",
         "retention": "Default data retention is 30 days unless legal requirements require longer.",
     }
-    return policies.get(topic.strip().lower(), "No policy found. Try: soc2, pii, retention.")
+    return policies.get(
+        topic.strip().lower(), "No policy found. Try: soc2, pii, retention."
+    )
 
 
 math_expert = Agent(

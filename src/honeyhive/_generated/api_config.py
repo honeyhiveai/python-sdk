@@ -3,7 +3,6 @@ from typing import Optional, Union
 
 from pydantic import BaseModel, Field
 
-
 # Default production URLs
 DEFAULT_BASE_URL = "https://api.honeyhive.ai"
 DEFAULT_CP_BASE_URL = "https://api.honeyhive.ai"
@@ -37,9 +36,7 @@ class APIConfig(BaseModel):
             cp_base_url: Override for HH_CP_API_URL
         """
         resolved_api_key = api_key or os.environ.get("HH_API_KEY")
-        resolved_base_url = (
-            base_url or os.environ.get("HH_API_URL") or DEFAULT_BASE_URL
-        )
+        resolved_base_url = base_url or os.environ.get("HH_API_URL") or DEFAULT_BASE_URL
         resolved_cp_base_url = (
             cp_base_url
             or os.environ.get("HH_CP_API_URL")

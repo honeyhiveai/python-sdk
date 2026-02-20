@@ -13,7 +13,9 @@ TODO: Update tests to match current OTLP exporter implementation.
 import pytest
 
 # Skip entire module - tests need to be updated to match current implementation
-pytestmark = pytest.mark.skip(reason="Tests need update to match current OTLP exporter implementation")
+pytestmark = pytest.mark.skip(
+    reason="Tests need update to match current OTLP exporter implementation"
+)
 
 # pylint: disable=protected-access,too-many-lines,redefined-outer-name,duplicate-code
 # Justification: Testing requires access to protected methods, comprehensive

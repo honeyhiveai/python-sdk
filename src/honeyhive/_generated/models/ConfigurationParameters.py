@@ -18,16 +18,26 @@ class ConfigurationParameters(BaseModel):
 
     model: str = Field(validation_alias="model")
 
-    hyperparameters: Optional[Dict[str, Any]] = Field(validation_alias="hyperparameters", default=None)
+    hyperparameters: Optional[Dict[str, Any]] = Field(
+        validation_alias="hyperparameters", default=None
+    )
 
-    responseFormat: Optional[ResponseFormat] = Field(validation_alias="responseFormat", default=None)
+    responseFormat: Optional[ResponseFormat] = Field(
+        validation_alias="responseFormat", default=None
+    )
 
     selectedFunctions: Optional[List[Optional[SelectedFunction]]] = Field(
         validation_alias="selectedFunctions", default=None
     )
 
-    functionCallParams: Optional[str] = Field(validation_alias="functionCallParams", default=None)
+    functionCallParams: Optional[str] = Field(
+        validation_alias="functionCallParams", default=None
+    )
 
-    forceFunction: Optional[Dict[str, Any]] = Field(validation_alias="forceFunction", default=None)
+    forceFunction: Optional[Dict[str, Any]] = Field(
+        validation_alias="forceFunction", default=None
+    )
 
-    template: Optional[Union[List[TemplateItem], str]] = Field(validation_alias="template", default=None)
+    template: Optional[Union[List[TemplateItem], str]] = Field(
+        validation_alias="template", default=None
+    )

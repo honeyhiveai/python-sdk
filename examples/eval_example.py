@@ -13,7 +13,7 @@ from typing import Any, Dict, List
 
 from dotenv import load_dotenv
 
-from honeyhive import HoneyHiveTracer, trace, enrich_span
+from honeyhive import HoneyHiveTracer, enrich_span, trace
 
 load_dotenv()
 
@@ -22,7 +22,7 @@ DATASET_NAME = "sample-honeyhive-evaluation"
 
 def invoke_summary_agent(context: str) -> str:
     """Simulate an LLM summarization agent.
-    
+
     In production, this would call an actual LLM API.
     """
     # Hardcoded response for demonstration
@@ -99,7 +99,7 @@ def length_check(output: str, ground_truth: str) -> Dict[str, Any]:
     """Check if output has reasonable length (10-500 words)."""
     word_count = len(output.split())
     in_range = 10 <= word_count <= 500
-    
+
     return {
         "score": 1.0 if in_range else 0.5,
         "word_count": word_count,
@@ -119,10 +119,10 @@ def has_content(output: str, ground_truth: str) -> Dict[str, Any]:
 @trace()
 def run_evaluation(datapoint: Dict[str, Any]) -> Dict[str, Any]:
     """Run evaluation on a single datapoint with tracing.
-    
+
     Args:
         datapoint: Contains 'inputs' and 'ground_truth' keys
-    
+
     Returns:
         Dictionary with output and evaluation metrics
     """
@@ -130,66 +130,70 @@ def run_evaluation(datapoint: Dict[str, Any]) -> Dict[str, Any]:
     ground_truth = datapoint.get("ground_truth", {})
     context = inputs.get("context", "")
     expected_answer = ground_truth.get("answer", "")
-    
+
     # Enrich span with input metadata
-    enrich_span(metadata={
-        "input_length": len(context),
-        "has_ground_truth": bool(expected_answer),
-    })
-    
+    enrich_span(
+        metadata={
+            "input_length": len(context),
+            "has_ground_truth": bool(expected_answer),
+        }
+    )
+
     # Call your application logic
     answer = invoke_summary_agent(context)
-    
+
     # Run evaluators
     length_result = length_check(answer, expected_answer)
     content_result = has_content(answer, expected_answer)
-    
+
     # Enrich span with evaluation metrics
-    enrich_span(metrics={
-        "length_score": length_result["score"],
-        "content_score": content_result["score"],
-        "word_count": length_result["word_count"],
-    })
-    
+    enrich_span(
+        metrics={
+            "length_score": length_result["score"],
+            "content_score": content_result["score"],
+            "word_count": length_result["word_count"],
+        }
+    )
+
     return {
         "answer": answer,
         "metrics": {
             "length_check": length_result,
             "has_content": content_result,
-        }
+        },
     }
 
 
 def run_all_evaluations(
-    tracer: HoneyHiveTracer,
-    dataset: List[Dict[str, Any]],
-    verbose: bool = True
+    tracer: HoneyHiveTracer, dataset: List[Dict[str, Any]], verbose: bool = True
 ) -> List[Dict[str, Any]]:
     """Run evaluations on all datapoints in the dataset.
-    
+
     Args:
         tracer: HoneyHiveTracer instance
         dataset: List of datapoints with 'inputs' and 'ground_truth'
         verbose: Whether to print progress
-    
+
     Returns:
         List of evaluation results
     """
     results = []
-    
+
     for i, datapoint in enumerate(dataset):
         if verbose:
             print(f"Processing datapoint {i + 1}/{len(dataset)}...")
-        
+
         result = run_evaluation(datapoint)
         results.append(result)
-        
+
         if verbose:
             metrics = result.get("metrics", {})
             length_score = metrics.get("length_check", {}).get("score", 0)
             content_score = metrics.get("has_content", {}).get("score", 0)
-            print(f"  Length score: {length_score:.2f}, Content score: {content_score:.2f}")
-    
+            print(
+                f"  Length score: {length_score:.2f}, Content score: {content_score:.2f}"
+            )
+
     return results
 
 
@@ -197,15 +201,15 @@ def calculate_aggregate_metrics(results: List[Dict[str, Any]]) -> Dict[str, floa
     """Calculate aggregate metrics across all results."""
     if not results:
         return {}
-    
+
     length_scores = []
     content_scores = []
-    
+
     for result in results:
         metrics = result.get("metrics", {})
         length_scores.append(metrics.get("length_check", {}).get("score", 0))
         content_scores.append(metrics.get("has_content", {}).get("score", 0))
-    
+
     return {
         "avg_length_score": sum(length_scores) / len(length_scores),
         "avg_content_score": sum(content_scores) / len(content_scores),
@@ -222,23 +226,23 @@ if __name__ == "__main__":
         source="eval-example",
         server_url=os.environ.get("HH_API_URL"),
     )
-    
+
     print(f"\nStarting evaluation run: {DATASET_NAME}")
     print(f"Dataset size: {len(dataset)} datapoints")
     print("-" * 50)
-    
+
     # Run evaluations
     results = run_all_evaluations(tracer, dataset, verbose=True)
-    
+
     # Calculate and print aggregate metrics
     aggregate = calculate_aggregate_metrics(results)
-    
+
     print("-" * 50)
     print("\nEvaluation Complete!")
     print(f"Total datapoints: {aggregate.get('total_datapoints', 0)}")
     print(f"Avg length score: {aggregate.get('avg_length_score', 0):.2f}")
     print(f"Avg content score: {aggregate.get('avg_content_score', 0):.2f}")
-    
+
     # Flush traces to ensure they're sent
     tracer.force_flush()
     print("\nTraces flushed to HoneyHive.")

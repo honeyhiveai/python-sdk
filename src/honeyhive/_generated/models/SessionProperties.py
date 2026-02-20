@@ -13,6 +13,10 @@ class SessionProperties(BaseModel):
 
     session_name: Optional[str] = Field(validation_alias="session_name", default=None)
 
-    user_properties: Optional[Dict[str, Any]] = Field(validation_alias="user_properties", default=None)
+    user_properties: Optional[Dict[str, Any]] = Field(
+        validation_alias="user_properties", default=None
+    )
 
-    metadata: Optional[Dict[str, Any]] = Field(validation_alias="metadata", default=None)
+    metadata: Optional[Dict[str, Any]] = Field(
+        validation_alias="metadata", default=None
+    )

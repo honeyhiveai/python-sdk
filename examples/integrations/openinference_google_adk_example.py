@@ -68,7 +68,7 @@ async def main():
             project=hh_project,
             session_name=Path(__file__).stem,  # Use filename as session name
             source="google_adk_example",
-            verbose=True
+            verbose=True,
         )
         print("✓ HoneyHive tracer initialized")
 

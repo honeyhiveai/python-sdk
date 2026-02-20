@@ -24,4 +24,6 @@ class CreateConfigurationRequest(BaseModel):
 
     tags: Optional[List[str]] = Field(validation_alias="tags", default=None)
 
-    user_properties: Optional[Dict[str, Any]] = Field(validation_alias="user_properties", default=None)
+    user_properties: Optional[Dict[str, Any]] = Field(
+        validation_alias="user_properties", default=None
+    )

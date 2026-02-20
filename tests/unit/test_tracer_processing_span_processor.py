@@ -19,7 +19,6 @@ from typing import Any, Dict, Optional
 from unittest.mock import Mock, call, patch
 
 import pytest
-
 from opentelemetry.context import Context
 from opentelemetry.sdk.trace import ReadableSpan, Span
 from opentelemetry.trace import Status, StatusCode
@@ -784,9 +783,7 @@ class TestHoneyHiveSpanProcessorOnEnd:
     """Test on_end method functionality with all conditional branches."""
 
     @patch("honeyhive.utils.logger.safe_log")
-    def test_on_end_client_param_uses_otlp_fallback(
-        self, mock_safe_log: Mock
-    ) -> None:
+    def test_on_end_client_param_uses_otlp_fallback(self, mock_safe_log: Mock) -> None:
         """Test on_end with client param now uses OTLP path (no exporter = warning)."""
         mock_client = Mock()
         mock_tracer = Mock(spec=HoneyHiveTracer)

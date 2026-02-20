@@ -113,7 +113,9 @@ class EventFilter(BaseModel):
         """Convert to dict for API request."""
         return {
             "field": self.field,
-            "operator": self.operator if isinstance(self.operator, str) else self.operator.value,
+            "operator": (
+                self.operator if isinstance(self.operator, str) else self.operator.value
+            ),
             "value": self.value,
             "type": self.type if isinstance(self.type, str) else self.type.value,
         }
@@ -177,7 +179,6 @@ from honeyhive._generated.models import (
     BatchCreateDatapointsRequest,
     BatchCreateDatapointsResponse,
     CreateConfigurationRequest,
-    DatapointMapping,
     CreateConfigurationResponse,
     CreateDatapointRequest,
     CreateDatapointResponse,
@@ -187,6 +188,7 @@ from honeyhive._generated.models import (
     CreateMetricResponse,
     CreateToolRequest,
     CreateToolResponse,
+    DatapointMapping,
     DeleteConfigurationResponse,
     DeleteDatapointParams,
     DeleteDatapointResponse,

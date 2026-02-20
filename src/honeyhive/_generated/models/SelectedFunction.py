@@ -16,4 +16,6 @@ class SelectedFunction(BaseModel):
 
     description: Optional[str] = Field(validation_alias="description", default=None)
 
-    parameters: Optional[Dict[str, Any]] = Field(validation_alias="parameters", default=None)
+    parameters: Optional[Dict[str, Any]] = Field(
+        validation_alias="parameters", default=None
+    )

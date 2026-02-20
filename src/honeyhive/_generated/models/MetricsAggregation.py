@@ -12,6 +12,10 @@ class MetricsAggregation(BaseModel):
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
-    aggregation_function: Optional[str] = Field(validation_alias="aggregation_function", default=None)
+    aggregation_function: Optional[str] = Field(
+        validation_alias="aggregation_function", default=None
+    )
 
-    details: Optional[List[Optional[MetricDetail]]] = Field(validation_alias="details", default=None)
+    details: Optional[List[Optional[MetricDetail]]] = Field(
+        validation_alias="details", default=None
+    )

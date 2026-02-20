@@ -8,24 +8,11 @@ NOTE: Tests temporarily skipped - test expectations don't match current implemen
 TODO: Update tests to match current CLI implementation.
 """
 
-import pytest
-
-# Previously skipped - now testing to identify actual failures
-# pytestmark = pytest.mark.skip(reason="Tests need update to match current CLI implementation")
-
-# pylint: disable=too-many-lines
-# Justification: Comprehensive unit test coverage requires extensive test cases
-
-# pylint: disable=redefined-outer-name
-# Justification: Pytest fixture pattern requires parameter shadowing
-
-# pylint: disable=protected-access
-# Justification: Unit tests need to verify private method behavior
-
 import json
 from io import StringIO
 from unittest.mock import Mock, patch
 
+import pytest
 import yaml
 from click.testing import CliRunner
 
@@ -46,6 +33,18 @@ from honeyhive.cli.main import (
     trace,
     watch,
 )
+
+# Previously skipped - now testing to identify actual failures
+# pytestmark = pytest.mark.skip(reason="Tests need update to match current CLI implementation")
+
+# pylint: disable=too-many-lines
+# Justification: Comprehensive unit test coverage requires extensive test cases
+
+# pylint: disable=redefined-outer-name
+# Justification: Pytest fixture pattern requires parameter shadowing
+
+# pylint: disable=protected-access
+# Justification: Unit tests need to verify private method behavior
 
 
 class TestCLIMain:

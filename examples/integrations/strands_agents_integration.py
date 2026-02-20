@@ -57,6 +57,7 @@ def semconv_opt_in(value: str | None):
 
 # --- Pattern 1: Agent with a tool ---
 
+
 @tool
 def calculator(expression: str) -> str:
     """Evaluate a basic arithmetic expression."""
@@ -83,10 +84,13 @@ with semconv_opt_in("gen_ai_latest_experimental"):
 
 # --- Pattern 2: Multi-agent orchestration ---
 
+
 @tool
 def research_agent(query: str) -> str:
     """Route factual questions to a research specialist."""
-    specialist = Agent(model=get_model(), system_prompt="You are a research specialist.")
+    specialist = Agent(
+        model=get_model(), system_prompt="You are a research specialist."
+    )
     return str(specialist(query))
 
 

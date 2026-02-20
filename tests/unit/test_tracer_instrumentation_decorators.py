@@ -1318,7 +1318,9 @@ class TestMissingCoverageEdgeCases:
             # Verify the function was called and handled the exception
             mock_set_attrs.assert_called_once()
 
-    @pytest.mark.skip(reason="otel_enrich_span behavior changed - test expectations outdated")
+    @pytest.mark.skip(
+        reason="otel_enrich_span behavior changed - test expectations outdated"
+    )
     def test_execute_with_tracing_sync_otel_enrich_exception(self) -> None:
         """Test exception handling in sync execution otel_enrich_span (lines 341-342)."""
         from honeyhive.models.tracing import TracingParams
@@ -1427,7 +1429,9 @@ class TestMissingCoverageEdgeCases:
 
         assert result == "no_tracer_result"
 
-    @pytest.mark.skip(reason="otel_enrich_span behavior changed - test expectations outdated")
+    @pytest.mark.skip(
+        reason="otel_enrich_span behavior changed - test expectations outdated"
+    )
     @pytest.mark.asyncio
     async def test_execute_with_tracing_async_otel_enrich_exception(self) -> None:
         """Test exception handling in async execution otel_enrich_span (lines 458-459)."""

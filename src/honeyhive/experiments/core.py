@@ -22,11 +22,11 @@ from honeyhive.experiments.utils import (
     prepare_external_dataset,
     prepare_run_request_data,
 )
-from honeyhive.utils.git_context import get_git_context
 from honeyhive.models import PostExperimentRunRequest, PutExperimentRunRequest
 from honeyhive.tracer import HoneyHiveTracer
 from honeyhive.tracer.instrumentation.decorators import trace
 from honeyhive.tracer.lifecycle.flush import force_flush_tracer
+from honeyhive.utils.git_context import get_git_context
 from honeyhive.utils.logger import get_logger, safe_log
 
 # Module-level logger for orchestration code (no tracer instance yet)
