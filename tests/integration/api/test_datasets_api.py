@@ -150,12 +150,6 @@ class TestDatasetsAPI:
         # Cleanup
         integration_client.datasets.delete(dataset_id)
 
-    def test_list_datasets_include_datapoints(
-        self, integration_client: Any, integration_project_name: str
-    ) -> None:
-        """Test dataset listing with include_datapoints parameter."""
-        pytest.skip("Backend issue with include_datapoints parameter")
-
     def test_delete_dataset(
         self, integration_client: Any, integration_project_name: str
     ) -> None:

@@ -11,7 +11,6 @@ async def getDatasets(
     *,
     dataset_id: Optional[str] = None,
     name: Optional[str] = None,
-    include_datapoints: Optional[Union[bool, str]] = None,
 ) -> GetDatasetsResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
@@ -22,11 +21,7 @@ async def getDatasets(
         "Accept": "application/json",
         "Authorization": f"Bearer { api_config.get_access_token() }",
     }
-    query_params: Dict[str, Any] = {
-        "dataset_id": dataset_id,
-        "name": name,
-        "include_datapoints": include_datapoints,
-    }
+    query_params: Dict[str, Any] = {"dataset_id": dataset_id, "name": name}
 
     query_params = {
         key: value for (key, value) in query_params.items() if value is not None

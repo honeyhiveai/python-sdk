@@ -83,7 +83,7 @@ Current Version Highlights
 
 * **Server-Side Filtering**: Find datasets by name, type, or ID without fetching all datasets
 * **Performance**: Much faster for large projects with 100+ datasets
-* **New Parameters**: ``name``, ``dataset_type``, ``dataset_id``, ``include_datapoints``
+* **New Parameters**: ``name``, ``dataset_type``, ``dataset_id``
 * **Backward Compatible**: All parameters optional, existing code works unchanged
 * **Customer Request**: Addresses scalability concerns as projects grow
 

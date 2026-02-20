@@ -50,7 +50,6 @@ All request and response models are re-exported from ``honeyhive.models``.
    **Query Parameters:**
    
    - ``GetEventsQuery`` - Query parameters for fetching events
-   - ``GetDatasetsQuery`` - Query parameters for fetching datasets
    - ``GetDatapointsQuery`` - Query parameters for fetching datapoints
    
    **Enums:**

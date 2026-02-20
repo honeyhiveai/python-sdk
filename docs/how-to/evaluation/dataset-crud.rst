@@ -462,24 +462,15 @@ Get Specific Dataset
    
    client = HoneyHive(api_key="your-api-key")
    
-   # Get dataset by ID (with datapoints included)
+   # Get dataset by ID
    response = client.datasets.list(
-       dataset_id="dataset_abc123",
-       include_datapoints=True
+       dataset_id="dataset_abc123"
    )
-   
+
    if response.datasets:
        dataset = response.datasets[0]
        print(f"Dataset: {dataset.name}")
        print(f"Description: {dataset.description}")
-       
-       # Access datapoints if included
-       if hasattr(dataset, 'datapoints') and dataset.datapoints:
-           print(f"Datapoints: {len(dataset.datapoints)}")
-           for i, dp in enumerate(dataset.datapoints[:3]):  # First 3
-               print(f"\nDatapoint {i+1}:")
-               print(f"  Inputs: {dp.get('inputs')}")
-               print(f"  Ground Truth: {dp.get('ground_truth')}")
 
 Find Datasets by Name
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -497,12 +488,6 @@ Find Datasets by Name
    
    # Get specific dataset by ID
    dataset = client.datasets.list(dataset_id="663876ec4611c47f4970f0c3")
-   
-   # Include datapoints in response (single query)
-   dataset_with_data = client.datasets.list(
-       dataset_id="663876ec4611c47f4970f0c3",
-       include_datapoints=True
-   )
 
 **Client-side filtering (for pattern matching):**
 
