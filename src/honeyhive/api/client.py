@@ -38,6 +38,7 @@ from honeyhive._generated.models import (
     CreateModelEventBatchRequest,
     CreateModelEventBatchResponse,
     CreateModelEventRequestBody,
+    CreateProjectRequest,
     CreateRunResponse,
     CreateToolRequest,
     CreateToolResponse,
@@ -61,6 +62,7 @@ from honeyhive._generated.models import (
     Tool,
     UpdateDatapointRequest,
     UpdateEventRequest,
+    UpdateProjectRequest,
     UpdateRunResponse,
     UpdateToolRequest,
 )
@@ -781,11 +783,11 @@ class ProjectsAPI(BaseAPI):
         """List projects."""
         return projects_svc.getProjects(self._api_config, name=name)
 
-    def create(self, data: Dict[str, Any]) -> Project:
+    def create(self, data: CreateProjectRequest) -> Project:
         """Create a project."""
         return projects_svc.createProject(self._api_config, data=data)
 
-    def update(self, data: Dict[str, Any]) -> None:
+    def update(self, data: UpdateProjectRequest) -> None:
         """Update a project."""
         return projects_svc.updateProject(self._api_config, data=data)
 
@@ -798,11 +800,11 @@ class ProjectsAPI(BaseAPI):
         """List projects asynchronously."""
         return await projects_svc_async.getProjects(self._api_config, name=name)
 
-    async def create_async(self, data: Dict[str, Any]) -> Project:
+    async def create_async(self, data: CreateProjectRequest) -> Project:
         """Create a project asynchronously."""
         return await projects_svc_async.createProject(self._api_config, data=data)
 
-    async def update_async(self, data: Dict[str, Any]) -> None:
+    async def update_async(self, data: UpdateProjectRequest) -> None:
         """Update a project asynchronously."""
         return await projects_svc_async.updateProject(self._api_config, data=data)
 
@@ -817,11 +819,11 @@ class ProjectsAPI(BaseAPI):
 
     def create_project(self, data: Dict[str, Any]) -> Project:
         """Create a project (backwards compatible alias)."""
-        return self.create(data)
+        return self.create(CreateProjectRequest(**data))
 
     def update_project(self, data: Dict[str, Any]) -> None:
         """Update a project (backwards compatible alias)."""
-        return self.update(data)
+        return self.update(UpdateProjectRequest(**data))
 
     def delete_project(self, name: str) -> None:
         """Delete a project (backwards compatible alias)."""

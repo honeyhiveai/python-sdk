@@ -916,10 +916,7 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
 
     # Initialize client - passing explicit values ensures both HONEYHIVE_* and HH_*
     # environment variables work (client's config only checks HH_* prefix)
-    client_params = {"api_key": api_key}
-    if server_url:
-        client_params["base_url"] = server_url
-    client = HoneyHive(**client_params)
+    client = HoneyHive(api_key=api_key, base_url=server_url)
 
     # Step 1: Prepare dataset
     if dataset is not None:
