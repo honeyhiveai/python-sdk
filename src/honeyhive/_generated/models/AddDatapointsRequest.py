@@ -2,6 +2,8 @@ from typing import *
 
 from pydantic import BaseModel, Field
 
+from .DatapointMapping import DatapointMapping
+
 
 class AddDatapointsRequest(BaseModel):
     """
@@ -14,4 +16,4 @@ class AddDatapointsRequest(BaseModel):
 
     data: List[Dict[str, Any]] = Field(validation_alias="data")
 
-    mapping: Dict[str, Any] = Field(validation_alias="mapping")
+    mapping: DatapointMapping = Field(validation_alias="mapping")

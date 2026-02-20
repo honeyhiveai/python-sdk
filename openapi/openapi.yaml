@@ -2643,60 +2643,7 @@ components:
           type: string
           description: Name of the provider - "openai", "anthropic", etc.
         parameters:
-          type: object
-          additionalProperties: true
-          properties:
-            call_type:
-              type: string
-              enum:
-              - chat
-              - completion
-              description: Type of API calling - "chat" or "completion"
-            model:
-              type: string
-              description: Model unique name
-            hyperparameters:
-              type: object
-              description: Model-specific hyperparameters
-              additionalProperties: true
-            responseFormat:
-              type: object
-              description: Response format for the model with the key "type" and value
-                "text" or "json_object"
-            selectedFunctions:
-              type: array
-              description: List of functions to be called by the model, refer to OpenAI
-                schema for more details
-              items:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    description: UUID of the function
-                  name:
-                    type: string
-                    description: Name of the function
-                  description:
-                    type: string
-                    description: Description of the function
-                  parameters:
-                    type: object
-                    additionalProperties: true
-                    description: Parameters for the function
-            functionCallParams:
-              type: string
-              enum:
-              - none
-              - auto
-              - force
-              description: Function calling mode - "none", "auto" or "force"
-            forceFunction:
-              type: object
-              additionalProperties: true
-              description: Force function-specific parameters
-          required:
-          - call_type
-          - model
+          $ref: '#/components/schemas/ConfigurationParameters'
         type:
           type: string
           enum:
@@ -2797,60 +2744,7 @@ components:
           type: string
           description: Name of the provider - "openai", "anthropic", etc.
         parameters:
-          type: object
-          additionalProperties: true
-          properties:
-            call_type:
-              type: string
-              enum:
-              - chat
-              - completion
-              description: Type of API calling - "chat" or "completion"
-            model:
-              type: string
-              description: Model unique name
-            hyperparameters:
-              type: object
-              description: Model-specific hyperparameters
-              additionalProperties: true
-            responseFormat:
-              type: object
-              description: Response format for the model with the key "type" and value
-                "text" or "json_object"
-            selectedFunctions:
-              type: array
-              description: List of functions to be called by the model, refer to OpenAI
-                schema for more details
-              items:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    description: UUID of the function
-                  name:
-                    type: string
-                    description: Name of the function
-                  description:
-                    type: string
-                    description: Description of the function
-                  parameters:
-                    type: object
-                    additionalProperties: true
-                    description: Parameters for the function
-            functionCallParams:
-              type: string
-              enum:
-              - none
-              - auto
-              - force
-              description: Function calling mode - "none", "auto" or "force"
-            forceFunction:
-              type: object
-              additionalProperties: true
-              description: Force function-specific parameters
-          required:
-          - call_type
-          - model
+          $ref: '#/components/schemas/ConfigurationParameters'
         env:
           type: array
           description: List of environments where the configuration is active
@@ -2935,60 +2829,7 @@ components:
           type: string
           description: Name of the provider - "openai", "anthropic", etc.
         parameters:
-          type: object
-          additionalProperties: true
-          properties:
-            call_type:
-              type: string
-              enum:
-              - chat
-              - completion
-              description: Type of API calling - "chat" or "completion"
-            model:
-              type: string
-              description: Model unique name
-            hyperparameters:
-              type: object
-              description: Model-specific hyperparameters
-              additionalProperties: true
-            responseFormat:
-              type: object
-              description: Response format for the model with the key "type" and value
-                "text" or "json_object"
-            selectedFunctions:
-              type: array
-              description: List of functions to be called by the model, refer to OpenAI
-                schema for more details
-              items:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    description: UUID of the function
-                  name:
-                    type: string
-                    description: Name of the function
-                  description:
-                    type: string
-                    description: Description of the function
-                  parameters:
-                    type: object
-                    additionalProperties: true
-                    description: Parameters for the function
-            functionCallParams:
-              type: string
-              enum:
-              - none
-              - auto
-              - force
-              description: Function calling mode - "none", "auto" or "force"
-            forceFunction:
-              type: object
-              additionalProperties: true
-              description: Force function-specific parameters
-          required:
-          - call_type
-          - model
+          $ref: '#/components/schemas/ConfigurationParameters'
         env:
           type: array
           description: List of environments where the configuration is active
@@ -3272,28 +3113,7 @@ components:
             additionalProperties: true
           description: List of JSON objects to be added as datapoints
         mapping:
-          description: Mapping of keys in the data object to be used as inputs, ground truth, and history
-          type: object
-          properties:
-            inputs:
-              type: array
-              items:
-                type: string
-              description: List of keys in the data object to be used as inputs
-            ground_truth:
-              type: array
-              items:
-                type: string
-              description: List of keys in the data object to be used as ground truth
-            history:
-              type: array
-              items:
-                type: string
-              description: List of keys in the data object to be used as chat history
-          required:
-          - inputs
-          - ground_truth
-          - history
+          $ref: '#/components/schemas/DatapointMapping'
       required:
       - project
       - data
@@ -3308,5 +3128,108 @@ components:
           items:
             type: string
           description: List of unique datapoint ids added to the dataset
+    ConfigurationParameters:
+      type: object
+      additionalProperties: true
+      properties:
+        call_type:
+          type: string
+          enum:
+          - chat
+          - completion
+          description: Type of API calling - "chat" or "completion"
+        model:
+          type: string
+          description: Model unique name
+        hyperparameters:
+          type: object
+          description: Model-specific hyperparameters
+          additionalProperties: true
+        responseFormat:
+          $ref: '#/components/schemas/ResponseFormat'
+        selectedFunctions:
+          type: array
+          description: List of functions to be called by the model, refer to OpenAI
+            schema for more details
+          items:
+            $ref: '#/components/schemas/SelectedFunction'
+        functionCallParams:
+          type: string
+          enum:
+          - none
+          - auto
+          - force
+          description: Function calling mode - "none", "auto" or "force"
+        forceFunction:
+          type: object
+          additionalProperties: true
+          description: Force function-specific parameters
+        template:
+          anyOf:
+          - type: array
+            items:
+              $ref: '#/components/schemas/TemplateItem'
+          - type: string
+      required:
+      - call_type
+      - model
+    ResponseFormat:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - text
+          - json_object
+      required:
+      - type
+    SelectedFunction:
+      type: object
+      properties:
+        id:
+          type: string
+          description: UUID of the function
+        name:
+          type: string
+          description: Name of the function
+        description:
+          type: string
+          description: Description of the function
+        parameters:
+          type: object
+          additionalProperties: true
+          description: Parameters for the function
+      required:
+      - id
+      - name
+    TemplateItem:
+      type: object
+      properties:
+        role:
+          type: string
+        content:
+          type: string
+      required:
+      - role
+      - content
+    DatapointMapping:
+      type: object
+      description: Mapping of keys in the data object to be used as inputs, ground truth, and history
+      properties:
+        inputs:
+          type: array
+          items:
+            type: string
+          description: List of keys in the data object to be used as inputs
+        ground_truth:
+          type: array
+          items:
+            type: string
+          description: List of keys in the data object to be used as ground truth
+        history:
+          type: array
+          items:
+            type: string
+          description: List of keys in the data object to be used as chat history
 security:
 - BearerAuth: []
