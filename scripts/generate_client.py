@@ -29,6 +29,7 @@ REPO_ROOT = Path(__file__).parent.parent
 DEFAULT_SPEC = REPO_ROOT / "openapi" / "openapi.yaml"
 OUTPUT_DIR = REPO_ROOT / "src" / "honeyhive" / "_generated"
 TEMP_DIR = REPO_ROOT / ".generated_temp"
+TEMPLATES_DIR = REPO_ROOT / "scripts" / "templates"
 
 
 def clean_output_dir(output_dir: Path) -> None:
@@ -51,7 +52,9 @@ def run_generator(spec_path: Path, temp_dir: Path) -> bool:
     Returns True if successful, False otherwise.
     """
     cmd = [
-        "openapi-python-generator",
+        sys.executable,
+        "-m",
+        "openapi_python_generator",
         str(spec_path),
         str(temp_dir),
         "--library",
@@ -60,6 +63,8 @@ def run_generator(spec_path: Path, temp_dir: Path) -> bool:
         "v2",
         "--formatter",
         "black",
+        "--custom-template-path",
+        str(TEMPLATES_DIR),
     ]
 
     print(f"Running: {' '.join(cmd)}")
@@ -106,6 +111,10 @@ def post_process(output_dir: Path) -> bool:
     """
     Apply any post-processing customizations to the generated code.
 
+    Most customizations are handled by custom Jinja2 templates in
+    scripts/templates/ (passed via --custom-template-path).  This function
+    only fixes issues that cannot be addressed through templates.
+
     Returns True if successful, False otherwise.
     """
     print("🔧 Applying post-processing customizations...")
@@ -116,9 +125,10 @@ def post_process(output_dir: Path) -> bool:
         init_file.write_text('"""Auto-generated HoneyHive API client."""\n')
         print("  ✓ Created __init__.py")
 
-    # Fix leading-underscore fields (e.g. _id) that Pydantic v2 rejects.
-    # Rename the Python field to drop the underscore while keeping the
-    # validation_alias so the original JSON key still works.
+    # Generator bug: fields named with a leading underscore (e.g. _id) are
+    # emitted verbatim, but Pydantic v2 forbids underscore-prefixed field
+    # names. Rename the Python field to drop the underscore while keeping
+    # the validation_alias so the original JSON key still works.
     import re
 
     models_dir = output_dir / "models"
@@ -139,22 +149,6 @@ def post_process(output_dir: Path) -> bool:
                 underscore_fixed += count
         if underscore_fixed > 0:
             print(f"  ✓ Fixed {underscore_fixed} leading-underscore field(s) in models")
-
-    # Fix serialization to exclude None values
-    # The API rejects null values, so we must use model_dump(exclude_none=True)
-    services_dir = output_dir / "services"
-    if services_dir.exists():
-        fixed_count = 0
-        for service_file in services_dir.glob("*.py"):
-            content = service_file.read_text()
-            if "data.dict()" in content:
-                content = content.replace(
-                    "data.dict()", "data.model_dump(exclude_none=True)"
-                )
-                service_file.write_text(content)
-                fixed_count += 1
-        if fixed_count > 0:
-            print(f"  ✓ Fixed serialization in {fixed_count} service files")
 
     print("  ✓ Post-processing complete")
     return True

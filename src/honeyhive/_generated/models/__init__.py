@@ -52,4 +52,3 @@ from .UpdateProjectRequest import *
 from .UpdateRunRequest import *
 from .UpdateRunResponse import *
 from .UpdateToolRequest import *
-from .UUIDType import *

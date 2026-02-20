@@ -87,8 +87,8 @@ check-integration:
 
 # Code Quality
 format:
-	black src tests examples scripts
-	isort src tests examples scripts
+	$(PYTHON) -m black src tests examples scripts
+	$(PYTHON) -m isort src tests examples scripts
 
 lint:
 	tox -e lint

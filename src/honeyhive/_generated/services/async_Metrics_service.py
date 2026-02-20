@@ -22,16 +22,20 @@ async def getMetrics(
     }
 
     response = await _make_request_async(
-        api_config, "get", path, headers, params=query_params
+        api_config,
+        "get",
+        path,
+        headers,
+        params=query_params,
     )
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"getMetrics failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"getMetrics failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
     return [Metric(**item) for item in body]
 
@@ -65,10 +69,10 @@ async def createMetric(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"createMetric failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"createMetric failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
     return None
 
@@ -102,10 +106,10 @@ async def updateMetric(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"updateMetric failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"updateMetric failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
     return None
 
@@ -128,15 +132,19 @@ async def deleteMetric(
     }
 
     response = await _make_request_async(
-        api_config, "delete", path, headers, params=query_params
+        api_config,
+        "delete",
+        path,
+        headers,
+        params=query_params,
     )
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"deleteMetric failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"deleteMetric failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
     return None

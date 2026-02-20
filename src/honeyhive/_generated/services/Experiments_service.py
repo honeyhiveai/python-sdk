@@ -21,17 +21,23 @@ def getRuns(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    response = _make_request(api_config, "get", path, headers, params=query_params)
+    response = _make_request(
+        api_config,
+        "get",
+        path,
+        headers,
+        params=query_params,
+    )
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"getRuns failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"getRuns failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
-    return GetRunsResponse(**body) if body is not None else GetRunsResponse()
+    return GetRunsResponse(**body)
 
 
 def createRun(
@@ -63,12 +69,12 @@ def createRun(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"createRun failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"createRun failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
-    return CreateRunResponse(**body) if body is not None else CreateRunResponse()
+    return CreateRunResponse(**body)
 
 
 def getRun(
@@ -88,17 +94,23 @@ def getRun(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    response = _make_request(api_config, "get", path, headers, params=query_params)
+    response = _make_request(
+        api_config,
+        "get",
+        path,
+        headers,
+        params=query_params,
+    )
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"getRun failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"getRun failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
-    return GetRunResponse(**body) if body is not None else GetRunResponse()
+    return GetRunResponse(**body)
 
 
 def updateRun(
@@ -133,12 +145,12 @@ def updateRun(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"updateRun failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"updateRun failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
-    return UpdateRunResponse(**body) if body is not None else UpdateRunResponse()
+    return UpdateRunResponse(**body)
 
 
 def deleteRun(
@@ -158,17 +170,23 @@ def deleteRun(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    response = _make_request(api_config, "delete", path, headers, params=query_params)
+    response = _make_request(
+        api_config,
+        "delete",
+        path,
+        headers,
+        params=query_params,
+    )
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"deleteRun failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"deleteRun failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
-    return DeleteRunResponse(**body) if body is not None else DeleteRunResponse()
+    return DeleteRunResponse(**body)
 
 
 def getExperimentResult(
@@ -195,21 +213,23 @@ def getExperimentResult(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    response = _make_request(api_config, "get", path, headers, params=query_params)
+    response = _make_request(
+        api_config,
+        "get",
+        path,
+        headers,
+        params=query_params,
+    )
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"getExperimentResult failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"getExperimentResult failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
-    return (
-        ExperimentResultResponse(**body)
-        if body is not None
-        else ExperimentResultResponse()
-    )
+    return ExperimentResultResponse(**body)
 
 
 def getExperimentComparison(
@@ -237,18 +257,20 @@ def getExperimentComparison(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    response = _make_request(api_config, "get", path, headers, params=query_params)
+    response = _make_request(
+        api_config,
+        "get",
+        path,
+        headers,
+        params=query_params,
+    )
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"getExperimentComparison failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"getExperimentComparison failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
-    return (
-        ExperimentComparisonResponse(**body)
-        if body is not None
-        else ExperimentComparisonResponse()
-    )
+    return ExperimentComparisonResponse(**body)

@@ -672,7 +672,10 @@ class TestEvaluate:
         mock_dp2_response = Mock()
         mock_dp2_response.datapoint = [mock_dp2]
 
-        mock_client.datapoints.get_datapoint.side_effect = [mock_dp1_response, mock_dp2_response]
+        mock_client.datapoints.get_datapoint.side_effect = [
+            mock_dp1_response,
+            mock_dp2_response,
+        ]
 
         mock_run_response = Mock()
         mock_run_response.run_id = "run-789"

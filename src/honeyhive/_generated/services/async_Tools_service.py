@@ -20,16 +20,20 @@ async def getTools(api_config_override: Optional[APIConfig] = None) -> List[Tool
     }
 
     response = await _make_request_async(
-        api_config, "get", path, headers, params=query_params
+        api_config,
+        "get",
+        path,
+        headers,
+        params=query_params,
     )
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"getTools failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"getTools failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
     return [Tool(**item) for item in body]
 
@@ -63,12 +67,12 @@ async def createTool(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"createTool failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"createTool failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
-    return CreateToolResponse(**body) if body is not None else CreateToolResponse()
+    return CreateToolResponse(**body)
 
 
 async def updateTool(
@@ -100,10 +104,10 @@ async def updateTool(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"updateTool failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"updateTool failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
     return None
 
@@ -126,15 +130,19 @@ async def deleteTool(
     }
 
     response = await _make_request_async(
-        api_config, "delete", path, headers, params=query_params
+        api_config,
+        "delete",
+        path,
+        headers,
+        params=query_params,
     )
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"deleteTool failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"deleteTool failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
     return None

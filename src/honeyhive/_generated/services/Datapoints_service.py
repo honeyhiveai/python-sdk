@@ -29,19 +29,23 @@ def getDatapoints(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    response = _make_request(api_config, "get", path, headers, params=query_params)
+    response = _make_request(
+        api_config,
+        "get",
+        path,
+        headers,
+        params=query_params,
+    )
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"getDatapoints failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"getDatapoints failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
-    return (
-        GetDatapointsResponse(**body) if body is not None else GetDatapointsResponse()
-    )
+    return GetDatapointsResponse(**body)
 
 
 def createDatapoint(
@@ -73,16 +77,12 @@ def createDatapoint(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"createDatapoint failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"createDatapoint failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
-    return (
-        CreateDatapointResponse(**body)
-        if body is not None
-        else CreateDatapointResponse()
-    )
+    return CreateDatapointResponse(**body)
 
 
 def getDatapoint(
@@ -102,17 +102,23 @@ def getDatapoint(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    response = _make_request(api_config, "get", path, headers, params=query_params)
+    response = _make_request(
+        api_config,
+        "get",
+        path,
+        headers,
+        params=query_params,
+    )
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"getDatapoint failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"getDatapoint failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
-    return GetDatapointResponse(**body) if body is not None else GetDatapointResponse()
+    return GetDatapointResponse(**body)
 
 
 def updateDatapoint(
@@ -147,10 +153,10 @@ def updateDatapoint(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"updateDatapoint failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"updateDatapoint failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
     return None
 
@@ -172,18 +178,20 @@ def deleteDatapoint(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    response = _make_request(api_config, "delete", path, headers, params=query_params)
+    response = _make_request(
+        api_config,
+        "delete",
+        path,
+        headers,
+        params=query_params,
+    )
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"deleteDatapoint failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"deleteDatapoint failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
-    return (
-        DeleteDatapointResponse(**body)
-        if body is not None
-        else DeleteDatapointResponse()
-    )
+    return DeleteDatapointResponse(**body)

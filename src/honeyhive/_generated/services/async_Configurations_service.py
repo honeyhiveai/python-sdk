@@ -26,16 +26,20 @@ async def getConfigurations(
     }
 
     response = await _make_request_async(
-        api_config, "get", path, headers, params=query_params
+        api_config,
+        "get",
+        path,
+        headers,
+        params=query_params,
     )
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"getConfigurations failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"getConfigurations failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
     return [Configuration(**item) for item in body]
 
@@ -69,10 +73,10 @@ async def createConfiguration(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"createConfiguration failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"createConfiguration failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
     return None
 
@@ -109,10 +113,10 @@ async def updateConfiguration(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"updateConfiguration failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"updateConfiguration failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
     return None
 
@@ -135,15 +139,19 @@ async def deleteConfiguration(
     }
 
     response = await _make_request_async(
-        api_config, "delete", path, headers, params=query_params
+        api_config,
+        "delete",
+        path,
+        headers,
+        params=query_params,
     )
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"deleteConfiguration failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"deleteConfiguration failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
     return None

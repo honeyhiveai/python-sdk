@@ -33,12 +33,12 @@ def createEvent(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"createEvent failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"createEvent failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
-    return CreateEventResponse(**body) if body is not None else CreateEventResponse()
+    return CreateEventResponse(**body)
 
 
 def updateEvent(
@@ -70,10 +70,10 @@ def updateEvent(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"updateEvent failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"updateEvent failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
     return None
 
@@ -107,12 +107,12 @@ def getEvents(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"getEvents failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"getEvents failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
-    return GetEventsResponse(**body) if body is not None else GetEventsResponse()
+    return GetEventsResponse(**body)
 
 
 def createModelEvent(
@@ -146,12 +146,12 @@ def createModelEvent(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"createModelEvent failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"createModelEvent failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
-    return CreateEventResponse(**body) if body is not None else CreateEventResponse()
+    return CreateEventResponse(**body)
 
 
 def createEventBatch(
@@ -183,16 +183,12 @@ def createEventBatch(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"createEventBatch failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"createEventBatch failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
-    return (
-        CreateEventBatchResponse(**body)
-        if body is not None
-        else CreateEventBatchResponse()
-    )
+    return CreateEventBatchResponse(**body)
 
 
 def createModelEventBatch(
@@ -226,13 +222,9 @@ def createModelEventBatch(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"createModelEventBatch failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"createModelEventBatch failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
-    return (
-        CreateModelEventBatchResponse(**body)
-        if body is not None
-        else CreateModelEventBatchResponse()
-    )
+    return CreateModelEventBatchResponse(**body)

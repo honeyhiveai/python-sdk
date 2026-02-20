@@ -21,15 +21,21 @@ def getMetrics(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    response = _make_request(api_config, "get", path, headers, params=query_params)
+    response = _make_request(
+        api_config,
+        "get",
+        path,
+        headers,
+        params=query_params,
+    )
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"getMetrics failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"getMetrics failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
     return [Metric(**item) for item in body]
 
@@ -63,10 +69,10 @@ def createMetric(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"createMetric failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"createMetric failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
     return None
 
@@ -100,10 +106,10 @@ def updateMetric(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"updateMetric failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"updateMetric failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
     return None
 
@@ -125,14 +131,20 @@ def deleteMetric(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    response = _make_request(api_config, "delete", path, headers, params=query_params)
+    response = _make_request(
+        api_config,
+        "delete",
+        path,
+        headers,
+        params=query_params,
+    )
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"deleteMetric failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"deleteMetric failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
     return None

@@ -10,7 +10,6 @@ def getDatasets(
     project: str,
     type: Optional[str] = None,
     dataset_id: Optional[str] = None,
-    name: Optional[str] = None,
 ) -> GetDatasetsResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
@@ -24,24 +23,29 @@ def getDatasets(
         "project": project,
         "type": type,
         "dataset_id": dataset_id,
-        "name": name,
     }
 
     query_params = {
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    response = _make_request(api_config, "get", path, headers, params=query_params)
+    response = _make_request(
+        api_config,
+        "get",
+        path,
+        headers,
+        params=query_params,
+    )
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"getDatasets failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"getDatasets failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
-    return GetDatasetsResponse(**body) if body is not None else GetDatasetsResponse()
+    return GetDatasetsResponse(**body)
 
 
 def createDataset(
@@ -73,14 +77,12 @@ def createDataset(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"createDataset failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"createDataset failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
-    return (
-        CreateDatasetResponse(**body) if body is not None else CreateDatasetResponse()
-    )
+    return CreateDatasetResponse(**body)
 
 
 def updateDataset(
@@ -112,10 +114,10 @@ def updateDataset(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"updateDataset failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"updateDataset failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
     return None
 
@@ -137,15 +139,21 @@ def deleteDataset(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    response = _make_request(api_config, "delete", path, headers, params=query_params)
+    response = _make_request(
+        api_config,
+        "delete",
+        path,
+        headers,
+        params=query_params,
+    )
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"deleteDataset failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"deleteDataset failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
     return None
 
@@ -182,11 +190,9 @@ def addDatapoints(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"addDatapoints failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"addDatapoints failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
-    return (
-        AddDatapointsResponse(**body) if body is not None else AddDatapointsResponse()
-    )
+    return AddDatapointsResponse(**body)

@@ -22,16 +22,20 @@ async def getProjects(
     }
 
     response = await _make_request_async(
-        api_config, "get", path, headers, params=query_params
+        api_config,
+        "get",
+        path,
+        headers,
+        params=query_params,
     )
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"getProjects failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"getProjects failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
     return [Project(**item) for item in body]
 
@@ -65,12 +69,12 @@ async def createProject(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"createProject failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"createProject failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
-    return Project(**body) if body is not None else Project()
+    return Project(**body)
 
 
 async def updateProject(
@@ -102,10 +106,10 @@ async def updateProject(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"updateProject failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"updateProject failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
     return None
 
@@ -128,15 +132,19 @@ async def deleteProject(
     }
 
     response = await _make_request_async(
-        api_config, "delete", path, headers, params=query_params
+        api_config,
+        "delete",
+        path,
+        headers,
+        params=query_params,
     )
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"deleteProject failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"deleteProject failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
     return None
