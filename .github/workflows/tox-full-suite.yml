@@ -262,12 +262,7 @@ jobs:
           pip install -e ".[dev]"
 
       - name: Regenerate SDK from OpenAPI spec
-        run: python scripts/generate_client.py
-
-      - name: Format generated code
-        run: |
-          black src/honeyhive/_generated
-          isort src/honeyhive/_generated
+        run: make generate
 
       - name: Check for uncommitted changes
         run: |
