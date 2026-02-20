@@ -1025,7 +1025,9 @@ class HoneyHive:
         import os
 
         # Resolve API key from parameter or environment
-        self._api_key: str = api_key if api_key is not None else os.environ.get("HH_API_KEY", "")
+        self._api_key: str = (
+            api_key if api_key is not None else os.environ.get("HH_API_KEY", "")
+        )
 
         # Resolve base URL: base_url > server_url (legacy) > env var > default
         resolved_base_url = (
