@@ -35,6 +35,7 @@ class TestModelIntegration:
             name="complex-config",
             provider="openai",
             parameters={
+                "call_type": "chat",
                 "model": "gpt-4",
                 "temperature": 0.7,
                 "max_tokens": 1000,
@@ -169,7 +170,7 @@ class TestModelIntegration:
             project="test-project",
             name="workflow-config",
             provider="openai",
-            parameters={"model": "gpt-4", "temperature": 0.7},
+            parameters={"call_type": "chat", "model": "gpt-4", "temperature": 0.7},
         )
 
         # Verify all models are valid and can be serialized
@@ -317,7 +318,10 @@ class TestModelIntegration:
     def test_model_performance_integration(self):
         """Test model performance with large data structures."""
         # v1 API: Create large configuration with simplified structure
-        large_parameters = {}
+        large_parameters = {
+            "call_type": "chat",
+            "model": "gpt-4",
+        }
         for i in range(100):
             large_parameters[f"param_{i}"] = {
                 "value": i,

@@ -364,7 +364,7 @@ class TestSimpleIntegration:
             project=integration_project_name,
             name="test-config",
             provider="openai",
-            parameters={"model": "gpt-4", "temperature": 0.7},
+            parameters={"call_type": "chat", "model": "gpt-4", "temperature": 0.7},
         )
         config_dict = config_request.model_dump(exclude_none=True)
         assert config_dict["name"] == "test-config"
