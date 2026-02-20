@@ -2,7 +2,6 @@ import time as _time
 from typing import Any, Dict, Optional, Union
 
 import httpx
-{% if env_token_name is not none %}import os{% endif %}
 from pydantic import BaseModel, Field
 
 
@@ -14,28 +13,15 @@ class APIConfig(BaseModel):
     base_path: str = {% if servers|length > 0 %} '{{ servers[0].url }}' {% else %} 'NO SERVER' {% endif %}
 
     verify: Union[bool, str] = True
-{% if env_token_name is none %}
     access_token: Optional[str] = None
-{% endif %}
     timeout: float = 30.0
     max_retries: int = 2
 
     def get_access_token(self) -> Optional[str]:
-{% if env_token_name is not none %}
-        try:
-            return os.environ['{{ env_token_name }}']
-        except KeyError:
-            return None
-{% else %}
         return self.access_token
-{% endif %}
 
     def set_access_token(self, value: str) -> None:
-{% if env_token_name is not none %}
-        raise Exception("This client was generated with an environment variable for the access token. Please set the environment variable '{{ env_token_name }}' to the access token.")
-{% else %}
         self.access_token = value
-{% endif %}
 
 class HTTPException(Exception):
     def __init__(self, status_code: int, message: str):
