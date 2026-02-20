@@ -172,11 +172,7 @@ Multiple files have OpenTelemetry tests skipped conditionally:
 
 **File:** `tests/integration/api/test_datasets_api.py`
 
-#### 1. `test_list_datasets_include_datapoints`
-- **Reason:** Backend issue with include_datapoints parameter
-- **Impact:** Cannot test dataset listing with datapoints included
-
-#### 2. `test_update_dataset`
+#### 1. `test_update_dataset`
 - **Reason:** UpdateDatasetRequest requires dataset_id field - needs investigation
 - **Impact:** Cannot test dataset metadata updates
 

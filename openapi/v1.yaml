@@ -848,14 +848,6 @@ paths:
           schema:
             type: string
           description: Dataset name to filter by
-        - in: query
-          name: include_datapoints
-          required: false
-          schema:
-            oneOf:
-              - type: boolean
-              - type: string
-          description: Whether to include datapoints in the response
       responses:
         '200':
           description: Successful response
@@ -2185,19 +2177,6 @@ components:
             minLength: 1
       required:
         - dataset_id
-    GetDatasetsQuery:
-      type: object
-      properties:
-        dataset_id:
-          type: string
-          minLength: 1
-        name:
-          type: string
-          maxLength: 200
-        include_datapoints:
-          anyOf:
-            - type: boolean
-            - type: string
     DeleteDatasetQuery:
       type: object
       properties:

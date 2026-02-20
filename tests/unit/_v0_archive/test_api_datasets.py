@@ -644,47 +644,6 @@ class TestDatasetsAPIListDatasets:
                     params={"limit": "100", "name": "Training Data Q4"},
                 )
 
-    def test_list_datasets_with_include_datapoints(self, mock_client: Mock) -> None:
-        """Test list_datasets with include_datapoints parameter."""
-        # Arrange
-        datasets_api = DatasetsAPI(mock_client)
-
-        mock_response = Mock()
-        mock_response.json.return_value = {
-            "testcases": [
-                {
-                    "id": "dataset-456",
-                    "name": "Dataset With Datapoints",
-                    "project": "project-1",
-                    "datapoints": [{"id": "dp-1"}, {"id": "dp-2"}],
-                }
-            ]
-        }
-
-        mock_processed_data = [
-            Dataset(name="Dataset With Datapoints", project="project-1")
-        ]
-
-        with patch.object(mock_client, "request", return_value=mock_response):
-            with patch.object(
-                datasets_api,
-                "_process_data_dynamically",
-                return_value=mock_processed_data,
-            ):
-                # Act
-                result = datasets_api.list_datasets(include_datapoints=True)
-
-                # Assert
-                assert isinstance(result, list)
-                assert len(result) == 1
-
-                # Verify boolean is converted to lowercase string
-                mock_client.request.assert_called_once_with(
-                    "GET",
-                    "/datasets",
-                    params={"limit": "100", "include_datapoints": "true"},
-                )
-
     def test_list_datasets_with_all_filters(self, mock_client: Mock) -> None:
         """Test list_datasets with all filter parameters combined."""
         # Arrange
@@ -693,7 +652,6 @@ class TestDatasetsAPIListDatasets:
         dataset_type = "evaluation"
         dataset_id = "dataset-789"
         name = "Regression Tests"
-        include_datapoints = True
         limit = 50
 
         mock_response = Mock()
@@ -723,7 +681,6 @@ class TestDatasetsAPIListDatasets:
                     dataset_type=dataset_type,
                     dataset_id=dataset_id,
                     name=name,
-                    include_datapoints=include_datapoints,
                     limit=limit,
                 )
 
@@ -742,7 +699,6 @@ class TestDatasetsAPIListDatasets:
                         "type": "evaluation",
                         "dataset_id": "dataset-789",
                         "name": "Regression Tests",
-                        "include_datapoints": "true",
                     },
                 )
 
@@ -750,11 +706,10 @@ class TestDatasetsAPIListDatasets:
     async def test_list_datasets_async_with_new_filters(
         self, mock_client: Mock
     ) -> None:
-        """Test list_datasets_async with name and include_datapoints filters."""
+        """Test list_datasets_async with name filter."""
         # Arrange
         datasets_api = DatasetsAPI(mock_client)
         name = "Async Dataset Name"
-        include_datapoints = True
 
         mock_response = Mock()
         mock_response.json.return_value = {
@@ -779,23 +734,19 @@ class TestDatasetsAPIListDatasets:
                 return_value=mock_processed_data,
             ):
                 # Act
-                result = await datasets_api.list_datasets_async(
-                    name=name, include_datapoints=include_datapoints
-                )
+                result = await datasets_api.list_datasets_async(name=name)
 
                 # Assert
                 assert isinstance(result, list)
                 assert len(result) == 1
                 assert result[0].name == "Async Dataset Name"
 
-                # When include_datapoints is True, it should be sent as "true"
                 mock_client.request_async.assert_called_once_with(
                     "GET",
                     "/datasets",
                     params={
                         "limit": "100",
                         "name": "Async Dataset Name",
-                        "include_datapoints": "true",
                     },
                 )
 

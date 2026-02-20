@@ -47,7 +47,6 @@ from .GetDatapointParams import *
 from .GetDatapointResponse import *
 from .GetDatapointsQuery import *
 from .GetDatapointsResponse import *
-from .GetDatasetsQuery import *
 from .GetDatasetsResponse import *
 from .GetEventsBySessionIdParams import *
 from .GetEventsBySessionIdResponse import *

@@ -304,20 +304,17 @@ class DatasetsAPI(BaseAPI):
         self,
         dataset_id: Optional[str] = None,
         name: Optional[str] = None,
-        include_datapoints: Optional[bool] = None,
     ) -> GetDatasetsResponse:
         """List datasets.
 
         Args:
             dataset_id: Optional dataset ID to fetch.
             name: Optional dataset name to filter by.
-            include_datapoints: Whether to include datapoints in the response.
         """
         return datasets_svc.getDatasets(
             self._api_config,
             dataset_id=dataset_id,
             name=name,
-            include_datapoints=include_datapoints,
         )
 
     def create(self, request: CreateDatasetRequest) -> CreateDatasetResponse:
@@ -369,20 +366,17 @@ class DatasetsAPI(BaseAPI):
         self,
         dataset_id: Optional[str] = None,
         name: Optional[str] = None,
-        include_datapoints: Optional[bool] = None,
     ) -> GetDatasetsResponse:
         """List datasets asynchronously.
 
         Args:
             dataset_id: Optional dataset ID to fetch.
             name: Optional dataset name to filter by.
-            include_datapoints: Whether to include datapoints in the response.
         """
         return await datasets_svc_async.getDatasets(
             self._api_config,
             dataset_id=dataset_id,
             name=name,
-            include_datapoints=include_datapoints,
         )
 
     async def create_async(
@@ -457,12 +451,9 @@ class DatasetsAPI(BaseAPI):
         self,
         dataset_id: Optional[str] = None,
         name: Optional[str] = None,
-        include_datapoints: Optional[bool] = None,
     ) -> GetDatasetsResponse:
         """List datasets (backwards compatible alias)."""
-        return self.list(
-            dataset_id=dataset_id, name=name, include_datapoints=include_datapoints
-        )
+        return self.list(dataset_id=dataset_id, name=name)
 
 
 class EventsAPI(BaseAPI):
