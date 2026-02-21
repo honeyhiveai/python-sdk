@@ -1,14 +1,6 @@
 #!/usr/bin/env python3
 """
-PydanticAI Example for HoneyHive UI validation.
-
-This example is designed as a single, comprehensive run for SDK integration.
-It focuses on high-value patterns that should map clearly in HoneyHive:
-
-1) Single agent with tools and structured output
-2) Agent delegation with usage propagation
-3) Multi-turn conversation with message history
-4) Streaming response
+PydanticAI integration example.
 
 Install:
     uv pip install honeyhive pydantic-ai
@@ -20,7 +12,7 @@ Environment:
     HH_API_KEY
     HH_PROJECT
     ANTHROPIC_API_KEY       (or key for whichever provider MODEL uses)
-    PYDANTIC_AI_MODEL       (optional, defaults to "anthropic:claude-3-5-haiku-latest")
+    PYDANTIC_AI_MODEL       (optional, defaults to "anthropic:claude-haiku-4-5")
     HH_SOURCE               (optional, defaults to "python_sdk_example")
 """
 
@@ -33,7 +25,7 @@ from pydantic_ai import Agent, RunContext
 
 from honeyhive import HoneyHiveTracer
 
-MODEL = os.getenv("PYDANTIC_AI_MODEL", "anthropic:claude-3-5-haiku-latest")
+MODEL = os.getenv("PYDANTIC_AI_MODEL", "anthropic:claude-haiku-4-5")
 
 
 @dataclass
@@ -41,20 +33,16 @@ class CustomerProfile:
     """Typed dependency injected into tools via RunContext."""
 
     name: str
-    account_tier: str
-    timezone: str
+    customer_id: int
+    account_type: str
 
 
-class SupportReply(BaseModel):
+class SupportResponse(BaseModel):
     """Structured output returned by the support agent."""
 
-    summary: str = Field(description="Short summary of what is happening.")
-    recommended_steps: list[str] = Field(
-        description="Actionable steps for the customer."
-    )
-    escalation_level: str = Field(
-        description="One of: none, monitor, urgent."
-    )
+    support_advice: str = Field(description="Advice returned to the customer.")
+    block_card: bool = Field(description="Whether to block the customer's card.")
+    risk: int = Field(ge=1, le=10, description="Risk level of the query, 1-10.")
 
 
 class EscalationRequired(BaseModel):
@@ -68,57 +56,61 @@ async def run_single_agent_tool_scenario() -> None:
     """Scenario 1: single agent with deps, tools, and structured output."""
     agent = Agent(
         MODEL,
-        name="support_agent",
+        name="bank_support_agent",
         deps_type=CustomerProfile,
-        output_type=SupportReply,
+        output_type=SupportResponse,
         instructions=(
-            "You are a HoneyHive support assistant. "
-            "Always call check_service_health and search_knowledge_base "
-            "before composing the final answer."
+            "You are a support agent in our bank. "
+            "Always call check_account_status and search_faq "
+            "before composing your final answer. "
+            "Reply using the customer's name."
         ),
     )
 
     @agent.tool
-    def check_service_health(ctx: RunContext[CustomerProfile], service: str) -> str:
-        """Return current service status for the customer's tier."""
-        statuses = {
-            "ingestion": "degraded — elevated retry volume in one region",
-            "dashboard": "operational",
-            "evaluations": "operational",
+    def check_account_status(ctx: RunContext[CustomerProfile], account_id: int) -> str:
+        """Return current account status for the customer."""
+        accounts = {
+            1001: {"balance": 4250.75, "status": "active", "last_transaction": "debit $83.20 at ElectroMart"},
+            1002: {"balance": 12800.00, "status": "active", "last_transaction": "wire transfer $2500 to external"},
+            1003: {"balance": 150.30, "status": "frozen", "last_transaction": "ATM withdrawal $400 (flagged)"},
         }
-        status = statuses.get(service.lower(), "unknown service")
-        return f"[{ctx.deps.account_tier}] {service}: {status}"
+        acct = accounts.get(account_id)
+        if acct:
+            return f"[{ctx.deps.account_type}] Account {account_id}: balance=${acct['balance']}, status={acct['status']}, last_txn='{acct['last_transaction']}'"
+        return f"Account {account_id} not found."
 
     @agent.tool_plain
-    def search_knowledge_base(topic: str) -> str:
-        """Search internal knowledge base for a support topic."""
+    def search_faq(topic: str) -> str:
+        """Search the bank's FAQ for a support topic."""
         articles = {
-            "missing traces": "Verify API key scope and project match. Normal delay is under 2 minutes.",
-            "rate limit": "Use retries with exponential backoff and reduce burst concurrency.",
-            "dashboard latency": "Large batch uploads can temporarily increase query latency.",
+            "suspicious transaction": "Report within 60 days. Temporary credit issued within 10 business days during investigation.",
+            "card block": "Card can be blocked instantly via app or phone. Replacement ships in 3-5 business days.",
+            "wire transfer": "International wires take 1-3 business days. Domestic wires complete same day if submitted before 4 PM ET.",
         }
         for key, summary in articles.items():
             if key in topic.lower():
                 return summary
-        return "No KB match. Ask for additional details and timestamps."
+        return "No FAQ match found. Please ask for additional details."
 
-    customer = CustomerProfile(name="Alex Kim", account_tier="pro", timezone="UTC")
+    customer = CustomerProfile(name="Alex Kim", customer_id=1001, account_type="checking")
 
     await agent.run(
-        "Our traces stopped showing up around 10:15 UTC. "
-        "Investigate likely causes and suggest next steps.",
+        "I see a charge for $83.20 at ElectroMart on my statement "
+        "but I never shopped there. Is this fraudulent?",
         deps=customer,
     )
 
 
 async def run_delegation_scenario() -> None:
-    """Scenario 2: parent agent delegates billing questions to a specialist."""
-    billing_agent = Agent(
+    """Scenario 2: parent agent delegates fraud questions to a specialist."""
+    fraud_agent = Agent(
         MODEL,
-        name="billing_specialist",
+        name="fraud_specialist",
         instructions=(
-            "You are a billing specialist. Return short, policy-safe answers "
-            "about credits and invoice adjustments."
+            "You are a fraud investigation specialist at the bank. "
+            "Give short, policy-safe answers about chargebacks, disputes, "
+            "and fraud claims. Cite timeframes and limits where applicable."
         ),
     )
 
@@ -126,30 +118,30 @@ async def run_delegation_scenario() -> None:
         MODEL,
         name="support_coordinator",
         deps_type=CustomerProfile,
-        output_type=SupportReply,
+        output_type=SupportResponse,
         instructions=(
-            "You are a support agent. If the customer asks about credits or "
-            "billing, delegate to ask_billing_specialist. "
+            "You are a bank support coordinator. If the customer asks about "
+            "fraud, disputes, or chargebacks, delegate to ask_fraud_specialist. "
             "Include the specialist's answer in your response."
         ),
     )
 
     @support_agent.tool
-    async def ask_billing_specialist(
+    async def ask_fraud_specialist(
         ctx: RunContext[CustomerProfile], question: str
     ) -> str:
-        """Delegate billing questions to a specialist sub-agent."""
-        prompt = f"Customer tier: {ctx.deps.account_tier}\nQuestion: {question}"
-        result = await billing_agent.run(prompt, usage=ctx.usage)
+        """Delegate fraud and dispute questions to a specialist sub-agent."""
+        prompt = f"Account type: {ctx.deps.account_type}\nQuestion: {question}"
+        result = await fraud_agent.run(prompt, usage=ctx.usage)
         return str(result.output)
 
     customer = CustomerProfile(
-        name="Jordan Lee", account_tier="enterprise", timezone="US/Pacific"
+        name="Jordan Lee", customer_id=1002, account_type="premium"
     )
 
     await support_agent.run(
-        "We had a 4-hour ingestion outage yesterday. "
-        "Are we eligible for billing credits under the enterprise SLA?",
+        "I noticed two wire transfers I didn't authorize on my statement. "
+        "Can I dispute these and how long will the investigation take?",
         deps=customer,
     )
 
@@ -159,19 +151,20 @@ async def run_multi_turn_scenario() -> None:
     triage_agent = Agent(
         MODEL,
         name="triage_agent",
-        output_type=[SupportReply, EscalationRequired],  # type: ignore[arg-type]
+        output_type=[SupportResponse, EscalationRequired],  # type: ignore[arg-type]
         instructions=(
-            "You are a triage agent. Return SupportReply for standard issues "
-            "or EscalationRequired for critical production outages."
+            "You are a bank triage agent. Return SupportResponse for standard issues "
+            "or EscalationRequired for security incidents and account compromises."
         ),
     )
 
     result1 = await triage_agent.run(
-        "Our dashboard has been loading slowly for the past 30 minutes."
+        "My online banking has been running slowly for the past hour."
     )
 
     await triage_agent.run(
-        "Update: it's now completely down. Our whole team is blocked.",
+        "Update: I can't log in at all now and I'm seeing "
+        "an error about unauthorized access attempts on my account.",
         message_history=result1.new_messages(),
     )
 
@@ -181,11 +174,15 @@ async def run_streaming_scenario() -> None:
     agent = Agent(
         MODEL,
         name="incident_writer",
-        instructions="Write concise incident updates for technical support teams.",
+        instructions=(
+            "Write concise internal incident updates for bank operations teams. "
+            "Use bullet points."
+        ),
     )
 
     async with agent.run_stream(
-        "Write a short 3-bullet internal update for a temporary ingestion delay."
+        "Write a 3-bullet internal update for a temporary ATM network "
+        "disruption affecting the northeast region."
     ) as streamed:
         async for _ in streamed.stream_text():
             pass
@@ -193,12 +190,16 @@ async def run_streaming_scenario() -> None:
 
 async def main() -> None:
     """Run PydanticAI example scenarios and emit HoneyHive traces."""
+    from capture_spans import setup_span_capture
+
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY"),
         project=os.getenv("HH_PROJECT"),
         session_name="pydantic_ai_integration_example",
         source=os.getenv("HH_SOURCE", "python_sdk_example"),
+        verbose=True,
     )
+    setup_span_capture("pydantic_ai", tracer)
     Agent.instrument_all()
 
     try:
@@ -207,7 +208,24 @@ async def main() -> None:
         await run_multi_turn_scenario()
         await run_streaming_scenario()
     finally:
+        session_id = tracer.session_id
+        print(f"Session ID: {session_id}")
         tracer.force_flush()
+
+        import json
+        import time
+        from pathlib import Path
+        from honeyhive import HoneyHive
+
+        time.sleep(10)
+        client = HoneyHive(api_key=os.environ["HH_API_KEY"], server_url=os.environ["HH_API_URL"])
+        result = client.events.get_by_session_id(session_id=session_id)
+        Path("span_dumps").mkdir(exist_ok=True)
+        filename = f"span_dumps/pydantic_ai_session_{session_id[:8]}.json"
+        events = [e.model_dump() if hasattr(e, "model_dump") else e for e in result.events]
+        with open(filename, "w") as f:
+            json.dump({"session_id": session_id, "total_events": result.total_events, "events": events}, f, indent=2, default=str)
+        print(f"Session dump: {filename} ({result.total_events} events)")
 
 
 if __name__ == "__main__":
