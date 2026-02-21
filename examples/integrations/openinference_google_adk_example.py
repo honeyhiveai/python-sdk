@@ -101,9 +101,7 @@ async def run_single_agent_tool_scenario(
         (
             "Check order ORD-1002 and summarize current shipping status for the customer."
         ),
-        (
-            "For delayed order ORD-1003, explain the cancellation policy and next steps."
-        ),
+        ("For delayed order ORD-1003, explain the cancellation policy and next steps."),
     ]
 
     for prompt in prompts:
@@ -161,7 +159,9 @@ async def run_multi_agent_scenario(
         sub_agents=[order_specialist, policy_specialist],
     )
 
-    runner = Runner(agent=coordinator, app_name=app_name, session_service=session_service)
+    runner = Runner(
+        agent=coordinator, app_name=app_name, session_service=session_service
+    )
 
     prompts = [
         "My order ORD-1001 has not arrived. Please investigate.",

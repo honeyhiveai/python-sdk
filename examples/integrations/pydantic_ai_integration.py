@@ -140,7 +140,9 @@ async def run_delegation_scenario() -> None:
     )
 
     @coordinator.tool
-    async def ask_policy_specialist(ctx: RunContext[CustomerContext], question: str) -> str:
+    async def ask_policy_specialist(
+        ctx: RunContext[CustomerContext], question: str
+    ) -> str:
         """Delegate policy questions to the specialist."""
         result = await policy_agent.run(question, usage=ctx.usage)
         return str(result.output)
@@ -228,13 +230,26 @@ async def main() -> None:
         from honeyhive import HoneyHive
 
         time.sleep(10)
-        client = HoneyHive(api_key=os.environ["HH_API_KEY"], server_url=os.environ["HH_API_URL"])
+        client = HoneyHive(
+            api_key=os.environ["HH_API_KEY"], server_url=os.environ["HH_API_URL"]
+        )
         result = client.events.get_by_session_id(session_id=session_id)
         Path("span_dumps").mkdir(exist_ok=True)
         filename = f"span_dumps/pydantic_ai_session_{session_id[:8]}.json"
-        events = [e.model_dump() if hasattr(e, "model_dump") else e for e in result.events]
+        events = [
+            e.model_dump() if hasattr(e, "model_dump") else e for e in result.events
+        ]
         with open(filename, "w") as f:
-            json.dump({"session_id": session_id, "total_events": result.total_events, "events": events}, f, indent=2, default=str)
+            json.dump(
+                {
+                    "session_id": session_id,
+                    "total_events": result.total_events,
+                    "events": events,
+                },
+                f,
+                indent=2,
+                default=str,
+            )
         print(f"Session dump: {filename} ({result.total_events} events)")
 
 

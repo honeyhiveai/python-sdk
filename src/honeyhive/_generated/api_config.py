@@ -3,6 +3,7 @@ from typing import Optional, Union
 
 from pydantic import BaseModel, Field
 
+
 # Default production URLs
 DEFAULT_BASE_URL = "https://api.honeyhive.ai"
 DEFAULT_CP_BASE_URL = "https://api.honeyhive.ai"
