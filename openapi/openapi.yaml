@@ -3056,7 +3056,10 @@ components:
       type: object
       properties:
         result:
-          $ref: '#/components/schemas/InsertResult'
+          type: object
+          properties:
+            insertedId:
+              type: string
     GetDatapointsResponse:
       type: object
       properties:

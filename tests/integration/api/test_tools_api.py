@@ -42,14 +42,14 @@ class TestToolsAPI:
 
         response = integration_client.tools.create(tool_request)
 
-        # API returns CreateToolResponse with result dict
+        # API returns CreateToolResponse with result as Dict[str, Any]
         assert response is not None
         result = getattr(response, "result", None)
         if result is None and isinstance(response, dict):
             result = response.get("result")
         assert result is not None
-        # Tools API returns InsertResult with insertedId
-        tool_id = getattr(result, "insertedId", None) or getattr(result, "id", None)
+        # Tools API returns id (not insertedId) in result dict
+        tool_id = result.get("insertedId") or result.get("id")
         assert tool_id is not None
 
         # Note: Cleanup removed - tools.delete() has a bug where client wrapper
