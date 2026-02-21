@@ -200,16 +200,12 @@ async def run_streaming_scenario() -> None:
 
 
 async def main() -> None:
-    from capture_spans import setup_span_capture
-
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY"),
         project=os.getenv("HH_PROJECT"),
         session_name="pydantic_ai_integration_example",
         source=os.getenv("HH_SOURCE", "python_sdk_example"),
-        verbose=True,
     )
-    setup_span_capture("pydantic_ai", tracer)
     Agent.instrument_all()
 
     try:
@@ -218,38 +214,7 @@ async def main() -> None:
         await run_multi_turn_scenario()
         await run_streaming_scenario()
     finally:
-        session_id = tracer.session_id
-        print(f"Session ID: {session_id}")
         tracer.force_flush()
-
-        import json
-        import time
-        from pathlib import Path
-
-        from honeyhive import HoneyHive
-
-        time.sleep(10)
-        client = HoneyHive(
-            api_key=os.environ["HH_API_KEY"], server_url=os.environ["HH_API_URL"]
-        )
-        result = client.events.get_by_session_id(session_id=session_id)
-        Path("span_dumps").mkdir(exist_ok=True)
-        filename = f"span_dumps/pydantic_ai_session_{session_id[:8]}.json"
-        events = [
-            e.model_dump() if hasattr(e, "model_dump") else e for e in result.events
-        ]
-        with open(filename, "w") as f:
-            json.dump(
-                {
-                    "session_id": session_id,
-                    "total_events": result.total_events,
-                    "events": events,
-                },
-                f,
-                indent=2,
-                default=str,
-            )
-        print(f"Session dump: {filename} ({result.total_events} events)")
 
 
 if __name__ == "__main__":

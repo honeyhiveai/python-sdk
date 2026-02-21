@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """
-Google ADK Example for HoneyHive UI validation.
+Google ADK + HoneyHive integration example.
 
-This example is designed as a single, comprehensive run for SDK integration.
-It focuses on high-value patterns that should map clearly in HoneyHive:
+Demonstrates four ADK agent patterns with HoneyHive tracing:
 
 1) Single agent with tool calls
 2) Multi-agent delegation (coordinator + specialists)
