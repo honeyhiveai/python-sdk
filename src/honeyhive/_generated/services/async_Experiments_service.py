@@ -21,11 +21,18 @@ async def getExperimentRunsSchema(
         "Accept": "application/json",
         "Authorization": f"Bearer { api_config.get_access_token() }",
     }
-    query_params: Dict[str, Any] = {"dateRange": dateRange, "evaluation_id": evaluation_id}
+    query_params: Dict[str, Any] = {
+        "dateRange": dateRange,
+        "evaluation_id": evaluation_id,
+    }
 
-    query_params = {key: value for (key, value) in query_params.items() if value is not None}
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
 
-    async with httpx.AsyncClient(base_url=base_path, verify=api_config.verify) as client:
+    async with httpx.AsyncClient(
+        base_url=base_path, verify=api_config.verify
+    ) as client:
         response = await client.request(
             "get",
             httpx.URL(path),
@@ -35,12 +42,17 @@ async def getExperimentRunsSchema(
 
     if response.status_code != 200:
         raise HTTPException(
-            response.status_code, f"getExperimentRunsSchema failed with status code: {response.status_code}"
+            response.status_code,
+            f"getExperimentRunsSchema failed with status code: {response.status_code}",
         )
     else:
         body = None if 200 == 204 else response.json()
 
-    return GetExperimentRunsSchemaResponse(**body) if body is not None else GetExperimentRunsSchemaResponse()
+    return (
+        GetExperimentRunsSchemaResponse(**body)
+        if body is not None
+        else GetExperimentRunsSchemaResponse()
+    )
 
 
 async def getRuns(
@@ -77,9 +89,13 @@ async def getRuns(
         "sort_order": sort_order,
     }
 
-    query_params = {key: value for (key, value) in query_params.items() if value is not None}
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
 
-    async with httpx.AsyncClient(base_url=base_path, verify=api_config.verify) as client:
+    async with httpx.AsyncClient(
+        base_url=base_path, verify=api_config.verify
+    ) as client:
         response = await client.request(
             "get",
             httpx.URL(path),
@@ -88,11 +104,18 @@ async def getRuns(
         )
 
     if response.status_code != 200:
-        raise HTTPException(response.status_code, f"getRuns failed with status code: {response.status_code}")
+        raise HTTPException(
+            response.status_code,
+            f"getRuns failed with status code: {response.status_code}",
+        )
     else:
         body = None if 200 == 204 else response.json()
 
-    return GetExperimentRunsResponse(**body) if body is not None else GetExperimentRunsResponse()
+    return (
+        GetExperimentRunsResponse(**body)
+        if body is not None
+        else GetExperimentRunsResponse()
+    )
 
 
 async def createRun(
@@ -109,20 +132,39 @@ async def createRun(
     }
     query_params: Dict[str, Any] = {}
 
-    query_params = {key: value for (key, value) in query_params.items() if value is not None}
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
 
-    async with httpx.AsyncClient(base_url=base_path, verify=api_config.verify) as client:
-        response = await client.request("post", httpx.URL(path), headers=headers, params=query_params, json=data.model_dump(exclude_none=True))
+    async with httpx.AsyncClient(
+        base_url=base_path, verify=api_config.verify
+    ) as client:
+        response = await client.request(
+            "post",
+            httpx.URL(path),
+            headers=headers,
+            params=query_params,
+            json=data.model_dump(exclude_none=True),
+        )
 
     if response.status_code != 200:
-        raise HTTPException(response.status_code, f"createRun failed with status code: {response.status_code}")
+        raise HTTPException(
+            response.status_code,
+            f"createRun failed with status code: {response.status_code}",
+        )
     else:
         body = None if 200 == 204 else response.json()
 
-    return PostExperimentRunResponse(**body) if body is not None else PostExperimentRunResponse()
+    return (
+        PostExperimentRunResponse(**body)
+        if body is not None
+        else PostExperimentRunResponse()
+    )
 
 
-async def getRun(api_config_override: Optional[APIConfig] = None, *, run_id: str) -> GetExperimentRunResponse:
+async def getRun(
+    api_config_override: Optional[APIConfig] = None, *, run_id: str
+) -> GetExperimentRunResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
@@ -134,9 +176,13 @@ async def getRun(api_config_override: Optional[APIConfig] = None, *, run_id: str
     }
     query_params: Dict[str, Any] = {}
 
-    query_params = {key: value for (key, value) in query_params.items() if value is not None}
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
 
-    async with httpx.AsyncClient(base_url=base_path, verify=api_config.verify) as client:
+    async with httpx.AsyncClient(
+        base_url=base_path, verify=api_config.verify
+    ) as client:
         response = await client.request(
             "get",
             httpx.URL(path),
@@ -145,15 +191,25 @@ async def getRun(api_config_override: Optional[APIConfig] = None, *, run_id: str
         )
 
     if response.status_code != 200:
-        raise HTTPException(response.status_code, f"getRun failed with status code: {response.status_code}")
+        raise HTTPException(
+            response.status_code,
+            f"getRun failed with status code: {response.status_code}",
+        )
     else:
         body = None if 200 == 204 else response.json()
 
-    return GetExperimentRunResponse(**body) if body is not None else GetExperimentRunResponse()
+    return (
+        GetExperimentRunResponse(**body)
+        if body is not None
+        else GetExperimentRunResponse()
+    )
 
 
 async def updateRun(
-    api_config_override: Optional[APIConfig] = None, *, run_id: str, data: PutExperimentRunRequest
+    api_config_override: Optional[APIConfig] = None,
+    *,
+    run_id: str,
+    data: PutExperimentRunRequest,
 ) -> PutExperimentRunResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
@@ -166,20 +222,39 @@ async def updateRun(
     }
     query_params: Dict[str, Any] = {}
 
-    query_params = {key: value for (key, value) in query_params.items() if value is not None}
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
 
-    async with httpx.AsyncClient(base_url=base_path, verify=api_config.verify) as client:
-        response = await client.request("put", httpx.URL(path), headers=headers, params=query_params, json=data.model_dump(exclude_none=True))
+    async with httpx.AsyncClient(
+        base_url=base_path, verify=api_config.verify
+    ) as client:
+        response = await client.request(
+            "put",
+            httpx.URL(path),
+            headers=headers,
+            params=query_params,
+            json=data.model_dump(exclude_none=True),
+        )
 
     if response.status_code != 200:
-        raise HTTPException(response.status_code, f"updateRun failed with status code: {response.status_code}")
+        raise HTTPException(
+            response.status_code,
+            f"updateRun failed with status code: {response.status_code}",
+        )
     else:
         body = None if 200 == 204 else response.json()
 
-    return PutExperimentRunResponse(**body) if body is not None else PutExperimentRunResponse()
+    return (
+        PutExperimentRunResponse(**body)
+        if body is not None
+        else PutExperimentRunResponse()
+    )
 
 
-async def deleteRun(api_config_override: Optional[APIConfig] = None, *, run_id: str) -> DeleteExperimentRunResponse:
+async def deleteRun(
+    api_config_override: Optional[APIConfig] = None, *, run_id: str
+) -> DeleteExperimentRunResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
@@ -191,9 +266,13 @@ async def deleteRun(api_config_override: Optional[APIConfig] = None, *, run_id: 
     }
     query_params: Dict[str, Any] = {}
 
-    query_params = {key: value for (key, value) in query_params.items() if value is not None}
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
 
-    async with httpx.AsyncClient(base_url=base_path, verify=api_config.verify) as client:
+    async with httpx.AsyncClient(
+        base_url=base_path, verify=api_config.verify
+    ) as client:
         response = await client.request(
             "delete",
             httpx.URL(path),
@@ -202,11 +281,18 @@ async def deleteRun(api_config_override: Optional[APIConfig] = None, *, run_id: 
         )
 
     if response.status_code != 200:
-        raise HTTPException(response.status_code, f"deleteRun failed with status code: {response.status_code}")
+        raise HTTPException(
+            response.status_code,
+            f"deleteRun failed with status code: {response.status_code}",
+        )
     else:
         body = None if 200 == 204 else response.json()
 
-    return DeleteExperimentRunResponse(**body) if body is not None else DeleteExperimentRunResponse()
+    return (
+        DeleteExperimentRunResponse(**body)
+        if body is not None
+        else DeleteExperimentRunResponse()
+    )
 
 
 async def getExperimentRunMetrics(
@@ -227,9 +313,13 @@ async def getExperimentRunMetrics(
     }
     query_params: Dict[str, Any] = {"dateRange": dateRange, "filters": filters}
 
-    query_params = {key: value for (key, value) in query_params.items() if value is not None}
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
 
-    async with httpx.AsyncClient(base_url=base_path, verify=api_config.verify) as client:
+    async with httpx.AsyncClient(
+        base_url=base_path, verify=api_config.verify
+    ) as client:
         response = await client.request(
             "get",
             httpx.URL(path),
@@ -239,7 +329,8 @@ async def getExperimentRunMetrics(
 
     if response.status_code != 200:
         raise HTTPException(
-            response.status_code, f"getExperimentRunMetrics failed with status code: {response.status_code}"
+            response.status_code,
+            f"getExperimentRunMetrics failed with status code: {response.status_code}",
         )
     else:
         body = None if 200 == 204 else response.json()
@@ -263,11 +354,18 @@ async def getExperimentResult(
         "Accept": "application/json",
         "Authorization": f"Bearer { api_config.get_access_token() }",
     }
-    query_params: Dict[str, Any] = {"aggregate_function": aggregate_function, "filters": filters}
+    query_params: Dict[str, Any] = {
+        "aggregate_function": aggregate_function,
+        "filters": filters,
+    }
 
-    query_params = {key: value for (key, value) in query_params.items() if value is not None}
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
 
-    async with httpx.AsyncClient(base_url=base_path, verify=api_config.verify) as client:
+    async with httpx.AsyncClient(
+        base_url=base_path, verify=api_config.verify
+    ) as client:
         response = await client.request(
             "get",
             httpx.URL(path),
@@ -277,12 +375,17 @@ async def getExperimentResult(
 
     if response.status_code != 200:
         raise HTTPException(
-            response.status_code, f"getExperimentResult failed with status code: {response.status_code}"
+            response.status_code,
+            f"getExperimentResult failed with status code: {response.status_code}",
         )
     else:
         body = None if 200 == 204 else response.json()
 
-    return GetExperimentRunResultResponse(**body) if body is not None else GetExperimentRunResultResponse()
+    return (
+        GetExperimentRunResultResponse(**body)
+        if body is not None
+        else GetExperimentRunResultResponse()
+    )
 
 
 async def getExperimentComparison(
@@ -302,11 +405,18 @@ async def getExperimentComparison(
         "Accept": "application/json",
         "Authorization": f"Bearer { api_config.get_access_token() }",
     }
-    query_params: Dict[str, Any] = {"aggregate_function": aggregate_function, "filters": filters}
+    query_params: Dict[str, Any] = {
+        "aggregate_function": aggregate_function,
+        "filters": filters,
+    }
 
-    query_params = {key: value for (key, value) in query_params.items() if value is not None}
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
 
-    async with httpx.AsyncClient(base_url=base_path, verify=api_config.verify) as client:
+    async with httpx.AsyncClient(
+        base_url=base_path, verify=api_config.verify
+    ) as client:
         response = await client.request(
             "get",
             httpx.URL(path),
@@ -316,12 +426,17 @@ async def getExperimentComparison(
 
     if response.status_code != 200:
         raise HTTPException(
-            response.status_code, f"getExperimentComparison failed with status code: {response.status_code}"
+            response.status_code,
+            f"getExperimentComparison failed with status code: {response.status_code}",
         )
     else:
         body = None if 200 == 204 else response.json()
 
-    return GetExperimentRunCompareResponse(**body) if body is not None else GetExperimentRunCompareResponse()
+    return (
+        GetExperimentRunCompareResponse(**body)
+        if body is not None
+        else GetExperimentRunCompareResponse()
+    )
 
 
 async def getExperimentCompareEvents(
@@ -354,9 +469,13 @@ async def getExperimentCompareEvents(
         "page": page,
     }
 
-    query_params = {key: value for (key, value) in query_params.items() if value is not None}
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
 
-    async with httpx.AsyncClient(base_url=base_path, verify=api_config.verify) as client:
+    async with httpx.AsyncClient(
+        base_url=base_path, verify=api_config.verify
+    ) as client:
         response = await client.request(
             "get",
             httpx.URL(path),
@@ -366,7 +485,8 @@ async def getExperimentCompareEvents(
 
     if response.status_code != 200:
         raise HTTPException(
-            response.status_code, f"getExperimentCompareEvents failed with status code: {response.status_code}"
+            response.status_code,
+            f"getExperimentCompareEvents failed with status code: {response.status_code}",
         )
     else:
         body = None if 200 == 204 else response.json()

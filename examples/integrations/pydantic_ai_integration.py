@@ -82,16 +82,15 @@ class EscalationRequired(BaseModel):
 
 
 async def run_single_agent_tool_scenario() -> None:
-    """Scenario 1: single agent with deps, tools, and structured output."""
+    """Scenario 1: single agent with deps and tools."""
     agent = Agent(
         MODEL,
         name="support_agent",
         deps_type=CustomerContext,
-        output_type=SupportResponse,
         instructions=(
             "You are a customer support agent. Use lookup_order_status and "
             "lookup_policy to gather context before answering. "
-            "Address the customer by name."
+            "Address the customer by name. Keep your response concise."
         ),
     )
 
@@ -131,11 +130,10 @@ async def run_delegation_scenario() -> None:
         MODEL,
         name="support_coordinator",
         deps_type=CustomerContext,
-        output_type=SupportResponse,
         instructions=(
             "You are a support coordinator. For policy questions, "
             "delegate to ask_policy_specialist. Combine the answer "
-            "with any order context to form your response."
+            "with any order context to form your response. Be concise."
         ),
     )
 
@@ -227,6 +225,7 @@ async def main() -> None:
         import json
         import time
         from pathlib import Path
+
         from honeyhive import HoneyHive
 
         time.sleep(10)
