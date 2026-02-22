@@ -1,0 +1,98 @@
+name: Post-Merge - SDK Staging Validation
+
+# Runs the Python SDK integration tests against the staging environment
+# after merges to verify that deployed changes work correctly.
+#
+# This reuses the existing `tox -e integration` environment which runs
+# tests/integration/ with real API credentials (no mocks).
+#
+# Required secrets:
+#   HH_API_KEY    - HoneyHive API key for the staging project
+#   HH_API_URL    - Staging DP backend URL (e.g. https://api.testing-dp-1.honeyhive.ai)
+#   HH_CP_API_URL - Staging CP backend URL
+#   HH_PROJECT    - Project name on staging
+#
+# Optional secrets (for LLM instrumentor tests):
+#   OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_API_KEY
+#   AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+
+on:
+  push:
+    branches:
+      - federated-sdk-release-candidate
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sdk-staging-validation:
+    name: SDK Integration Tests (Staging)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install tox and dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install tox>=4.0
+
+      - name: Check for API credentials
+        id: check_credentials
+        env:
+          HH_API_KEY_EXISTS: ${{ secrets.HH_API_KEY != '' }}
+        run: |
+          if [[ "$HH_API_KEY_EXISTS" == "true" ]]; then
+            echo "has_credentials=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_credentials=false" >> $GITHUB_OUTPUT
+            echo "::warning::HH_API_KEY secret not configured — skipping staging validation"
+          fi
+
+      - name: Run integration tests against staging
+        if: steps.check_credentials.outputs.has_credentials == 'true'
+        run: |
+          echo "Running SDK integration tests against staging..."
+          tox -e integration
+        env:
+          # HoneyHive staging credentials
+          HH_API_KEY: ${{ secrets.HH_API_KEY }}
+          HH_API_URL: ${{ secrets.HH_API_URL }}
+          HH_CP_API_URL: ${{ secrets.HH_CP_API_URL }}
+          HH_PROJECT: ${{ secrets.HH_PROJECT }}
+          HH_SOURCE: "github-actions-post-merge"
+          HH_TEST_MODE: false
+          # LLM provider credentials (optional — tests skip if unavailable)
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+          # CI indicators
+          CI: true
+          GITHUB_ACTIONS: true
+
+      - name: Skip validation (no credentials)
+        if: steps.check_credentials.outputs.has_credentials == 'false'
+        run: |
+          echo "Skipping SDK staging validation — HH_API_KEY not configured"
+          echo "Configure the required secrets to enable post-merge validation"
+
+      - name: Upload test results
+        if: always() && steps.check_credentials.outputs.has_credentials == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdk-staging-test-results
+          path: |
+            .tox/integration/log/
+          retention-days: 30
