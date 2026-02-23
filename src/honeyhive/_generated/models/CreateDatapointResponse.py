@@ -2,6 +2,8 @@ from typing import *
 
 from pydantic import BaseModel, Field
 
+from .InsertResult import InsertResult
+
 
 class CreateDatapointResponse(BaseModel):
     """
@@ -10,4 +12,4 @@ class CreateDatapointResponse(BaseModel):
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
-    result: Optional[Dict[str, Any]] = Field(validation_alias="result", default=None)
+    result: Optional[InsertResult] = Field(validation_alias="result", default=None)

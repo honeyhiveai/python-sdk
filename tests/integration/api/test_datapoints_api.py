@@ -12,27 +12,20 @@ from honeyhive.models import CreateDatapointRequest, UpdateDatapointRequest
 def _get_created_id(response: Any) -> str:
     """Extract created datapoint ID from CreateDatapointResponse.
 
-    The API returns a CreateDatapointResponse with a `result` dict containing
-    `insertedId` (str) and `insertedIds` (dict with string keys like {'0': 'id'}).
+    The API returns a CreateDatapointResponse with a `result` InsertResult
+    containing `insertedId` (str).
     """
     result = getattr(response, "result", None) or (
         response.get("result") if isinstance(response, dict) else None
     )
     assert result is not None, f"Missing result in response: {response}"
 
-    # Prefer insertedId (single value)
-    created_id = result.get("insertedId")
-    if created_id:
-        return created_id
-
-    # Fallback to insertedIds
-    inserted_ids = result.get("insertedIds")
-    assert (
-        inserted_ids and len(inserted_ids) > 0
-    ), f"Missing insertedIds in result: {result}"
-    if isinstance(inserted_ids, dict):
-        return list(inserted_ids.values())[0]
-    return inserted_ids[0]
+    # result is an InsertResult model with insertedId attribute
+    created_id = getattr(result, "insertedId", None) or (
+        result.get("insertedId") if isinstance(result, dict) else None
+    )
+    assert created_id is not None, f"Missing insertedId in result: {result}"
+    return created_id
 
 
 class TestDatapointsAPI:
@@ -59,7 +52,8 @@ class TestDatapointsAPI:
         result = getattr(response, "result", None)
         assert result is not None
         assert (
-            result.get("acknowledged") is True or result.get("insertedId") is not None
+            getattr(result, "acknowledged", None) is True
+            or getattr(result, "insertedId", None) is not None
         )
 
     def test_get_datapoint(

@@ -5,9 +5,9 @@ from pydantic import BaseModel, Field
 from .EvaluationRun import EvaluationRun
 
 
-class GetRunResponse(BaseModel):
+class PutExperimentRunResponse(BaseModel):
     """
-    GetRunResponse model
+    PutExperimentRunResponse model
     """
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
@@ -15,3 +15,5 @@ class GetRunResponse(BaseModel):
     evaluation: Optional[EvaluationRun] = Field(
         validation_alias="evaluation", default=None
     )
+
+    warning: Optional[str] = Field(validation_alias="warning", default=None)

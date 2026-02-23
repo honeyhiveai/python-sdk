@@ -3,9 +3,9 @@ from typing import *
 from pydantic import BaseModel, Field
 
 
-class DatasetUpdate(BaseModel):
+class UpdateDatasetRequest(BaseModel):
     """
-    DatasetUpdate model
+    UpdateDatasetRequest model
     """
 
     model_config = {"populate_by_name": True, "validate_assignment": True}

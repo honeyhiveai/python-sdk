@@ -55,14 +55,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateEventRequestBody'
+              $ref: '#/components/schemas/PostEventRequestBody'
       responses:
         '200':
           description: Event created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateEventResponse'
+                $ref: '#/components/schemas/PostEventResponse'
     put:
       tags:
       - Events
@@ -117,7 +117,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateEventResponse'
+                $ref: '#/components/schemas/PostEventResponse'
   /events/batch:
     post:
       tags:
@@ -137,7 +137,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateEventBatchResponse'
+                $ref: '#/components/schemas/PostEventBatchResponse'
         '500':
           description: Events partially created
           content:
@@ -261,7 +261,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MetricEdit'
+              $ref: '#/components/schemas/UpdateMetricRequest'
       responses:
         '200':
           description: Metric updated successfully
@@ -517,7 +517,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/DatasetUpdate'
+              $ref: '#/components/schemas/UpdateDatasetRequest'
       responses:
         '200':
           description: Successful update
@@ -554,7 +554,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AddDatapointsRequest'
+              $ref: '#/components/schemas/AddDatapointsToDatasetRequest'
       responses:
         '200':
           description: Successful addition
@@ -640,14 +640,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateRunRequest'
+              $ref: '#/components/schemas/PostExperimentRunRequest'
       responses:
         '200':
           description: Successful response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateRunResponse'
+                $ref: '#/components/schemas/PostExperimentRunResponse'
         '400':
           description: Invalid input
     get:
@@ -687,7 +687,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GetRunResponse'
+                $ref: '#/components/schemas/GetExperimentRunResponse'
         '400':
           description: Error fetching evaluation
     put:
@@ -706,14 +706,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateRunRequest'
+              $ref: '#/components/schemas/PutExperimentRunRequest'
       responses:
         '200':
           description: Successful response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UpdateRunResponse'
+                $ref: '#/components/schemas/PutExperimentRunResponse'
         '400':
           description: Invalid input
     delete:
@@ -733,7 +733,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DeleteRunResponse'
+                $ref: '#/components/schemas/DeleteExperimentRunResponse'
         '400':
           description: Error deleting evaluation
   /runs/{run_id}/result:
@@ -853,7 +853,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PostConfigurationRequest'
+              $ref: '#/components/schemas/CreateConfigurationRequest'
       responses:
         '200':
           description: Configuration created successfully
@@ -875,7 +875,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PutConfigurationRequest'
+              $ref: '#/components/schemas/UpdateConfigurationRequest'
       responses:
         '200':
           description: Configuration updated successfully
@@ -1243,7 +1243,7 @@ components:
         operator: is
         value: model
         type: string
-    CreateEventRequest:
+    PostEventRequest:
       type: object
       properties:
         project:
@@ -1616,7 +1616,7 @@ components:
       - name
       - type
       - criteria
-    MetricEdit:
+    UpdateMetricRequest:
       type: object
       properties:
         metric_id:
@@ -2135,7 +2135,7 @@ components:
         pipeline_type: event
         created_at: 2024-05-04 20:15:04.124000
         updated_at: 2024-05-04 20:15:04.124000
-    DatasetUpdate:
+    UpdateDatasetRequest:
       type: object
       properties:
         dataset_id:
@@ -2223,7 +2223,7 @@ components:
           description: Timestamp of when the project was last updated
       required:
       - name
-    CreateRunRequest:
+    PostExperimentRunRequest:
       type: object
       required:
       - project
@@ -2263,7 +2263,7 @@ components:
           - pending
           - completed
           description: The status of the run
-    CreateRunResponse:
+    PostExperimentRunResponse:
       type: object
       properties:
         evaluation:
@@ -2279,12 +2279,12 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/EvaluationRun'
-    GetRunResponse:
+    GetExperimentRunResponse:
       type: object
       properties:
         evaluation:
           $ref: '#/components/schemas/EvaluationRun'
-    UpdateRunRequest:
+    PutExperimentRunRequest:
       type: object
       properties:
         event_ids:
@@ -2316,19 +2316,17 @@ components:
           enum:
           - pending
           - completed
-    UpdateRunResponse:
+    PutExperimentRunResponse:
       type: object
       properties:
         evaluation:
-          type: object
-          description: Database update success message
-          additionalProperties: true
+          $ref: '#/components/schemas/EvaluationRun'
         warning:
           type: string
           description: A warning message if the logged events don't have an associated
             datapoint id on the event metadata
           nullable: true
-    DeleteRunResponse:
+    DeleteExperimentRunResponse:
       type: object
       properties:
         id:
@@ -2643,60 +2641,7 @@ components:
           type: string
           description: Name of the provider - "openai", "anthropic", etc.
         parameters:
-          type: object
-          additionalProperties: true
-          properties:
-            call_type:
-              type: string
-              enum:
-              - chat
-              - completion
-              description: Type of API calling - "chat" or "completion"
-            model:
-              type: string
-              description: Model unique name
-            hyperparameters:
-              type: object
-              description: Model-specific hyperparameters
-              additionalProperties: true
-            responseFormat:
-              type: object
-              description: Response format for the model with the key "type" and value
-                "text" or "json_object"
-            selectedFunctions:
-              type: array
-              description: List of functions to be called by the model, refer to OpenAI
-                schema for more details
-              items:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    description: UUID of the function
-                  name:
-                    type: string
-                    description: Name of the function
-                  description:
-                    type: string
-                    description: Description of the function
-                  parameters:
-                    type: object
-                    additionalProperties: true
-                    description: Parameters for the function
-            functionCallParams:
-              type: string
-              enum:
-              - none
-              - auto
-              - force
-              description: Function calling mode - "none", "auto" or "force"
-            forceFunction:
-              type: object
-              additionalProperties: true
-              description: Force function-specific parameters
-          required:
-          - call_type
-          - model
+          $ref: '#/components/schemas/ConfigurationParameters'
         type:
           type: string
           enum:
@@ -2784,7 +2729,7 @@ components:
           user_name: Dhruv Singh
           user_picture: https://lh3.googleusercontent.com/a/ACg8ocLyQilNtK9RIv4M0p-0FBSbxljBP0p5JabnStku1AQKtFSK=s96-c
           user_email: dhruv@honeyhive.ai
-    PutConfigurationRequest:
+    UpdateConfigurationRequest:
       type: object
       properties:
         project:
@@ -2797,60 +2742,7 @@ components:
           type: string
           description: Name of the provider - "openai", "anthropic", etc.
         parameters:
-          type: object
-          additionalProperties: true
-          properties:
-            call_type:
-              type: string
-              enum:
-              - chat
-              - completion
-              description: Type of API calling - "chat" or "completion"
-            model:
-              type: string
-              description: Model unique name
-            hyperparameters:
-              type: object
-              description: Model-specific hyperparameters
-              additionalProperties: true
-            responseFormat:
-              type: object
-              description: Response format for the model with the key "type" and value
-                "text" or "json_object"
-            selectedFunctions:
-              type: array
-              description: List of functions to be called by the model, refer to OpenAI
-                schema for more details
-              items:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    description: UUID of the function
-                  name:
-                    type: string
-                    description: Name of the function
-                  description:
-                    type: string
-                    description: Description of the function
-                  parameters:
-                    type: object
-                    additionalProperties: true
-                    description: Parameters for the function
-            functionCallParams:
-              type: string
-              enum:
-              - none
-              - auto
-              - force
-              description: Function calling mode - "none", "auto" or "force"
-            forceFunction:
-              type: object
-              additionalProperties: true
-              description: Force function-specific parameters
-          required:
-          - call_type
-          - model
+          $ref: '#/components/schemas/ConfigurationParameters'
         env:
           type: array
           description: List of environments where the configuration is active
@@ -2922,7 +2814,7 @@ components:
           user_name: Dhruv Singh
           user_picture: https://lh3.googleusercontent.com/a/ACg8ocLyQilNtK9RIv4M0p-0FBSbxljBP0p5JabnStku1AQKtFSK=s96-c
           user_email: dhruv@honeyhive.ai
-    PostConfigurationRequest:
+    CreateConfigurationRequest:
       type: object
       properties:
         project:
@@ -2935,60 +2827,7 @@ components:
           type: string
           description: Name of the provider - "openai", "anthropic", etc.
         parameters:
-          type: object
-          additionalProperties: true
-          properties:
-            call_type:
-              type: string
-              enum:
-              - chat
-              - completion
-              description: Type of API calling - "chat" or "completion"
-            model:
-              type: string
-              description: Model unique name
-            hyperparameters:
-              type: object
-              description: Model-specific hyperparameters
-              additionalProperties: true
-            responseFormat:
-              type: object
-              description: Response format for the model with the key "type" and value
-                "text" or "json_object"
-            selectedFunctions:
-              type: array
-              description: List of functions to be called by the model, refer to OpenAI
-                schema for more details
-              items:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    description: UUID of the function
-                  name:
-                    type: string
-                    description: Name of the function
-                  description:
-                    type: string
-                    description: Description of the function
-                  parameters:
-                    type: object
-                    additionalProperties: true
-                    description: Parameters for the function
-            functionCallParams:
-              type: string
-              enum:
-              - none
-              - auto
-              - force
-              description: Function calling mode - "none", "auto" or "force"
-            forceFunction:
-              type: object
-              additionalProperties: true
-              description: Force function-specific parameters
-          required:
-          - call_type
-          - model
+          $ref: '#/components/schemas/ConfigurationParameters'
         env:
           type: array
           description: List of environments where the configuration is active
@@ -3060,12 +2899,12 @@ components:
       properties:
         session_id:
           type: string
-    CreateEventRequestBody:
+    PostEventRequestBody:
       type: object
       properties:
         event:
-          $ref: '#/components/schemas/CreateEventRequest'
-    CreateEventResponse:
+          $ref: '#/components/schemas/PostEventRequest'
+    PostEventResponse:
       type: object
       properties:
         event_id:
@@ -3164,7 +3003,7 @@ components:
         events:
           type: array
           items:
-            $ref: '#/components/schemas/CreateEventRequest'
+            $ref: '#/components/schemas/PostEventRequest'
         is_single_session:
           type: boolean
           description: Default is false. If true, all events will be associated with the same session
@@ -3172,7 +3011,7 @@ components:
           $ref: '#/components/schemas/SessionPropertiesBatch'
       required:
       - events
-    CreateEventBatchResponse:
+    PostEventBatchResponse:
       type: object
       properties:
         event_ids:
@@ -3206,6 +3045,11 @@ components:
             type: string
         success:
           type: boolean
+    InsertResult:
+      type: object
+      properties:
+        insertedId:
+          type: string
     CreateToolResponse:
       type: object
       properties:
@@ -3225,10 +3069,7 @@ components:
       type: object
       properties:
         result:
-          type: object
-          properties:
-            insertedId:
-              type: string
+          $ref: '#/components/schemas/InsertResult'
     GetDatapointResponse:
       type: object
       properties:
@@ -3254,12 +3095,8 @@ components:
         inserted:
           type: boolean
         result:
-          type: object
-          properties:
-            insertedId:
-              type: string
-              description: UUID for the created dataset
-    AddDatapointsRequest:
+          $ref: '#/components/schemas/InsertResult'
+    AddDatapointsToDatasetRequest:
       type: object
       properties:
         project:
@@ -3272,28 +3109,7 @@ components:
             additionalProperties: true
           description: List of JSON objects to be added as datapoints
         mapping:
-          description: Mapping of keys in the data object to be used as inputs, ground truth, and history
-          type: object
-          properties:
-            inputs:
-              type: array
-              items:
-                type: string
-              description: List of keys in the data object to be used as inputs
-            ground_truth:
-              type: array
-              items:
-                type: string
-              description: List of keys in the data object to be used as ground truth
-            history:
-              type: array
-              items:
-                type: string
-              description: List of keys in the data object to be used as chat history
-          required:
-          - inputs
-          - ground_truth
-          - history
+          $ref: '#/components/schemas/DatapointMapping'
       required:
       - project
       - data
@@ -3308,5 +3124,108 @@ components:
           items:
             type: string
           description: List of unique datapoint ids added to the dataset
+    ConfigurationParameters:
+      type: object
+      additionalProperties: true
+      properties:
+        call_type:
+          type: string
+          enum:
+          - chat
+          - completion
+          description: Type of API calling - "chat" or "completion"
+        model:
+          type: string
+          description: Model unique name
+        hyperparameters:
+          type: object
+          description: Model-specific hyperparameters
+          additionalProperties: true
+        responseFormat:
+          $ref: '#/components/schemas/ResponseFormat'
+        selectedFunctions:
+          type: array
+          description: List of functions to be called by the model, refer to OpenAI
+            schema for more details
+          items:
+            $ref: '#/components/schemas/SelectedFunction'
+        functionCallParams:
+          type: string
+          enum:
+          - none
+          - auto
+          - force
+          description: Function calling mode - "none", "auto" or "force"
+        forceFunction:
+          type: object
+          additionalProperties: true
+          description: Force function-specific parameters
+        template:
+          anyOf:
+          - type: array
+            items:
+              $ref: '#/components/schemas/TemplateItem'
+          - type: string
+      required:
+      - call_type
+      - model
+    ResponseFormat:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - text
+          - json_object
+      required:
+      - type
+    SelectedFunction:
+      type: object
+      properties:
+        id:
+          type: string
+          description: UUID of the function
+        name:
+          type: string
+          description: Name of the function
+        description:
+          type: string
+          description: Description of the function
+        parameters:
+          type: object
+          additionalProperties: true
+          description: Parameters for the function
+      required:
+      - id
+      - name
+    TemplateItem:
+      type: object
+      properties:
+        role:
+          type: string
+        content:
+          type: string
+      required:
+      - role
+      - content
+    DatapointMapping:
+      type: object
+      description: Mapping of keys in the data object to be used as inputs, ground truth, and history
+      properties:
+        inputs:
+          type: array
+          items:
+            type: string
+          description: List of keys in the data object to be used as inputs
+        ground_truth:
+          type: array
+          items:
+            type: string
+          description: List of keys in the data object to be used as ground truth
+        history:
+          type: array
+          items:
+            type: string
+          description: List of keys in the data object to be used as chat history
 security:
 - BearerAuth: []

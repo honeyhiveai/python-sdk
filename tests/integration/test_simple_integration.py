@@ -46,14 +46,10 @@ class TestSimpleIntegration:
             assert datapoint_response is not None
             result = getattr(datapoint_response, "result", None)
             assert result is not None, "CreateDatapointResponse missing result"
-            # Extract created ID - insertedId is a str, insertedIds may be dict with string keys
-            created_id = result.get("insertedId")
-            if not created_id:
-                inserted_ids = result.get("insertedIds", {})
-                if isinstance(inserted_ids, dict):
-                    created_id = list(inserted_ids.values())[0]
-                elif isinstance(inserted_ids, list) and len(inserted_ids) > 0:
-                    created_id = inserted_ids[0]
+            # result is an InsertResult model with insertedId attribute
+            created_id = getattr(result, "insertedId", None) or (
+                result.get("insertedId") if isinstance(result, dict) else None
+            )
             assert created_id is not None, "No created ID found in response"
 
             # Step 2: Wait for data propagation (real systems need time)
@@ -364,7 +360,7 @@ class TestSimpleIntegration:
             project=integration_project_name,
             name="test-config",
             provider="openai",
-            parameters={"model": "gpt-4", "temperature": 0.7},
+            parameters={"call_type": "chat", "model": "gpt-4", "temperature": 0.7},
         )
         config_dict = config_request.model_dump(exclude_none=True)
         assert config_dict["name"] == "test-config"

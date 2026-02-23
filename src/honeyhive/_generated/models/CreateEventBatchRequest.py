@@ -2,7 +2,7 @@ from typing import *
 
 from pydantic import BaseModel, Field
 
-from .CreateEventRequest import CreateEventRequest
+from .PostEventRequest import PostEventRequest
 from .SessionPropertiesBatch import SessionPropertiesBatch
 
 
@@ -13,7 +13,7 @@ class CreateEventBatchRequest(BaseModel):
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
-    events: List[CreateEventRequest] = Field(validation_alias="events")
+    events: List[PostEventRequest] = Field(validation_alias="events")
 
     is_single_session: Optional[bool] = Field(
         validation_alias="is_single_session", default=None

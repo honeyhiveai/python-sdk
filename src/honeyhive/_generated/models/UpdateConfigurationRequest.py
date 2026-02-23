@@ -2,10 +2,12 @@ from typing import *
 
 from pydantic import BaseModel, Field
 
+from .ConfigurationParameters import ConfigurationParameters
 
-class PutConfigurationRequest(BaseModel):
+
+class UpdateConfigurationRequest(BaseModel):
     """
-    PutConfigurationRequest model
+    UpdateConfigurationRequest model
     """
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
@@ -16,7 +18,7 @@ class PutConfigurationRequest(BaseModel):
 
     provider: str = Field(validation_alias="provider")
 
-    parameters: Dict[str, Any] = Field(validation_alias="parameters")
+    parameters: ConfigurationParameters = Field(validation_alias="parameters")
 
     env: Optional[List[str]] = Field(validation_alias="env", default=None)
 

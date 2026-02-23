@@ -45,7 +45,7 @@ def getConfigurations(
 
 
 def createConfiguration(
-    api_config_override: Optional[APIConfig] = None, *, data: PostConfigurationRequest
+    api_config_override: Optional[APIConfig] = None, *, data: CreateConfigurationRequest
 ) -> None:
     api_config = api_config_override if api_config_override else APIConfig()
 
@@ -85,7 +85,7 @@ def updateConfiguration(
     api_config_override: Optional[APIConfig] = None,
     *,
     id: str,
-    data: PutConfigurationRequest,
+    data: UpdateConfigurationRequest,
 ) -> None:
     api_config = api_config_override if api_config_override else APIConfig()
 

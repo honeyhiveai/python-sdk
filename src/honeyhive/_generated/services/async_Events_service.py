@@ -5,8 +5,8 @@ from ..models import *
 
 
 async def createEvent(
-    api_config_override: Optional[APIConfig] = None, *, data: CreateEventRequestBody
-) -> CreateEventResponse:
+    api_config_override: Optional[APIConfig] = None, *, data: PostEventRequestBody
+) -> PostEventResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     path = f"/events"
@@ -38,7 +38,7 @@ async def createEvent(
     else:
         body = response.json()
 
-    return CreateEventResponse(**body)
+    return PostEventResponse(**body)
 
 
 async def updateEvent(
@@ -119,7 +119,7 @@ async def createModelEvent(
     api_config_override: Optional[APIConfig] = None,
     *,
     data: CreateModelEventRequestBody,
-) -> CreateEventResponse:
+) -> PostEventResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     path = f"/events/model"
@@ -151,12 +151,12 @@ async def createModelEvent(
     else:
         body = response.json()
 
-    return CreateEventResponse(**body)
+    return PostEventResponse(**body)
 
 
 async def createEventBatch(
     api_config_override: Optional[APIConfig] = None, *, data: CreateEventBatchRequest
-) -> CreateEventBatchResponse:
+) -> PostEventBatchResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     path = f"/events/batch"
@@ -188,7 +188,7 @@ async def createEventBatch(
     else:
         body = response.json()
 
-    return CreateEventBatchResponse(**body)
+    return PostEventBatchResponse(**body)
 
 
 async def createModelEventBatch(

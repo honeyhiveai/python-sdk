@@ -78,7 +78,7 @@ def createMetric(
 
 
 def updateMetric(
-    api_config_override: Optional[APIConfig] = None, *, data: MetricEdit
+    api_config_override: Optional[APIConfig] = None, *, data: UpdateMetricRequest
 ) -> None:
     api_config = api_config_override if api_config_override else APIConfig()
 
