@@ -561,7 +561,7 @@ class EventsAPI(BaseAPI):
             return GetEventsResponse(events=[result])
         elif isinstance(result, dict):
             return GetEventsResponse(events=[Event(**result)])
-        return GetEventsResponse(events=[result])
+        return GetEventsResponse(events=[Event.model_validate(result)])
 
 
 class ExperimentsAPI(BaseAPI):

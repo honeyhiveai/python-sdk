@@ -49,7 +49,7 @@ class TestToolsAPI:
             result = response.get("result")
         assert result is not None
         # Tools API returns id (not insertedId) in result dict
-        tool_id = result.get("insertedId") or result.get("id")
+        tool_id = result.get("id") or result.get("insertedId")
         assert tool_id is not None
 
         # Note: Cleanup removed - tools.delete() has a bug where client wrapper
