@@ -22,28 +22,26 @@ from honeyhive._generated.api_config import APIConfig
 
 # Import all models needed by the wrapper layer
 from honeyhive._generated.models import (
-    AddDatapointsRequest,
     AddDatapointsResponse,
+    AddDatapointsToDatasetRequest,
     Configuration,
+    CreateConfigurationRequest,
     CreateDatapointRequest,
     CreateDatapointResponse,
     CreateDatasetRequest,
     CreateDatasetResponse,
     CreateEventBatchRequest,
     CreateEventBatchResponse,
-    CreateEventRequest,
-    CreateEventRequestBody,
     CreateEventResponse,
     CreateModelEvent,
     CreateModelEventBatchRequest,
     CreateModelEventBatchResponse,
     CreateModelEventRequestBody,
     CreateProjectRequest,
-    CreateRunResponse,
     CreateToolRequest,
     CreateToolResponse,
     DeleteDatapointResponse,
-    DeleteRunResponse,
+    DeleteExperimentRunResponse,
     Event,
     ExperimentComparisonResponse,
     ExperimentResultResponse,
@@ -52,18 +50,26 @@ from honeyhive._generated.models import (
     GetDatasetsResponse,
     GetEventsRequest,
     GetEventsResponse,
-    GetRunResponse,
+    GetExperimentRunResponse,
     GetRunsResponse,
     Metric,
+    PostEventRequest,
+    PostEventRequestBody,
+    PostExperimentRunRequest,
+    PostExperimentRunResponse,
     Project,
+    PutExperimentRunRequest,
+    PutExperimentRunResponse,
     SessionStartRequest,
     StartSessionRequestBody,
     StartSessionResponse,
     Tool,
+    UpdateConfigurationRequest,
     UpdateDatapointRequest,
+    UpdateDatasetRequest,
     UpdateEventRequest,
+    UpdateMetricRequest,
     UpdateProjectRequest,
-    UpdateRunResponse,
     UpdateToolRequest,
 )
 
@@ -95,17 +101,8 @@ from honeyhive._generated.services import async_Session_service as session_svc_a
 from honeyhive._generated.services import async_Tools_service as tools_svc_async
 from honeyhive.config.utils import resolve_project
 
-# Import aliased model names for FED-compatible type annotations
-from honeyhive.models import (
-    CreateConfigurationRequest,
-    CreateMetricRequest,
-    PostEventRequest,
-    PostExperimentRunRequest,
-    PutExperimentRunRequest,
-    UpdateConfigurationRequest,
-    UpdateDatasetRequest,
-    UpdateMetricRequest,
-)
+# Import alias (Metric is used as the create request body in FED)
+from honeyhive.models import CreateMetricRequest
 
 from ._base import BaseAPI
 
@@ -338,13 +335,15 @@ class DatasetsAPI(BaseAPI):
         return datasets_svc.deleteDataset(self._api_config, dataset_id=id)
 
     def add_datapoints(
-        self, dataset_id: str, request: Union[AddDatapointsRequest, Dict[str, Any]]
+        self,
+        dataset_id: str,
+        request: Union[AddDatapointsToDatasetRequest, Dict[str, Any]],
     ) -> AddDatapointsResponse:
         """Add datapoints to a dataset."""
-        if isinstance(request, AddDatapointsRequest):
+        if isinstance(request, AddDatapointsToDatasetRequest):
             req = request
         else:
-            req = AddDatapointsRequest(**request)
+            req = AddDatapointsToDatasetRequest(**request)
         return datasets_svc.addDatapoints(
             self._api_config, dataset_id=dataset_id, data=req
         )
@@ -380,13 +379,15 @@ class DatasetsAPI(BaseAPI):
         return await datasets_svc_async.deleteDataset(self._api_config, dataset_id=id)
 
     async def add_datapoints_async(
-        self, dataset_id: str, request: Union[AddDatapointsRequest, Dict[str, Any]]
+        self,
+        dataset_id: str,
+        request: Union[AddDatapointsToDatasetRequest, Dict[str, Any]],
     ) -> AddDatapointsResponse:
         """Add datapoints to a dataset asynchronously."""
-        if isinstance(request, AddDatapointsRequest):
+        if isinstance(request, AddDatapointsToDatasetRequest):
             req = request
         else:
-            req = AddDatapointsRequest(**request)
+            req = AddDatapointsToDatasetRequest(**request)
         return await datasets_svc_async.addDatapoints(
             self._api_config, dataset_id=dataset_id, data=req
         )
@@ -430,15 +431,15 @@ class EventsAPI(BaseAPI):
         return events_svc.getEvents(self._api_config, data=req)
 
     def create(
-        self, request: Union[CreateEventRequestBody, CreateEventRequest, Dict[str, Any]]
+        self, request: Union[PostEventRequestBody, PostEventRequest, Dict[str, Any]]
     ) -> CreateEventResponse:
         """Create an event."""
-        if isinstance(request, CreateEventRequestBody):
+        if isinstance(request, PostEventRequestBody):
             req = request
         elif isinstance(request, dict):
-            req = CreateEventRequestBody(event=CreateEventRequest(**request))
+            req = PostEventRequestBody(event=PostEventRequest(**request))
         else:
-            req = CreateEventRequestBody(event=request)
+            req = PostEventRequestBody(event=request)
         return events_svc.createEvent(self._api_config, data=req)
 
     def update(self, data: Union[UpdateEventRequest, Dict[str, Any]]) -> None:
@@ -495,15 +496,15 @@ class EventsAPI(BaseAPI):
 
     async def create_async(
         self,
-        request: Union[CreateEventRequestBody, CreateEventRequest, Dict[str, Any]],
+        request: Union[PostEventRequestBody, PostEventRequest, Dict[str, Any]],
     ) -> CreateEventResponse:
         """Create an event asynchronously."""
-        if isinstance(request, CreateEventRequestBody):
+        if isinstance(request, PostEventRequestBody):
             req = request
         elif isinstance(request, dict):
-            req = CreateEventRequestBody(event=CreateEventRequest(**request))
+            req = PostEventRequestBody(event=PostEventRequest(**request))
         else:
-            req = CreateEventRequestBody(event=request)
+            req = PostEventRequestBody(event=request)
         return await events_svc_async.createEvent(self._api_config, data=req)
 
     async def update_async(
@@ -528,7 +529,7 @@ class EventsAPI(BaseAPI):
 
     # Backwards compatible aliases
     def create_event(
-        self, request: Union[CreateEventRequestBody, CreateEventRequest, Dict[str, Any]]
+        self, request: Union[PostEventRequestBody, PostEventRequest, Dict[str, Any]]
     ) -> CreateEventResponse:
         """Create an event (backwards compatible alias for create())."""
         return self.create(request)
@@ -575,21 +576,23 @@ class ExperimentsAPI(BaseAPI):
         """
         return experiments_svc.getRuns(self._api_config, project=project)
 
-    def get_run(self, run_id: str) -> GetRunResponse:
+    def get_run(self, run_id: str) -> GetExperimentRunResponse:
         """Get an experiment run by ID."""
         return experiments_svc.getRun(self._api_config, run_id=run_id)
 
-    def create_run(self, request: PostExperimentRunRequest) -> CreateRunResponse:
+    def create_run(
+        self, request: PostExperimentRunRequest
+    ) -> PostExperimentRunResponse:
         """Create an experiment run."""
         return experiments_svc.createRun(self._api_config, data=request)
 
     def update_run(
         self, run_id: str, request: PutExperimentRunRequest
-    ) -> UpdateRunResponse:
+    ) -> PutExperimentRunResponse:
         """Update an experiment run."""
         return experiments_svc.updateRun(self._api_config, run_id=run_id, data=request)
 
-    def delete_run(self, run_id: str) -> DeleteRunResponse:
+    def delete_run(self, run_id: str) -> DeleteExperimentRunResponse:
         """Delete an experiment run."""
         return experiments_svc.deleteRun(self._api_config, run_id=run_id)
 
@@ -645,25 +648,25 @@ class ExperimentsAPI(BaseAPI):
         """List experiment runs asynchronously."""
         return await experiments_svc_async.getRuns(self._api_config, project=project)
 
-    async def get_run_async(self, run_id: str) -> GetRunResponse:
+    async def get_run_async(self, run_id: str) -> GetExperimentRunResponse:
         """Get an experiment run by ID asynchronously."""
         return await experiments_svc_async.getRun(self._api_config, run_id=run_id)
 
     async def create_run_async(
         self, request: PostExperimentRunRequest
-    ) -> CreateRunResponse:
+    ) -> PostExperimentRunResponse:
         """Create an experiment run asynchronously."""
         return await experiments_svc_async.createRun(self._api_config, data=request)
 
     async def update_run_async(
         self, run_id: str, request: PutExperimentRunRequest
-    ) -> UpdateRunResponse:
+    ) -> PutExperimentRunResponse:
         """Update an experiment run asynchronously."""
         return await experiments_svc_async.updateRun(
             self._api_config, run_id=run_id, data=request
         )
 
-    async def delete_run_async(self, run_id: str) -> DeleteRunResponse:
+    async def delete_run_async(self, run_id: str) -> DeleteExperimentRunResponse:
         """Delete an experiment run asynchronously."""
         return await experiments_svc_async.deleteRun(self._api_config, run_id=run_id)
 

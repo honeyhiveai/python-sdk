@@ -41,8 +41,8 @@ async def getRuns(
 
 
 async def createRun(
-    api_config_override: Optional[APIConfig] = None, *, data: CreateRunRequest
-) -> CreateRunResponse:
+    api_config_override: Optional[APIConfig] = None, *, data: PostExperimentRunRequest
+) -> PostExperimentRunResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     path = f"/runs"
@@ -74,12 +74,12 @@ async def createRun(
     else:
         body = response.json()
 
-    return CreateRunResponse(**body)
+    return PostExperimentRunResponse(**body)
 
 
 async def getRun(
     api_config_override: Optional[APIConfig] = None, *, run_id: str
-) -> GetRunResponse:
+) -> GetExperimentRunResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     path = f"/runs/{run_id}"
@@ -110,15 +110,15 @@ async def getRun(
     else:
         body = response.json()
 
-    return GetRunResponse(**body)
+    return GetExperimentRunResponse(**body)
 
 
 async def updateRun(
     api_config_override: Optional[APIConfig] = None,
     *,
     run_id: str,
-    data: UpdateRunRequest,
-) -> UpdateRunResponse:
+    data: PutExperimentRunRequest,
+) -> PutExperimentRunResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     path = f"/runs/{run_id}"
@@ -150,12 +150,12 @@ async def updateRun(
     else:
         body = response.json()
 
-    return UpdateRunResponse(**body)
+    return PutExperimentRunResponse(**body)
 
 
 async def deleteRun(
     api_config_override: Optional[APIConfig] = None, *, run_id: str
-) -> DeleteRunResponse:
+) -> DeleteExperimentRunResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     path = f"/runs/{run_id}"
@@ -186,7 +186,7 @@ async def deleteRun(
     else:
         body = response.json()
 
-    return DeleteRunResponse(**body)
+    return DeleteExperimentRunResponse(**body)
 
 
 async def getExperimentResult(

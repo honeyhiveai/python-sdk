@@ -3,9 +3,9 @@ from typing import *
 from pydantic import BaseModel, Field
 
 
-class MetricEdit(BaseModel):
+class UpdateMetricRequest(BaseModel):
     """
-    MetricEdit model
+    UpdateMetricRequest model
     """
 
     model_config = {"populate_by_name": True, "validate_assignment": True}

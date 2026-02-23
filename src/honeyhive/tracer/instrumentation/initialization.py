@@ -1444,7 +1444,6 @@ def _register_tracer_instance(tracer_instance: Any) -> None:
     :type tracer_instance: HoneyHiveTracer
     """
     try:
-
         tracer_instance._tracer_id = registry.register_tracer(tracer_instance)
 
         # Auto-set as default if this is the first tracer

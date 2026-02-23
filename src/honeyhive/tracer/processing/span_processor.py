@@ -616,10 +616,7 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                 else:
                     self._safe_log(
                         "debug",
-                        (
-                            "⚠️ DEBUG: No session_id found in tracer "
-                            "instance or baggage"
-                        ),
+                        ("⚠️ DEBUG: No session_id found in tracer instance or baggage"),
                         honeyhive_data={
                             "span_name": span.name,
                             "tracer_instance_id": (
@@ -771,10 +768,7 @@ class HoneyHiveSpanProcessor(SpanProcessor):
             else:
                 self._safe_log(
                     "warning",
-                    (
-                        "⚠️ No valid export method for mode: %s, "
-                        "client: %s, exporter: %s"
-                    ),
+                    ("⚠️ No valid export method for mode: %s, client: %s, exporter: %s"),
                     self.mode,
                     self.client is not None,
                     self.otlp_exporter is not None,

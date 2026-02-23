@@ -5,9 +5,9 @@ from pydantic import BaseModel, Field
 from .ConfigurationParameters import ConfigurationParameters
 
 
-class PutConfigurationRequest(BaseModel):
+class UpdateConfigurationRequest(BaseModel):
     """
-    PutConfigurationRequest model
+    UpdateConfigurationRequest model
     """
 
     model_config = {"populate_by_name": True, "validate_assignment": True}

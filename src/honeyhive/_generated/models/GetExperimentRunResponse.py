@@ -2,16 +2,16 @@ from typing import *
 
 from pydantic import BaseModel, Field
 
+from .EvaluationRun import EvaluationRun
 
-class UpdateRunResponse(BaseModel):
+
+class GetExperimentRunResponse(BaseModel):
     """
-    UpdateRunResponse model
+    GetExperimentRunResponse model
     """
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
-    evaluation: Optional[Dict[str, Any]] = Field(
+    evaluation: Optional[EvaluationRun] = Field(
         validation_alias="evaluation", default=None
     )
-
-    warning: Optional[str] = Field(validation_alias="warning", default=None)

@@ -211,9 +211,7 @@ class TracerConfig(BaseHoneyHiveConfig):
     )
 
     # Evaluation-related fields (for hybrid approach)
-    is_evaluation: bool = Field(
-        default=False, description="Enable evaluation mode"
-    )  # type: ignore[call-overload]
+    is_evaluation: bool = Field(default=False, description="Enable evaluation mode")  # type: ignore[call-overload]
 
     run_id: Optional[str] = Field(  # type: ignore[call-overload]
         None,
@@ -402,9 +400,7 @@ class EvaluationConfig(BaseHoneyHiveConfig):
         ... )
     """
 
-    is_evaluation: bool = Field(
-        default=False, description="Enable evaluation mode"
-    )  # type: ignore[call-overload]
+    is_evaluation: bool = Field(default=False, description="Enable evaluation mode")  # type: ignore[call-overload]
 
     run_id: Optional[str] = Field(  # type: ignore[call-overload]
         None,

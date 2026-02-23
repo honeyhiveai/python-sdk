@@ -888,9 +888,10 @@ class evaluator(metaclass=EvaluatorMeta):  # pylint: disable=invalid-name
             )
 
             # transform
-            transformed_result, transformed_score = (
-                await self.async_apply_transformation(result, score, final_settings)
-            )
+            (
+                transformed_result,
+                transformed_score,
+            ) = await self.async_apply_transformation(result, score, final_settings)
 
             # check target on transform if aggregate not defined
             if not final_settings.aggregate:

@@ -143,7 +143,6 @@ def show(output_format: str) -> None:
     if output_format == "json":
         click.echo(json.dumps(config_dict, indent=2))
     elif output_format == "yaml":
-
         click.echo(yaml.dump(config_dict, default_flow_style=False))
     elif output_format == "env":
         # Map config field names to environment variable names

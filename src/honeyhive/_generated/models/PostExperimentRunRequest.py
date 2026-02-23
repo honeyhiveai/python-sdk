@@ -3,9 +3,9 @@ from typing import *
 from pydantic import BaseModel, Field
 
 
-class CreateRunRequest(BaseModel):
+class PostExperimentRunRequest(BaseModel):
     """
-    CreateRunRequest model
+    PostExperimentRunRequest model
     """
 
     model_config = {"populate_by_name": True, "validate_assignment": True}

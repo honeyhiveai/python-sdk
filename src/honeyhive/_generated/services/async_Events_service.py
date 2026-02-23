@@ -5,7 +5,7 @@ from ..models import *
 
 
 async def createEvent(
-    api_config_override: Optional[APIConfig] = None, *, data: CreateEventRequestBody
+    api_config_override: Optional[APIConfig] = None, *, data: PostEventRequestBody
 ) -> CreateEventResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 

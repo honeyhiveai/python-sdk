@@ -5,9 +5,9 @@ from pydantic import BaseModel, Field
 from .DatapointMapping import DatapointMapping
 
 
-class AddDatapointsRequest(BaseModel):
+class AddDatapointsToDatasetRequest(BaseModel):
     """
-    AddDatapointsRequest model
+    AddDatapointsToDatasetRequest model
     """
 
     model_config = {"populate_by_name": True, "validate_assignment": True}

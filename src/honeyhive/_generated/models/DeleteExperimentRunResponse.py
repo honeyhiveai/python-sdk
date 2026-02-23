@@ -3,9 +3,9 @@ from typing import *
 from pydantic import BaseModel, Field
 
 
-class DeleteRunResponse(BaseModel):
+class DeleteExperimentRunResponse(BaseModel):
     """
-    DeleteRunResponse model
+    DeleteExperimentRunResponse model
     """
 
     model_config = {"populate_by_name": True, "validate_assignment": True}

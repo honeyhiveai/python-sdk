@@ -178,10 +178,7 @@ class ExperimentConfig(BaseHoneyHiveConfig):
             if not isinstance(v, dict):
                 logger = logging.getLogger(__name__)
                 logger.warning(
-                    (
-                        "Invalid experiment_metadata: expected dict, got %s. "
-                        "Using None."
-                    ),
+                    ("Invalid experiment_metadata: expected dict, got %s. Using None."),
                     type(v).__name__,
                     extra={"honeyhive_data": {"metadata_type": type(v).__name__}},
                 )
