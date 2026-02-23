@@ -8,8 +8,6 @@ from .CreateDatapointResponse import *
 from .CreateDatasetRequest import *
 from .CreateDatasetResponse import *
 from .CreateEventBatchRequest import *
-from .CreateEventBatchResponse import *
-from .CreateEventResponse import *
 from .CreateModelEvent import *
 from .CreateModelEventBatchRequest import *
 from .CreateModelEventBatchResponse import *
@@ -36,8 +34,10 @@ from .GetExperimentRunResponse import *
 from .GetRunsResponse import *
 from .InsertResult import *
 from .Metric import *
+from .PostEventBatchResponse import *
 from .PostEventRequest import *
 from .PostEventRequestBody import *
+from .PostEventResponse import *
 from .PostExperimentRunRequest import *
 from .PostExperimentRunResponse import *
 from .Project import *

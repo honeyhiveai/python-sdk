@@ -62,7 +62,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateEventResponse'
+                $ref: '#/components/schemas/PostEventResponse'
     put:
       tags:
       - Events
@@ -117,7 +117,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateEventResponse'
+                $ref: '#/components/schemas/PostEventResponse'
   /events/batch:
     post:
       tags:
@@ -137,7 +137,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateEventBatchResponse'
+                $ref: '#/components/schemas/PostEventBatchResponse'
         '500':
           description: Events partially created
           content:
@@ -2904,7 +2904,7 @@ components:
       properties:
         event:
           $ref: '#/components/schemas/PostEventRequest'
-    CreateEventResponse:
+    PostEventResponse:
       type: object
       properties:
         event_id:
@@ -3011,7 +3011,7 @@ components:
           $ref: '#/components/schemas/SessionPropertiesBatch'
       required:
       - events
-    CreateEventBatchResponse:
+    PostEventBatchResponse:
       type: object
       properties:
         event_ids:

@@ -31,8 +31,6 @@ from honeyhive._generated.models import (
     CreateDatasetRequest,
     CreateDatasetResponse,
     CreateEventBatchRequest,
-    CreateEventBatchResponse,
-    CreateEventResponse,
     CreateModelEvent,
     CreateModelEventBatchRequest,
     CreateModelEventBatchResponse,
@@ -53,8 +51,10 @@ from honeyhive._generated.models import (
     GetExperimentRunResponse,
     GetRunsResponse,
     Metric,
+    PostEventBatchResponse,
     PostEventRequest,
     PostEventRequestBody,
+    PostEventResponse,
     PostExperimentRunRequest,
     PostExperimentRunResponse,
     Project,
@@ -432,7 +432,7 @@ class EventsAPI(BaseAPI):
 
     def create(
         self, request: Union[PostEventRequestBody, PostEventRequest, Dict[str, Any]]
-    ) -> CreateEventResponse:
+    ) -> PostEventResponse:
         """Create an event."""
         if isinstance(request, PostEventRequestBody):
             req = request
@@ -452,7 +452,7 @@ class EventsAPI(BaseAPI):
 
     def create_batch(
         self, data: Union[CreateEventBatchRequest, Dict[str, Any]]
-    ) -> CreateEventBatchResponse:
+    ) -> PostEventBatchResponse:
         """Create events in batch."""
         if isinstance(data, CreateEventBatchRequest):
             req = data
@@ -462,7 +462,7 @@ class EventsAPI(BaseAPI):
 
     def create_model_event(
         self, data: Union[CreateModelEventRequestBody, CreateModelEvent, Dict[str, Any]]
-    ) -> CreateEventResponse:
+    ) -> PostEventResponse:
         """Create a model event."""
         if isinstance(data, CreateModelEventRequestBody):
             req = data
@@ -497,7 +497,7 @@ class EventsAPI(BaseAPI):
     async def create_async(
         self,
         request: Union[PostEventRequestBody, PostEventRequest, Dict[str, Any]],
-    ) -> CreateEventResponse:
+    ) -> PostEventResponse:
         """Create an event asynchronously."""
         if isinstance(request, PostEventRequestBody):
             req = request
@@ -519,7 +519,7 @@ class EventsAPI(BaseAPI):
 
     async def create_batch_async(
         self, data: Union[CreateEventBatchRequest, Dict[str, Any]]
-    ) -> CreateEventBatchResponse:
+    ) -> PostEventBatchResponse:
         """Create events in batch asynchronously."""
         if isinstance(data, CreateEventBatchRequest):
             req = data
@@ -530,7 +530,7 @@ class EventsAPI(BaseAPI):
     # Backwards compatible aliases
     def create_event(
         self, request: Union[PostEventRequestBody, PostEventRequest, Dict[str, Any]]
-    ) -> CreateEventResponse:
+    ) -> PostEventResponse:
         """Create an event (backwards compatible alias for create())."""
         return self.create(request)
 

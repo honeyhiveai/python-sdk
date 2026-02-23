@@ -3,9 +3,9 @@ from typing import *
 from pydantic import BaseModel, Field
 
 
-class CreateEventResponse(BaseModel):
+class PostEventResponse(BaseModel):
     """
-    CreateEventResponse model
+    PostEventResponse model
     """
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
