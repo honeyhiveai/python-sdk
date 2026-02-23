@@ -222,11 +222,8 @@ class TestHoneyHiveSpanProcessorBaggageHandling:
 
         expected = {
             "honeyhive.session_id": "session-123",
-            "traceloop.association.properties.session_id": "session-123",
             "honeyhive.project": "test-project",
-            "traceloop.association.properties.project": "test-project",
             "honeyhive.source": "test-source",
-            "traceloop.association.properties.source": "test-source",
             "honeyhive.parent_id": "parent-456",
         }
         assert result == expected
@@ -256,14 +253,11 @@ class TestHoneyHiveSpanProcessorBaggageHandling:
 
         result = processor._get_basic_baggage_attributes(mock_context)
 
-        # UPDATED: Baggage now takes priority for distributed tracing
+        # Baggage takes priority for distributed tracing
         expected = {
             "honeyhive.session_id": "baggage-session-123",
-            "traceloop.association.properties.session_id": "baggage-session-123",
             "honeyhive.project": "distributed-project",
-            "traceloop.association.properties.project": "distributed-project",
             "honeyhive.source": "distributed-source",
-            "traceloop.association.properties.source": "distributed-source",
         }
         assert result == expected
 
@@ -359,7 +353,6 @@ class TestHoneyHiveSpanProcessorBaggageHandling:
 
         expected = {
             "honeyhive.session_id": "session-789",
-            "traceloop.association.properties.session_id": "session-789",
         }
         assert result == expected
 
@@ -385,7 +378,6 @@ class TestHoneyHiveSpanProcessorBaggageHandling:
 
         expected = {
             "honeyhive.session_id": "baggage-session",
-            "traceloop.association.properties.session_id": "baggage-session",
         }
         assert result == expected
 
@@ -489,98 +481,6 @@ class TestHoneyHiveSpanProcessorExperimentAttributes:
 
         assert not result
         mock_safe_log.assert_called()
-
-
-class TestHoneyHiveSpanProcessorAssociationProperties:
-    """Test association properties handling with all conditional branches."""
-
-    def test_process_association_properties_with_context_get(self) -> None:
-        """Test association properties with context that has get method."""
-        processor = HoneyHiveSpanProcessor()
-        mock_context = Mock(spec=Context)
-        mock_context.get.return_value = {"key1": "value1", "key2": None}
-
-        result = processor._process_association_properties(mock_context)
-
-        # This method returns empty dict - it doesn't process association properties
-        assert not result
-
-    def test_process_association_properties_no_get_method(self) -> None:
-        """Test association properties with context that has no get method."""
-        processor = HoneyHiveSpanProcessor()
-        mock_context = Mock(spec=Context)
-        del mock_context.get  # Remove get method
-
-        result = processor._process_association_properties(mock_context)
-
-        assert not result
-
-    def test_process_association_properties_empty_properties(self) -> None:
-        """Test association properties with empty properties."""
-        processor = HoneyHiveSpanProcessor()
-        mock_context = Mock(spec=Context)
-        mock_context.get.return_value = {}
-
-        result = processor._process_association_properties(mock_context)
-
-        assert not result
-
-    def test_process_association_properties_non_dict(self) -> None:
-        """Test association properties with non-dict return value."""
-        processor = HoneyHiveSpanProcessor()
-        mock_context = Mock(spec=Context)
-        mock_context.get.return_value = "not a dict"
-
-        result = processor._process_association_properties(mock_context)
-
-        assert not result
-
-    @patch("honeyhive.tracer.processing.span_processor.baggage.get_baggage")
-    @patch("honeyhive.utils.logger.safe_log")
-    def test_process_association_properties_exception_handling(
-        self, mock_safe_log: Mock, mock_get_baggage: Mock
-    ) -> None:
-        """Test association properties with exception handling."""
-        processor = HoneyHiveSpanProcessor()
-        mock_context = Mock(spec=Context)
-        mock_context.get.side_effect = Exception("Context error")
-
-        result = processor._process_association_properties(mock_context)
-
-        assert not result
-        mock_safe_log.assert_called()
-
-
-class TestHoneyHiveSpanProcessorTraceloopCompatibility:
-    """Test Traceloop compatibility attributes."""
-
-    def test_get_traceloop_compatibility_attributes_with_session(self) -> None:
-        """Test Traceloop compatibility attributes with session ID."""
-        processor = HoneyHiveSpanProcessor()
-        mock_context = Mock(spec=Context)
-
-        with patch.object(processor, "_get_basic_baggage_attributes") as mock_baggage:
-            mock_baggage.return_value = {
-                "honeyhive.session_id": "session-123",
-                "honeyhive.project": "test-project",
-            }
-
-            result = processor._get_traceloop_compatibility_attributes(mock_context)
-
-        # This method returns empty dict - it doesn't process traceloop attributes
-        assert not result
-
-    def test_get_traceloop_compatibility_attributes_empty(self) -> None:
-        """Test Traceloop compatibility attributes with empty baggage."""
-        processor = HoneyHiveSpanProcessor()
-        mock_context = Mock(spec=Context)
-
-        with patch.object(processor, "_get_basic_baggage_attributes") as mock_baggage:
-            mock_baggage.return_value = {}
-
-            result = processor._get_traceloop_compatibility_attributes(mock_context)
-
-            assert not result
 
 
 class TestHoneyHiveSpanProcessorEventTypeDetection:

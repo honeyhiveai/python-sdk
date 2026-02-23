@@ -300,8 +300,6 @@ class HoneyHiveSpanProcessor(SpanProcessor):
 
         if session_id:
             attributes["honeyhive.session_id"] = session_id
-            # Backend compatibility: also set Traceloop-style attribute
-            attributes["traceloop.association.properties.session_id"] = session_id
 
         # Priority: baggage project (for distributed tracing), then tracer instance
         project = baggage.get_baggage("project", ctx)
@@ -313,8 +311,6 @@ class HoneyHiveSpanProcessor(SpanProcessor):
 
         if project:
             attributes["honeyhive.project"] = project
-            # Backend compatibility: also set Traceloop-style attribute
-            attributes["traceloop.association.properties.project"] = project
 
         # Priority: baggage source (for distributed tracing), then tracer instance
         source = baggage.get_baggage("source", ctx)
@@ -328,8 +324,6 @@ class HoneyHiveSpanProcessor(SpanProcessor):
 
         if source:
             attributes["honeyhive.source"] = source
-            # Backend compatibility: also set Traceloop-style attribute
-            attributes["traceloop.association.properties.source"] = source
 
         parent_id = baggage.get_baggage("parent_id", ctx)
         if parent_id:
@@ -380,66 +374,6 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                 "Error adding experiment attributes",
                 honeyhive_data={"error_type": type(e).__name__},
             )
-
-        return attributes
-
-    def _process_association_properties(self, ctx: Context) -> dict:
-        """Process legacy association_properties from context.
-
-        :param ctx: OpenTelemetry context to extract association properties from
-        :type ctx: Context
-        :return: Dictionary of association properties attributes
-        :rtype: dict
-        """
-        attributes = {}
-
-        try:
-            # Check if context has association_properties (legacy support)
-            if hasattr(ctx, "get") and callable(getattr(ctx, "get", None)):
-                association_properties = ctx.get("association_properties")
-                if association_properties and isinstance(association_properties, dict):
-                    # Found association_properties
-                    for key, value in association_properties.items():
-                        if value is not None and not baggage.get_baggage(key, ctx):
-                            # Set traceloop.association.properties.* format
-                            # for backend compatibility
-                            attr_key = f"traceloop.association.properties.{key}"
-                            attributes[attr_key] = str(value)
-        except Exception as e:
-            # Graceful degradation following Agent OS standards - never crash host
-            self._safe_log(
-                "debug",
-                "Error checking association_properties",
-                honeyhive_data={"error_type": type(e).__name__},
-            )
-
-        return attributes
-
-    def _get_traceloop_compatibility_attributes(self, ctx: Context) -> dict:
-        """Get traceloop.association.properties.* attributes for backend compatibility.
-
-        :param ctx: OpenTelemetry context to extract baggage from
-        :type ctx: Context
-        :return: Dictionary of traceloop compatibility attributes
-        :rtype: dict
-        """
-        attributes = {}
-
-        session_id = baggage.get_baggage("session_id", ctx)
-        if session_id:
-            attributes["traceloop.association.properties.session_id"] = session_id
-
-        project = baggage.get_baggage("project", ctx)
-        if project:
-            attributes["traceloop.association.properties.project"] = project
-
-        source = baggage.get_baggage("source", ctx)
-        if source:
-            attributes["traceloop.association.properties.source"] = source
-
-        parent_id = baggage.get_baggage("parent_id", ctx)
-        if parent_id:
-            attributes["traceloop.association.properties.parent_id"] = parent_id
 
         return attributes
 
@@ -641,32 +575,17 @@ class HoneyHiveSpanProcessor(SpanProcessor):
             # Collect all attributes to set
             attributes_to_set = {}
 
-            # Always process association_properties for legacy support
-            attributes_to_set.update(self._process_association_properties(ctx))
-
             # Always add experiment attributes (they don't require session_id)
             attributes_to_set.update(self._get_experiment_attributes())
 
             if session_id:
-                # Set session_id attributes directly (multi-instance isolation)
+                # Set session_id directly (multi-instance isolation)
                 attributes_to_set["honeyhive.session_id"] = session_id
-                attributes_to_set["traceloop.association.properties.session_id"] = (
-                    session_id
-                )
 
                 # Get other baggage attributes (project, source, etc.)
                 other_baggage_attrs = self._get_basic_baggage_attributes(ctx)
-                # Remove session_id from baggage attrs since we're setting it directly
                 other_baggage_attrs.pop("honeyhive.session_id", None)
-                other_baggage_attrs.pop(
-                    "traceloop.association.properties.session_id", None
-                )
                 attributes_to_set.update(other_baggage_attrs)
-
-                # Add traceloop compatibility attributes for backend
-                attributes_to_set.update(
-                    self._get_traceloop_compatibility_attributes(ctx)
-                )
 
                 # Add evaluation metadata from baggage (run_id, dataset_id,
                 # datapoint_id)
@@ -738,9 +657,7 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                 attributes = dict(span.attributes)
 
             # Get session information from span attributes (set in on_start)
-            session_id_raw = attributes.get("honeyhive.session_id") or attributes.get(
-                "traceloop.association.properties.session_id"
-            )
+            session_id_raw = attributes.get("honeyhive.session_id")
 
             if not session_id_raw:
                 # Span has no session_id, skipping HoneyHive export
