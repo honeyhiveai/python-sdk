@@ -268,6 +268,7 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
             and self.datapoint_id
         ):
             self.is_evaluation = True
+            config["is_evaluation"] = True
 
         # Legacy compatibility attributes
         self.project = config.get("project")
