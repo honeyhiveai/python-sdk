@@ -259,6 +259,12 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
         self.dataset_id = config.get("dataset_id")
         self.datapoint_id = config.get("datapoint_id")
 
+        # Auto-infer is_evaluation when all evaluation identifiers are present.
+        # This allows users to skip passing is_evaluation=True explicitly
+        # when dataset_id, datapoint_id, and run_id are all defined.
+        if not self.is_evaluation and self.run_id and self.dataset_id and self.datapoint_id:
+            self.is_evaluation = True
+
         # Legacy compatibility attributes
         self.project = config.get("project")
         self.source = config.get("source")
