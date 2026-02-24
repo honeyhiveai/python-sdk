@@ -1,5 +1,51 @@
 ## [Unreleased]
 
+### Added
+
+- **Experiments: Git context stamped on experiment run metadata** (#205)
+  - `evaluate()` now automatically collects git metadata (commit hash, branch, author, remote URL, dirty status) and attaches it to the run's `metadata.git` field
+  - Gracefully degrades to empty dict when git is unavailable or caller is not in a repo
+
+- **Docs: New integration examples for CrewAI, LangChain, Strands Agents, ADK, and PydanticAI** (#211, #224)
+  - Added examples covering common agent patterns for each framework
+  - Rewrote LangGraph example with canonical tool-calling loop and routing workflow
+
+### Fixed
+
+- **API Client: List query params serialization with single item** (#251)
+  - Fixed 400 errors when passing a single-element list to API query params (e.g. `ids=["abc"]`)
+  - List params now serialize with bracket notation (`ids[]=a&ids[]=b`) as required by the backend
+
+- **Tracing: Auto-infer `is_evaluation=True` from evaluation identifiers** (#254)
+  - When `dataset_id`, `datapoint_id`, and `run_id` are all provided but `is_evaluation` is not set, the tracer now automatically enables evaluation mode
+  - Prevents silent loss of evaluation context and session lifecycle issues
+
+- **Experiments: Async evaluator `UnboundLocalError` in non-repeat path** (#207)
+  - Fixed crash when using `@aevaluator`-decorated functions without `repeat` setting (the default)
+  - The `results` variable was never assigned in the non-repeat branch
+
+- **Dependencies: `uv` convenience extras resolution** (#209)
+  - Expanded convenience extras to concrete package requirements so `uv` resolves dependencies correctly
+  - Aligned OpenInference Google extras with `google-genai` package naming
+
+### Changed
+
+- **API Client: Removed non-functional `include_datapoints` query param** (#244)
+  - This parameter never worked and was included in the spec by mistake
+  - Removed from function arguments and docs
+
+- **API Client: Synced OpenAPI spec and removed defunct Tools API** (#243)
+  - Removed `ToolsAPI` client, model re-exports, and all references to the non-existent Tools API
+  - Added new generated models: `ConfigurationItem`, `MetricItem`, `ProjectItem`
+
+- **Tracing: Deprecated client mode in `HoneyHiveSpanProcessor`** (#210)
+  - Client mode was unreachable dead code; processor now always uses OTLP export
+  - `_send_via_client` and `_convert_span_to_event` raise `NotImplementedError` if called directly
+
+## [1.0.0rc16] - 2026-01-29
+
+No customer-facing changes. Internal CI/release automation improvements only.
+
 ## [1.0.0rc15] - 2026-01-29
 
 ### Added
