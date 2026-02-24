@@ -261,7 +261,12 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
         # Auto-infer is_evaluation when all evaluation identifiers are present.
         # This allows users to skip passing is_evaluation=True explicitly
         # when dataset_id, datapoint_id, and run_id are all defined.
-        if not self.is_evaluation and self.run_id and self.dataset_id and self.datapoint_id:
+        if (
+            not self.is_evaluation
+            and self.run_id
+            and self.dataset_id
+            and self.datapoint_id
+        ):
             self.is_evaluation = True
 
         # Legacy compatibility attributes
