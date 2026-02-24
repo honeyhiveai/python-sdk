@@ -55,7 +55,7 @@ jobs:
             1. **Find the last changelog update:**
                - Run: `git log -1 --format="%H" -- CHANGELOG.md`
                - If no result, use the first commit: `git rev-list --max-parents=0 HEAD`
-               - If the commit range exceeds 100 commits, limit to the most recent 100: use `git log -100 --format="%H" | tail -1` as the starting point
+               - Do NOT limit the commit range. Analyze all commits between the last changelog update and HEAD to ensure completeness
 
             2. **Get all commits since then:**
                - Run: `git log --oneline <starting_commit>..HEAD`
@@ -219,9 +219,9 @@ jobs:
         id: changes
         run: |
           if git diff --quiet && git diff --cached --quiet; then
-            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
           else
-            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Generate token
