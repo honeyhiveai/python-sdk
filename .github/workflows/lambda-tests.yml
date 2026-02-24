@@ -113,7 +113,7 @@ jobs:
 
       - name: Upload Lambda test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: lambda-docker-test-results
           path: tests/lambda/test-results/
@@ -202,7 +202,7 @@ jobs:
           python -m pytest test_lambda_performance.py --benchmark-json=benchmark-results.json
 
       - name: Upload benchmark results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: lambda-benchmarks
           path: tests/lambda/benchmark-results.json
@@ -302,7 +302,7 @@ jobs:
 
       - name: Upload compatibility test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: lambda-compatibility-results
           path: tests/lambda/compatibility-*.log

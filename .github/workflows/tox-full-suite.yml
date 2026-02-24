@@ -143,7 +143,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: test-results-python-${{ matrix.python-version }}
           path: |
@@ -244,7 +244,7 @@ jobs:
 
       - name: Upload quality results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: quality-results
           path: |
@@ -253,7 +253,7 @@ jobs:
           retention-days: 7
 
       - name: Upload documentation build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: documentation-build
           path: docs/_build/html/
@@ -335,7 +335,7 @@ jobs:
 
       - name: Upload integration test results
         if: always() && steps.check_credentials.outputs.has_honeyhive_key == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: integration-test-results
           path: |
