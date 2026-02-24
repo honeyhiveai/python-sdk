@@ -3330,6 +3330,8 @@ components:
     PostExperimentRunRequest:
       type: object
       properties:
+        run_id:
+          type: string
         name:
           type: string
         description:
@@ -4598,7 +4600,7 @@ components:
           description: Placeholder - Zod schema not yet implemented
       required:
         - message
-      description: 'TODO: This is a placeholder schema. Proper Zod schemas need to be created in @hive-kube/core-ts for: Sessions, Events, Projects, and Experiment comparison/result endpoints.'
+      description: 'TODO: This is a placeholder schema. Proper Zod schemas need to be created in @hive-kube/iso-core-ts for: Sessions, Events, Projects, and Experiment comparison/result endpoints.'
   parameters: {}
   securitySchemes:
     BearerAuth:

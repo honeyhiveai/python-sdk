@@ -193,6 +193,7 @@ def prepare_run_request_data(  # pylint: disable=unused-argument
     request_data: Dict[str, Any] = {
         "project": project,
         "name": name,
+        "run_id": run_id,
         "event_ids": event_ids or [],
         "datapoint_ids": datapoint_ids or [],
         "configuration": configuration or {},

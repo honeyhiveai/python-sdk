@@ -10,6 +10,8 @@ class PostExperimentRunRequest(BaseModel):
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
+    run_id: Optional[str] = Field(validation_alias="run_id", default=None)
+
     name: Optional[str] = Field(validation_alias="name", default=None)
 
     description: Optional[str] = Field(validation_alias="description", default=None)
