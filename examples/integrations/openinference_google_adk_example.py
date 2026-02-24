@@ -2,12 +2,11 @@
 """
 Google ADK + HoneyHive integration example.
 
-Demonstrates four ADK agent patterns with HoneyHive tracing:
+Demonstrates three ADK agent patterns with HoneyHive tracing:
 
 1) Single agent with tool calls
 2) Multi-agent delegation (coordinator + specialists)
 3) Workflow orchestration (ParallelAgent + SequentialAgent)
-4) Iterative refinement (LoopAgent)
 
 Install:
     uv pip install honeyhive google-adk openinference-instrumentation-google-adk
@@ -25,10 +24,9 @@ Environment:
 import asyncio
 import os
 
-from google.adk.agents import LlmAgent, LoopAgent, ParallelAgent, SequentialAgent
+from google.adk.agents import LlmAgent, ParallelAgent, SequentialAgent
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
-from google.adk.tools.tool_context import ToolContext
 from google.genai import types
 from openinference.instrumentation.google_adk import GoogleADKInstrumentor
 
@@ -256,72 +254,6 @@ async def run_workflow_scenario(
         pass
 
 
-def approve_response(tool_context: ToolContext) -> dict:
-    """Call when the draft fully meets quality criteria and no more iterations are needed."""
-    tool_context.actions.escalate = True
-    tool_context.actions.skip_summarization = True
-    return {}
-
-
-async def run_loop_scenario(
-    session_service: InMemorySessionService,
-) -> None:
-    """Scenario 4: iterative refinement with LoopAgent (LLM-as-judge critic)."""
-    app_name = "adk_example_loop"
-    user_id = "example_user"
-    session_id = "loop_session"
-    await session_service.create_session(
-        app_name=app_name, user_id=user_id, session_id=session_id
-    )
-
-    drafter = LlmAgent(
-        name="response_drafter",
-        model=MODEL,
-        description="Drafts or revises a customer support response.",
-        instruction=(
-            "Write a short customer support response for the issue described. "
-            "Include: current order status, applicable policy, an apology, "
-            "and a concrete next step for the customer."
-        ),
-        tools=[lookup_order_status, lookup_policy],
-    )
-
-    critic = LlmAgent(
-        name="response_critic",
-        model=MODEL,
-        description="Evaluates draft quality and either approves or requests revisions.",
-        instruction=(
-            "Review the most recent draft support response.\n"
-            "Check for: (1) order status mentioned, (2) relevant policy cited, "
-            "(3) apology included, (4) clear next step.\n"
-            "If all four are present, call approve_response to finalize.\n"
-            "Otherwise, write 1-2 sentences of specific feedback for revision."
-        ),
-        tools=[approve_response],
-    )
-
-    loop_agent = LoopAgent(
-        name="response_refinement_loop",
-        sub_agents=[drafter, critic],
-        max_iterations=3,
-    )
-
-    runner = Runner(
-        agent=loop_agent,
-        app_name=app_name,
-        session_service=session_service,
-    )
-
-    prompt = "Customer: Order ORD-1003 is delayed. I want a refund and an apology."
-    message = types.Content(role="user", parts=[types.Part(text=prompt)])
-    async for _ in runner.run_async(
-        user_id=user_id,
-        session_id=session_id,
-        new_message=message,
-    ):
-        pass
-
-
 async def main() -> None:
     """Run ADK example scenarios and emit HoneyHive traces."""
     tracer = HoneyHiveTracer.init(
@@ -338,7 +270,6 @@ async def main() -> None:
         await run_single_agent_tool_scenario(session_service)
         await run_multi_agent_scenario(session_service)
         await run_workflow_scenario(session_service)
-        await run_loop_scenario(session_service)
     finally:
         tracer.force_flush()
         instrumentor.uninstrument()
