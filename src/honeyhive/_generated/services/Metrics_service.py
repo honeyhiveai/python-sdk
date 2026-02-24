@@ -2,7 +2,7 @@ from typing import *
 
 import httpx
 
-from ..api_config import APIConfig, HTTPException
+from ..api_config import APIConfig, HTTPException, _serialize_query_params
 from ..models import *
 
 
@@ -32,7 +32,7 @@ def getMetrics(
             "get",
             httpx.URL(path),
             headers=headers,
-            params=query_params,
+            params=_serialize_query_params(query_params),
         )
 
     if response.status_code != 200:
@@ -69,7 +69,7 @@ def createMetric(
             "post",
             httpx.URL(path),
             headers=headers,
-            params=query_params,
+            params=_serialize_query_params(query_params),
             json=data.model_dump(exclude_none=True),
         )
 
@@ -107,7 +107,7 @@ def updateMetric(
             "put",
             httpx.URL(path),
             headers=headers,
-            params=query_params,
+            params=_serialize_query_params(query_params),
             json=data.model_dump(exclude_none=True),
         )
 
@@ -145,7 +145,7 @@ def deleteMetric(
             "delete",
             httpx.URL(path),
             headers=headers,
-            params=query_params,
+            params=_serialize_query_params(query_params),
         )
 
     if response.status_code != 200:
@@ -182,7 +182,7 @@ def runMetric(
             "post",
             httpx.URL(path),
             headers=headers,
-            params=query_params,
+            params=_serialize_query_params(query_params),
             json=data.model_dump(exclude_none=True),
         )
 

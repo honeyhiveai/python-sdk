@@ -2,7 +2,7 @@ from typing import *
 
 import httpx
 
-from ..api_config import APIConfig, HTTPException
+from ..api_config import APIConfig, HTTPException, _serialize_query_params
 from ..models import *
 
 
@@ -28,7 +28,11 @@ async def startSession(
         base_url=base_path, verify=api_config.verify
     ) as client:
         response = await client.request(
-            "post", httpx.URL(path), headers=headers, params=query_params, json=data
+            "post",
+            httpx.URL(path),
+            headers=headers,
+            params=_serialize_query_params(query_params),
+            json=data,
         )
 
     if response.status_code != 200:

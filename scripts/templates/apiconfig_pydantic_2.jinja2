@@ -1,7 +1,23 @@
+{#
+  Forked from openapi-python-generator's default template:
+  https://github.com/MarcoMuellner/openapi-python-generator/blob/main/src/openapi_python_generator/language_converters/python/templates/apiconfig_pydantic_2.jinja2
+
+  Changes from upstream:
+  - Always import os and add Any to typing imports (upstream conditionally imports os
+    only when env_token_name is set)
+  - Added DEFAULT_BASE_URL and DEFAULT_CP_BASE_URL constants
+  - Added cp_base_path field to APIConfig
+  - Added from_env() classmethod for environment-based initialization
+  - Added get_cp_base_path() method
+  - Removed env_token_name conditional branches (hardcoded to the non-env-token path)
+  - Added _serialize_query_params() helper so List-typed query params are sent as
+    bracket notation (ids[]=a&ids[]=b) instead of bare repeated keys (ids=a&ids=b)
+#}
 import os
 from typing import Any, Optional, Union
 
 from pydantic import BaseModel, Field
+
 
 # Default production URLs
 DEFAULT_BASE_URL = "https://api.honeyhive.ai"
@@ -9,7 +25,9 @@ DEFAULT_CP_BASE_URL = "https://api.honeyhive.ai"
 
 
 class APIConfig(BaseModel):
-    model_config = {"validate_assignment": True}
+    model_config = {
+        "validate_assignment": True
+    }
 
     base_path: str = DEFAULT_BASE_URL
     cp_base_path: Optional[str] = DEFAULT_CP_BASE_URL
@@ -36,7 +54,9 @@ class APIConfig(BaseModel):
             cp_base_url: Override for HH_CP_API_URL
         """
         resolved_api_key = api_key or os.environ.get("HH_API_KEY")
-        resolved_base_url = base_url or os.environ.get("HH_API_URL") or DEFAULT_BASE_URL
+        resolved_base_url = (
+            base_url or os.environ.get("HH_API_URL") or DEFAULT_BASE_URL
+        )
         resolved_cp_base_url = (
             cp_base_url
             or os.environ.get("HH_CP_API_URL")

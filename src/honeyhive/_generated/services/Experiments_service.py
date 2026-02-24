@@ -2,7 +2,7 @@ from typing import *
 
 import httpx
 
-from ..api_config import APIConfig, HTTPException
+from ..api_config import APIConfig, HTTPException, _serialize_query_params
 from ..models import *
 
 
@@ -35,7 +35,7 @@ def getExperimentRunsSchema(
             "get",
             httpx.URL(path),
             headers=headers,
-            params=query_params,
+            params=_serialize_query_params(query_params),
         )
 
     if response.status_code != 200:
@@ -96,7 +96,7 @@ def getRuns(
             "get",
             httpx.URL(path),
             headers=headers,
-            params=query_params,
+            params=_serialize_query_params(query_params),
         )
 
     if response.status_code != 200:
@@ -137,7 +137,7 @@ def createRun(
             "post",
             httpx.URL(path),
             headers=headers,
-            params=query_params,
+            params=_serialize_query_params(query_params),
             json=data.model_dump(exclude_none=True),
         )
 
@@ -179,7 +179,7 @@ def getRun(
             "get",
             httpx.URL(path),
             headers=headers,
-            params=query_params,
+            params=_serialize_query_params(query_params),
         )
 
     if response.status_code != 200:
@@ -223,7 +223,7 @@ def updateRun(
             "put",
             httpx.URL(path),
             headers=headers,
-            params=query_params,
+            params=_serialize_query_params(query_params),
             json=data.model_dump(exclude_none=True),
         )
 
@@ -265,7 +265,7 @@ def deleteRun(
             "delete",
             httpx.URL(path),
             headers=headers,
-            params=query_params,
+            params=_serialize_query_params(query_params),
         )
 
     if response.status_code != 200:
@@ -310,7 +310,7 @@ def getExperimentRunMetrics(
             "get",
             httpx.URL(path),
             headers=headers,
-            params=query_params,
+            params=_serialize_query_params(query_params),
         )
 
     if response.status_code != 200:
@@ -354,7 +354,7 @@ def getExperimentResult(
             "get",
             httpx.URL(path),
             headers=headers,
-            params=query_params,
+            params=_serialize_query_params(query_params),
         )
 
     if response.status_code != 200:
@@ -403,7 +403,7 @@ def getExperimentComparison(
             "get",
             httpx.URL(path),
             headers=headers,
-            params=query_params,
+            params=_serialize_query_params(query_params),
         )
 
     if response.status_code != 200:
@@ -460,7 +460,7 @@ def getExperimentCompareEvents(
             "get",
             httpx.URL(path),
             headers=headers,
-            params=query_params,
+            params=_serialize_query_params(query_params),
         )
 
     if response.status_code != 200:
