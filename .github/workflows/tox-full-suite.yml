@@ -177,7 +177,7 @@ jobs:
       - name: Regenerate and format code
         run: |
           echo "🔄 Regenerating and formatting code..."
-          make generate
+          source .venv/bin/activate && make generate
 
       - name: Check for uncommitted changes
         run: |
