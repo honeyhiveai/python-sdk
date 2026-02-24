@@ -1,5 +1,8 @@
 .PHONY: help install install-dev test test-all test-unit test-integration check-integration lint format check check-format check-lint typecheck check-docs check-docs-compliance check-feature-sync check-tracer-patterns check-no-mocks docs docs-serve docs-clean generate generate-sdk compare-sdk clean clean-all
 
+# Use the venv python so make recipes get venv site-packages
+PYTHON := .venv/bin/python
+
 # Default target
 help:
 	@echo "HoneyHive Python SDK - Available Commands"
@@ -100,10 +103,10 @@ check: check-format check-lint test-unit check-no-mocks check-integration check-
 	@echo "✅ All checks passed!"
 
 check-docs-compliance:
-	python scripts/check-documentation-compliance.py
+	$(PYTHON) scripts/check-documentation-compliance.py
 
 check-feature-sync:
-	python scripts/check-feature-sync.py
+	$(PYTHON) scripts/check-feature-sync.py
 
 check-tracer-patterns:
 	scripts/validate-tracer-patterns.sh
@@ -120,7 +123,7 @@ docs:
 	cd docs && $(MAKE) html
 
 docs-serve:
-	cd docs && python serve.py
+	cd docs && ../$(PYTHON) serve.py
 
 docs-clean:
 	cd docs && $(MAKE) clean
@@ -128,24 +131,24 @@ docs-clean:
 # SDK Generation
 # Generate v1 client from full OpenAPI spec
 generate:
-	python scripts/generate_client.py
+	$(PYTHON) scripts/generate_client.py
 	$(MAKE) format
 
 # Generate v1 client from minimal spec (for testing pipeline)
 generate-minimal:
-	python scripts/generate_client.py --minimal
+	$(PYTHON) scripts/generate_client.py --minimal
 	$(MAKE) format
 
 # Generate full SDK to comparison_output/ (for analysis)
 generate-sdk:
-	python scripts/generate_models_and_client.py
+	$(PYTHON) scripts/generate_models_and_client.py
 
 compare-sdk:
 	@if [ ! -d "comparison_output/full_sdk" ]; then \
 		echo "❌ No generated SDK found. Run 'make generate-sdk' first."; \
 		exit 1; \
 	fi
-	python comparison_output/full_sdk/compare_with_current.py
+	$(PYTHON) comparison_output/full_sdk/compare_with_current.py
 
 # Maintenance
 clean:
