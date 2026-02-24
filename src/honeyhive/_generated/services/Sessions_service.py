@@ -2,7 +2,7 @@ from typing import *
 
 import httpx
 
-from ..api_config import APIConfig, HTTPException
+from ..api_config import APIConfig, HTTPException, _serialize_query_params
 from ..models import *
 
 
@@ -29,7 +29,7 @@ def getSession(
             "get",
             httpx.URL(path),
             headers=headers,
-            params=query_params,
+            params=_serialize_query_params(query_params),
         )
 
     if response.status_code != 200:
@@ -66,7 +66,7 @@ def deleteSession(
             "delete",
             httpx.URL(path),
             headers=headers,
-            params=query_params,
+            params=_serialize_query_params(query_params),
         )
 
     if response.status_code != 200:

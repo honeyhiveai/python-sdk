@@ -2,7 +2,7 @@ from typing import *
 
 import httpx
 
-from ..api_config import APIConfig, HTTPException
+from ..api_config import APIConfig, HTTPException, _serialize_query_params
 from ..models import *
 
 
@@ -45,7 +45,7 @@ def getEvents(
             "get",
             httpx.URL(path),
             headers=headers,
-            params=query_params,
+            params=_serialize_query_params(query_params),
         )
 
     if response.status_code != 200:
@@ -79,7 +79,11 @@ def createEvent(
 
     with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
         response = client.request(
-            "post", httpx.URL(path), headers=headers, params=query_params, json=data
+            "post",
+            httpx.URL(path),
+            headers=headers,
+            params=_serialize_query_params(query_params),
+            json=data,
         )
 
     if response.status_code != 200:
@@ -113,7 +117,11 @@ def updateEvent(
 
     with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
         response = client.request(
-            "put", httpx.URL(path), headers=headers, params=query_params, json=data
+            "put",
+            httpx.URL(path),
+            headers=headers,
+            params=_serialize_query_params(query_params),
+            json=data,
         )
 
     if response.status_code != 200:
@@ -168,7 +176,7 @@ def getEventsChart(
             "get",
             httpx.URL(path),
             headers=headers,
-            params=query_params,
+            params=_serialize_query_params(query_params),
         )
 
     if response.status_code != 200:
@@ -207,7 +215,7 @@ def getEventsBySessionId(
             "get",
             httpx.URL(path),
             headers=headers,
-            params=query_params,
+            params=_serialize_query_params(query_params),
         )
 
     if response.status_code != 200:
@@ -248,7 +256,7 @@ def deleteEvent(
             "delete",
             httpx.URL(path),
             headers=headers,
-            params=query_params,
+            params=_serialize_query_params(query_params),
         )
 
     if response.status_code != 200:
@@ -285,7 +293,7 @@ def exportEvents(
             "post",
             httpx.URL(path),
             headers=headers,
-            params=query_params,
+            params=_serialize_query_params(query_params),
             json=data.model_dump(exclude_none=True),
         )
 
@@ -327,7 +335,7 @@ def createModelEvent(
             "post",
             httpx.URL(path),
             headers=headers,
-            params=query_params,
+            params=_serialize_query_params(query_params),
             json=data.model_dump(exclude_none=True),
         )
 
@@ -365,7 +373,7 @@ def createEventBatch(
             "post",
             httpx.URL(path),
             headers=headers,
-            params=query_params,
+            params=_serialize_query_params(query_params),
             json=data.model_dump(exclude_none=True),
         )
 
@@ -405,7 +413,7 @@ def createModelEventBatch(
             "post",
             httpx.URL(path),
             headers=headers,
-            params=query_params,
+            params=_serialize_query_params(query_params),
             json=data.model_dump(exclude_none=True),
         )
 

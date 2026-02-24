@@ -52,6 +52,9 @@ def run_generator(spec_path: Path, temp_dir: Path) -> bool:
 
     Returns True if successful, False otherwise.
     """
+    # Custom templates live alongside this script
+    templates_dir = Path(__file__).parent / "templates"
+
     cmd = [
         "openapi-python-generator",
         str(spec_path),
@@ -62,6 +65,8 @@ def run_generator(spec_path: Path, temp_dir: Path) -> bool:
         "v2",
         "--formatter",
         "black",
+        "--custom-template-path",
+        str(templates_dir),
     ]
 
     print(f"Running: {' '.join(cmd)}")
@@ -123,7 +128,7 @@ def patch_api_config(output_dir: Path) -> bool:
 
     # Our custom api_config.py content with all extensions
     custom_content = '''import os
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -196,6 +201,29 @@ class HTTPException(Exception):
 
     def __str__(self):
         return f"{self.status_code} {self.message}"
+
+
+def _serialize_query_params(
+    params: dict,
+) -> list[tuple[str, Any]]:
+    """Serialize query params, expanding lists with bracket notation.
+
+    httpx passes a plain List value as a repeated bare key, e.g.
+    ``ids=a&ids=b``.  The server-side Zod schema rejects a single-value
+    list as "expected array, received string" because one bare key looks
+    like a plain string to the parser.
+
+    Bracket notation (``ids[]=a&ids[]=b``) always produces an array
+    regardless of how many values are present, which is what Zod expects.
+    """
+    result: list[tuple[str, Any]] = []
+    for key, value in params.items():
+        if isinstance(value, list):
+            for item in value:
+                result.append((f"{key}[]", item))
+        else:
+            result.append((key, value))
+    return result
 '''
 
     api_config_file.write_text(custom_content)
@@ -221,21 +249,8 @@ def post_process(output_dir: Path) -> bool:
         init_file.write_text('"""Auto-generated HoneyHive API client."""\n')
         print("  ✓ Created __init__.py")
 
-    # Fix serialization to exclude None values
-    # The API rejects null values, so we must use model_dump(exclude_none=True)
-    services_dir = output_dir / "services"
-    if services_dir.exists():
-        fixed_count = 0
-        for service_file in services_dir.glob("*.py"):
-            content = service_file.read_text()
-            if "data.dict()" in content:
-                content = content.replace(
-                    "data.dict()", "data.model_dump(exclude_none=True)"
-                )
-                service_file.write_text(content)
-                fixed_count += 1
-        if fixed_count > 0:
-            print(f"  ✓ Fixed serialization in {fixed_count} service files")
+    # Note: data.model_dump(exclude_none=True) and _serialize_query_params are
+    # handled directly in scripts/templates/httpx.jinja2 and service.jinja2.
 
     print("  ✓ Post-processing complete")
     return True

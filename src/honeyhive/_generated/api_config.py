@@ -1,5 +1,5 @@
 import os
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -69,3 +69,26 @@ class HTTPException(Exception):
 
     def __str__(self):
         return f"{self.status_code} {self.message}"
+
+
+def _serialize_query_params(
+    params: dict,
+) -> list[tuple[str, Any]]:
+    """Serialize query params, expanding lists with bracket notation.
+
+    httpx passes a plain List value as a repeated bare key, e.g.
+    ``ids=a&ids=b``.  The server-side Zod schema rejects a single-value
+    list as "expected array, received string" because one bare key looks
+    like a plain string to the parser.
+
+    Bracket notation (``ids[]=a&ids[]=b``) always produces an array
+    regardless of how many values are present, which is what Zod expects.
+    """
+    result: list[tuple[str, Any]] = []
+    for key, value in params.items():
+        if isinstance(value, list):
+            for item in value:
+                result.append((f"{key}[]", item))
+        else:
+            result.append((key, value))
+    return result

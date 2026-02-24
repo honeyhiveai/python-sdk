@@ -1,0 +1,20 @@
+{#
+  Forked from openapi-python-generator's default template.
+
+  Changes from upstream:
+  - Added _serialize_query_params to the api_config import so service functions
+    can use bracket-notation query param serialization (fixes Zod "expected array,
+    received string" errors when List params are passed to GET endpoints).
+#}
+from typing import *
+import {{ library_import }}
+
+{% if use_orjson %}
+import orjson
+from uuid import UUID
+{% endif %}
+
+from ..models import *
+from ..api_config import APIConfig, HTTPException, _serialize_query_params
+
+{{ content | safe}}

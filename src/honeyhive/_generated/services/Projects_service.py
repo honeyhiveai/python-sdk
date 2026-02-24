@@ -2,7 +2,7 @@ from typing import *
 
 import httpx
 
-from ..api_config import APIConfig, HTTPException
+from ..api_config import APIConfig, HTTPException, _serialize_query_params
 from ..models import *
 
 
@@ -29,7 +29,7 @@ def getProjects(
             "get",
             httpx.URL(path),
             headers=headers,
-            params=query_params,
+            params=_serialize_query_params(query_params),
         )
 
     if response.status_code != 200:
@@ -66,7 +66,7 @@ def createProject(
             "post",
             httpx.URL(path),
             headers=headers,
-            params=query_params,
+            params=_serialize_query_params(query_params),
             json=data.model_dump(exclude_none=True),
         )
 
@@ -104,7 +104,7 @@ def updateProject(
             "put",
             httpx.URL(path),
             headers=headers,
-            params=query_params,
+            params=_serialize_query_params(query_params),
             json=data.model_dump(exclude_none=True),
         )
 
@@ -142,7 +142,7 @@ def deleteProject(
             "delete",
             httpx.URL(path),
             headers=headers,
-            params=query_params,
+            params=_serialize_query_params(query_params),
         )
 
     if response.status_code != 200:
