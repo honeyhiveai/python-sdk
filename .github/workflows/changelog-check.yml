@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - complete-refactor
+      - federated-sdk-release-candidate
     paths:
       - 'src/**'
       - 'tests/**'
