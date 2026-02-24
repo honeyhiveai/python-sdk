@@ -1,1 +1,1 @@
-"""Tests for HoneyHive Python SDK."""
+"""Tests for HoneyHive Python SDK!"""
