@@ -10,7 +10,6 @@ from pydantic import ValidationError
 from honeyhive.models import (
     CreateConfigurationRequest,
     CreateDatapointRequest,
-    CreateToolRequest,
     PostExperimentRunRequest,
 )
 
@@ -35,10 +34,13 @@ class TestModelIntegration:
             name="complex-config",
             provider="openai",
             parameters={
+                "call_type": "chat",
                 "model": "gpt-4",
-                "temperature": 0.7,
-                "max_tokens": 1000,
-                "top_p": 0.9,
+                "hyperparameters": {
+                    "temperature": 0.7,
+                    "max_tokens": 1000,
+                    "top_p": 0.9,
+                },
             },
             env=["prod", "staging"],
             user_properties={"team": "AI-Research", "project_lead": "Dr. Smith"},
@@ -51,7 +53,7 @@ class TestModelIntegration:
         assert config_dict["name"] == "complex-config"
         assert config_dict["provider"] == "openai"
         assert config_dict["parameters"]["model"] == "gpt-4"
-        assert config_dict["parameters"]["temperature"] == 0.7
+        assert config_dict["parameters"]["hyperparameters"]["temperature"] == 0.7
         assert config_dict["env"] == ["prod", "staging"]
 
         # v0 API test - commented out as these models don't exist in v1
@@ -145,33 +147,25 @@ class TestModelIntegration:
             metadata={"workflow_step": "datapoint_creation"},
         )
 
-        # Step 2: Create tool request
-        tool_request = CreateToolRequest(
-            task="integration-test-project",
-            name="workflow-tool",
-            description="Tool for workflow testing",
-            parameters={"test": True, "workflow": "integration"},
-            type="function",
-        )
-
-        # Step 3: Create experiment run request (replaces CreateRunRequest)
+        # Step 2: Create experiment run request (replaces CreateRunRequest)
         run_request = PostExperimentRunRequest(
             name="workflow-evaluation",
             event_ids=[str(uuid.uuid4())],  # Use real UUID string
             configuration={"metrics": ["accuracy", "precision"]},
         )
 
-        # Step 4: Create configuration request
+        # Step 3: Create configuration request
         config_request = CreateConfigurationRequest(
             name="workflow-config",
             provider="openai",
-            parameters={"model": "gpt-4", "temperature": 0.7},
+            parameters={"call_type": "chat", "model": "gpt-4"},
         )
+
+        # Note: CreateToolRequest was removed from generated SDK models
 
         # Verify all models are valid and can be serialized
         models = [
             datapoint_request,
-            tool_request,
             run_request,
             config_request,
         ]
@@ -308,10 +302,10 @@ class TestModelIntegration:
 
     def test_model_performance_integration(self):
         """Test model performance with large data structures."""
-        # v1 API: Create large configuration with simplified structure
-        large_parameters = {}
+        # v1 API: Create large configuration with a large hyperparameters dict
+        large_hyperparameters = {}
         for i in range(100):
-            large_parameters[f"param_{i}"] = {
+            large_hyperparameters[f"param_{i}"] = {
                 "value": i,
                 "description": f"Parameter {i} description",
                 "nested": {"sub_value": i * 2, "sub_array": list(range(i))},
@@ -320,7 +314,11 @@ class TestModelIntegration:
         large_config = CreateConfigurationRequest(
             name="large-config",
             provider="openai",
-            parameters=large_parameters,
+            parameters={
+                "call_type": "chat",
+                "model": "gpt-4",
+                "hyperparameters": large_hyperparameters,
+            },
         )
 
         # Test serialization performance
@@ -331,7 +329,7 @@ class TestModelIntegration:
         # Verify serialization completed
         assert isinstance(config_dict, dict)
         assert config_dict["name"] == "large-config"
-        assert len(config_dict["parameters"]) == 100
+        assert len(config_dict["parameters"]["hyperparameters"]) == 100
 
         # Verify reasonable performance (should complete in under 1 second)
         duration = (end_time - start_time).total_seconds()

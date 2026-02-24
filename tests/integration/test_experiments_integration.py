@@ -553,6 +553,7 @@ class TestExperimentsIntegration:
             client=integration_client,
             new_run_id=improved_run_id,
             old_run_id=baseline_run_id,
+            project_id=real_project,
             aggregate_function="average",
         )
 
@@ -663,7 +664,14 @@ class TestExperimentsIntegration:
 
         # Helper: Extract ID from object
         def get_id_from_object(obj: Any) -> Optional[str]:
-            """Extract ID from object with multiple field support."""
+            """Extract ID from object/dict with multiple field support."""
+            if isinstance(obj, dict):
+                for key in ("_id", "id"):
+                    id_value = obj.get(key)
+                    if id_value:
+                        return str(id_value)
+                return None
+
             if hasattr(obj, "_id"):
                 id_value = getattr(obj, "_id", None)
                 if id_value:
@@ -685,11 +693,34 @@ class TestExperimentsIntegration:
             created = integration_client.datasets.create_dataset(request)
 
             print("✅ Dataset created")
-            print(f"   Name: {created.name}")
-            print(f"   Project: {created.project}")
+
+            created_result = getattr(created, "result", None)
+            dataset_obj: Any = created
+            if created_result is not None:
+                dataset_obj = (
+                    created_result[0]
+                    if isinstance(created_result, list) and created_result
+                    else created_result
+                )
+
+            dataset_name_value = (
+                dataset_obj.get("name")
+                if isinstance(dataset_obj, dict)
+                else getattr(dataset_obj, "name", None)
+            )
+            if dataset_name_value:
+                print(f"   Name: {dataset_name_value}")
+
+            dataset_project_value = (
+                dataset_obj.get("project")
+                if isinstance(dataset_obj, dict)
+                else getattr(dataset_obj, "project", None)
+            )
+            if dataset_project_value:
+                print(f"   Project: {dataset_project_value}")
 
             # Try to get ID from response
-            ds_id = get_id_from_object(created)
+            ds_id = get_id_from_object(dataset_obj) or get_id_from_object(created)
 
             if not ds_id:
                 # Fallback: search by name
