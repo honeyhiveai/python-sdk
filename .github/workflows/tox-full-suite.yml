@@ -1,27 +1,27 @@
 ---
 name: Tox Full Test Suite
 
-'on':
+"on":
   workflow_dispatch:
     inputs:
       python_versions:
-        description: 'Python versions to test (comma-separated)'
+        description: "Python versions to test (comma-separated)"
         required: false
-        default: '3.11,3.12,3.13'
+        default: "3.11,3.12,3.13"
       upload_coverage:
-        description: 'Upload coverage reports'
+        description: "Upload coverage reports"
         type: boolean
         required: false
         default: true
   workflow_call:
     inputs:
       python_versions:
-        description: 'Python versions to test (comma-separated)'
+        description: "Python versions to test (comma-separated)"
         required: false
-        default: '3.11,3.12,3.13'
+        default: "3.11,3.12,3.13"
         type: string
       upload_coverage:
-        description: 'Upload coverage reports'
+        description: "Upload coverage reports"
         type: boolean
         required: false
         default: true
@@ -48,25 +48,25 @@ name: Tox Full Test Suite
       AWS_SECRET_ACCESS_KEY:
         required: false
   push:
-    branches: [main]  # Only run on pushes to the protected main branch
+    branches: [main] # Only run on pushes to the protected main branch
     paths:
-      - 'src/**'
-      - 'tests/**'
-      - 'tox.ini'
-      - 'pyproject.toml'
-      - 'openapi/**'
-      - 'scripts/generate_*.py'
-      - '.github/workflows/tox-full-suite.yml'
+      - "src/**"
+      - "tests/**"
+      - "tox.ini"
+      - "pyproject.toml"
+      - "openapi/**"
+      - "scripts/generate_*.py"
+      - ".github/workflows/tox-full-suite.yml"
   pull_request:
     # Run on all PRs - immediate feedback on feature branch work
     paths:
-      - 'src/**'
-      - 'tests/**'
-      - 'tox.ini'
-      - 'pyproject.toml'
-      - 'openapi/**'
-      - 'scripts/generate_*.py'
-      - '.github/workflows/tox-full-suite.yml'
+      - "src/**"
+      - "tests/**"
+      - "tox.ini"
+      - "pyproject.toml"
+      - "openapi/**"
+      - "scripts/generate_*.py"
+      - ".github/workflows/tox-full-suite.yml"
 
 permissions:
   contents: read
@@ -97,8 +97,8 @@ jobs:
       - name: Set up Python 3.12
         uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
-          cache: 'pip'
+          python-version: "3.12"
+          cache: "pip"
 
       - name: Install tox and dependencies
         run: |
@@ -121,8 +121,8 @@ jobs:
       - name: Set up Python 3.12
         uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
-          cache: 'pip'
+          python-version: "3.12"
+          cache: "pip"
 
       - name: Install tox and dependencies
         run: |
@@ -140,7 +140,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.11', '3.12', '3.13']
+        python-version: ["3.11", "3.12", "3.13"]
 
     steps:
       - name: Checkout code
@@ -150,7 +150,7 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pip'
+          cache: "pip"
 
       - name: Install tox and dependencies
         run: |
@@ -182,7 +182,6 @@ jobs:
             .tox/*/log/
           retention-days: 7
 
-
   # === INTEGRATION TESTS (Real APIs, NO MOCKS) ===
   integration-tests:
     name: "🔗 Integration Tests (Real APIs)"
@@ -198,8 +197,8 @@ jobs:
       - name: Set up Python 3.12
         uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
-          cache: 'pip'
+          python-version: "3.12"
+          cache: "pip"
 
       - name: Install tox and dependencies
         run: |
@@ -230,11 +229,11 @@ jobs:
         env:
           # HoneyHive credentials (required)
           # Use multitenent key for old backend (this branch), fall back to standard key
-          HH_API_KEY: ${{ secrets.HH_API_KEY_MULTITENENT || secrets.HH_API_KEY }}
-          HH_PROJECT: ${{ secrets.HH_PROJECT }}
+          HH_API_KEY: ${{ secrets.HH_API_KEY_MULTITENENT }}
+          HH_PROJECT: ${{ secrets.HH_PROJECT_MULTITENENT }}
           HH_SOURCE: "github-actions-integration"
           HH_TEST_MODE: false
-          HH_API_URL: https://api.honeyhive.ai
+          HH_API_URL: ${{ secrets.HH_API_URL_MULTITENENT || https://api.honeyhive.ai }}
           # LLM Provider credentials (optional - tests will skip if not available)
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -277,8 +276,8 @@ jobs:
       - name: Set up Python 3.12
         uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
-          cache: 'pip'
+          python-version: "3.12"
+          cache: "pip"
 
       - name: Install dependencies in venv
         run: |
@@ -302,7 +301,14 @@ jobs:
   # === TEST SUITE SUMMARY ===
   summary:
     name: "📊 Test Summary"
-    needs: [code-quality, typecheck, generation-check, python-tests, integration-tests]
+    needs:
+      [
+        code-quality,
+        typecheck,
+        generation-check,
+        python-tests,
+        integration-tests,
+      ]
     runs-on: ubuntu-latest
     if: always()
 
@@ -368,8 +374,8 @@ jobs:
       - name: Set up Python 3.12
         uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
-          cache: 'pip'
+          python-version: "3.12"
+          cache: "pip"
 
       - name: Install tox and dependencies
         run: |
