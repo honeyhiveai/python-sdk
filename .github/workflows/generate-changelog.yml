@@ -21,8 +21,6 @@ on:
 permissions:
   contents: write
   pull-requests: write
-  issues: write
-  id-token: write
 
 jobs:
   generate-changelog:
@@ -32,7 +30,7 @@ jobs:
       - name: Checkout python-sdk
         uses: actions/checkout@v6
         with:
-          ref: federated-sdk-release-candidate
+          ref: federated-sdk-release-candidate  # Pinned: this is the current default/release branch for federated SDK releases
           fetch-depth: 0  # Fetch full history for commit analysis
           
       - name: Claude Code - Generate Changelog
@@ -57,10 +55,11 @@ jobs:
             1. **Find the last changelog update:**
                - Run: `git log -1 --format="%H" -- CHANGELOG.md`
                - If no result, use the first commit: `git rev-list --max-parents=0 HEAD`
+               - If the commit range exceeds 100 commits, limit to the most recent 100: use `git log -100 --format="%H" | tail -1` as the starting point
 
             2. **Get all commits since then:**
                - Run: `git log --oneline <starting_commit>..HEAD`
-               - Also run: `git log --format="%H %s" <starting_commit>..HEAD` for full hashes
+               - Also run: `git log --name-only --format="COMMIT:%H %s" <starting_commit>..HEAD` to get all file paths at once (more efficient than per-commit git diff-tree)
 
             ### Step 2: Determine the new version
 
@@ -72,6 +71,7 @@ jobs:
                - MAJOR: `BREAKING CHANGE:` in body, or `!` after type (e.g., `feat!:`)
                - MINOR: `feat:` or `feat(scope):`
                - PATCH: `fix:`, `perf:`
+               - If no bump-triggering commits are found (only `chore:`, `docs:`, `ci:`, `refactor:`, `style:`, `test:`), default to PATCH
 
             3. **Apply version rules:**
                - If release_type is `auto`: Use highest bump level found
@@ -134,12 +134,13 @@ jobs:
             #### Core SDK
             - **src/honeyhive/tracer/**: PR #XXX - Description (commit_hash)
             - **src/honeyhive/evaluation/**: PR #XXX - Description (commit_hash)
+            - **src/honeyhive/experiments/**: PR #XXX - Description (commit_hash)
             - **src/honeyhive/api/**: PR #XXX - Description (commit_hash)
             - **src/honeyhive/models/**: PR #XXX - Description (commit_hash)
+            - **src/honeyhive/config/**: PR #XXX - Description (commit_hash)
 
-            #### Integrations
-            - **src/honeyhive/integrations/**: PR #XXX - Description (commit_hash)
-            - Provider-specific changes listed here
+            #### Generated Code
+            - **src/honeyhive/_generated/**: PR #XXX - Description (commit_hash)
 
             #### CLI
             - **src/honeyhive/cli/**: PR #XXX - Description (commit_hash)
@@ -178,8 +179,8 @@ jobs:
             ```
 
             **Rules for the internal changelog:**
-            - To determine which module a commit belongs to, check files modified:
-              - Run `git diff-tree --no-commit-id --name-only -r <hash>` for each commit
+            - To determine which module a commit belongs to, use the batched output from Step 1:
+              - Parse `git log --name-only --format="COMMIT:%H %s" <start>..HEAD` to map files to commits in a single command
               - Map file paths to modules (e.g., `src/honeyhive/tracer/` -> Core SDK / Tracer)
             - A commit can appear under multiple modules if it touches multiple
             - Include EVERY commit - nothing is excluded from the internal log
@@ -227,10 +228,10 @@ jobs:
         uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ steps.app-token.outputs.token }}
-          commit-message: "docs: update CHANGELOG"
+          commit-message: "docs: update CHANGELOG and CHANGELOG-INTERNAL"
           branch: changelog/latest
           delete-branch: true
-          title: "docs: Update CHANGELOG with latest changes"
+          title: "docs: Update changelogs with latest changes"
           body: |
             ## Automated Changelog Update
             
