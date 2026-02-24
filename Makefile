@@ -1,4 +1,4 @@
-.PHONY: help install install-dev test test-all test-unit test-integration check-integration lint format check check-format check-lint typecheck check-docs check-docs-compliance check-feature-sync check-tracer-patterns check-no-mocks docs docs-serve docs-clean generate generate-sdk compare-sdk clean clean-all
+.PHONY: help install install-dev test test-all test-unit test-integration check-integration lint format check check-format check-lint typecheck check-docs check-docs-compliance check-feature-sync check-tracer-patterns check-no-mocks docs docs-serve docs-clean generate generate-sdk compare-sdk clean clean-all build
 
 # Use the venv python so make recipes get venv site-packages
 PYTHON := .venv/bin/python
@@ -45,6 +45,9 @@ help:
 	@echo "  make generate-minimal - Generate v1 client from minimal spec (testing)"
 	@echo "  make generate-sdk    - Generate full SDK to comparison_output/ (for analysis)"
 	@echo "  make compare-sdk     - Compare generated SDK with current implementation"
+	@echo ""
+	@echo "Build:"
+	@echo "  make build           - Build honeyhive package"
 	@echo ""
 	@echo "Maintenance:"
 	@echo "  make clean           - Remove build artifacts"
@@ -149,6 +152,10 @@ compare-sdk:
 		exit 1; \
 	fi
 	$(PYTHON) comparison_output/full_sdk/compare_with_current.py
+
+# Build
+build:
+	$(PYTHON) -m build
 
 # Maintenance
 clean:
