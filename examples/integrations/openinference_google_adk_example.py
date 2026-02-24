@@ -1,668 +1,348 @@
 #!/usr/bin/env python3
 """
-Simple Google ADK Integration Example with HoneyHive
+Google ADK + HoneyHive integration example.
 
-This example demonstrates how to integrate Google's Agent Development Kit (ADK)
-with HoneyHive using the "Bring Your Own Instrumentor" pattern for comprehensive
-agent observability and tracing.
+Demonstrates four ADK agent patterns with HoneyHive tracing:
 
-Requirements:
-    pip install honeyhive google-adk openinference-instrumentation-google-adk
+1) Single agent with tool calls
+2) Multi-agent delegation (coordinator + specialists)
+3) Workflow orchestration (ParallelAgent + SequentialAgent)
+4) Iterative refinement (LoopAgent)
 
-Environment Variables:
-    HH_API_KEY: Your HoneyHive API key
-    HH_PROJECT: Your HoneyHive project name
-    GOOGLE_API_KEY: Your Google API key (for Gemini models)
+Install:
+    uv pip install honeyhive google-adk openinference-instrumentation-google-adk
+
+Run:
+    uv run python examples/integrations/openinference_google_adk_example.py
+
+Environment:
+    HH_API_KEY
+    HH_PROJECT
+    GOOGLE_API_KEY
+    HH_SOURCE (optional, defaults to "python_sdk_example")
 """
 
 import asyncio
 import os
-import sys
-from pathlib import Path
-from typing import Optional
+
+from google.adk.agents import LlmAgent, LoopAgent, ParallelAgent, SequentialAgent
+from google.adk.runners import Runner
+from google.adk.sessions import InMemorySessionService
+from google.adk.tools.tool_context import ToolContext
+from google.genai import types
+from openinference.instrumentation.google_adk import GoogleADKInstrumentor
+
+from honeyhive import HoneyHiveTracer
+
+MODEL = "gemini-3-flash-preview"
 
 
-async def main():
-    """Main example demonstrating Google ADK integration with HoneyHive."""
+def lookup_order_status(order_id: str) -> dict:
+    """Return mock order status for deterministic support flows."""
+    statuses = {
+        "ORD-1001": {"state": "shipped", "eta_days": 2},
+        "ORD-1002": {"state": "processing", "eta_days": 5},
+        "ORD-1003": {"state": "delayed", "eta_days": 8},
+    }
+    status = statuses.get(order_id.upper())
+    if status:
+        return {"status": "success", "order_id": order_id.upper(), "order": status}
+    return {"status": "not_found", "order_id": order_id.upper()}
 
-    # Check required environment variables
-    hh_api_key = os.getenv("HH_API_KEY")
-    hh_project = os.getenv("HH_PROJECT")
-    google_api_key = os.getenv("GOOGLE_API_KEY")
 
-    if not all([hh_api_key, hh_project, google_api_key]):
-        print("❌ Missing required environment variables:")
-        print("   - HH_API_KEY: Your HoneyHive API key")
-        print("   - HH_PROJECT: Your HoneyHive project name")
-        print(
-            "   - GOOGLE_API_KEY: Your Google API key (get from https://aistudio.google.com/apikey)"
-        )
-        print("\nSet these environment variables and try again.")
-        return False
+def lookup_policy(topic: str) -> dict:
+    """Return mock support policy snippets for deterministic support flows."""
+    policies = {
+        "refund": {
+            "summary": "Refunds are available within 30 days for undelivered or damaged items.",
+            "window_days": 30,
+        },
+        "cancellation": {
+            "summary": "Cancellation is allowed before shipment. Delayed orders can request assisted cancellation.",
+            "window_days": 2,
+        },
+        "shipping": {
+            "summary": "Standard shipping takes 3-5 business days. Delays can trigger proactive support outreach.",
+            "window_days": 5,
+        },
+    }
+    key = topic.lower().strip()
+    result = policies.get(key)
+    if result:
+        return {"status": "success", "topic": key, "policy": result}
+    return {"status": "not_found", "topic": key}
+
+
+async def run_single_agent_tool_scenario(
+    session_service: InMemorySessionService,
+) -> None:
+    """Scenario 1: single LlmAgent with multiple tool calls and two turns."""
+    app_name = "adk_example_single_agent"
+    user_id = "example_user"
+    session_id = "single_agent_tools_session"
+    await session_service.create_session(
+        app_name=app_name, user_id=user_id, session_id=session_id
+    )
+
+    agent = LlmAgent(
+        name="support_generalist",
+        model=MODEL,
+        description="Single support agent for order and policy questions.",
+        instruction=(
+            "You are SupportGeneralist. Use tools for order and policy questions. "
+            "Keep responses concise and customer-friendly."
+        ),
+        tools=[lookup_order_status, lookup_policy],
+    )
+    runner = Runner(agent=agent, app_name=app_name, session_service=session_service)
+
+    prompts = [
+        (
+            "Check order ORD-1002 and summarize current shipping status for the customer."
+        ),
+        ("For delayed order ORD-1003, explain the cancellation policy and next steps."),
+    ]
+
+    for prompt in prompts:
+        message = types.Content(role="user", parts=[types.Part(text=prompt)])
+        async for _ in runner.run_async(
+            user_id=user_id,
+            session_id=session_id,
+            new_message=message,
+        ):
+            pass
+
+
+async def run_multi_agent_scenario(
+    session_service: InMemorySessionService,
+) -> None:
+    """Scenario 2: coordinator delegates to specialist sub-agents."""
+    app_name = "adk_example_multi_agent"
+    user_id = "example_user"
+    session_id = "multi_agent_session"
+    await session_service.create_session(
+        app_name=app_name, user_id=user_id, session_id=session_id
+    )
+
+    order_specialist = LlmAgent(
+        name="order_specialist",
+        model=MODEL,
+        description="Handles shipment and delivery questions.",
+        instruction=(
+            "You are OrderSpecialist. Use lookup_order_status for all order "
+            "questions and answer with status plus ETA."
+        ),
+        tools=[lookup_order_status],
+    )
+
+    policy_specialist = LlmAgent(
+        name="policy_specialist",
+        model=MODEL,
+        description="Handles refund and cancellation policy questions.",
+        instruction=(
+            "You are PolicySpecialist. Use lookup_policy for refund, cancellation, "
+            "or shipping policy questions."
+        ),
+        tools=[lookup_policy],
+    )
+
+    coordinator = LlmAgent(
+        name="support_coordinator",
+        model=MODEL,
+        description="Routes support requests to the right specialist.",
+        instruction=(
+            "You are SupportCoordinator. Delegate order issues to order_specialist "
+            "and policy issues to policy_specialist. Return a concise "
+            "final answer based on delegated results."
+        ),
+        sub_agents=[order_specialist, policy_specialist],
+    )
+
+    runner = Runner(
+        agent=coordinator, app_name=app_name, session_service=session_service
+    )
+
+    prompts = [
+        "My order ORD-1001 has not arrived. Please investigate.",
+        "What is your cancellation policy for delayed orders?",
+    ]
+
+    for prompt in prompts:
+        message = types.Content(role="user", parts=[types.Part(text=prompt)])
+        async for _ in runner.run_async(
+            user_id=user_id,
+            session_id=session_id,
+            new_message=message,
+        ):
+            pass
+
+
+async def run_workflow_scenario(
+    session_service: InMemorySessionService,
+) -> None:
+    """Scenario 3: Workflow orchestration for support response drafting."""
+    app_name = "adk_example_workflow"
+    user_id = "example_user"
+    session_id = "workflow_session"
+    await session_service.create_session(
+        app_name=app_name, user_id=user_id, session_id=session_id
+    )
+
+    order_context_agent = LlmAgent(
+        name="order_context_agent",
+        model=MODEL,
+        description="Builds order-status context.",
+        instruction=(
+            "Use lookup_order_status for the order in the request. Output one concise "
+            "line of order context."
+        ),
+        tools=[lookup_order_status],
+        output_key="order_context",
+    )
+
+    policy_context_agent = LlmAgent(
+        name="policy_context_agent",
+        model=MODEL,
+        description="Builds policy context.",
+        instruction=(
+            "Identify the single most relevant policy topic from the customer request "
+            "(one of: refund, cancellation, shipping). Call lookup_policy exactly once "
+            "with that topic, then immediately output one concise line summarizing the "
+            "policy. Do not call the tool more than once."
+        ),
+        tools=[lookup_policy],
+        output_key="policy_context",
+    )
+
+    parallel_context_builder = ParallelAgent(
+        name="parallel_context_builder",
+        description="Builds order and policy context in parallel.",
+        sub_agents=[order_context_agent, policy_context_agent],
+    )
+
+    resolution_agent = LlmAgent(
+        name="resolution_agent",
+        model=MODEL,
+        description="Drafts a final support resolution from gathered context.",
+        instruction=(
+            "Create a concise support response using:\n"
+            "Order Context: {order_context}\n"
+            "Policy Context: {policy_context}\n"
+            "Respond in 3 bullets: current status, policy impact, next action."
+        ),
+    )
+
+    workflow_agent = SequentialAgent(
+        name="support_resolution_pipeline",
+        description="Runs parallel context building followed by final response drafting.",
+        sub_agents=[parallel_context_builder, resolution_agent],
+    )
+
+    runner = Runner(
+        agent=workflow_agent,
+        app_name=app_name,
+        session_service=session_service,
+    )
+
+    workflow_prompt = (
+        "Customer says: My order ORD-1003 is delayed. Can I cancel and get a refund?"
+    )
+    message = types.Content(role="user", parts=[types.Part(text=workflow_prompt)])
+    async for _ in runner.run_async(
+        user_id=user_id,
+        session_id=session_id,
+        new_message=message,
+    ):
+        pass
+
+
+def approve_response(tool_context: ToolContext) -> dict:
+    """Call when the draft fully meets quality criteria and no more iterations are needed."""
+    tool_context.actions.escalate = True
+    tool_context.actions.skip_summarization = True
+    return {}
+
+
+async def run_loop_scenario(
+    session_service: InMemorySessionService,
+) -> None:
+    """Scenario 4: iterative refinement with LoopAgent (LLM-as-judge critic)."""
+    app_name = "adk_example_loop"
+    user_id = "example_user"
+    session_id = "loop_session"
+    await session_service.create_session(
+        app_name=app_name, user_id=user_id, session_id=session_id
+    )
+
+    drafter = LlmAgent(
+        name="response_drafter",
+        model=MODEL,
+        description="Drafts or revises a customer support response.",
+        instruction=(
+            "Write a short customer support response for the issue described. "
+            "Include: current order status, applicable policy, an apology, "
+            "and a concrete next step for the customer."
+        ),
+        tools=[lookup_order_status, lookup_policy],
+    )
+
+    critic = LlmAgent(
+        name="response_critic",
+        model=MODEL,
+        description="Evaluates draft quality and either approves or requests revisions.",
+        instruction=(
+            "Review the most recent draft support response.\n"
+            "Check for: (1) order status mentioned, (2) relevant policy cited, "
+            "(3) apology included, (4) clear next step.\n"
+            "If all four are present, call approve_response to finalize.\n"
+            "Otherwise, write 1-2 sentences of specific feedback for revision."
+        ),
+        tools=[approve_response],
+    )
+
+    loop_agent = LoopAgent(
+        name="response_refinement_loop",
+        sub_agents=[drafter, critic],
+        max_iterations=3,
+    )
+
+    runner = Runner(
+        agent=loop_agent,
+        app_name=app_name,
+        session_service=session_service,
+    )
+
+    prompt = "Customer: Order ORD-1003 is delayed. I want a refund and an apology."
+    message = types.Content(role="user", parts=[types.Part(text=prompt)])
+    async for _ in runner.run_async(
+        user_id=user_id,
+        session_id=session_id,
+        new_message=message,
+    ):
+        pass
+
+
+async def main() -> None:
+    """Run ADK example scenarios and emit HoneyHive traces."""
+    tracer = HoneyHiveTracer.init(
+        api_key=os.getenv("HH_API_KEY"),
+        project=os.getenv("HH_PROJECT"),
+        session_name="openinference_google_adk_example",
+        source=os.getenv("HH_SOURCE", "python_sdk_example"),
+    )
+    instrumentor = GoogleADKInstrumentor()
+    instrumentor.instrument(tracer_provider=tracer.provider)
+    session_service = InMemorySessionService()
 
     try:
-        # Import required packages
-        from capture_spans import setup_span_capture
-        from google.adk.agents import LlmAgent
-        from google.adk.runners import Runner
-        from google.adk.sessions import InMemorySessionService
-        from google.genai import types
-        from openinference.instrumentation.google_adk import GoogleADKInstrumentor
-
-        from honeyhive import HoneyHiveTracer
-        from honeyhive.models import EventType
-        from honeyhive.tracer.instrumentation.decorators import trace
-
-        print("🚀 Google ADK + HoneyHive Integration Example")
-        print("=" * 50)
-
-        # 1. Initialize the Google ADK instrumentor
-        print("🔧 Setting up Google ADK instrumentor...")
-        adk_instrumentor = GoogleADKInstrumentor()
-        print("✓ Google ADK instrumentor initialized")
-
-        # 2. Initialize HoneyHive tracer with the instrumentor
-        print("🔧 Setting up HoneyHive tracer...")
-        tracer = HoneyHiveTracer.init(
-            api_key=hh_api_key,
-            project=hh_project,
-            session_name=Path(__file__).stem,  # Use filename as session name
-            source="google_adk_example",
-            verbose=True,
-        )
-        print("✓ HoneyHive tracer initialized")
-
-        # Setup span capture
-        span_processor = setup_span_capture("google_adk", tracer)
-
-        # Initialize instrumentor separately with tracer_provider
-        adk_instrumentor.instrument(tracer_provider=tracer.provider)
-        print("✓ HoneyHive tracer initialized with Google ADK instrumentor")
-
-        # 3. Google API key is automatically read from GOOGLE_API_KEY env var
-        print("✓ Google API key configured from environment")
-
-        # 4. Set up session service
-        session_service = InMemorySessionService()
-        app_name = "google_adk_demo"
-        user_id = "test_user"
-
-        # 5. Execute basic agent tasks - automatically traced
-        print("\n🤖 Testing basic agent functionality...")
-        basic_result = await test_basic_agent_functionality(
-            tracer, session_service, app_name, user_id
-        )
-        print(f"✓ Basic test completed: {basic_result[:100]}...")
-
-        # 6. Test agent with tools - automatically traced
-        print("\n🔧 Testing agent with tools...")
-        tool_result = await test_agent_with_tools(
-            tracer, session_service, app_name, user_id
-        )
-        print(f"✓ Tool test completed: {tool_result[:100]}...")
-
-        # 7. Test multi-step workflow - automatically traced
-        print("\n🔄 Testing multi-step workflow...")
-        workflow_result = await test_multi_step_workflow(
-            tracer, session_service, app_name, user_id
-        )
-        print(f"✓ Workflow test completed: {workflow_result['summary'][:100]}...")
-
-        # 8. Test sequential workflow - automatically traced
-        print("\n🔀 Testing sequential workflow...")
-        sequential_result = await test_sequential_workflow(
-            tracer, session_service, app_name, user_id
-        )
-        print(f"✓ Sequential workflow completed: {sequential_result[:100]}...")
-
-        # 9. Test parallel workflow - automatically traced
-        # print("\n⚡ Testing parallel workflow...")
-        # parallel_result = await test_parallel_workflow(tracer, session_service, app_name, user_id)
-        # print(f"✓ Parallel workflow completed: {parallel_result[:100]}...")
-
-        # 10. Test loop workflow - automatically traced (DISABLED: API incompatibility)
-        # print("\n🔁 Testing loop workflow...")
-        # loop_result = await test_loop_workflow(tracer, session_service, app_name, user_id)
-        # print(f"✓ Loop workflow completed: {loop_result[:100]}...")
-
-        # 11. Clean up instrumentor
-        print("\n🧹 Cleaning up...")
-        if span_processor:
-            span_processor.force_flush()
-        adk_instrumentor.uninstrument()
-        print("✓ Instrumentor cleaned up")
-
-        print("\n🎉 Google ADK integration example completed successfully!")
-        print(f"📊 Check your HoneyHive project '{hh_project}' for trace data")
-
-        return True
-
-    except ImportError as e:
-        print(f"❌ Import error: {e}")
-        print("\n💡 Install required packages:")
-        print(
-            "   pip install honeyhive google-adk openinference-instrumentation-google-adk"
-        )
-        return False
-
-    except Exception as e:
-        print(f"❌ Example failed: {e}")
-        import traceback
-
-        traceback.print_exc()
-        return False
-
-
-async def test_basic_agent_functionality(
-    tracer: "HoneyHiveTracer", session_service, app_name: str, user_id: str
-) -> str:
-    """Test basic agent functionality with automatic tracing."""
-
-    from google.adk.agents import LlmAgent
-    from google.adk.runners import Runner
-    from google.genai import types
-
-    from honeyhive.tracer.instrumentation.decorators import trace
-
-    @trace(
-        event_type="chain", event_name="test_basic_agent_functionality", tracer=tracer
-    )
-    async def _test():
-        # Create agent with automatic tracing
-        agent = LlmAgent(
-            model="gemini-2.0-flash-exp",
-            name="research_assistant",
-            description="A helpful research assistant that can analyze information and provide insights",
-            instruction="You are a helpful research assistant. Provide clear, concise, and informative responses.",
-        )
-
-        # Create runner
-        runner = Runner(agent=agent, app_name=app_name, session_service=session_service)
-
-        # Create session
-        session_id = "test_basic"
-        await session_service.create_session(
-            app_name=app_name, user_id=user_id, session_id=session_id
-        )
-
-        # Execute a simple task - automatically traced by ADK instrumentor
-        prompt = "Explain the concept of artificial intelligence in 2-3 sentences."
-        user_content = types.Content(role="user", parts=[types.Part(text=prompt)])
-
-        final_response = ""
-        async for event in runner.run_async(
-            user_id=user_id, session_id=session_id, new_message=user_content
-        ):
-            if event.is_final_response() and event.content and event.content.parts:
-                final_response = event.content.parts[0].text
-
-        return final_response
-
-    return await _test()
-
-
-async def test_agent_with_tools(
-    tracer: "HoneyHiveTracer", session_service, app_name: str, user_id: str
-) -> str:
-    """Test agent with custom tools and automatic tracing."""
-
-    from google.adk.agents import LlmAgent
-    from google.adk.runners import Runner
-    from google.genai import types
-
-    from honeyhive.tracer.instrumentation.decorators import trace
-
-    @trace(event_type="chain", event_name="test_agent_with_tools", tracer=tracer)
-    async def _test():
-        # Define custom tools as simple Python functions
-        def get_weather(city: str) -> dict:
-            """Retrieves the current weather report for a specified city."""
-            if city.lower() == "new york":
-                return {
-                    "status": "success",
-                    "report": "The weather in New York is sunny with a temperature of 25 degrees Celsius (77 degrees Fahrenheit).",
-                }
-            else:
-                return {
-                    "status": "error",
-                    "error_message": f"Weather information for '{city}' is not available.",
-                }
-
-        def get_current_time(city: str) -> dict:
-            """Returns the current time in a specified city."""
-            if city.lower() == "new york":
-                return {
-                    "status": "success",
-                    "report": "The current time in New York is 10:30 AM",
-                }
-            else:
-                return {
-                    "status": "error",
-                    "error_message": f"Sorry, I don't have timezone information for {city}.",
-                }
-
-        # Create agent with tools
-        tool_agent = LlmAgent(
-            model="gemini-2.0-flash-exp",
-            name="weather_time_agent",
-            description="Agent to answer questions about the time and weather in a city.",
-            instruction="You are a helpful agent who can answer user questions about the time and weather in a city. Use the available tools to get accurate information.",
-            tools=[get_weather, get_current_time],
-        )
-
-        # Create runner
-        runner = Runner(
-            agent=tool_agent, app_name=app_name, session_service=session_service
-        )
-
-        # Create session
-        session_id = "test_tools"
-        await session_service.create_session(
-            app_name=app_name, user_id=user_id, session_id=session_id
-        )
-
-        # Test tool usage
-        task = "What is the weather in New York?"
-        user_content = types.Content(role="user", parts=[types.Part(text=task)])
-
-        final_response = ""
-        async for event in runner.run_async(
-            user_id=user_id, session_id=session_id, new_message=user_content
-        ):
-            if event.is_final_response() and event.content and event.content.parts:
-                final_response = event.content.parts[0].text
-
-        return final_response
-
-    return await _test()
-
-
-async def test_multi_step_workflow(
-    tracer: "HoneyHiveTracer", session_service, app_name: str, user_id: str
-) -> dict:
-    """Test a multi-step agent workflow with state tracking."""
-
-    from google.adk.agents import LlmAgent
-    from google.adk.runners import Runner
-    from google.genai import types
-
-    from honeyhive.tracer.instrumentation.decorators import trace
-
-    @trace(event_type="chain", event_name="test_multi_step_workflow", tracer=tracer)
-    async def _test():
-        workflow_agent = LlmAgent(
-            model="gemini-2.0-flash-exp",
-            name="workflow_agent",
-            description="Agent capable of multi-step analysis workflows",
-            instruction="You are an analytical assistant that provides detailed analysis and insights.",
-        )
-
-        # Create runner
-        runner = Runner(
-            agent=workflow_agent, app_name=app_name, session_service=session_service
-        )
-
-        # Create session
-        session_id = "test_workflow"
-        await session_service.create_session(
-            app_name=app_name, user_id=user_id, session_id=session_id
-        )
-
-        # Step 1: Initial analysis
-        user_content1 = types.Content(
-            role="user",
-            parts=[
-                types.Part(
-                    text="Analyze the current trends in renewable energy. Focus on solar and wind power."
-                )
-            ],
-        )
-        step1_result = ""
-        async for event in runner.run_async(
-            user_id=user_id, session_id=session_id, new_message=user_content1
-        ):
-            if event.is_final_response() and event.content and event.content.parts:
-                step1_result = event.content.parts[0].text
-
-        # Step 2: Deep dive
-        user_content2 = types.Content(
-            role="user",
-            parts=[
-                types.Part(
-                    text=f"Based on this analysis: {step1_result[:200]}... Provide specific insights about market growth and technological challenges."
-                )
-            ],
-        )
-        step2_result = ""
-        async for event in runner.run_async(
-            user_id=user_id, session_id=session_id, new_message=user_content2
-        ):
-            if event.is_final_response() and event.content and event.content.parts:
-                step2_result = event.content.parts[0].text
-
-        # Step 3: Synthesis
-        user_content3 = types.Content(
-            role="user",
-            parts=[
-                types.Part(
-                    text="Create a concise summary with key takeaways and future predictions."
-                )
-            ],
-        )
-        step3_result = ""
-        async for event in runner.run_async(
-            user_id=user_id, session_id=session_id, new_message=user_content3
-        ):
-            if event.is_final_response() and event.content and event.content.parts:
-                step3_result = event.content.parts[0].text
-
-        # Return workflow results
-        workflow_results = {
-            "initial_analysis": step1_result,
-            "deep_dive": step2_result,
-            "summary": step3_result,
-            "total_steps": 3,
-            "workflow_complete": True,
-        }
-
-        return workflow_results
-
-    return await _test()
-
-
-async def test_sequential_workflow(
-    tracer: "HoneyHiveTracer", session_service, app_name: str, user_id: str
-) -> str:
-    """Test sequential agent workflow where agents run one after another."""
-
-    from google.adk.agents import LlmAgent, SequentialAgent
-    from google.adk.runners import Runner
-    from google.genai import types
-
-    from honeyhive.tracer.instrumentation.decorators import trace
-
-    @trace(event_type="chain", event_name="test_sequential_workflow", tracer=tracer)
-    async def _test():
-        # Agent 1: Research agent
-        research_agent = LlmAgent(
-            model="gemini-2.0-flash-exp",
-            name="researcher",
-            description="Conducts initial research on a topic",
-            instruction="You are a research assistant. When given a topic, provide key facts about it in 2-3 sentences.",
-            output_key="research_findings",
-        )
-
-        # Agent 2: Analyzer agent (uses output from research_agent)
-        analyzer_agent = LlmAgent(
-            model="gemini-2.0-flash-exp",
-            name="analyzer",
-            description="Analyzes research findings",
-            instruction="""You are an analytical assistant. Review the research findings provided below and identify the key insights:
-
-Research Findings:
-{research_findings}
-
-Provide your analysis in 2-3 sentences.""",
-            output_key="analysis_result",
-        )
-
-        # Agent 3: Synthesizer agent (uses outputs from both previous agents)
-        synthesizer_agent = LlmAgent(
-            model="gemini-2.0-flash-exp",
-            name="synthesizer",
-            description="Synthesizes research and analysis into a conclusion",
-            instruction="""You are a synthesis assistant. Based on the research and analysis below, provide a clear conclusion:
-
-Research:
-{research_findings}
-
-Analysis:
-{analysis_result}
-
-Provide a concise conclusion (1-2 sentences).""",
-        )
-
-        # Create sequential workflow
-        sequential_agent = SequentialAgent(
-            name="research_pipeline",
-            sub_agents=[research_agent, analyzer_agent, synthesizer_agent],
-            description="Sequential research, analysis, and synthesis pipeline",
-        )
-
-        # Create runner
-        runner = Runner(
-            agent=sequential_agent, app_name=app_name, session_service=session_service
-        )
-
-        # Create session
-        session_id = "test_sequential"
-        await session_service.create_session(
-            app_name=app_name, user_id=user_id, session_id=session_id
-        )
-
-        # Execute sequential workflow
-        prompt = "Tell me about artificial intelligence"
-        user_content = types.Content(role="user", parts=[types.Part(text=prompt)])
-
-        final_response = ""
-        async for event in runner.run_async(
-            user_id=user_id, session_id=session_id, new_message=user_content
-        ):
-            if event.is_final_response() and event.content and event.content.parts:
-                final_response = event.content.parts[0].text
-
-        return final_response
-
-    return await _test()
-
-
-async def test_parallel_workflow(
-    tracer: "HoneyHiveTracer", session_service, app_name: str, user_id: str
-) -> str:
-    """Test parallel agent workflow where multiple agents run concurrently."""
-
-    from google.adk.agents import LlmAgent, ParallelAgent, SequentialAgent
-    from google.adk.runners import Runner
-    from google.genai import types
-
-    from honeyhive.tracer.instrumentation.decorators import trace
-
-    @trace(event_type="chain", event_name="test_parallel_workflow", tracer=tracer)
-    async def _test():
-        # Mock search tool for researchers
-        def mock_search(query: str) -> dict:
-            """Mock search tool that returns predefined results."""
-            search_results = {
-                "renewable energy": "Recent advances include improved solar panel efficiency and offshore wind farms.",
-                "electric vehicles": "New battery technologies are extending range and reducing charging times.",
-                "carbon capture": "Direct air capture methods are becoming more cost-effective and scalable.",
-            }
-            for key, value in search_results.items():
-                if key in query.lower():
-                    return {"status": "success", "results": value}
-            return {"status": "success", "results": f"Information about {query}"}
-
-        # Researcher 1: Renewable Energy
-        researcher_1 = LlmAgent(
-            name="renewable_energy_researcher",
-            model="gemini-2.0-flash-exp",
-            instruction="""Research renewable energy sources. Summarize key findings in 1-2 sentences.
-Use the mock_search tool to gather information.""",
-            description="Researches renewable energy sources",
-            tools=[mock_search],
-            output_key="renewable_energy_result",
-        )
-
-        # Researcher 2: Electric Vehicles
-        researcher_2 = LlmAgent(
-            name="ev_researcher",
-            model="gemini-2.0-flash-exp",
-            instruction="""Research electric vehicle technology. Summarize key findings in 1-2 sentences.
-Use the mock_search tool to gather information.""",
-            description="Researches electric vehicle technology",
-            tools=[mock_search],
-            output_key="ev_technology_result",
-        )
-
-        # Researcher 3: Carbon Capture
-        researcher_3 = LlmAgent(
-            name="carbon_capture_researcher",
-            model="gemini-2.0-flash-exp",
-            instruction="""Research carbon capture methods. Summarize key findings in 1-2 sentences.
-Use the mock_search tool to gather information.""",
-            description="Researches carbon capture methods",
-            tools=[mock_search],
-            output_key="carbon_capture_result",
-        )
-
-        # Parallel agent to run all researchers concurrently
-        parallel_research_agent = ParallelAgent(
-            name="parallel_research",
-            sub_agents=[researcher_1, researcher_2, researcher_3],
-            description="Runs multiple research agents in parallel",
-        )
-
-        # Merger agent to synthesize results
-        merger_agent = LlmAgent(
-            name="synthesis_agent",
-            model="gemini-2.0-flash-exp",
-            instruction="""Synthesize the following research findings into a structured report:
-
-**Renewable Energy:**
-{renewable_energy_result}
-
-**Electric Vehicles:**
-{ev_technology_result}
-
-**Carbon Capture:**
-{carbon_capture_result}
-
-Provide a brief summary combining these findings.""",
-            description="Combines research findings from parallel agents",
-        )
-
-        # Sequential agent to orchestrate: first parallel research, then synthesis
-        pipeline_agent = SequentialAgent(
-            name="research_synthesis_pipeline",
-            sub_agents=[parallel_research_agent, merger_agent],
-            description="Coordinates parallel research and synthesizes results",
-        )
-
-        # Create runner
-        runner = Runner(
-            agent=pipeline_agent, app_name=app_name, session_service=session_service
-        )
-
-        # Create session
-        session_id = "test_parallel"
-        await session_service.create_session(
-            app_name=app_name, user_id=user_id, session_id=session_id
-        )
-
-        # Execute parallel workflow
-        prompt = "Research sustainable technology advancements"
-        user_content = types.Content(role="user", parts=[types.Part(text=prompt)])
-
-        final_response = ""
-        async for event in runner.run_async(
-            user_id=user_id, session_id=session_id, new_message=user_content
-        ):
-            if event.is_final_response() and event.content and event.content.parts:
-                final_response = event.content.parts[0].text
-
-        return final_response
-
-    return await _test()
-
-
-async def test_loop_workflow(
-    tracer: "HoneyHiveTracer", session_service, app_name: str, user_id: str
-) -> str:
-    """Test loop agent workflow where an agent runs iteratively until a condition is met."""
-
-    from google.adk.agents import LlmAgent, LoopAgent
-    from google.adk.runners import Runner
-    from google.genai import types
-
-    from honeyhive.tracer.instrumentation.decorators import trace
-
-    @trace(event_type="chain", event_name="test_loop_workflow", tracer=tracer)
-    async def _test():
-        # Mock validation tool
-        def validate_completeness(text: str) -> dict:
-            """Check if the text contains all required sections."""
-            required_sections = ["introduction", "body", "conclusion"]
-            found_sections = [
-                section for section in required_sections if section in text.lower()
-            ]
-            is_complete = len(found_sections) == len(required_sections)
-
-            return {
-                "is_complete": is_complete,
-                "found_sections": found_sections,
-                "missing_sections": list(set(required_sections) - set(found_sections)),
-            }
-
-        # Worker agent that refines content iteratively
-        worker_agent = LlmAgent(
-            model="gemini-2.0-flash-exp",
-            name="content_refiner",
-            description="Refines content iteratively until it meets quality standards",
-            instruction="""You are a content writer. Your task is to write or refine content about the given topic.
-
-Your content must include three sections:
-1. Introduction - Brief overview
-2. Body - Main content with details
-3. Conclusion - Summary and key takeaways
-
-Use the validate_completeness tool to check if your content has all required sections.
-If sections are missing, add them. If complete, output the final content.""",
-            tools=[validate_completeness],
-            output_key="refined_content",
-        )
-
-        # Loop agent with max 3 iterations
-        loop_agent = LoopAgent(
-            name="iterative_refinement",
-            sub_agent=worker_agent,
-            max_iterations=3,
-            description="Iteratively refines content until quality standards are met",
-        )
-
-        # Create runner
-        runner = Runner(
-            agent=loop_agent, app_name=app_name, session_service=session_service
-        )
-
-        # Create session
-        session_id = "test_loop"
-        await session_service.create_session(
-            app_name=app_name, user_id=user_id, session_id=session_id
-        )
-
-        # Execute loop workflow
-        prompt = "Write a brief article about machine learning"
-        user_content = types.Content(role="user", parts=[types.Part(text=prompt)])
-
-        final_response = ""
-        async for event in runner.run_async(
-            user_id=user_id, session_id=session_id, new_message=user_content
-        ):
-            if event.is_final_response() and event.content and event.content.parts:
-                final_response = event.content.parts[0].text
-
-        return final_response
-
-    return await _test()
+        await run_single_agent_tool_scenario(session_service)
+        await run_multi_agent_scenario(session_service)
+        await run_workflow_scenario(session_service)
+        await run_loop_scenario(session_service)
+    finally:
+        tracer.force_flush()
+        instrumentor.uninstrument()
 
 
 if __name__ == "__main__":
-    """Run the Google ADK integration example."""
-    success = asyncio.run(main())
-
-    if success:
-        print("\n✅ Example completed successfully!")
-        sys.exit(0)
-    else:
-        print("\n❌ Example failed!")
-        sys.exit(1)
+    asyncio.run(main())
