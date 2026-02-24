@@ -355,7 +355,10 @@ class TestAdditionalFunctions:
             warnings.simplefilter("ignore")
 
             result = compare_runs(
-                client=Mock(), new_run_id="new-123", old_run_id="old-456"
+                client=Mock(),
+                new_run_id="new-123",
+                old_run_id="old-456",
+                project_id="project-123",
             )
 
             mock_compare.assert_called_once()

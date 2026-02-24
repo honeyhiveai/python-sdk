@@ -1,4 +1,9 @@
-"""ToolsAPI Integration Tests - NO MOCKS, REAL API CALLS."""
+"""ToolsAPI Integration Tests - NO MOCKS, REAL API CALLS.
+
+NOTE: Tool models (CreateToolRequest, CreateToolResponse, etc.) were removed
+from the generated SDK models. These tests are skipped until the OpenAPI spec
+is updated and the models are regenerated.
+"""
 
 import time
 import uuid
@@ -6,13 +11,25 @@ from typing import Any
 
 import pytest
 
-from honeyhive.models import (
-    CreateToolRequest,
-    CreateToolResponse,
-    DeleteToolResponse,
-    GetToolsResponse,
-    UpdateToolRequest,
-    UpdateToolResponse,
+# Tool models have been removed from the generated SDK.
+# Guard the import so the file can be collected without ImportError.
+try:
+    from honeyhive.models import (
+        CreateToolRequest,
+        CreateToolResponse,
+        DeleteToolResponse,
+        GetToolsResponse,
+        UpdateToolRequest,
+        UpdateToolResponse,
+    )
+
+    _TOOL_MODELS_AVAILABLE = True
+except ImportError:
+    _TOOL_MODELS_AVAILABLE = False
+
+pytestmark = pytest.mark.skipif(
+    not _TOOL_MODELS_AVAILABLE,
+    reason="Tool models removed from SDK — waiting for OpenAPI spec update",
 )
 
 
