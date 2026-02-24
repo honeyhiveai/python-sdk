@@ -30,7 +30,6 @@
             buildInputs = [
             # Python environment
             pythonEnv
-            pkgs.yq
           ];
 
           shellHook = ''
@@ -50,9 +49,6 @@
             # Activate virtual environment
             source .venv/bin/activate
 
-            # Ensure venv site-packages and src are in PYTHONPATH
-            export PYTHONPATH="src:.venv/lib/python3.12/site-packages:.:$PYTHONPATH"
-
             # Upgrade pip (silent)
             pip install --upgrade pip > /dev/null 2>&1
 
@@ -69,7 +65,6 @@
           '';
 
           # Environment variables
-          # Note: PYTHONPATH is set in shellHook after venv activation
 
           # Prevent Python from writing bytecode
           PYTHONDONTWRITEBYTECODE = "1";
