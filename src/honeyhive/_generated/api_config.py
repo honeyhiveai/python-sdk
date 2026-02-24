@@ -72,7 +72,7 @@ class HTTPException(Exception):
 
 
 def _serialize_query_params(
-    params: dict,
+    params: dict[str, Any],
 ) -> list[tuple[str, Any]]:
     """Serialize query params, expanding lists with bracket notation.
 

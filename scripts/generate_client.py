@@ -205,7 +205,7 @@ class HTTPException(Exception):
 
 def _serialize_query_params(
     params: dict,
-) -> list[tuple[str, Any]]:
+    params: dict[str, Any],
     """Serialize query params, expanding lists with bracket notation.
 
     httpx passes a plain List value as a repeated bare key, e.g.
