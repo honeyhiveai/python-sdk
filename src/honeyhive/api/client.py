@@ -714,11 +714,6 @@ class EventsAPI(BaseAPI):
                 operation="export()",
             )
 
-        logger.debug(
-            "export response: status=%d",
-            response.status_code,
-        )
-
         data = response.json()
         events = data.get("events", [])
         total_events = data.get("totalEvents", data.get("count", 0))
@@ -973,11 +968,6 @@ class EventsAPI(BaseAPI):
                 ),
                 operation="export_async()",
             )
-
-        logger.debug(
-            "export_async response: status=%d",
-            response.status_code,
-        )
 
         data = response.json()
         events = data.get("events", [])

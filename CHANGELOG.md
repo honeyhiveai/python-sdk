@@ -14,6 +14,11 @@
   - `export_async()` now retries on transient HTTP errors (502, 503, 504, etc.), matching `export()` behavior
   - Export errors now raise `APIError` with status code and response body instead of generic `Exception`
 
+- **API Client: Debug logging for `get_by_session_id` flow** (#261)
+  - Added `DEBUG`-level logging to `get_by_session_id`, `get_by_session_id_async`, `export`, and `export_async`
+  - Logs entry/exit with parameters, HTTP request metadata, and empty result diagnostics
+  - No sensitive data (request bodies, headers, filters) is logged
+
 ### Fixed
 
 - **API Client: List query params serialization with single item** (#251)
