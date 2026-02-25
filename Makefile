@@ -171,5 +171,5 @@ clean-all: clean
 	rm -rf .venv/ python-sdk/ .direnv/ .tox/
 
 publish: build
-  @echo "Publishing honeyhive to PyPI..."
-  $(PYTHON) -m twine upload dist/*
+	@echo "Publishing honeyhive to PyPI..."
+	$(PYTHON) -m twine upload dist/*
