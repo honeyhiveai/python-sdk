@@ -21,11 +21,7 @@ def getEvents(
 
     base_path = api_config.base_path
     path = f"/events"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {
         "dateRange": dateRange,
         "filters": filters,
@@ -66,11 +62,7 @@ def createEvent(
 
     base_path = api_config.base_path
     path = f"/events"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 
     query_params = {
@@ -104,11 +96,7 @@ def updateEvent(
 
     base_path = api_config.base_path
     path = f"/events"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 
     query_params = {
@@ -151,11 +139,7 @@ def getEventsChart(
 
     base_path = api_config.base_path
     path = f"/v1/events/chart"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {
         "dateRange": dateRange,
         "filters": filters,
@@ -199,11 +183,7 @@ def getEventsBySessionId(
 
     base_path = api_config.base_path
     path = f"/v1/events/{id}"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 
     query_params = {
@@ -240,11 +220,7 @@ def deleteEvent(
 
     base_path = api_config.base_path
     path = f"/v1/events/{id}"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 
     query_params = {
@@ -277,11 +253,7 @@ def exportEvents(
 
     base_path = api_config.base_path
     path = f"/v1/events/export"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 
     query_params = {
@@ -319,11 +291,7 @@ def createModelEvent(
 
     base_path = api_config.base_path
     path = f"/events/model"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 
     query_params = {
@@ -357,11 +325,7 @@ def createEventBatch(
 
     base_path = api_config.base_path
     path = f"/events/batch"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 
     query_params = {
@@ -397,11 +361,7 @@ def createModelEventBatch(
 
     base_path = api_config.base_path
     path = f"/events/model/batch"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 
     query_params = {

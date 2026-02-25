@@ -687,11 +687,7 @@ class EventsAPI(BaseAPI):
 
         # Make direct request to /events/export (bypasses generated model issues)
         base_path = self._api_config.base_path
-        headers = {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "Authorization": f"Bearer {self._api_config.get_access_token()}",
-        }
+        headers = self._api_config.get_default_headers()
 
         # Log outgoing request metadata
         logger.debug(
@@ -940,11 +936,7 @@ class EventsAPI(BaseAPI):
 
         # Make direct async request to /events/export
         base_path = self._api_config.base_path
-        headers = {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "Authorization": f"Bearer {self._api_config.get_access_token()}",
-        }
+        headers = self._api_config.get_default_headers()
 
         # Log outgoing request metadata
         logger.debug(

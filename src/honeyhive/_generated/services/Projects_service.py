@@ -13,11 +13,7 @@ def getProjects(
 
     base_path = api_config.base_path
     path = f"/v1/projects"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {"name": name}
 
     query_params = {
@@ -50,11 +46,7 @@ def createProject(
 
     base_path = api_config.base_path
     path = f"/v1/projects"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 
     query_params = {
@@ -88,11 +80,7 @@ def updateProject(
 
     base_path = api_config.base_path
     path = f"/v1/projects"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 
     query_params = {
@@ -126,11 +114,7 @@ def deleteProject(
 
     base_path = api_config.base_path
     path = f"/v1/projects"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {"name": name}
 
     query_params = {

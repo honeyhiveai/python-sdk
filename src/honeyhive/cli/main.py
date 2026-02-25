@@ -343,7 +343,12 @@ def request(
             sys.exit(1)
 
         # Parse headers and data
-        request_headers = {"Authorization": f"Bearer {api_key}"}
+        from honeyhive import __version__
+
+        request_headers = {
+            "Authorization": f"Bearer {api_key}",
+            "hh-sdk-version": __version__,
+        }
         if headers:
             try:
                 request_headers.update(json.loads(headers))
