@@ -187,9 +187,7 @@ class RetryConfig:
         raise RuntimeError(f"{operation} retry loop exited unexpectedly")
 
     @staticmethod
-    def _raise_non_retryable(
-        operation: str, response: httpx.Response
-    ) -> NoReturn:
+    def _raise_non_retryable(operation: str, response: httpx.Response) -> NoReturn:
         """Raise an APIError for a non-retryable HTTP error.
 
         Args:

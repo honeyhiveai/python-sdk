@@ -680,9 +680,7 @@ class EventsAPI(BaseAPI):
 
         # Execute with retry logic for transient errors (502, 503, 504, etc.)
         retry_config = RetryConfig.default()
-        with httpx.Client(
-            base_url=base_path, verify=self._api_config.verify
-        ) as client:
+        with httpx.Client(base_url=base_path, verify=self._api_config.verify) as client:
             response = retry_config.execute(
                 lambda: client.request(
                     "POST",
