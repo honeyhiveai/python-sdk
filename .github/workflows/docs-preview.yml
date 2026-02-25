@@ -132,22 +132,24 @@ jobs:
             const artifactUrl = `${context.serverUrl}/${context.repo.owner}/` +
               `${context.repo.repo}/actions/runs/${context.runId}`;
 
-            const body = `📚 Documentation preview built — [Download artifact](${artifactUrl})
-
-            <details>
-            <summary>Review instructions & validation status</summary>
-
-            **How to Review**
-            1. Download the artifact from the link above
-            2. Extract the files
-            3. Open \`index.html\` in your browser
-
-            **Validation Status**
-            - API validation: ✅ Passed
-            - Build process: ✅ Successful
-            - Import tests: ✅ All imports working
-
-            </details>`;
+            const body = [
+              `📚 Documentation preview built — [Download artifact](${artifactUrl})`,
+              '',
+              '<details>',
+              '<summary>Review instructions & validation status</summary>',
+              '',
+              '**How to Review**',
+              '1. Download the artifact from the link above',
+              '2. Extract the files',
+              '3. Open `index.html` in your browser',
+              '',
+              '**Validation Status**',
+              '- API validation: ✅ Passed',
+              '- Build process: ✅ Successful',
+              '- Import tests: ✅ All imports working',
+              '',
+              '</details>',
+            ].join('\n');
 
             github.rest.issues.createComment({
               issue_number: prNumber,
