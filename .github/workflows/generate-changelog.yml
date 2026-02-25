@@ -38,7 +38,7 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
-            Generate BOTH an external customer-facing changelog AND an internal changelog for the HoneyHive Python SDK.
+            Generate BOTH an external customer-facing changelog AND an internal changelog for the HoneyHive Python SDK, with **one entry per release tag**.
 
             ## Inputs
             - Release type preference: ${{ inputs.release_type }}
@@ -50,42 +50,50 @@ jobs:
             1. `CHANGELOG.md` - External, customer-facing changelog (concise, actionable, SDK-focused)
             2. `CHANGELOG-INTERNAL.md` - Internal changelog for developers and AI agents (comprehensive)
 
-            ### Step 1: Determine the version range to analyze
+            **CRITICAL**: Each release tag gets its OWN changelog entry. Do NOT combine multiple releases into one entry.
 
-            1. **Find the last changelog update:**
-               - Run: `git log -1 --format="%H" -- CHANGELOG.md`
-               - If no result, use the first commit: `git rev-list --max-parents=0 HEAD`
-               - Do NOT limit the commit range. Analyze all commits between the last changelog update and HEAD to ensure completeness
+            ### Step 1: Discover release tags and determine which need changelog entries
 
-            2. **Get all commits since then:**
-               - Run: `git log --oneline <starting_commit>..HEAD`
-               - Also run: `git log --name-only --format="COMMIT:%H %s" <starting_commit>..HEAD` to get all file paths at once (more efficient than per-commit git diff-tree)
+            1. **List all release tags** reachable from HEAD, sorted chronologically:
+               ```bash
+               git tag -l 'v*' --sort=creatordate | while read tag; do
+                 echo "$tag $(git rev-list -1 "$tag") $(git log -1 --format='%ci' "$tag")"
+               done
+               ```
+               Note: Tags may use various formats like `v1.0.0rc9`, `v1.0.0-rc3`, etc.
 
-            ### Step 2: Determine the new version
+            2. **Find which tags already have changelog entries:**
+               - Read CHANGELOG.md and extract all version headers (pattern: `## vX.Y.Z` or similar)
+               - Any tag NOT in the changelog needs an entry
 
-            1. **Find the current version** from pyproject.toml or `src/honeyhive/__init__.py`
-               - Also check CHANGELOG.md for the last version header
-               - Look for patterns like `## vX.Y.Z` or `## X.Y.Z`
+            3. **Build the list of releases to document**, from oldest to newest:
+               - For each undocumented tag, the commit range is: `<previous_tag>..<this_tag>`
+               - For the first undocumented tag with no predecessor, use: `$(git rev-list --max-parents=0 HEAD)..<this_tag>`
+               - If there are commits after the latest tag (HEAD is ahead), also create an entry for those as "Unreleased" — but ONLY if `release_version` input is provided; otherwise skip unreleased commits
 
-            2. **Parse conventional commits** for version bump:
-               - MAJOR: `BREAKING CHANGE:` in body, or `!` after type (e.g., `feat!:`)
-               - MINOR: `feat:` or `feat(scope):`
-               - PATCH: `fix:`, `perf:`
-               - If no bump-triggering commits are found (only `chore:`, `docs:`, `ci:`, `refactor:`, `style:`, `test:`), default to PATCH
+            4. **For each release range**, gather commits:
+               - Run: `git log --oneline <prev_tag>..<this_tag>`
+               - Run: `git log --name-only --format="COMMIT:%H %s" <prev_tag>..<this_tag>` to map files to commits
 
-            3. **Apply version rules:**
-               - If release_type is `auto`: Use highest bump level found
-               - If release_type is `major`/`minor`/`patch`: Use that override
-               - If override_version is provided, use that exactly
+            **Important**: Do not truncate commit ranges. Process ALL commits between tags.
 
-            ### Step 3: Generate the EXTERNAL changelog (CHANGELOG.md)
+            ### Step 2: Generate entries for EACH release tag
+
+            For **each** undocumented release tag (oldest first), generate both an external and internal entry using the formats below.
+
+            The version number comes directly from the tag name (e.g., tag `v1.0.0rc15` → version header `## v1.0.0rc15`).
+            The date comes from the tag's commit date.
+
+            Do NOT auto-calculate versions — use the actual tag names.
+
+            #### EXTERNAL changelog entry format (CHANGELOG.md)
 
             This changelog is for SDK users installing via `pip install honeyhive`. Must be concise and actionable.
 
             **Use this tiered structure (omit empty tiers):**
 
             ```markdown
-            ## vX.Y.Z (YYYY-MM-DD)
+            ## vX.Y.ZrcN (YYYY-MM-DD)
 
             ### Breaking Changes
             - Changes to public API signatures, class interfaces, or default values
@@ -118,14 +126,14 @@ jobs:
             - For breaking changes: state what changed, the old behavior, the new behavior, and migration path
             - If there are NO user-facing changes, still create the version entry but note "Internal improvements only"
 
-            ### Step 4: Generate the INTERNAL changelog (CHANGELOG-INTERNAL.md)
+            #### INTERNAL changelog entry format (CHANGELOG-INTERNAL.md)
 
             Comprehensive record for developers and AI agents working on the SDK.
 
             **Use this structure:**
 
             ```markdown
-            ## [Internal] vX.Y.Z (YYYY-MM-DD)
+            ## [Internal] vX.Y.ZrcN (YYYY-MM-DD)
 
             > Commits: `abc123..def456` (N commits)
 
@@ -179,41 +187,42 @@ jobs:
             ```
 
             **Rules for the internal changelog:**
-            - To determine which module a commit belongs to, use the batched output from Step 1:
-              - Parse `git log --name-only --format="COMMIT:%H %s" <start>..HEAD` to map files to commits in a single command
-              - Map file paths to modules (e.g., `src/honeyhive/tracer/` -> Core SDK / Tracer)
+            - To determine which module a commit belongs to:
+              - Parse `git log --name-only --format="COMMIT:%H %s" <prev_tag>..<this_tag>` to map files to commits
+              - Map file paths to modules (e.g., `src/honeyhive/tracer/` → Core SDK / Tracer)
             - A commit can appear under multiple modules if it touches multiple
-            - Include EVERY commit - nothing is excluded from the internal log
-            - For API changes, check `git diff <start>..HEAD -- "src/honeyhive/models/**" "src/honeyhive/api/**"` for generated code changes
-            - For dependency changes, check `git diff <start>..HEAD -- pyproject.toml`
+            - Include EVERY commit — nothing is excluded from the internal log
+            - For API changes, check `git diff <prev_tag>..<this_tag> -- "src/honeyhive/models/**" "src/honeyhive/api/**"` for generated code changes
+            - For dependency changes, check `git diff <prev_tag>..<this_tag> -- pyproject.toml`
 
-            ### Step 5: Update both files
+            ### Step 3: Update both files
 
-            1. Add the new entry at the TOP of each file (after the header)
-            2. Create the file with an appropriate header if it doesn't exist
-            3. For CHANGELOG.md header (if creating):
-               ```markdown
-               # Changelog
+            1. Add new entries at the TOP of each file (after the header), with the **most recent release first**
+            2. **Preserve** any existing entries already in the files — do not remove or rewrite them
+            3. Create the file with an appropriate header if it doesn't exist:
+               - CHANGELOG.md:
+                 ```markdown
+                 # Changelog
 
-               Customer-facing changelog for the HoneyHive Python SDK.
-               For internal details, see [CHANGELOG-INTERNAL.md](./CHANGELOG-INTERNAL.md).
-               ```
-            4. For CHANGELOG-INTERNAL.md header (if creating):
-               ```markdown
-               # Internal Changelog
+                 Customer-facing changelog for the HoneyHive Python SDK.
+                 For internal details, see [CHANGELOG-INTERNAL.md](./CHANGELOG-INTERNAL.md).
+                 ```
+               - CHANGELOG-INTERNAL.md:
+                 ```markdown
+                 # Internal Changelog
 
-               Comprehensive internal record of all SDK changes for developers and AI agents.
-               For customer-facing changes, see [CHANGELOG.md](./CHANGELOG.md).
-               ```
+                 Comprehensive internal record of all SDK changes for developers and AI agents.
+                 For customer-facing changes, see [CHANGELOG.md](./CHANGELOG.md).
+                 ```
 
-            ### Step 6: Provide summary
+            ### Step 4: Provide summary
 
             Output a summary of:
-            - Previous version -> New version
-            - Count of user-facing vs internal-only changes
+            - How many release tags were processed
+            - For each: tag name, commit count, and whether it has user-facing changes
             - Any breaking changes highlighted
           
-          claude_args: "--allowedTools Read Edit Write 'Bash(git log:*)' 'Bash(git show:*)' 'Bash(git diff:*)' 'Bash(git diff-tree:*)' 'Bash(git rev-parse:*)' 'Bash(git rev-list:*)' 'Bash(cat:*)' 'Bash(ls:*)' 'Bash(head:*)' 'Bash(tail:*)' 'Bash(date:*)' 'Bash(grep:*)'"
+          claude_args: "--allowedTools Read Edit Write 'Bash(git log:*)' 'Bash(git show:*)' 'Bash(git diff:*)' 'Bash(git diff-tree:*)' 'Bash(git rev-parse:*)' 'Bash(git rev-list:*)' 'Bash(git tag:*)' 'Bash(cat:*)' 'Bash(ls:*)' 'Bash(head:*)' 'Bash(tail:*)' 'Bash(date:*)' 'Bash(grep:*)' 'Bash(wc:*)' 'Bash(sort:*)'"
 
       - name: Check for changelog changes
         id: changes
