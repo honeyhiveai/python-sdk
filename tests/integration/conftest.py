@@ -237,8 +237,8 @@ def real_source(real_api_credentials: Dict[str, Any]) -> str:
 def integration_client(real_api_credentials: Dict[str, Any]) -> HoneyHive:
     """HoneyHive client for integration tests with real API credentials."""
     # DEBUG: Print environment variables to verify CI vs local configuration
-    api_url = os.getenv('HH_API_URL', 'NOT SET')
-    api_key = os.getenv('HH_API_KEY', 'NOT SET')
+    api_url = os.getenv("HH_API_URL", "NOT SET")
+    api_key = os.getenv("HH_API_KEY", "NOT SET")
     print(f"\n{'='*80}")
     print(f"🔍 INTEGRATION TEST ENVIRONMENT")
     print(f"{'='*80}")
