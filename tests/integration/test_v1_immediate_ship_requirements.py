@@ -101,19 +101,21 @@ class TestV1ImmediateShipRequirements:
 
         # TASK 4 & 5: Get all child events
         events_response = integration_client.events.get_events(
-            project=real_project,
-            filters=[
-                {
-                    "field": "session_id",
-                    "operator": "is",
-                    "value": session_id_str,
-                    "type": "id",
-                },
-            ],
-            limit=100,
+            query={
+                "project": real_project,
+                "filters": [
+                    {
+                        "field": "session_id",
+                        "operator": "is",
+                        "value": session_id_str,
+                        "type": "id",
+                    },
+                ],
+                "limit": 100,
+            }
         )
 
-        all_events = events_response.get("events", [])
+        all_events = getattr(events_response, "events", []) or []
         child_events = [
             e for e in all_events if getattr(e, "event_id", None) != session_id_str
         ]
