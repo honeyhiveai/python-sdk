@@ -236,6 +236,18 @@ def real_source(real_api_credentials: Dict[str, Any]) -> str:
 @pytest.fixture
 def integration_client(real_api_credentials: Dict[str, Any]) -> HoneyHive:
     """HoneyHive client for integration tests with real API credentials."""
+    # DEBUG: Print environment variables to verify CI vs local configuration
+    api_url = os.getenv('HH_API_URL', 'NOT SET')
+    api_key = os.getenv('HH_API_KEY', 'NOT SET')
+    print(f"\n{'='*80}")
+    print(f"🔍 INTEGRATION TEST ENVIRONMENT")
+    print(f"{'='*80}")
+    print(f"HH_API_URL env var: {api_url}")
+    print(f"HH_API_KEY env var: {api_key[:20] if len(api_key) > 20 else api_key}...")
+    print(f"server_url (from credentials): {real_api_credentials['server_url']}")
+    print(f"Project: {real_api_credentials.get('project', 'NOT SET')}")
+    print(f"{'='*80}\n")
+
     return HoneyHive(
         api_key=real_api_credentials["api_key"],
         base_url=real_api_credentials["server_url"],
