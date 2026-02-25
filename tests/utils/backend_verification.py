@@ -31,6 +31,86 @@ def _get_field(obj: Any, field: str, default: Any = None) -> Any:
     return getattr(obj, field, default)
 
 
+def _coerce_otlp_value(value: Any) -> Any:
+    """Coerce OTLP string values back to native Python types.
+
+    OTLP serializes all span attributes as strings. This helper converts them
+    back to their original types for test assertions that compare against
+    native Python values (int, float, bool).
+
+    Coercion rules (applied in order):
+    1. Non-string values are returned as-is
+    2. 'True'/'False' → bool
+    3. Valid integer strings → int
+    4. Valid float strings → float
+    5. Everything else stays as string
+    """
+    if not isinstance(value, str):
+        return value
+    # Bool coercion (before int, since 'True'/'False' are not valid ints)
+    if value == "True":
+        return True
+    if value == "False":
+        return False
+    # Int coercion
+    try:
+        return int(value)
+    except ValueError:
+        pass
+    # Float coercion
+    try:
+        return float(value)
+    except ValueError:
+        pass
+    return value
+
+
+class EventDict(dict):
+    """Dict subclass that supports attribute and coerced dict access for event fields.
+
+    WORKAROUND: The Events API returns untyped dicts instead of Pydantic models
+    due to incomplete OpenAPI specs. Additionally, OTLP serializes all span
+    attributes as strings. This wrapper:
+    1. Allows both dict access (event['field']) and attribute access (event.field)
+    2. Recursively wraps nested dicts (e.g., event.metadata → EventDict)
+    3. Auto-coerces OTLP string values in .get() calls (e.g., '42' → 42)
+
+    See: UNTYPED_ENDPOINTS.md for details on which endpoints are untyped.
+    """
+
+    def __getattr__(self, name: str) -> Any:
+        try:
+            value = self[name]
+        except KeyError:
+            raise AttributeError(
+                f"'EventDict' object has no attribute '{name}'"
+            ) from None
+        # Recursively wrap nested dicts for chained attribute access
+        if isinstance(value, dict) and not isinstance(value, EventDict):
+            return EventDict(value)
+        return value
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        self[name] = value
+
+    def get(self, key: str, default: Any = None) -> Any:
+        """Get with OTLP string-to-native type coercion and recursive dict wrapping."""
+        value = super().get(key, default)
+        if isinstance(value, dict) and not isinstance(value, EventDict):
+            return EventDict(value)
+        return _coerce_otlp_value(value)
+
+
+def _wrap_event(event: Any) -> Any:
+    """Wrap a dict event in EventDict for dual dict/attribute access.
+
+    If the event is already a model object (not a dict), returns it unchanged.
+    """
+    if isinstance(event, dict) and not isinstance(event, EventDict):
+        return EventDict(event)
+    return event
+
+
 class BackendVerificationError(Exception):
     """Raised when backend verification fails after all retries."""
 
@@ -140,7 +220,7 @@ def verify_backend_event(
                     f"✅ Backend verification successful for '{unique_identifier}' "
                     f"on attempt {attempt + 1}"
                 )
-                return verified_event
+                return _wrap_event(verified_event)
 
             # Event not found - wait and retry (backend processing delay)
             logger.debug(
