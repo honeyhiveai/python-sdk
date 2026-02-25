@@ -95,6 +95,8 @@ class EventDict(dict):
 
     def get(self, key: str, default: Any = None) -> Any:
         """Get with OTLP string-to-native type coercion and recursive dict wrapping."""
+        if key not in self:
+            return default
         value = super().get(key, default)
         if isinstance(value, dict) and not isinstance(value, EventDict):
             return EventDict(value)
