@@ -999,8 +999,10 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
             logger.info("DEBUG - datapoint_ids collected: %s", datapoint_ids)
 
     # Step 2: Create experiment run
-    # Use caller-supplied run_id or generate a new UUID as the client-side ID.
-    # The backend's returned run_id (if any) will override this after the API call.
+    # Generate a client-side UUID if no run_id was provided. The backend also
+    # generates a UUID when run_id is omitted, but we do it here so the
+    # default run name ("experiment-{short_id}") is derived from the same ID
+    # that will be sent in the request.
     run_id = run_id or str(uuid.uuid4())
     run_name = name or f"experiment-{run_id[:8]}"
 
