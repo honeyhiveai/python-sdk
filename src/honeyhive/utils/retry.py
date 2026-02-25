@@ -6,7 +6,7 @@ import asyncio
 import random
 import time
 from dataclasses import dataclass
-from typing import Callable, NoReturn, Optional
+from typing import Awaitable, Callable, NoReturn, Optional
 
 import httpx
 
@@ -263,7 +263,7 @@ class RetryConfig:
 
     async def execute_async(
         self,
-        request_fn: Callable[[], httpx.Response],
+        request_fn: Callable[[], Awaitable[httpx.Response]],
         operation: str = "request",
     ) -> httpx.Response:
         """Execute an async HTTP request with retries.
