@@ -302,18 +302,28 @@ class TestPrepareRunRequestData:
     def test_includes_required_fields(self) -> None:
         """Test that required fields are included in output."""
         result = prepare_run_request_data(
-            run_id="run-123",  # Not included in output (used for API endpoint)
+            run_id="run-123",
             name="test-run",
             project="test-project",
             dataset_id="ds-123",
         )
 
-        # run_id is NOT in output (it's used for the API endpoint path)
-        assert "run_id" not in result
-        # These fields ARE in output
+        assert result["run_id"] == "run-123"
         assert result["name"] == "test-run"
         assert result["project"] == "test-project"
         assert result["status"] == "pending"  # Default value
+
+    def test_run_id_included_when_provided(self) -> None:
+        """Test that a caller-supplied run_id is passed through in the request."""
+        custom_id = "my-custom-run-id"
+        result = prepare_run_request_data(
+            run_id=custom_id,
+            name="test-run",
+            project="test-project",
+            dataset_id="ds-123",
+        )
+
+        assert result["run_id"] == custom_id
 
     def test_non_ext_dataset_id_preserved(self) -> None:
         """Test that non-EXT dataset_id is preserved as-is."""

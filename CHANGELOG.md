@@ -19,6 +19,11 @@
   - Logs entry/exit with parameters, HTTP request metadata, and empty result diagnostics
   - No sensitive data (request bodies, headers, filters) is logged
 
+- **Experiments: Custom `run_id` support in `evaluate()`** (#253)
+  - `evaluate()` now accepts an optional `run_id` parameter to specify a custom run identifier
+  - The `run_id` is sent to the backend via `POST /v1/runs`; if omitted, the backend auto-generates one
+  - Enables customers to use their own short IDs and retrieve runs by custom identifiers
+
 ### Fixed
 
 - **API Client: List query params serialization with single item** (#251)
