@@ -225,6 +225,8 @@ jobs:
         if: steps.check_credentials.outputs.has_honeyhive_key == 'true'
         run: |
           echo "🔗 Running integration tests with REAL APIs (NO MOCKS)..."
+          echo "DEBUG: HH_PROJECT='$HH_PROJECT'"
+          echo "DEBUG: HH_API_URL='$HH_API_URL'"
           tox -e integration
         env:
           # HoneyHive credentials (required)
