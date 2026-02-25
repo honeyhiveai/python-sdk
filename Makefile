@@ -1,4 +1,4 @@
-.PHONY: help install install-dev test test-all test-unit test-integration check-integration lint format check check-format check-lint typecheck check-docs check-docs-compliance check-feature-sync check-tracer-patterns check-no-mocks docs docs-serve docs-clean generate generate-sdk compare-sdk clean clean-all build
+.PHONY: help install install-dev test test-all test-unit test-integration check-integration lint format check check-format check-lint typecheck check-docs check-docs-compliance check-feature-sync check-tracer-patterns check-no-mocks docs docs-serve docs-clean generate generate-sdk compare-sdk clean clean-all build publish
 
 # Use the venv python so make recipes get venv site-packages
 PYTHON := .venv/bin/python
@@ -169,3 +169,7 @@ clean:
 
 clean-all: clean
 	rm -rf .venv/ python-sdk/ .direnv/ .tox/
+
+publish: build
+	@echo "Publishing honeyhive to PyPI..."
+	$(PYTHON) -m twine upload dist/*

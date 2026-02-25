@@ -1,5 +1,7 @@
 ## [Unreleased]
 
+## [1.0.0rc17] - 2026-02-25
+
 ### Added
 
 - **Experiments: Git context stamped on experiment run metadata** (#205)
