@@ -132,25 +132,22 @@ jobs:
             const artifactUrl = `${context.serverUrl}/${context.repo.owner}/` +
               `${context.repo.repo}/actions/runs/${context.runId}`;
 
-            const body = `## 📚 Documentation Preview Built
+            const body = `📚 Documentation preview built — [Download artifact](${artifactUrl})
 
-            ✅ **Documentation preview is ready!**
+            <details>
+            <summary>Review instructions & validation status</summary>
 
-            ### 📦 Download Preview
-            [Download documentation artifact](${artifactUrl})
-
-            ### 🔍 How to Review
+            **How to Review**
             1. Download the artifact from the link above
             2. Extract the files
             3. Open \`index.html\` in your browser
 
-            ### ✅ Validation Status
+            **Validation Status**
             - API validation: ✅ Passed
             - Build process: ✅ Successful
             - Import tests: ✅ All imports working
 
-            ---
-            *Preview generated for PR #${prNumber}*`;
+            </details>`;
 
             github.rest.issues.createComment({
               issue_number: prNumber,
