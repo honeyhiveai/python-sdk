@@ -241,6 +241,8 @@ class RetryConfig:
                         delay = self.backoff_strategy.get_delay(attempt + 1)
                         time.sleep(delay)
                         continue
+                    # Last attempt exhausted — break to _raise_for_failure
+                    break
 
                 # Non-retryable error — raise immediately
                 self._raise_non_retryable(operation, response)
@@ -252,6 +254,8 @@ class RetryConfig:
                         delay = self.backoff_strategy.get_delay(attempt + 1)
                         time.sleep(delay)
                         continue
+                    # Last attempt exhausted — break to _raise_for_failure
+                    break
                 raise
 
         # All retries exhausted (loop finished without return/raise)
@@ -295,6 +299,8 @@ class RetryConfig:
                         delay = self.backoff_strategy.get_delay(attempt + 1)
                         await asyncio.sleep(delay)
                         continue
+                    # Last attempt exhausted — break to _raise_for_failure
+                    break
 
                 # Non-retryable error — raise immediately
                 self._raise_non_retryable(operation, response)
@@ -306,6 +312,8 @@ class RetryConfig:
                         delay = self.backoff_strategy.get_delay(attempt + 1)
                         await asyncio.sleep(delay)
                         continue
+                    # Last attempt exhausted — break to _raise_for_failure
+                    break
                 raise
 
         # All retries exhausted (loop finished without return/raise)
