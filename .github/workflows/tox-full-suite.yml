@@ -235,7 +235,7 @@ jobs:
           HH_PROJECT: ${{ secrets.HH_PROJECT_MULTITENENT }}
           HH_SOURCE: "github-actions-integration"
           HH_TEST_MODE: false
-          HH_API_URL: ${{ secrets.HH_API_URL_MULTITENENT || 'https://api.honeyhive.ai' }}
+          HH_API_URL: ${{ secrets.HH_API_URL_MULTITENENT }}
           # LLM Provider credentials (optional - tests will skip if not available)
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
