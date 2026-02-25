@@ -81,12 +81,14 @@ class APIConfig(BaseModel):
         return self.cp_base_path or self.base_path
 
     def get_default_headers(self) -> Dict[str, str]:
-        """Get default headers for API requests, including SDK version."""
+        """Get default headers for API requests, including SDK metadata."""
         return {
             "Content-Type": "application/json",
             "Accept": "application/json",
             "Authorization": f"Bearer {self.get_access_token() or ''}",
             "hh-sdk-version": _get_sdk_version(),
+            "hh-sdk-language": "python",
+            "hh-sdk-package": "honeyhive",
         }
 
 

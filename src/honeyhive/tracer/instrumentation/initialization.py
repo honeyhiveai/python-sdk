@@ -828,6 +828,8 @@ def _create_otlp_exporter(tracer_instance: Any) -> Optional[Any]:
                 "X-Project": tracer_instance.project_name,
                 "X-Source": tracer_instance.source_environment,
                 "hh-sdk-version": _get_sdk_version(),
+                "hh-sdk-language": "python",
+                "hh-sdk-package": "honeyhive",
             },
             timeout=30.0,  # 30 second timeout for exports
         )

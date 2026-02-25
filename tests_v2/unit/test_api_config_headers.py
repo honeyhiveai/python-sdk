@@ -1,8 +1,8 @@
 """Unit tests for APIConfig.get_default_headers() and _get_sdk_version().
 
 Verifies that:
-- The hh-sdk-version header is present in default headers
-- The header value matches the SDK __version__
+- The hh-sdk-version, hh-sdk-language, and hh-sdk-package headers are present
+- The header values are correct
 - get_default_headers() includes all expected keys
 - _get_sdk_version() returns a valid version string
 """
@@ -44,6 +44,18 @@ class TestGetDefaultHeaders:
         config = APIConfig()
         headers = config.get_default_headers()
         assert "None" not in headers["Authorization"]
+
+    def test_includes_sdk_language_header(self) -> None:
+        """get_default_headers() must include hh-sdk-language set to 'python'."""
+        config = APIConfig(access_token="test-token")
+        headers = config.get_default_headers()
+        assert headers["hh-sdk-language"] == "python"
+
+    def test_includes_sdk_package_header(self) -> None:
+        """get_default_headers() must include hh-sdk-package set to 'honeyhive'."""
+        config = APIConfig(access_token="test-token")
+        headers = config.get_default_headers()
+        assert headers["hh-sdk-package"] == "honeyhive"
 
 
 class TestGetSdkVersion:
