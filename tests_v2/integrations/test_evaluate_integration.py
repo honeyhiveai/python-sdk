@@ -107,6 +107,41 @@ class TestEvaluateIntegration:
         assert result.run_id is not None
         assert result.status in ["completed", "pending", "running"]
 
+    def test_evaluate_with_custom_run_id(self):
+        """Test evaluate() with a caller-supplied run_id.
+
+        Verifies the backend honors a client-provided UUID as the run
+        identifier instead of generating its own.
+        """
+        import uuid
+        from honeyhive import evaluate, evaluator
+
+        custom_run_id = str(uuid.uuid4())
+
+        def echo_function(inputs: Dict[str, Any]) -> Dict[str, Any]:
+            return {"result": inputs.get("text", "")}
+
+        @evaluator()
+        def always_pass(outputs: Dict, inputs: Dict, ground_truths: Dict) -> bool:
+            return True
+
+        dataset = [
+            {"inputs": {"text": "hello"}, "ground_truths": {}},
+        ]
+
+        result = evaluate(
+            function=echo_function,
+            project=os.getenv("HH_PROJECT", "evaluate-integration-test"),
+            name="test_evaluate_with_custom_run_id",
+            run_id=custom_run_id,
+            dataset=dataset,
+            evaluators=[always_pass],
+        )
+
+        assert result is not None
+        # The backend should honor our custom run_id
+        assert result.run_id == custom_run_id
+
     def test_evaluate_multiple_evaluators(self):
         """Test evaluate() with multiple evaluators."""
         from honeyhive import evaluate, evaluator
