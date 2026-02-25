@@ -2,6 +2,12 @@
 
 ### Added
 
+- **API Client: `hh-sdk-version` header on all HTTP requests** (#268)
+  - Every request now includes an `hh-sdk-version` header set to the SDK version string
+  - Covers generated service calls, `export`/`export_async`, OTLP exporter, and CLI requests
+  - Centralised via `APIConfig.get_default_headers()` and updated code-generation templates so the header survives regeneration
+  - Graceful degradation: falls back to `"unknown"` if version import fails
+
 - **Experiments: Git context stamped on experiment run metadata** (#205)
   - `evaluate()` now automatically collects git metadata (commit hash, branch, author, remote URL, dirty status) and attaches it to the run's `metadata.git` field
   - Gracefully degrades to empty dict when git is unavailable or caller is not in a repo

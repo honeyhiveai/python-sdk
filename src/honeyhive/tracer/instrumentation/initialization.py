@@ -49,9 +49,12 @@ if TYPE_CHECKING:
 
 def _get_sdk_version() -> str:
     """Get the SDK version string for use in headers."""
-    from honeyhive import __version__
+    try:
+        from honeyhive import __version__
 
-    return __version__
+        return __version__
+    except Exception:
+        return "unknown"
 
 
 # Dynamic logger - will be created per tracer instance

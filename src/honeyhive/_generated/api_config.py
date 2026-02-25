@@ -62,14 +62,22 @@ class APIConfig(BaseModel):
 
     def get_default_headers(self) -> Dict[str, str]:
         """Get default headers for API requests, including SDK version."""
-        from honeyhive import __version__
-
         return {
             "Content-Type": "application/json",
             "Accept": "application/json",
-            "Authorization": f"Bearer {self.get_access_token()}",
-            "hh-sdk-version": __version__,
+            "Authorization": f"Bearer {self.get_access_token() or ''}",
+            "hh-sdk-version": _get_sdk_version(),
         }
+
+
+def _get_sdk_version() -> str:
+    """Get the SDK version for use in request headers."""
+    try:
+        from honeyhive import __version__
+
+        return __version__
+    except Exception:
+        return "unknown"
 
 
 class HTTPException(Exception):

@@ -343,11 +343,16 @@ def request(
             sys.exit(1)
 
         # Parse headers and data
-        from honeyhive import __version__
+        try:
+            from honeyhive import __version__
+
+            sdk_version = __version__
+        except Exception:
+            sdk_version = "unknown"
 
         request_headers = {
             "Authorization": f"Bearer {api_key}",
-            "hh-sdk-version": __version__,
+            "hh-sdk-version": sdk_version,
         }
         if headers:
             try:
