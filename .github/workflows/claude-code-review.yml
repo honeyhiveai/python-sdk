@@ -1,6 +1,7 @@
 # Triggered by:
-#   1. Commenting "@claude review" on a PR — runs code review
+#   1. Commenting "@claude review" on a PR — runs code review (no risk assessment)
 #   2. Automatically when a PR is opened (excludes dependabot PRs) — runs code review
+#   3. Commenting "@claude approve" on a PR — runs risk assessment and approves/rejects the PR
 name: Claude Code Review
 
 on:
@@ -127,5 +128,118 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: claude-review-output
+          path: /home/runner/work/_temp/claude-execution-output.json
+          if-no-files-found: warn
+
+  request-approval:
+    if: >
+      github.event_name == 'issue_comment' &&
+      github.event.issue.pull_request &&
+      contains(github.event.comment.body, '@claude approve')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read  # clone repo
+      actions: read   # read CI output
+      issues: write   # write comments on PRs
+      pull-requests: write # read PR head ref + post reviews
+      id-token: write # get OIDC token
+    steps:
+      - name: Resolve PR info
+        id: pr-info
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const prNumber = context.issue.number;
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber
+            });
+            core.setOutput('pr_number', prNumber);
+            core.setOutput('head_ref', pr.data.head.ref);
+
+      - name: Check if workflow file is modified
+        id: check-workflow
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const files = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: Number(${{ steps.pr-info.outputs.pr_number }})
+            });
+            const workflowModified = files.data.some(
+              f => f.filename === '.github/workflows/claude-code-review.yml'
+            );
+            core.setOutput('skip', workflowModified ? 'true' : 'false');
+            if (workflowModified) {
+              core.info('Skipping Claude approve — workflow file itself is modified in this PR');
+            }
+
+      - name: Checkout repository
+        if: steps.check-workflow.outputs.skip != 'true'
+        uses: actions/checkout@v6
+        with:
+          ref: federated-sdk-release-candidate
+          fetch-depth: 1
+
+      - name: Run Claude Approve
+        if: steps.check-workflow.outputs.skip != 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          trigger_phrase: "@claude approve"
+          track_progress: true
+          allowed_bots: "devin-ai-integration"
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ steps.pr-info.outputs.pr_number }}
+
+            You are performing the final review before approving this PR.
+            Do a final check of the PR changes.
+
+            Your approval is advisory — a human reviewer can always merge regardless. Be direct and honest in your assessment.
+
+            NOTE: the default branch of this repository is `federated-sdk-release-candidate`.
+
+            ## Steps
+
+            1. Review the full diff one more time.
+            2. Check CI status using `gh pr checks`. If any required checks are failing, do NOT approve. Post a comment listing the failing checks and stop.
+            3a. For every unresolved comment, if the feedback has been addressed correctly, resolve the comment.
+            3b. If it has not been addressed, or addressed incorrectly, reply to the comment saying that it has not been addressed.
+            4a. Perform the risk assessment (see below).
+            4b. Post your risk assessment as a top-level PR comment using `gh pr comment`.
+            5a. If the risk is Low, post a top-level PR comment using `gh pr comment` that starts with **APPROVED** followed by the reason.
+            5b. If the risk is not Low, post a top-level PR comment using `gh pr comment` that starts with **NOT APPROVED** followed by the reason.
+
+            ## Risk assessment
+
+            Evaluate two axes separately. The overall rating is the higher of the two.
+
+            **Regression Risk**
+            Will this break something that currently works?
+            Factors: test coverage of changed code paths, blast radius (shared vs leaf code), sensitive areas (auth, infra, config, CI/CD), reversibility.
+
+            **Design Quality Risk**
+            Is the new code well-structured and complete?
+            Factors: all review comments resolved, appropriate abstractions, edge cases handled, no obvious gaps in logic.
+
+            **Combined Rating**
+
+            - 🟢 **Low** — New behavior is tested, no unresolved comments, and shared/sensitive code paths are covered. Design feedback has been addressed and the implementation is sound.
+            - 🟡 **Medium** — Test coverage exists but has gaps in non-critical paths, OR minor design feedback remains unresolved. No sensitive areas affected.
+            - 🟠 **High** — Sensitive areas or shared code touched with incomplete test coverage, OR substantive design concerns (wrong abstraction, unhandled edge cases) remain unresolved.
+            - 🔴 **Critical** — Missing tests on new behavior in sensitive or high-blast-radius code, OR fundamental design issues (architectural mismatch, broken contracts). Multiple unresolved concerns.
+
+            Only 🟢 Low is approved. All other ratings require changes.
+          claude_args: |
+            --model claude-opus-4-6 --allowedTools "Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr checks:*),WebFetch,WebSearch"
+
+      - name: Upload approve execution output
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: claude-approve-output
           path: /home/runner/work/_temp/claude-execution-output.json
           if-no-files-found: warn
