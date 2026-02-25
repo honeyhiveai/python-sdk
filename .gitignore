@@ -198,3 +198,5 @@ var/
 venv.bak/
 venv/
 wheels/
+.env.integration
+.env
