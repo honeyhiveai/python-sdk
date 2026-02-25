@@ -3,7 +3,7 @@
 ### Added
 
 - **API Client: `hh-sdk-version` header on all HTTP requests** (#268)
-  - All HTTP requests now include an `hh-sdk-version` header set to the current SDK version
+  - All HTTP requests now include an `hh-sdk-version` header to indicate the current SDK version
 
 - **Experiments: Git context stamped on experiment run metadata** (#205)
   - `evaluate()` now automatically collects git metadata (commit hash, branch, author, remote URL, dirty status) and attaches it to the run's `metadata.git` field
