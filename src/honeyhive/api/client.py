@@ -16,6 +16,7 @@ Usage::
     configs = await client.configurations.list_async(project="my-project")
 """
 
+import logging
 import warnings
 from typing import Any, Dict, List, Optional, Union
 
@@ -101,6 +102,8 @@ from honeyhive.models import EventExportRequest, EventExportResponse, EventFilte
 from honeyhive.utils.retry import RetryConfig
 
 from ._base import BaseAPI
+
+logger = logging.getLogger(__name__)
 
 
 class ConfigurationsAPI(BaseAPI):
@@ -536,6 +539,11 @@ class EventsAPI(BaseAPI):
             for event in response.events:
                 print(event["event_name"])
         """
+        logger.debug(
+            "get_by_session_id called: session_id=%s limit=%d",
+            session_id,
+            limit,
+        )
         if project is not None:
             warnings.warn(
                 "The 'project' parameter is deprecated and will be removed in v2.0. "
@@ -544,7 +552,7 @@ class EventsAPI(BaseAPI):
                 stacklevel=2,
             )
 
-        return self.export(
+        result = self.export(
             project=project,
             filters=[
                 EventFilter(
@@ -557,6 +565,13 @@ class EventsAPI(BaseAPI):
             limit=limit,
             _sort_by_time=True,  # Enable time-based sorting
         )
+        logger.debug(
+            "get_by_session_id result: session_id=%s events=%d total=%d",
+            session_id,
+            len(result.events),
+            result.total_events,
+        )
+        return result
 
     def create(self, request: PostEventRequest) -> PostEventResponse:
         """Create an event."""
@@ -678,6 +693,14 @@ class EventsAPI(BaseAPI):
             "Authorization": f"Bearer {self._api_config.get_access_token()}",
         }
 
+        # Log outgoing request metadata
+        logger.debug(
+            "export request: POST %s/v1/events/export limit=%d page=%d",
+            base_path,
+            limit,
+            page,
+        )
+
         # Execute with retry logic for transient errors (502, 503, 504, etc.)
         retry_config = RetryConfig.default()
         with httpx.Client(base_url=base_path, verify=self._api_config.verify) as client:
@@ -693,6 +716,19 @@ class EventsAPI(BaseAPI):
 
         data = response.json()
         events = data.get("events", [])
+        total_events = data.get("totalEvents", data.get("count", 0))
+
+        logger.debug(
+            "export result: %d events, total_events=%d",
+            len(events),
+            total_events,
+        )
+        if not events:
+            logger.debug(
+                "export returned empty events list; limit=%d page=%d",
+                limit,
+                page,
+            )
 
         # Sort events by start_time if requested (fixes jumbled order issue)
         if _sort_by_time and events:
@@ -700,7 +736,7 @@ class EventsAPI(BaseAPI):
 
         return EventExportResponse(
             events=events,
-            total_events=data.get("totalEvents", data.get("count", 0)),
+            total_events=total_events,
         )
 
     def _sort_events_by_time(
@@ -789,6 +825,11 @@ class EventsAPI(BaseAPI):
         Returns:
             EventExportResponse with events for the session, sorted by start_time.
         """
+        logger.debug(
+            "get_by_session_id_async called: session_id=%s limit=%d",
+            session_id,
+            limit,
+        )
         if project is not None:
             warnings.warn(
                 "The 'project' parameter is deprecated and will be removed in v2.0. "
@@ -797,7 +838,7 @@ class EventsAPI(BaseAPI):
                 stacklevel=2,
             )
 
-        return await self.export_async(
+        result = await self.export_async(
             project=project,
             filters=[
                 EventFilter(
@@ -810,6 +851,13 @@ class EventsAPI(BaseAPI):
             limit=limit,
             _sort_by_time=True,  # Enable time-based sorting
         )
+        logger.debug(
+            "get_by_session_id_async result: session_id=%s events=%d total=%d",
+            session_id,
+            len(result.events),
+            result.total_events,
+        )
+        return result
 
     async def create_async(self, request: PostEventRequest) -> PostEventResponse:
         """Create an event asynchronously."""
@@ -898,6 +946,14 @@ class EventsAPI(BaseAPI):
             "Authorization": f"Bearer {self._api_config.get_access_token()}",
         }
 
+        # Log outgoing request metadata
+        logger.debug(
+            "export_async request: POST %s/v1/events/export limit=%d page=%d",
+            base_path,
+            limit,
+            page,
+        )
+
         # Execute with retry logic for transient errors (502, 503, 504, etc.)
         retry_config = RetryConfig.default()
         async with httpx.AsyncClient(
@@ -915,6 +971,19 @@ class EventsAPI(BaseAPI):
 
         data = response.json()
         events = data.get("events", [])
+        total_events = data.get("totalEvents", data.get("count", 0))
+
+        logger.debug(
+            "export_async result: %d events, total_events=%d",
+            len(events),
+            total_events,
+        )
+        if not events:
+            logger.debug(
+                "export_async returned empty events list; limit=%d page=%d",
+                limit,
+                page,
+            )
 
         # Sort events by start_time if requested (fixes jumbled order issue)
         if _sort_by_time and events:
@@ -922,7 +991,7 @@ class EventsAPI(BaseAPI):
 
         return EventExportResponse(
             events=events,
-            total_events=data.get("totalEvents", data.get("count", 0)),
+            total_events=total_events,
         )
 
     # Backwards compatible aliases
