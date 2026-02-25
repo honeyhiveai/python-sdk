@@ -232,10 +232,10 @@ jobs:
           # HoneyHive credentials (required)
           # Use multitenent key for old backend (this branch), fall back to standard key
           HH_API_KEY: ${{ secrets.HH_API_KEY_MULTITENENT }}
-          HH_PROJECT: ${{ secrets.HH_PROJECT_MULTITENENT }}
+          HH_PROJECT: ${{ vars.HH_PROJECT_MULTITENENT }}
           HH_SOURCE: "github-actions-integration"
           HH_TEST_MODE: false
-          HH_API_URL: ${{ secrets.HH_API_URL_MULTITENENT }}
+          HH_API_URL: ${{ vars.HH_API_URL_MULTITENENT }}
           # LLM Provider credentials (optional - tests will skip if not available)
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
