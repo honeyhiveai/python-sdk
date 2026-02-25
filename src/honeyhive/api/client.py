@@ -16,7 +16,6 @@ Usage::
     configs = await client.configurations.list_async(project="my-project")
 """
 
-import time
 import warnings
 from typing import Any, Dict, List, Optional, Union
 
@@ -679,59 +678,20 @@ class EventsAPI(BaseAPI):
             "Authorization": f"Bearer {self._api_config.get_access_token()}",
         }
 
-        # Use retry logic for transient errors (502, 503, 504, etc.)
+        # Execute with retry logic for transient errors (502, 503, 504, etc.)
         retry_config = RetryConfig.default()
-        last_exception: Optional[Exception] = None
-        last_response: Optional[httpx.Response] = None
-
-        for attempt in range(retry_config.max_retries + 1):
-            try:
-                with httpx.Client(
-                    base_url=base_path, verify=self._api_config.verify
-                ) as client:
-                    response = client.request(
-                        "POST",
-                        "/v1/events/export",
-                        headers=headers,
-                        json=request_body,
-                    )
-
-                if response.status_code == 200:
-                    break  # Success, exit retry loop
-
-                # Check if we should retry this status code
-                if retry_config.should_retry(response):
-                    last_response = response
-                    if attempt < retry_config.max_retries:
-                        delay = retry_config.backoff_strategy.get_delay(attempt + 1)
-                        time.sleep(delay)
-                        continue
-
-                # Non-retryable error, raise immediately
-                raise Exception(
-                    f"export() failed with status code: {response.status_code}, "
-                    f"response: {response.text}"
-                )
-
-            except httpx.HTTPError as e:
-                if retry_config.should_retry_exception(e):
-                    last_exception = e
-                    if attempt < retry_config.max_retries:
-                        delay = retry_config.backoff_strategy.get_delay(attempt + 1)
-                        time.sleep(delay)
-                        continue
-                raise
-
-        else:
-            # All retries exhausted
-            if last_response is not None:
-                raise Exception(
-                    f"export() failed after {retry_config.max_retries + 1} attempts "
-                    f"with status code: {last_response.status_code}, "
-                    f"response: {last_response.text}"
-                )
-            if last_exception is not None:
-                raise last_exception
+        with httpx.Client(
+            base_url=base_path, verify=self._api_config.verify
+        ) as client:
+            response = retry_config.execute(
+                lambda: client.request(
+                    "POST",
+                    "/v1/events/export",
+                    headers=headers,
+                    json=request_body,
+                ),
+                operation="export()",
+            )
 
         data = response.json()
         events = data.get("events", [])
@@ -940,20 +900,19 @@ class EventsAPI(BaseAPI):
             "Authorization": f"Bearer {self._api_config.get_access_token()}",
         }
 
+        # Execute with retry logic for transient errors (502, 503, 504, etc.)
+        retry_config = RetryConfig.default()
         async with httpx.AsyncClient(
             base_url=base_path, verify=self._api_config.verify
         ) as client:
-            response = await client.request(
-                "POST",
-                "/v1/events/export",
-                headers=headers,
-                json=request_body,
-            )
-
-        if response.status_code != 200:
-            raise Exception(
-                f"export_async() failed with status code: {response.status_code}, "
-                f"response: {response.text}"
+            response = await retry_config.execute_async(
+                lambda: client.request(
+                    "POST",
+                    "/v1/events/export",
+                    headers=headers,
+                    json=request_body,
+                ),
+                operation="export_async()",
             )
 
         data = response.json()
