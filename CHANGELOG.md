@@ -10,11 +10,11 @@
   - Added examples covering common agent patterns for each framework
   - Rewrote LangGraph example with canonical tool-calling loop and routing workflow
 
-### Fixed
-
 - **API Client: Async export now retries on transient errors** (#264)
   - `export_async()` now retries on transient HTTP errors (502, 503, 504, etc.), matching `export()` behavior
   - Export errors now raise `APIError` with status code and response body instead of generic `Exception`
+
+### Fixed
 
 - **API Client: List query params serialization with single item** (#251)
   - Fixed 400 errors when passing a single-element list to API query params (e.g. `ids=["abc"]`)
