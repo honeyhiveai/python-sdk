@@ -77,7 +77,21 @@ class TestModelPatterns:
         """Test that model patterns include popular model name patterns."""
         patterns = get_model_patterns()
 
-        expected_models = ["gpt-", "gpt4", "gpt_", "claude-", "claude_", "llama-", "llama_", "gemini-", "gemini_", "mistral-", "mistral_", "palm-", "palm_"]
+        expected_models = [
+            "gpt-",
+            "gpt4",
+            "gpt_",
+            "claude-",
+            "claude_",
+            "llama-",
+            "llama_",
+            "gemini-",
+            "gemini_",
+            "mistral-",
+            "mistral_",
+            "palm-",
+            "palm_",
+        ]
 
         for model in expected_models:
             assert model in patterns
