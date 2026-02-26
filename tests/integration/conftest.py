@@ -91,12 +91,7 @@ def pytest_collection_modifyitems(config: Any, items: Any) -> None:
     # progressively restore them.
     skip_known_failures = os.getenv("HH_INTEGRATION_SKIP_KNOWN_FAILURES", "").lower()
     if skip_known_failures in {"1", "true", "yes", "on"}:
-        default_skiplist = (
-            Path(__file__).resolve().parents[2]
-            / "tests"
-            / "integration"
-            / "ci_known_failures.txt"
-        )
+        default_skiplist = Path(__file__).resolve().parent / "ci_known_failures.txt"
         skiplist_path = Path(
             os.getenv("HH_INTEGRATION_KNOWN_FAILURES_FILE", str(default_skiplist))
         )
