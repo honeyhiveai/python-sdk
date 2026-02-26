@@ -10,14 +10,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from honeyhive._generated.models.Pagination import Pagination
 from honeyhive.api.client import (
     QUERY_BATCH_SIZE,
     DatapointsAPI,
     ExperimentsAPI,
     _chunk_list,
 )
-from honeyhive._generated.models.Pagination import Pagination
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -142,9 +141,7 @@ class TestDatapointsListBatching:
         assert result is expected
 
     @patch("honeyhive.api.client.datapoints_svc")
-    def test_dataset_name_forwarded_to_each_batch(
-        self, mock_svc: MagicMock
-    ) -> None:
+    def test_dataset_name_forwarded_to_each_batch(self, mock_svc: MagicMock) -> None:
         """dataset_name should be forwarded to every batch request."""
         total = QUERY_BATCH_SIZE + 10
         all_ids = [f"id_{i}" for i in range(total)]

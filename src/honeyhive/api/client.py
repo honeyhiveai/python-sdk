@@ -54,8 +54,8 @@ from honeyhive._generated.models import (
     GetExperimentRunsResponse,
     GetExperimentRunsSchemaResponse,
     GetMetricsResponse,
-    Pagination,
     GetSessionResponse,
+    Pagination,
     PostEventRequest,
     PostEventResponse,
     PostExperimentRunRequest,
@@ -114,6 +114,7 @@ QUERY_BATCH_SIZE = 100
 
 
 T = TypeVar("T")
+
 
 def _chunk_list(items: List[T], size: int) -> List[List[T]]:
     """Split a list into chunks of the given size."""
@@ -1404,9 +1405,7 @@ class ExperimentsAPI(BaseAPI):
         batches = _chunk_list(run_ids, QUERY_BATCH_SIZE)
         resps = await asyncio.gather(
             *(
-                experiments_svc_async.getRuns(
-                    self._api_config, run_ids=batch, **kwargs
-                )
+                experiments_svc_async.getRuns(self._api_config, run_ids=batch, **kwargs)
                 for batch in batches
             )
         )
