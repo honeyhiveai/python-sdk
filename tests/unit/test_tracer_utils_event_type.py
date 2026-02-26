@@ -655,6 +655,7 @@ class TestEventTypeDetectionEdgeCases:
         """Test detection of compound AI/ML patterns in span names."""
         compound_patterns = [
             "ai_model_inference",
+            "ml_prediction_service",
             "nlp_text_processing",
         ]
 

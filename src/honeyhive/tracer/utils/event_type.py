@@ -417,8 +417,7 @@ def _detect_from_span_name_dynamically(
     # Exclusion patterns: span names that contain LLM-like substrings but
     # are NOT model calls (e.g., agent runtime, orchestration, validators)
     non_model_prefixes = [
-        "agent_runtime",
-        "agent_runtime ",
+        "agent_runtime",  # Semantic Kernel InProcessRuntime spans
     ]
     for prefix in non_model_prefixes:
         if span_name_lower.startswith(prefix):
