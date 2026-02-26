@@ -27,9 +27,11 @@ Environment:
 """
 
 import os
+from pathlib import Path
 
 from strands import Agent, tool
 from strands.models.openai import OpenAIModel
+from strands.multiagent import Swarm
 
 from honeyhive import HoneyHiveTracer
 
@@ -73,7 +75,8 @@ def lookup_policy(topic: str) -> dict:
             "Delayed orders can request assisted cancellation."
         ),
         "shipping": (
-            "Standard shipping 3-5 business days. " "Delays trigger proactive outreach."
+            "Standard shipping 3-5 business days. "
+            "Delays trigger proactive outreach."
         ),
     }
     key = topic.lower().strip()
@@ -90,6 +93,7 @@ def lookup_policy(topic: str) -> dict:
 
 def run_single_agent_scenario() -> None:
     """Single support agent handles two turns, demonstrating session continuity."""
+    print("\n--- Scenario 1: Single agent with tools + session continuity ---")
     agent = Agent(
         name="support_generalist",
         model=_get_model(),
@@ -102,16 +106,18 @@ def run_single_agent_scenario() -> None:
     )
 
     # Turn 1 -- order status inquiry
-    agent(
+    result1 = agent(
         "Hi, my name is Alex Kim. Can you check the status of order ORD-1002 "
         "and tell me when it will arrive?"
     )
+    print(f"Turn 1: {result1}")
 
     # Turn 2 -- follow-up about delayed order (same conversation history)
-    agent(
+    result2 = agent(
         "Thanks. I also placed order ORD-1003 and it seems delayed. "
         "What is your cancellation policy for delayed orders?"
     )
+    print(f"Turn 2: {result2}")
 
 
 # ---------------------------------------------------------------------------
@@ -151,6 +157,7 @@ def ask_policy_specialist(question: str) -> str:
 
 def run_delegation_scenario() -> None:
     """Coordinator delegates to specialist sub-agents wrapped as tools."""
+    print("\n--- Scenario 2: Multi-agent delegation (agents-as-tools) ---")
     coordinator = Agent(
         name="support_coordinator",
         model=_get_model(),
@@ -163,10 +170,11 @@ def run_delegation_scenario() -> None:
         ),
     )
 
-    coordinator(
+    result = coordinator(
         "Order ORD-1003 is delayed. What is the current status, "
         "and can I cancel and get a refund?"
     )
+    print(f"Coordinator: {result}")
 
 
 # ---------------------------------------------------------------------------
@@ -176,8 +184,7 @@ def run_delegation_scenario() -> None:
 
 def run_swarm_scenario() -> None:
     """Swarm of agents collaborate to resolve a complex support request."""
-    from strands.multiagent import Swarm
-
+    print("\n--- Scenario 3: Swarm multi-agent collaboration ---")
     researcher = Agent(
         name="researcher",
         model=_get_model(),
@@ -217,11 +224,12 @@ def run_swarm_scenario() -> None:
         node_timeout=60.0,
     )
 
-    swarm(
+    result = swarm(
         "Customer Jordan Lee has order ORD-1001 which was supposed to arrive "
         "today but tracking has not updated. They want to know the status "
         "and whether a refund is possible."
     )
+    print(f"Swarm result: {result}")
 
 
 # ---------------------------------------------------------------------------
@@ -233,7 +241,7 @@ def main() -> None:
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY"),
         project=os.getenv("HH_PROJECT"),
-        session_name="strands_agents_integration_example",
+        session_name=Path(__file__).stem,
         source=os.getenv("HH_SOURCE", "python_sdk_example"),
     )
 
