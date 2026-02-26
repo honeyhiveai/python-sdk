@@ -25,6 +25,7 @@ Environment:
 """
 
 import asyncio
+import json
 import os
 
 from agents import Agent, Runner, SQLiteSession, function_tool
@@ -47,8 +48,8 @@ def lookup_order_status(order_id: str) -> str:
     }
     status = statuses.get(order_id.upper())
     if status:
-        return str({"status": "success", "order_id": order_id.upper(), **status})
-    return str({"status": "not_found", "order_id": order_id.upper()})
+        return json.dumps({"status": "success", "order_id": order_id.upper(), **status})
+    return json.dumps({"status": "not_found", "order_id": order_id.upper()})
 
 
 @function_tool
@@ -62,8 +63,8 @@ def lookup_policy(topic: str) -> str:
     key = topic.lower().strip()
     summary = policies.get(key)
     if summary:
-        return str({"status": "success", "topic": key, "summary": summary})
-    return str({"status": "not_found", "topic": key})
+        return json.dumps({"status": "success", "topic": key, "summary": summary})
+    return json.dumps({"status": "not_found", "topic": key})
 
 
 # -- Scenarios --
@@ -86,11 +87,11 @@ async def run_single_agent_tool_scenario() -> None:
         "Check order ORD-1002 and summarize current shipping status for the customer.",
     )
 
-    await Runner.run(
-        agent,
-        "For delayed order ORD-1003, explain the cancellation policy and next steps.",
-        input=result.to_input_list(),
-    )
+    # Build on previous conversation by appending a new user message
+    follow_up_input = result.to_input_list() + [
+        {"role": "user", "content": "For delayed order ORD-1003, explain the cancellation policy and next steps."}
+    ]
+    await Runner.run(agent, follow_up_input)
 
 
 async def run_handoff_scenario() -> None:
