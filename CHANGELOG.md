@@ -1,6 +1,17 @@
 ## [Unreleased]
 
+### Fixed
+
+- **API Client: Large query string arrays no longer fail with 414/431 errors**
+  - Methods that pass arrays in query strings (`datapoints.list(datapoint_ids=...)`, `experiments.list_runs(run_ids=...)`) now automatically batch requests when the list exceeds 100 items and merge the results transparently
+  - No changes to the public API — existing code works as before, just without silent truncation or HTTP errors on large lists
+
+## [1.0.0rc17] - 2026-02-25
+
 ### Added
+
+- **API Client: SDK identification headers on all HTTP requests** (#268)
+  - All HTTP requests now include `hh-sdk-version`, `hh-sdk-language`, and `hh-sdk-package` headers
 
 - **Experiments: Git context stamped on experiment run metadata** (#205)
   - `evaluate()` now automatically collects git metadata (commit hash, branch, author, remote URL, dirty status) and attaches it to the run's `metadata.git` field
@@ -9,6 +20,20 @@
 - **Docs: New integration examples for CrewAI, LangChain, Strands Agents, ADK, and PydanticAI** (#211, #224)
   - Added examples covering common agent patterns for each framework
   - Rewrote LangGraph example with canonical tool-calling loop and routing workflow
+
+- **API Client: Async export now retries on transient errors** (#264)
+  - `export_async()` now retries on transient HTTP errors (502, 503, 504, etc.), matching `export()` behavior
+  - Export errors now raise `APIError` with status code and response body instead of generic `Exception`
+
+- **API Client: Debug logging for `get_by_session_id` flow** (#261)
+  - Added `DEBUG`-level logging to `get_by_session_id`, `get_by_session_id_async`, `export`, and `export_async`
+  - Logs entry/exit with parameters, HTTP request metadata, and empty result diagnostics
+  - No sensitive data (request bodies, headers, filters) is logged
+
+- **Experiments: Custom `run_id` support in `evaluate()`** (#253)
+  - `evaluate()` now accepts an optional `run_id` parameter to specify a custom run identifier
+  - The `run_id` is sent to the backend via `POST /v1/runs`; if omitted, the backend auto-generates one
+  - Enables customers to use their own short IDs and retrieve runs by custom identifiers
 
 ### Fixed
 

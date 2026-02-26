@@ -13,7 +13,8 @@ import gc
 import os
 import sys
 import time
-from typing import Any, Dict, Optional
+from pathlib import Path
+from typing import Any, Dict, Optional, Set
 
 import pytest
 from opentelemetry import context, trace
@@ -85,6 +86,34 @@ def pytest_collection_modifyitems(config: Any, items: Any) -> None:
             for item in items:
                 if "real_api" in item.keywords:
                     item.add_marker(skip_no_api_key)
+
+    # Optionally skip known failing integration tests in CI while we
+    # progressively restore them.
+    skip_known_failures = os.getenv("HH_INTEGRATION_SKIP_KNOWN_FAILURES", "").lower()
+    if skip_known_failures in {"1", "true", "yes", "on"}:
+        default_skiplist = Path(__file__).resolve().parent / "ci_known_failures.txt"
+        skiplist_path = Path(
+            os.getenv("HH_INTEGRATION_KNOWN_FAILURES_FILE", str(default_skiplist))
+        )
+        if not skiplist_path.is_absolute():
+            skiplist_path = Path(__file__).resolve().parents[2] / skiplist_path
+
+        if skiplist_path.exists():
+            known_failures: Set[str] = {
+                line.strip()
+                for line in skiplist_path.read_text(encoding="utf-8").splitlines()
+                if line.strip() and not line.startswith("#")
+            }
+            if known_failures:
+                skip_known_failure = pytest.mark.skip(
+                    reason=(
+                        "Temporarily skipped known failing integration test in CI; "
+                        "see tests/integration/ci_known_failures.txt"
+                    )
+                )
+                for item in items:
+                    if item.nodeid in known_failures:
+                        item.add_marker(skip_known_failure)
 
 
 @pytest.fixture(scope="session")

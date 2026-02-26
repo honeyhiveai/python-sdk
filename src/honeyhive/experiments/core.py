@@ -811,6 +811,7 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
     server_url: Optional[str] = None,
     project: str = "default",
     name: Optional[str] = None,
+    run_id: Optional[str] = None,
     max_workers: int = 10,
     aggregate_function: str = "average",
     verbose: bool = False,
@@ -842,6 +843,8 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
             HH_SERVER_URL/HH_API_URL env var)
         project: HoneyHive project (or set HONEYHIVE_PROJECT env var)
         name: Experiment run name (auto-generated if not provided)
+        run_id: Experiment run ID to send to the backend (auto-generated UUID if not
+            provided). The backend's returned run_id is always honored as the final ID.
         max_workers: ThreadPool size for concurrent execution (default: 10)
         aggregate_function: Backend aggregation function
             ("average", "sum", "min", "max")
@@ -996,7 +999,11 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
             logger.info("DEBUG - datapoint_ids collected: %s", datapoint_ids)
 
     # Step 2: Create experiment run
-    run_id = str(uuid.uuid4())
+    # Generate a client-side UUID if no run_id was provided. The backend also
+    # generates a UUID when run_id is omitted, but we do it here so the
+    # default run name ("experiment-{short_id}") is derived from the same ID
+    # that will be sent in the request.
+    run_id = run_id or str(uuid.uuid4())
     run_name = name or f"experiment-{run_id[:8]}"
 
     if verbose:

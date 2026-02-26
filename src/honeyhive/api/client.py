@@ -16,9 +16,10 @@ Usage::
     configs = await client.configurations.list_async(project="my-project")
 """
 
-import time
+import asyncio
+import logging
 import warnings
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, TypeVar, Union
 
 import httpx
 
@@ -54,6 +55,7 @@ from honeyhive._generated.models import (
     GetExperimentRunsSchemaResponse,
     GetMetricsResponse,
     GetSessionResponse,
+    Pagination,
     PostEventRequest,
     PostEventResponse,
     PostExperimentRunRequest,
@@ -102,6 +104,21 @@ from honeyhive.models import EventExportRequest, EventExportResponse, EventFilte
 from honeyhive.utils.retry import RetryConfig
 
 from ._base import BaseAPI
+
+logger = logging.getLogger(__name__)
+
+# Maximum number of array items to send in a single query string request.
+# Real-world URL length limits (8-16 KB) cap practical array sizes at ~170-340
+# items for typical 26-char IDs. Batching at 100 keeps us safely within bounds.
+QUERY_BATCH_SIZE = 100
+
+
+T = TypeVar("T")
+
+
+def _chunk_list(items: List[T], size: int) -> List[List[T]]:
+    """Split a list into chunks of the given size."""
+    return [items[i : i + size] for i in range(0, len(items), size)]
 
 
 class ConfigurationsAPI(BaseAPI):
@@ -200,10 +217,33 @@ class DatapointsAPI(BaseAPI):
     ) -> GetDatapointsResponse:
         """List datapoints.
 
+        When datapoint_ids exceeds QUERY_BATCH_SIZE, requests are automatically
+        batched to stay within URL length limits and the results are merged.
+
         Args:
             datapoint_ids: Optional list of datapoint IDs to fetch.
             dataset_name: Optional dataset name to filter by.
         """
+        # Batch if the list is large enough to risk exceeding URL length limits.
+        if datapoint_ids and len(datapoint_ids) > QUERY_BATCH_SIZE:
+            all_datapoints: List[Any] = []
+            batches = _chunk_list(datapoint_ids, QUERY_BATCH_SIZE)
+            for i, batch in enumerate(batches):
+                try:
+                    resp = datapoints_svc.getDatapoints(
+                        self._api_config,
+                        datapoint_ids=batch,
+                        dataset_name=dataset_name,
+                    )
+                except Exception:
+                    logger.warning(
+                        "Batch %d/%d failed (%d IDs)", i + 1, len(batches), len(batch)
+                    )
+                    raise
+                all_datapoints.extend(resp.datapoints)
+            # Skip re-validation — items are already validated Datapoint instances.
+            return GetDatapointsResponse.model_construct(datapoints=all_datapoints)
+
         return datapoints_svc.getDatapoints(
             self._api_config, datapoint_ids=datapoint_ids, dataset_name=dataset_name
         )
@@ -234,10 +274,32 @@ class DatapointsAPI(BaseAPI):
     ) -> GetDatapointsResponse:
         """List datapoints asynchronously.
 
+        When datapoint_ids exceeds QUERY_BATCH_SIZE, requests are automatically
+        batched to stay within URL length limits and the results are merged.
+
         Args:
             datapoint_ids: Optional list of datapoint IDs to fetch.
             dataset_name: Optional dataset name to filter by.
         """
+        # Batch if the list is large enough to risk exceeding URL length limits.
+        if datapoint_ids and len(datapoint_ids) > QUERY_BATCH_SIZE:
+            batches = _chunk_list(datapoint_ids, QUERY_BATCH_SIZE)
+            resps = await asyncio.gather(
+                *(
+                    datapoints_svc_async.getDatapoints(
+                        self._api_config,
+                        datapoint_ids=batch,
+                        dataset_name=dataset_name,
+                    )
+                    for batch in batches
+                )
+            )
+            all_datapoints: List[Any] = []
+            for resp in resps:
+                all_datapoints.extend(resp.datapoints)
+            # Skip re-validation — items are already validated Datapoint instances.
+            return GetDatapointsResponse.model_construct(datapoints=all_datapoints)
+
         return await datapoints_svc_async.getDatapoints(
             self._api_config, datapoint_ids=datapoint_ids, dataset_name=dataset_name
         )
@@ -537,6 +599,11 @@ class EventsAPI(BaseAPI):
             for event in response.events:
                 print(event["event_name"])
         """
+        logger.debug(
+            "get_by_session_id called: session_id=%s limit=%d",
+            session_id,
+            limit,
+        )
         if project is not None:
             warnings.warn(
                 "The 'project' parameter is deprecated and will be removed in v2.0. "
@@ -545,7 +612,7 @@ class EventsAPI(BaseAPI):
                 stacklevel=2,
             )
 
-        return self.export(
+        result = self.export(
             project=project,
             filters=[
                 EventFilter(
@@ -558,6 +625,13 @@ class EventsAPI(BaseAPI):
             limit=limit,
             _sort_by_time=True,  # Enable time-based sorting
         )
+        logger.debug(
+            "get_by_session_id result: session_id=%s events=%d total=%d",
+            session_id,
+            len(result.events),
+            result.total_events,
+        )
+        return result
 
     def create(self, request: PostEventRequest) -> PostEventResponse:
         """Create an event."""
@@ -673,68 +747,44 @@ class EventsAPI(BaseAPI):
 
         # Make direct request to /events/export (bypasses generated model issues)
         base_path = self._api_config.base_path
-        headers = {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "Authorization": f"Bearer {self._api_config.get_access_token()}",
-        }
+        headers = self._api_config.get_default_headers()
 
-        # Use retry logic for transient errors (502, 503, 504, etc.)
+        # Log outgoing request metadata
+        logger.debug(
+            "export request: POST %s/v1/events/export limit=%d page=%d",
+            base_path,
+            limit,
+            page,
+        )
+
+        # Execute with retry logic for transient errors (502, 503, 504, etc.)
         retry_config = RetryConfig.default()
-        last_exception: Optional[Exception] = None
-        last_response: Optional[httpx.Response] = None
-
-        for attempt in range(retry_config.max_retries + 1):
-            try:
-                with httpx.Client(
-                    base_url=base_path, verify=self._api_config.verify
-                ) as client:
-                    response = client.request(
-                        "POST",
-                        "/v1/events/export",
-                        headers=headers,
-                        json=request_body,
-                    )
-
-                if response.status_code == 200:
-                    break  # Success, exit retry loop
-
-                # Check if we should retry this status code
-                if retry_config.should_retry(response):
-                    last_response = response
-                    if attempt < retry_config.max_retries:
-                        delay = retry_config.backoff_strategy.get_delay(attempt + 1)
-                        time.sleep(delay)
-                        continue
-
-                # Non-retryable error, raise immediately
-                raise Exception(
-                    f"export() failed with status code: {response.status_code}, "
-                    f"response: {response.text}"
-                )
-
-            except httpx.HTTPError as e:
-                if retry_config.should_retry_exception(e):
-                    last_exception = e
-                    if attempt < retry_config.max_retries:
-                        delay = retry_config.backoff_strategy.get_delay(attempt + 1)
-                        time.sleep(delay)
-                        continue
-                raise
-
-        else:
-            # All retries exhausted
-            if last_response is not None:
-                raise Exception(
-                    f"export() failed after {retry_config.max_retries + 1} attempts "
-                    f"with status code: {last_response.status_code}, "
-                    f"response: {last_response.text}"
-                )
-            if last_exception is not None:
-                raise last_exception
+        with httpx.Client(base_url=base_path, verify=self._api_config.verify) as client:
+            response = retry_config.execute(
+                lambda: client.request(
+                    "POST",
+                    "/v1/events/export",
+                    headers=headers,
+                    json=request_body,
+                ),
+                operation="export()",
+            )
 
         data = response.json()
         events = data.get("events", [])
+        total_events = data.get("totalEvents", data.get("count", 0))
+
+        logger.debug(
+            "export result: %d events, total_events=%d",
+            len(events),
+            total_events,
+        )
+        if not events:
+            logger.debug(
+                "export returned empty events list; limit=%d page=%d",
+                limit,
+                page,
+            )
 
         # Sort events by start_time if requested (fixes jumbled order issue)
         if _sort_by_time and events:
@@ -742,7 +792,7 @@ class EventsAPI(BaseAPI):
 
         return EventExportResponse(
             events=events,
-            total_events=data.get("totalEvents", data.get("count", 0)),
+            total_events=total_events,
         )
 
     def _sort_events_by_time(
@@ -831,6 +881,11 @@ class EventsAPI(BaseAPI):
         Returns:
             EventExportResponse with events for the session, sorted by start_time.
         """
+        logger.debug(
+            "get_by_session_id_async called: session_id=%s limit=%d",
+            session_id,
+            limit,
+        )
         if project is not None:
             warnings.warn(
                 "The 'project' parameter is deprecated and will be removed in v2.0. "
@@ -839,7 +894,7 @@ class EventsAPI(BaseAPI):
                 stacklevel=2,
             )
 
-        return await self.export_async(
+        result = await self.export_async(
             project=project,
             filters=[
                 EventFilter(
@@ -852,6 +907,13 @@ class EventsAPI(BaseAPI):
             limit=limit,
             _sort_by_time=True,  # Enable time-based sorting
         )
+        logger.debug(
+            "get_by_session_id_async result: session_id=%s events=%d total=%d",
+            session_id,
+            len(result.events),
+            result.total_events,
+        )
+        return result
 
     async def create_async(self, request: PostEventRequest) -> PostEventResponse:
         """Create an event asynchronously."""
@@ -934,30 +996,46 @@ class EventsAPI(BaseAPI):
 
         # Make direct async request to /events/export
         base_path = self._api_config.base_path
-        headers = {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "Authorization": f"Bearer {self._api_config.get_access_token()}",
-        }
+        headers = self._api_config.get_default_headers()
 
+        # Log outgoing request metadata
+        logger.debug(
+            "export_async request: POST %s/v1/events/export limit=%d page=%d",
+            base_path,
+            limit,
+            page,
+        )
+
+        # Execute with retry logic for transient errors (502, 503, 504, etc.)
+        retry_config = RetryConfig.default()
         async with httpx.AsyncClient(
             base_url=base_path, verify=self._api_config.verify
         ) as client:
-            response = await client.request(
-                "POST",
-                "/v1/events/export",
-                headers=headers,
-                json=request_body,
-            )
-
-        if response.status_code != 200:
-            raise Exception(
-                f"export_async() failed with status code: {response.status_code}, "
-                f"response: {response.text}"
+            response = await retry_config.execute_async(
+                lambda: client.request(
+                    "POST",
+                    "/v1/events/export",
+                    headers=headers,
+                    json=request_body,
+                ),
+                operation="export_async()",
             )
 
         data = response.json()
         events = data.get("events", [])
+        total_events = data.get("totalEvents", data.get("count", 0))
+
+        logger.debug(
+            "export_async result: %d events, total_events=%d",
+            len(events),
+            total_events,
+        )
+        if not events:
+            logger.debug(
+                "export_async returned empty events list; limit=%d page=%d",
+                limit,
+                page,
+            )
 
         # Sort events by start_time if requested (fixes jumbled order issue)
         if _sort_by_time and events:
@@ -965,7 +1043,7 @@ class EventsAPI(BaseAPI):
 
         return EventExportResponse(
             events=events,
-            total_events=data.get("totalEvents", data.get("count", 0)),
+            total_events=total_events,
         )
 
     # Backwards compatible aliases
@@ -1129,6 +1207,9 @@ class ExperimentsAPI(BaseAPI):
     ) -> GetExperimentRunsResponse:
         """List experiment runs.
 
+        When run_ids exceeds QUERY_BATCH_SIZE, requests are automatically
+        batched to stay within URL length limits and the results are merged.
+
         Args:
             dataset_id: Filter by dataset ID.
             page: Page number for pagination.
@@ -1140,6 +1221,20 @@ class ExperimentsAPI(BaseAPI):
             sort_by: Sort by field.
             sort_order: Sort order (asc/desc).
         """
+        # Batch if the list is large enough to risk exceeding URL length limits.
+        if run_ids and len(run_ids) > QUERY_BATCH_SIZE:
+            return self._batched_list_runs(
+                dataset_id=dataset_id,
+                page=page,
+                limit=limit,
+                run_ids=run_ids,
+                name=name,
+                status=status,
+                dateRange=dateRange,
+                sort_by=sort_by,
+                sort_order=sort_order,
+            )
+
         return experiments_svc.getRuns(
             self._api_config,
             dataset_id=dataset_id,
@@ -1151,6 +1246,53 @@ class ExperimentsAPI(BaseAPI):
             dateRange=dateRange,
             sort_by=sort_by,
             sort_order=sort_order,
+        )
+
+    def _batched_list_runs(
+        self, *, run_ids: List[str], **kwargs: Any
+    ) -> GetExperimentRunsResponse:
+        """Fetch runs in batches and merge the responses."""
+        # Pagination doesn't apply when batching by IDs — each batch must
+        # return all matching runs for its chunk.
+        kwargs.pop("page", None)
+        kwargs.pop("limit", None)
+
+        all_evaluations: List[Any] = []
+        all_metrics: List[str] = []
+        total = 0
+        total_unfiltered = 0
+
+        batches = _chunk_list(run_ids, QUERY_BATCH_SIZE)
+        for i, batch in enumerate(batches):
+            try:
+                resp = experiments_svc.getRuns(
+                    self._api_config, run_ids=batch, **kwargs
+                )
+            except Exception:
+                logger.warning(
+                    "Batch %d/%d failed (%d run IDs)",
+                    i + 1,
+                    len(batches),
+                    len(batch),
+                )
+                raise
+            all_evaluations.extend(resp.evaluations)
+            all_metrics.extend(resp.metrics)
+            total += resp.pagination.total
+            total_unfiltered += resp.pagination.total_unfiltered
+
+        return GetExperimentRunsResponse.model_construct(
+            evaluations=all_evaluations,
+            metrics=list(dict.fromkeys(all_metrics)),  # deduplicate, preserve order
+            pagination=Pagination(
+                page=1,
+                limit=total,
+                total=total,
+                total_unfiltered=total_unfiltered,
+                total_pages=1,
+                has_next=False,
+                has_prev=False,
+            ),
         )
 
     def get_run(self, run_id: str) -> GetExperimentRunResponse:
@@ -1203,6 +1345,9 @@ class ExperimentsAPI(BaseAPI):
     ) -> GetExperimentRunsResponse:
         """List experiment runs asynchronously.
 
+        When run_ids exceeds QUERY_BATCH_SIZE, requests are automatically
+        batched to stay within URL length limits and the results are merged.
+
         Args:
             dataset_id: Filter by dataset ID.
             page: Page number for pagination.
@@ -1214,6 +1359,20 @@ class ExperimentsAPI(BaseAPI):
             sort_by: Sort by field.
             sort_order: Sort order (asc/desc).
         """
+        # Batch if the list is large enough to risk exceeding URL length limits.
+        if run_ids and len(run_ids) > QUERY_BATCH_SIZE:
+            return await self._batched_list_runs_async(
+                dataset_id=dataset_id,
+                page=page,
+                limit=limit,
+                run_ids=run_ids,
+                name=name,
+                status=status,
+                dateRange=dateRange,
+                sort_by=sort_by,
+                sort_order=sort_order,
+            )
+
         return await experiments_svc_async.getRuns(
             self._api_config,
             dataset_id=dataset_id,
@@ -1225,6 +1384,46 @@ class ExperimentsAPI(BaseAPI):
             dateRange=dateRange,
             sort_by=sort_by,
             sort_order=sort_order,
+        )
+
+    async def _batched_list_runs_async(
+        self, *, run_ids: List[str], **kwargs: Any
+    ) -> GetExperimentRunsResponse:
+        """Fetch runs in batches (async, parallel) and merge the responses."""
+        # Strip pagination params — each batch fetches its full slice.
+        kwargs.pop("page", None)
+        kwargs.pop("limit", None)
+
+        batches = _chunk_list(run_ids, QUERY_BATCH_SIZE)
+        resps = await asyncio.gather(
+            *(
+                experiments_svc_async.getRuns(self._api_config, run_ids=batch, **kwargs)
+                for batch in batches
+            )
+        )
+
+        all_evaluations: List[Any] = []
+        all_metrics: List[str] = []
+        total = 0
+        total_unfiltered = 0
+        for resp in resps:
+            all_evaluations.extend(resp.evaluations)
+            all_metrics.extend(resp.metrics)
+            total += resp.pagination.total
+            total_unfiltered += resp.pagination.total_unfiltered
+
+        return GetExperimentRunsResponse.model_construct(
+            evaluations=all_evaluations,
+            metrics=list(dict.fromkeys(all_metrics)),  # deduplicate, preserve order
+            pagination=Pagination(
+                page=1,
+                limit=total,
+                total=total,
+                total_unfiltered=total_unfiltered,
+                total_pages=1,
+                has_next=False,
+                has_prev=False,
+            ),
         )
 
     async def get_run_async(self, run_id: str) -> GetExperimentRunResponse:

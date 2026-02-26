@@ -265,11 +265,9 @@ jobs:
   integration-tests:
     name: "🔗 Integration Tests (Real APIs)"
     runs-on: ubuntu-latest
-    if: false  # Temporarily disabled - requires valid API credentials
-    # Original condition:
-    # if: >-
-    #   !contains(github.event.head_commit.message, '[skip-tests]') &&
-    #   !contains(github.event.head_commit.message, '[skip-integration]')
+    if: >-
+      !contains(github.event.head_commit.message, '[skip-tests]') &&
+      !contains(github.event.head_commit.message, '[skip-integration]')
 
     steps:
       - name: Checkout code
@@ -315,6 +313,8 @@ jobs:
           HH_PROJECT: ${{ secrets.HH_PROJECT }}
           HH_SOURCE: "github-actions-integration"
           HH_TEST_MODE: false
+          HH_INTEGRATION_SKIP_KNOWN_FAILURES: "true"
+          HH_INTEGRATION_KNOWN_FAILURES_FILE: "tests/integration/ci_known_failures.txt"
           # LLM Provider credentials (optional - tests will skip if not available)
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

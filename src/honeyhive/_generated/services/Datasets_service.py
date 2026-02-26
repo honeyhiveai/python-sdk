@@ -16,11 +16,7 @@ def getDatasets(
 
     base_path = api_config.base_path
     path = f"/v1/datasets"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {"dataset_id": dataset_id, "name": name}
 
     query_params = {
@@ -53,11 +49,7 @@ def createDataset(
 
     base_path = api_config.base_path
     path = f"/v1/datasets"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 
     query_params = {
@@ -93,11 +85,7 @@ def updateDataset(
 
     base_path = api_config.base_path
     path = f"/v1/datasets"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 
     query_params = {
@@ -133,11 +121,7 @@ def deleteDataset(
 
     base_path = api_config.base_path
     path = f"/v1/datasets"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {"dataset_id": dataset_id}
 
     query_params = {
@@ -175,11 +159,7 @@ def addDatapoints(
 
     base_path = api_config.base_path
     path = f"/v1/datasets/{dataset_id}/datapoints"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 
     query_params = {
@@ -218,11 +198,7 @@ def removeDatapoint(
 
     base_path = api_config.base_path
     path = f"/v1/datasets/{dataset_id}/datapoints/{datapoint_id}"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 
     query_params = {
