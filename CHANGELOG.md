@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+### Fixed
+
+- **Tracing: Fixed false positive model classification for Semantic Kernel agent spans** (#281)
+  - Agent orchestration spans (e.g., `GroupChatManagerActor`) were incorrectly classified as model events
+  - Tightened span name pattern matching to use provider-specific and delimiter-aware patterns
+  - Aligned `get_model_patterns()` public API with the updated detection logic
+
 ## [1.0.0rc17] - 2026-02-25
 
 ### Added
