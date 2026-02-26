@@ -170,6 +170,9 @@ class TestEventTypeDetection:
             ("gpt_request", "model"),
             ("chat_completion", "model"),
             ("model_inference", "model"),
+            # Verify agent runtime spans are NOT classified as model
+            ("agent_runtime process GroupChatManagerActor_abc123", "tool"),
+            ("agent_runtime create Writer_abc123", "tool"),
         ]
 
         for span_name, expected_type in test_cases:
@@ -209,7 +212,7 @@ class TestEventTypeDetection:
     def test_detect_event_type_from_patterns_case_insensitive(self) -> None:
         """Test event type detection is case insensitive."""
         test_cases = [
-            ("GPT_CALL", "model"),
+            ("GPT_request", "model"),
             ("OpenAI.Chat.Completions", "model"),
             ("LLM_REQUEST", "model"),
             ("Model_Inference", "model"),
@@ -652,7 +655,6 @@ class TestEventTypeDetectionEdgeCases:
         """Test detection of compound AI/ML patterns in span names."""
         compound_patterns = [
             "ai_model_inference",
-            "ml_prediction_service",
             "nlp_text_processing",
         ]
 

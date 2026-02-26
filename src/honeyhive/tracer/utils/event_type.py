@@ -397,6 +397,12 @@ def _detect_from_span_name_dynamically(
 ) -> Optional[str]:
     """Dynamically detect event type from span name patterns.
 
+    Uses targeted pattern matching to identify model/LLM spans without
+    false positives from runtime/orchestration spans. Patterns are designed
+    to match actual LLM provider operations and model invocations, not
+    generic terms that appear in non-model span names (e.g., "chat" in
+    "GroupChatManager" or "model" in "model_validator").
+
     Args:
         span_name: Name of the span
 
@@ -408,43 +414,106 @@ def _detect_from_span_name_dynamically(
 
     span_name_lower = span_name.lower()
 
-    # Dynamic LLM/Model detection patterns - more flexible matching
-    llm_indicators = [
-        "llm",
-        "model",
-        "gpt",
-        "claude",
-        "llama",
-        "gemini",
-        "mistral",
-        "palm",
-        "chat",
-        "completion",
-        "generate",
-        "inference",
-        "openai",
-        "anthropic",
-        "bedrock",
-        "google",
-        "generativeai",
+    # Exclusion patterns: span names that contain LLM-like substrings but
+    # are NOT model calls (e.g., agent runtime, orchestration, validators)
+    non_model_prefixes = [
+        "agent_runtime",
+        "agent_runtime ",
+    ]
+    for prefix in non_model_prefixes:
+        if span_name_lower.startswith(prefix):
+            return None
+
+    # High-confidence LLM provider patterns - these are specific enough
+    # to avoid false positives
+    provider_patterns = [
+        "openai.chat.completions",
+        "openai.completions",
+        "anthropic.messages",
+        "bedrock.invoke_model",
+        "google.generativeai",
+        "chatcompletion",  # OpenAI/SK ChatCompletion spans
     ]
 
-    # Dynamic pattern matching - check if any LLM indicator is present
-    for indicator in llm_indicators:
-        if indicator in span_name_lower:
+    for pattern in provider_patterns:
+        if pattern in span_name_lower:
             safe_log(
                 tracer_instance,
                 "debug",
-                "Event type inferred as 'model' from span name pattern",
+                "Event type inferred as 'model' from provider pattern",
                 honeyhive_data={
-                    "indicator": indicator,
+                    "pattern": pattern,
                     "span_name": span_name,
                 },
             )
             return "model"
 
-    # Additional dynamic checks for compound patterns
-    if any(term in span_name_lower for term in ["ai_", "ml_", "nlp_"]):
+    # Model name patterns - specific model identifiers
+    # Use word-boundary-like patterns (prefix/suffix with common delimiters)
+    model_name_patterns = [
+        "gpt-",
+        "gpt4",
+        "gpt_",
+        "claude-",
+        "claude_",
+        "llama-",
+        "llama_",
+        "gemini-",
+        "gemini_",
+        "mistral-",
+        "mistral_",
+        "palm-",
+        "palm_",
+    ]
+
+    for pattern in model_name_patterns:
+        if pattern in span_name_lower:
+            safe_log(
+                tracer_instance,
+                "debug",
+                "Event type inferred as 'model' from model name pattern",
+                honeyhive_data={
+                    "pattern": pattern,
+                    "span_name": span_name,
+                },
+            )
+            return "model"
+
+    # LLM operation patterns - require specific prefixes/suffixes to
+    # avoid matching generic words like "chat" or "generate"
+    llm_operation_patterns = [
+        "llm.",
+        "llm_",
+        ".llm",
+        "_llm",
+        "chat_completion",
+        "text_completion",
+        "generate_content",
+        "model_inference",
+        "model_predict",
+    ]
+
+    for pattern in llm_operation_patterns:
+        if pattern in span_name_lower:
+            safe_log(
+                tracer_instance,
+                "debug",
+                "Event type inferred as 'model' from LLM operation pattern",
+                honeyhive_data={
+                    "pattern": pattern,
+                    "span_name": span_name,
+                },
+            )
+            return "model"
+
+    # Compound AI/ML patterns - these indicate AI/ML operations
+    if any(term in span_name_lower for term in ["ai_model", "ml_predict", "nlp_"]):
+        safe_log(
+            tracer_instance,
+            "debug",
+            "Event type inferred as 'model' from compound AI/ML pattern",
+            honeyhive_data={"span_name": span_name},
+        )
         return "model"
 
     return None
