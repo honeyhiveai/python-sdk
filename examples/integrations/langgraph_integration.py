@@ -1,213 +1,404 @@
+#!/usr/bin/env python3
 """
 LangGraph + HoneyHive integration example.
 
-Patterns:
-  1) Agent with tool calling loop (canonical LangGraph pattern)
-  2) Routing workflow with structured output + conditional edges
+Demonstrates three LangGraph patterns with HoneyHive tracing:
 
-Requirements:
-    pip install honeyhive langgraph langchain-openai openinference-instrumentation-langchain
+1) Single agent with tool calling loop (canonical StateGraph pattern)
+2) Multi-agent delegation (coordinator routes to specialist sub-graphs)
+3) Multi-turn session continuity (two-turn conversation with shared history)
 
-Environment variables:
-    HH_API_KEY, HH_PROJECT, OPENAI_API_KEY
+Install:
+    uv pip install honeyhive langgraph langchain-openai openinference-instrumentation-langchain
+
+Run:
+    uv run python examples/integrations/langgraph_integration.py
+
+Environment:
+    HH_API_KEY
+    HH_PROJECT
+    OPENAI_API_KEY
+    HH_SOURCE          (optional, defaults to "python_sdk_example")
 """
 
 import operator
 import os
 from typing import Annotated, Literal, TypedDict
 
-from langchain.messages import AnyMessage, HumanMessage, SystemMessage, ToolMessage
-from langchain.tools import tool
+from langchain_core.messages import AnyMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
 from openinference.instrumentation.langchain import LangChainInstrumentor
-from pydantic import BaseModel, Field
 
 from honeyhive import HoneyHiveTracer
 
-# --- HoneyHive setup (add these 3 lines to any LangGraph app) ---
+MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
-tracer = HoneyHiveTracer.init(
-    api_key=os.environ["HH_API_KEY"],
-    project=os.environ["HH_PROJECT"],
-    session_name="langgraph-example",
-)
-LangChainInstrumentor().instrument(tracer_provider=tracer.provider)
 
-# --- Tools ---
+# -- Mock tools (same domain as the ADK / PydanticAI examples) --
 
-model = ChatOpenAI(model="gpt-4o-mini")
+
+def lookup_order_status(order_id: str) -> dict:
+    """Return mock order status for deterministic support flows."""
+    statuses = {
+        "ORD-1001": {"state": "shipped", "eta_days": 2},
+        "ORD-1002": {"state": "processing", "eta_days": 5},
+        "ORD-1003": {"state": "delayed", "eta_days": 8},
+    }
+    status = statuses.get(order_id.upper())
+    if status:
+        return {"status": "success", "order_id": order_id.upper(), **status}
+    return {"status": "not_found", "order_id": order_id.upper()}
+
+
+def lookup_policy(topic: str) -> dict:
+    """Return mock support policy snippet."""
+    policies = {
+        "refund": "Refunds available within 30 days for undelivered or damaged items.",
+        "cancellation": "Cancellation allowed before shipment. Delayed orders can request assisted cancellation.",
+        "shipping": "Standard shipping 3-5 business days. Delays trigger proactive outreach.",
+    }
+    key = topic.lower().strip()
+    summary = policies.get(key)
+    if summary:
+        return {"status": "success", "topic": key, "summary": summary}
+    return {"status": "not_found", "topic": key}
+
+
+# -- LangChain tool wrappers --
 
 
 @tool
-def calculator(a: float, b: float, operation: str) -> str:
-    """Perform arithmetic on two numbers.
+def check_order_status(order_id: str) -> str:
+    """Look up order status by order ID (e.g. ORD-1001).
 
     Args:
-        a: First number
-        b: Second number
-        operation: One of 'add', 'subtract', 'multiply', 'divide'
+        order_id: The order identifier to look up.
     """
-    ops = {
-        "add": lambda x, y: x + y,
-        "subtract": lambda x, y: x - y,
-        "multiply": lambda x, y: x * y,
-        "divide": lambda x, y: x / y if y else "err",
-    }
-    fn = ops.get(operation)
-    return str(fn(a, b)) if fn else f"Unknown operation: {operation}"
+    result = lookup_order_status(order_id)
+    return str(result)
 
 
 @tool
-def knowledge_base(topic: str) -> str:
-    """Look up information on a topic.
+def check_policy(topic: str) -> str:
+    """Look up support policy on a topic (refund, cancellation, or shipping).
 
     Args:
-        topic: The topic to look up
+        topic: The policy topic to look up.
     """
-    topics = {
-        "renewable energy": "Solar and wind generate 30% of global electricity. Costs dropped 90% since 2010.",
-        "machine learning": "ML models learn patterns from data. Key types: supervised, unsupervised, reinforcement.",
-    }
-    for k, v in topics.items():
-        if k in topic.lower():
-            return v
-    return f"No match for '{topic}'."
+    result = lookup_policy(topic)
+    return str(result)
 
 
-# --- Pattern 1: Agent with tool calling loop ---
-# The LLM decides which tools to call via bind_tools.
-# A loop runs until no more tool calls remain.
-
-tools = [calculator, knowledge_base]
-tools_by_name = {t.name: t for t in tools}
-model_with_tools = model.bind_tools(tools)
+# ---------------------------------------------------------------------------
+# Shared state and helpers
+# ---------------------------------------------------------------------------
 
 
 class AgentState(TypedDict):
     messages: Annotated[list[AnyMessage], operator.add]
 
 
-def llm_call(state: AgentState):
-    """LLM decides whether to call a tool or respond."""
-    return {
-        "messages": [
-            model_with_tools.invoke(
-                [
-                    SystemMessage(
-                        content="You are a helpful assistant. Use tools when needed."
-                    )
-                ]
-                + state["messages"]
+def build_tool_node(tools_list):
+    """Build a generic tool-execution node from a list of tools."""
+    tools_by_name = {t.name: t for t in tools_list}
+
+    def tool_node(state: AgentState):
+        results = []
+        for tc in state["messages"][-1].tool_calls:
+            result = tools_by_name[tc["name"]].invoke(tc["args"])
+            results.append(
+                ToolMessage(content=str(result), tool_call_id=tc["id"])
             )
-        ]
-    }
+        return {"messages": results}
 
-
-def tool_node(state: AgentState):
-    """Execute tool calls from the LLM response."""
-    results = []
-    for tc in state["messages"][-1].tool_calls:
-        result = tools_by_name[tc["name"]].invoke(tc["args"])
-        results.append(ToolMessage(content=str(result), tool_call_id=tc["id"]))
-    return {"messages": results}
+    return tool_node
 
 
 def should_continue(state: AgentState) -> Literal["tool_node", "__end__"]:
+    """Route to tool_node if the last message has tool calls, else end."""
     if state["messages"][-1].tool_calls:
         return "tool_node"
     return END
 
 
-agent = (
-    StateGraph(AgentState)
-    .add_node("llm_call", llm_call)
-    .add_node("tool_node", tool_node)
-    .add_edge(START, "llm_call")
-    .add_conditional_edges("llm_call", should_continue, ["tool_node", END])
-    .add_edge("tool_node", "llm_call")
-    .compile()
-)
-
-result = agent.invoke({"messages": [HumanMessage(content="What is 256 divided by 8?")]})
-print(result["messages"][-1].content)
-
-result = agent.invoke({"messages": [HumanMessage(content="Look up renewable energy")]})
-print(result["messages"][-1].content)
+# ---------------------------------------------------------------------------
+# Pattern 1 -- Single agent with tool calling loop
+# ---------------------------------------------------------------------------
 
 
-# --- Pattern 2: Routing workflow with structured output ---
-# Classify the question, then route to a specialized handler node.
+def run_single_agent_scenario(model: ChatOpenAI) -> None:
+    """Single agent answers order + policy questions using both tools."""
+    tools = [check_order_status, check_policy]
+    model_with_tools = model.bind_tools(tools)
+
+    def llm_call(state: AgentState):
+        return {
+            "messages": [
+                model_with_tools.invoke(
+                    [
+                        SystemMessage(
+                            content=(
+                                "You are SupportGeneralist. Use tools for order "
+                                "and policy questions. Keep responses concise."
+                            )
+                        )
+                    ]
+                    + state["messages"]
+                )
+            ]
+        }
+
+    agent = (
+        StateGraph(AgentState)
+        .add_node("llm_call", llm_call)
+        .add_node("tool_node", build_tool_node(tools))
+        .add_edge(START, "llm_call")
+        .add_conditional_edges("llm_call", should_continue, ["tool_node", END])
+        .add_edge("tool_node", "llm_call")
+        .compile()
+    )
+
+    # Turn 1 -- order status
+    result = agent.invoke(
+        {
+            "messages": [
+                HumanMessage(
+                    content="Check order ORD-1002 and summarize shipping status."
+                )
+            ]
+        }
+    )
+    print(f"[Single-agent turn 1] {result['messages'][-1].content[:120]}")
+
+    # Turn 2 -- policy lookup
+    result = agent.invoke(
+        {
+            "messages": [
+                HumanMessage(
+                    content="For delayed order ORD-1003, explain the cancellation policy."
+                )
+            ]
+        }
+    )
+    print(f"[Single-agent turn 2] {result['messages'][-1].content[:120]}")
 
 
-class Route(BaseModel):
-    category: Literal["math", "knowledge", "general"] = Field(
-        description="The category of the question"
+# ---------------------------------------------------------------------------
+# Pattern 2 -- Multi-agent delegation
+# ---------------------------------------------------------------------------
+
+
+def _build_specialist(
+    name: str, system_prompt: str, tools: list, model: ChatOpenAI
+):
+    """Build a compiled specialist sub-graph."""
+    model_with_tools = model.bind_tools(tools)
+
+    def llm_call(state: AgentState):
+        return {
+            "messages": [
+                model_with_tools.invoke(
+                    [SystemMessage(content=system_prompt)] + state["messages"]
+                )
+            ]
+        }
+
+    return (
+        StateGraph(AgentState)
+        .add_node("llm_call", llm_call)
+        .add_node("tool_node", build_tool_node(tools))
+        .add_edge(START, "llm_call")
+        .add_conditional_edges("llm_call", should_continue, ["tool_node", END])
+        .add_edge("tool_node", "llm_call")
+        .compile()
     )
 
 
-class RouterState(TypedDict):
-    question: str
-    category: str
-    answer: str
-
-
-router_llm = model.with_structured_output(Route)
-
-
-def classify(state: RouterState):
-    result = router_llm.invoke(
-        [
-            SystemMessage(content="Classify as 'math', 'knowledge', or 'general'."),
-            HumanMessage(content=state["question"]),
-        ]
+def run_multi_agent_scenario(model: ChatOpenAI) -> None:
+    """Coordinator delegates to order specialist and policy specialist."""
+    order_specialist = _build_specialist(
+        name="order_specialist",
+        system_prompt=(
+            "You are OrderSpecialist. Use check_order_status for all order "
+            "questions and answer with status plus ETA."
+        ),
+        tools=[check_order_status],
+        model=model,
     )
-    return {"category": result.category}
 
-
-def handle_math(state: RouterState):
-    response = model.invoke(f"Solve this math problem: {state['question']}")
-    return {"answer": response.content}
-
-
-def handle_knowledge(state: RouterState):
-    # Use tool directly for lookup, then summarize
-    result = knowledge_base.invoke(state["question"])
-    response = model.invoke(
-        f"Question: {state['question']}\nFacts: {result}\nBrief answer."
+    policy_specialist = _build_specialist(
+        name="policy_specialist",
+        system_prompt=(
+            "You are PolicySpecialist. Use check_policy for refund, "
+            "cancellation, or shipping policy questions."
+        ),
+        tools=[check_policy],
+        model=model,
     )
-    return {"answer": response.content}
 
+    # -- Coordinator graph that routes to specialists --
 
-def handle_general(state: RouterState):
-    response = model.invoke(f"Answer concisely: {state['question']}")
-    return {"answer": response.content}
+    class CoordinatorState(TypedDict):
+        messages: Annotated[list[AnyMessage], operator.add]
+        route: str
 
+    def classify(state: CoordinatorState):
+        """Classify request as 'order' or 'policy'."""
+        response = model.invoke(
+            [
+                SystemMessage(
+                    content=(
+                        "You are SupportCoordinator. Classify the customer "
+                        "request as exactly one word: 'order' or 'policy'."
+                    )
+                )
+            ]
+            + state["messages"]
+        )
+        route = "order" if "order" in response.content.lower() else "policy"
+        return {"route": route}
 
-router = (
-    StateGraph(RouterState)
-    .add_node("classify", classify)
-    .add_node("math", handle_math)
-    .add_node("knowledge", handle_knowledge)
-    .add_node("general", handle_general)
-    .add_edge(START, "classify")
-    .add_conditional_edges(
-        "classify",
-        lambda state: state["category"],
-        {"math": "math", "knowledge": "knowledge", "general": "general"},
+    def handle_order(state: CoordinatorState):
+        result = order_specialist.invoke({"messages": state["messages"]})
+        return {"messages": [result["messages"][-1]]}
+
+    def handle_policy(state: CoordinatorState):
+        result = policy_specialist.invoke({"messages": state["messages"]})
+        return {"messages": [result["messages"][-1]]}
+
+    def route_fn(state: CoordinatorState) -> Literal["handle_order", "handle_policy"]:
+        return "handle_order" if state["route"] == "order" else "handle_policy"
+
+    coordinator = (
+        StateGraph(CoordinatorState)
+        .add_node("classify", classify)
+        .add_node("handle_order", handle_order)
+        .add_node("handle_policy", handle_policy)
+        .add_edge(START, "classify")
+        .add_conditional_edges(
+            "classify",
+            route_fn,
+            ["handle_order", "handle_policy"],
+        )
+        .add_edge("handle_order", END)
+        .add_edge("handle_policy", END)
+        .compile()
     )
-    .add_edge("math", END)
-    .add_edge("knowledge", END)
-    .add_edge("general", END)
-    .compile()
-)
 
-result = router.invoke(
-    {"question": "What is 42 times 15?", "category": "", "answer": ""}
-)
-print(f"Route: {result['category']} | {result['answer']}")
+    # Request 1 -- routed to order specialist
+    result = coordinator.invoke(
+        {
+            "messages": [
+                HumanMessage(content="My order ORD-1001 has not arrived yet.")
+            ],
+            "route": "",
+        }
+    )
+    print(f"[Multi-agent request 1] {result['messages'][-1].content[:120]}")
 
-result = router.invoke(
-    {"question": "Tell me about machine learning", "category": "", "answer": ""}
-)
-print(f"Route: {result['category']} | {result['answer']}")
+    # Request 2 -- routed to policy specialist
+    result = coordinator.invoke(
+        {
+            "messages": [
+                HumanMessage(
+                    content="What is your cancellation policy for delayed orders?"
+                )
+            ],
+            "route": "",
+        }
+    )
+    print(f"[Multi-agent request 2] {result['messages'][-1].content[:120]}")
+
+
+# ---------------------------------------------------------------------------
+# Pattern 3 -- Multi-turn session continuity
+# ---------------------------------------------------------------------------
+
+
+def run_multi_turn_scenario(model: ChatOpenAI) -> None:
+    """Two-turn conversation where the second turn builds on the first."""
+    tools = [check_order_status, check_policy]
+    model_with_tools = model.bind_tools(tools)
+
+    def llm_call(state: AgentState):
+        return {
+            "messages": [
+                model_with_tools.invoke(
+                    [
+                        SystemMessage(
+                            content=(
+                                "You are SupportAgent. Use tools to look up "
+                                "orders and policies. Reference earlier context "
+                                "when the customer follows up."
+                            )
+                        )
+                    ]
+                    + state["messages"]
+                )
+            ]
+        }
+
+    agent = (
+        StateGraph(AgentState)
+        .add_node("llm_call", llm_call)
+        .add_node("tool_node", build_tool_node(tools))
+        .add_edge(START, "llm_call")
+        .add_conditional_edges("llm_call", should_continue, ["tool_node", END])
+        .add_edge("tool_node", "llm_call")
+        .compile()
+    )
+
+    # Turn 1
+    result1 = agent.invoke(
+        {
+            "messages": [
+                HumanMessage(
+                    content="My order ORD-1003 is delayed. What's happening?"
+                )
+            ]
+        }
+    )
+    print(f"[Multi-turn turn 1] {result1['messages'][-1].content[:120]}")
+
+    # Turn 2 -- carry full history forward
+    result2 = agent.invoke(
+        {
+            "messages": result1["messages"]
+            + [
+                HumanMessage(
+                    content="Can I cancel and get a refund instead?"
+                )
+            ]
+        }
+    )
+    print(f"[Multi-turn turn 2] {result2['messages'][-1].content[:120]}")
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+
+def main() -> None:
+    tracer = HoneyHiveTracer.init(
+        api_key=os.getenv("HH_API_KEY"),
+        project=os.getenv("HH_PROJECT"),
+        session_name="langgraph-example",
+        source=os.getenv("HH_SOURCE", "python_sdk_example"),
+    )
+    LangChainInstrumentor().instrument(tracer_provider=tracer.provider)
+
+    model = ChatOpenAI(model=MODEL)
+
+    try:
+        run_single_agent_scenario(model)
+        run_multi_agent_scenario(model)
+        run_multi_turn_scenario(model)
+    finally:
+        tracer.force_flush()
+
+
+if __name__ == "__main__":
+    main()
