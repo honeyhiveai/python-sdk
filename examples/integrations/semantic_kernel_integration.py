@@ -55,30 +55,21 @@ def lookup_order_status(order_id: str) -> dict:
     }
     status = statuses.get(order_id.upper())
     if status:
-        return {"status": "success", "order_id": order_id.upper(), "order": status}
+        return {"status": "success", "order_id": order_id.upper(), **status}
     return {"status": "not_found", "order_id": order_id.upper()}
 
 
 def lookup_policy(topic: str) -> dict:
-    """Return mock support policy snippets for deterministic support flows."""
+    """Return mock support policy snippet."""
     policies = {
-        "refund": {
-            "summary": "Refunds are available within 30 days for undelivered or damaged items.",
-            "window_days": 30,
-        },
-        "cancellation": {
-            "summary": "Cancellation is allowed before shipment. Delayed orders can request assisted cancellation.",
-            "window_days": 2,
-        },
-        "shipping": {
-            "summary": "Standard shipping takes 3-5 business days. Delays can trigger proactive support outreach.",
-            "window_days": 5,
-        },
+        "refund": "Refunds available within 30 days for undelivered or damaged items.",
+        "cancellation": "Cancellation allowed before shipment. Delayed orders can request assisted cancellation.",
+        "shipping": "Standard shipping 3-5 business days. Delays trigger proactive outreach.",
     }
     key = topic.lower().strip()
-    result = policies.get(key)
-    if result:
-        return {"status": "success", "topic": key, "policy": result}
+    summary = policies.get(key)
+    if summary:
+        return {"status": "success", "topic": key, "summary": summary}
     return {"status": "not_found", "topic": key}
 
 
@@ -142,7 +133,7 @@ async def run_single_agent_tool_scenario() -> None:
         "Check order ORD-1002 and summarize the current shipping status for the customer."
     )
     response1 = await agent.get_response(history)
-    history.add_assistant_message(str(response1))
+    history.add_assistant_message(response1.content)
 
     # Turn 2 -- follow-up requiring both tools
     history.add_user_message(
@@ -253,17 +244,15 @@ async def run_group_chat_scenario() -> None:
 
 async def main() -> None:
     """Run Semantic Kernel example scenarios and emit HoneyHive traces."""
+    if not os.getenv("OPENAI_API_KEY"):
+        raise SystemExit("OPENAI_API_KEY environment variable is required")
+
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY"),
         project=os.getenv("HH_PROJECT"),
         session_name="semantic_kernel_integration_example",
         source=os.getenv("HH_SOURCE", "python_sdk_example"),
     )
-
-    # Setup span capture (activated when CAPTURE_SPANS=true)
-    from capture_spans import setup_span_capture
-
-    setup_span_capture("semantic_kernel", tracer)
 
     # Instrument OpenAI calls (SK uses OpenAI under the hood)
     instrumentor = OpenAIInstrumentor()
