@@ -16,11 +16,7 @@ async def getDatapoints(
 
     base_path = api_config.base_path
     path = f"/v1/datapoints"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {
         "datapoint_ids": datapoint_ids,
         "dataset_name": dataset_name,
@@ -60,11 +56,7 @@ async def createDatapoint(
 
     base_path = api_config.base_path
     path = f"/v1/datapoints"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 
     query_params = {
@@ -106,11 +98,7 @@ async def batchCreateDatapoints(
 
     base_path = api_config.base_path
     path = f"/v1/datapoints/batch"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 
     query_params = {
@@ -150,11 +138,7 @@ async def getDatapoint(
 
     base_path = api_config.base_path
     path = f"/v1/datapoints/{id}"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 
     query_params = {
@@ -192,11 +176,7 @@ async def updateDatapoint(
 
     base_path = api_config.base_path
     path = f"/v1/datapoints/{id}"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 
     query_params = {
@@ -236,11 +216,7 @@ async def deleteDatapoint(
 
     base_path = api_config.base_path
     path = f"/v1/datapoints/{id}"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 
     query_params = {

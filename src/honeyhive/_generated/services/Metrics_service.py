@@ -16,11 +16,7 @@ def getMetrics(
 
     base_path = api_config.base_path
     path = f"/v1/metrics"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {"type": type, "id": id}
 
     query_params = {
@@ -53,11 +49,7 @@ def createMetric(
 
     base_path = api_config.base_path
     path = f"/v1/metrics"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 
     query_params = {
@@ -91,11 +83,7 @@ def updateMetric(
 
     base_path = api_config.base_path
     path = f"/v1/metrics"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 
     query_params = {
@@ -129,11 +117,7 @@ def deleteMetric(
 
     base_path = api_config.base_path
     path = f"/v1/metrics"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {"metric_id": metric_id}
 
     query_params = {
@@ -166,11 +150,7 @@ def runMetric(
 
     base_path = api_config.base_path
     path = f"/v1/metrics/run_metric"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 
     query_params = {

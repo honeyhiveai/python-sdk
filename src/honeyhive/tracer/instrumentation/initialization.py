@@ -47,6 +47,16 @@ if TYPE_CHECKING:
 # too-many-lines disabled due to extensive informative docstrings
 
 
+def _get_sdk_version() -> str:
+    """Get the SDK version string for use in headers."""
+    try:
+        from honeyhive import __version__
+
+        return __version__
+    except Exception:
+        return "unknown"
+
+
 # Dynamic logger - will be created per tracer instance
 def _get_logger_for_tracer(tracer_instance: Any) -> Any:
     """Get a logger configured for the specific tracer instance."""
@@ -817,6 +827,9 @@ def _create_otlp_exporter(tracer_instance: Any) -> Optional[Any]:
                 "Authorization": f"Bearer {tracer_instance.config.api_key}",
                 "X-Project": tracer_instance.project_name,
                 "X-Source": tracer_instance.source_environment,
+                "hh-sdk-version": _get_sdk_version(),
+                "hh-sdk-language": "python",
+                "hh-sdk-package": "honeyhive",
             },
             timeout=30.0,  # 30 second timeout for exports
         )

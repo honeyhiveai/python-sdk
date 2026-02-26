@@ -4,6 +4,9 @@
 
 ### Added
 
+- **API Client: SDK identification headers on all HTTP requests** (#268)
+  - All HTTP requests now include `hh-sdk-version`, `hh-sdk-language`, and `hh-sdk-package` headers
+
 - **Experiments: Git context stamped on experiment run metadata** (#205)
   - `evaluate()` now automatically collects git metadata (commit hash, branch, author, remote URL, dirty status) and attaches it to the run's `metadata.git` field
   - Gracefully degrades to empty dict when git is unavailable or caller is not in a repo

@@ -16,11 +16,7 @@ def getExperimentRunsSchema(
 
     base_path = api_config.base_path
     path = f"/v1/runs/schema"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {
         "dateRange": dateRange,
         "evaluation_id": evaluation_id,
@@ -70,11 +66,7 @@ def getRuns(
 
     base_path = api_config.base_path
     path = f"/v1/runs"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {
         "dataset_id": dataset_id,
         "page": page,
@@ -121,11 +113,7 @@ def createRun(
 
     base_path = api_config.base_path
     path = f"/v1/runs"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 
     query_params = {
@@ -163,11 +151,7 @@ def getRun(
 
     base_path = api_config.base_path
     path = f"/v1/runs/{run_id}"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 
     query_params = {
@@ -207,11 +191,7 @@ def updateRun(
 
     base_path = api_config.base_path
     path = f"/v1/runs/{run_id}"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 
     query_params = {
@@ -249,11 +229,7 @@ def deleteRun(
 
     base_path = api_config.base_path
     path = f"/v1/runs/{run_id}"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 
     query_params = {
@@ -294,11 +270,7 @@ def getExperimentRunMetrics(
 
     base_path = api_config.base_path
     path = f"/v1/runs/{run_id}/metrics"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {"dateRange": dateRange, "filters": filters}
 
     query_params = {
@@ -335,11 +307,7 @@ def getExperimentResult(
 
     base_path = api_config.base_path
     path = f"/v1/runs/{run_id}/result"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {
         "aggregate_function": aggregate_function,
         "filters": filters,
@@ -384,11 +352,7 @@ def getExperimentComparison(
 
     base_path = api_config.base_path
     path = f"/v1/runs/{new_run_id}/compare-with/{old_run_id}"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {
         "aggregate_function": aggregate_function,
         "filters": filters,
@@ -436,11 +400,7 @@ def getExperimentCompareEvents(
 
     base_path = api_config.base_path
     path = f"/v1/runs/compare/events"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {
         "run_id_1": run_id_1,
         "run_id_2": run_id_2,

@@ -17,11 +17,7 @@ async def getConfigurations(
 
     base_path = api_config.base_path
     path = f"/v1/configurations"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {"name": name, "env": env, "tags": tags}
 
     query_params = {
@@ -56,11 +52,7 @@ async def createConfiguration(
 
     base_path = api_config.base_path
     path = f"/v1/configurations"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 
     query_params = {
@@ -103,11 +95,7 @@ async def updateConfiguration(
 
     base_path = api_config.base_path
     path = f"/v1/configurations/{id}"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 
     query_params = {
@@ -147,11 +135,7 @@ async def deleteConfiguration(
 
     base_path = api_config.base_path
     path = f"/v1/configurations/{id}"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
+    headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 
     query_params = {
