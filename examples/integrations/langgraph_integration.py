@@ -23,7 +23,7 @@ Environment:
 
 import operator
 import os
-from typing import Annotated, Literal, TypedDict
+from typing import Annotated, Callable, Literal, TypedDict
 
 from langchain_core.messages import AnyMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.tools import tool
@@ -100,14 +100,23 @@ class AgentState(TypedDict):
     messages: Annotated[list[AnyMessage], operator.add]
 
 
-def build_tool_node(tools_list):
+def build_tool_node(tools_list: list) -> Callable[[AgentState], dict]:
     """Build a generic tool-execution node from a list of tools."""
     tools_by_name = {t.name: t for t in tools_list}
 
-    def tool_node(state: AgentState):
+    def tool_node(state: AgentState) -> dict:
         results = []
         for tc in state["messages"][-1].tool_calls:
-            result = tools_by_name[tc["name"]].invoke(tc["args"])
+            tool_fn = tools_by_name.get(tc["name"])
+            if tool_fn is None:
+                results.append(
+                    ToolMessage(
+                        content=f"Unknown tool: {tc['name']}",
+                        tool_call_id=tc["id"],
+                    )
+                )
+                continue
+            result = tool_fn.invoke(tc["args"])
             results.append(
                 ToolMessage(content=str(result), tool_call_id=tc["id"])
             )
@@ -133,7 +142,7 @@ def run_single_agent_scenario(model: ChatOpenAI) -> None:
     tools = [check_order_status, check_policy]
     model_with_tools = model.bind_tools(tools)
 
-    def llm_call(state: AgentState):
+    def llm_call(state: AgentState) -> dict:
         return {
             "messages": [
                 model_with_tools.invoke(
@@ -192,11 +201,13 @@ def run_single_agent_scenario(model: ChatOpenAI) -> None:
 
 def _build_specialist(
     name: str, system_prompt: str, tools: list, model: ChatOpenAI
-):
-    """Build a compiled specialist sub-graph."""
+) -> StateGraph:
+    """Build a compiled specialist sub-graph with *name*-prefixed nodes."""
     model_with_tools = model.bind_tools(tools)
+    llm_node = f"{name}_llm"
+    tool_node_name = f"{name}_tools"
 
-    def llm_call(state: AgentState):
+    def llm_call(state: AgentState) -> dict:
         return {
             "messages": [
                 model_with_tools.invoke(
@@ -205,13 +216,18 @@ def _build_specialist(
             ]
         }
 
+    def _should_continue(state: AgentState) -> str:
+        if state["messages"][-1].tool_calls:
+            return tool_node_name
+        return END
+
     return (
         StateGraph(AgentState)
-        .add_node("llm_call", llm_call)
-        .add_node("tool_node", build_tool_node(tools))
-        .add_edge(START, "llm_call")
-        .add_conditional_edges("llm_call", should_continue, ["tool_node", END])
-        .add_edge("tool_node", "llm_call")
+        .add_node(llm_node, llm_call)
+        .add_node(tool_node_name, build_tool_node(tools))
+        .add_edge(START, llm_node)
+        .add_conditional_edges(llm_node, _should_continue, [tool_node_name, END])
+        .add_edge(tool_node_name, llm_node)
         .compile()
     )
 
@@ -244,7 +260,7 @@ def run_multi_agent_scenario(model: ChatOpenAI) -> None:
         messages: Annotated[list[AnyMessage], operator.add]
         route: str
 
-    def classify(state: CoordinatorState):
+    def classify(state: CoordinatorState) -> dict:
         """Classify request as 'order' or 'policy'."""
         response = model.invoke(
             [
@@ -257,14 +273,15 @@ def run_multi_agent_scenario(model: ChatOpenAI) -> None:
             ]
             + state["messages"]
         )
-        route = "order" if "order" in response.content.lower() else "policy"
+        label = response.content.strip().lower()
+        route = "order" if label == "order" else "policy"
         return {"route": route}
 
-    def handle_order(state: CoordinatorState):
+    def handle_order(state: CoordinatorState) -> dict:
         result = order_specialist.invoke({"messages": state["messages"]})
         return {"messages": [result["messages"][-1]]}
 
-    def handle_policy(state: CoordinatorState):
+    def handle_policy(state: CoordinatorState) -> dict:
         result = policy_specialist.invoke({"messages": state["messages"]})
         return {"messages": [result["messages"][-1]]}
 
@@ -322,7 +339,7 @@ def run_multi_turn_scenario(model: ChatOpenAI) -> None:
     tools = [check_order_status, check_policy]
     model_with_tools = model.bind_tools(tools)
 
-    def llm_call(state: AgentState):
+    def llm_call(state: AgentState) -> dict:
         return {
             "messages": [
                 model_with_tools.invoke(
@@ -388,7 +405,8 @@ def main() -> None:
         session_name="langgraph-example",
         source=os.getenv("HH_SOURCE", "python_sdk_example"),
     )
-    LangChainInstrumentor().instrument(tracer_provider=tracer.provider)
+    instrumentor = LangChainInstrumentor()
+    instrumentor.instrument(tracer_provider=tracer.provider)
 
     model = ChatOpenAI(model=MODEL)
 
@@ -398,6 +416,7 @@ def main() -> None:
         run_multi_turn_scenario(model)
     finally:
         tracer.force_flush()
+        instrumentor.uninstrument()
 
 
 if __name__ == "__main__":
