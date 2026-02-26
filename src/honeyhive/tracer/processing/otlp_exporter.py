@@ -120,9 +120,7 @@ class OTLPJSONExporter(SpanExporter):
         if isinstance(value, (list, tuple)):
             return {
                 "arrayValue": {
-                    "values": [
-                        OTLPJSONExporter._convert_value(item) for item in value
-                    ]
+                    "values": [OTLPJSONExporter._convert_value(item) for item in value]
                 }
             }
         if isinstance(value, dict):
