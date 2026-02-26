@@ -83,6 +83,63 @@ class OTLPJSONExporter(SpanExporter):
             },
         )
 
+    @staticmethod
+    def _convert_value(value: Any) -> Dict[str, Any]:
+        """Convert a Python value to OTLP JSON AnyValue format.
+
+        Maps Python types to the correct OTLP JSON value types:
+        - str -> stringValue
+        - bool -> boolValue (must be checked before int since bool is a subclass of int)
+        - int -> intValue (serialized as string per protobuf JSON mapping for int64)
+        - float -> doubleValue
+        - bytes -> bytesValue (base64 encoded)
+        - list/tuple -> arrayValue (recursively converts elements)
+        - dict -> kvlistValue (recursively converts values)
+        - other -> stringValue (fallback using str())
+
+        Args:
+            value: Python value to convert
+
+        Returns:
+            Dictionary with the appropriate OTLP JSON value key
+        """
+        if isinstance(value, str):
+            return {"stringValue": value}
+        if isinstance(value, bool):
+            # Must check bool before int since bool is a subclass of int in Python
+            return {"boolValue": value}
+        if isinstance(value, int):
+            # OTLP JSON encodes int64 as string per protobuf JSON mapping
+            return {"intValue": str(value)}
+        if isinstance(value, float):
+            return {"doubleValue": value}
+        if isinstance(value, bytes):
+            import base64
+
+            return {"bytesValue": base64.b64encode(value).decode("ascii")}
+        if isinstance(value, (list, tuple)):
+            return {
+                "arrayValue": {
+                    "values": [
+                        OTLPJSONExporter._convert_value(item) for item in value
+                    ]
+                }
+            }
+        if isinstance(value, dict):
+            return {
+                "kvlistValue": {
+                    "values": [
+                        {
+                            "key": str(k),
+                            "value": OTLPJSONExporter._convert_value(v),
+                        }
+                        for k, v in value.items()
+                    ]
+                }
+            }
+        # Fallback: convert to string
+        return {"stringValue": str(value)}
+
     def _span_to_otlp_json(self, span: ReadableSpan) -> Dict[str, Any]:
         """Convert a ReadableSpan to OTLP JSON format.
 
@@ -99,13 +156,13 @@ class OTLPJSONExporter(SpanExporter):
         if span.parent and hasattr(span.parent, "span_id") and span.parent.span_id:
             parent_span_id = format(span.parent.span_id, "016x")
 
-        # Convert attributes - use string values, let backend handle type conversion
+        # Convert attributes with proper OTLP JSON type mapping
         attributes = []
         if span.attributes:
             for key, value in span.attributes.items():
                 attr = {
                     "key": key,
-                    "value": {"stringValue": str(value)},
+                    "value": self._convert_value(value),
                 }
                 attributes.append(attr)
 
@@ -119,7 +176,7 @@ class OTLPJSONExporter(SpanExporter):
                         event_attrs.append(
                             {
                                 "key": key,
-                                "value": {"stringValue": str(value)},
+                                "value": self._convert_value(value),
                             }
                         )
                 events.append(
@@ -184,7 +241,7 @@ class OTLPJSONExporter(SpanExporter):
         resource_attrs = []
         if first_span.resource and first_span.resource.attributes:
             resource_attrs = [
-                {"key": k, "value": {"stringValue": str(v)}}
+                {"key": k, "value": self._convert_value(v)}
                 for k, v in first_span.resource.attributes.items()
             ]
 
