@@ -220,6 +220,9 @@ async def run_swarm_handoff_scenario(
 
 async def main() -> None:
     """Run AgentChat example scenarios and emit HoneyHive traces."""
+    if not os.getenv("OPENAI_API_KEY"):
+        raise SystemExit("Set OPENAI_API_KEY before running this example.")
+
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY"),
         project=os.getenv("HH_PROJECT"),
