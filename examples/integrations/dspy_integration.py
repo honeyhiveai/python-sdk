@@ -146,6 +146,8 @@ def run_custom_module_scenario() -> None:
         ) -> dspy.Prediction:
             # Gather context from mock tools
             order_data = lookup_order_status(order_id)
+            # Hardcoded for demo simplicity; a real coordinator would
+            # extract the topic from the customer question dynamically.
             policy_data = lookup_policy("cancellation")
 
             # Sub-module 1: analyze order
