@@ -60,11 +60,14 @@ class TestModelPatterns:
 
         expected_operations = [
             "llm.",
-            "model.",
-            "chat",
-            "completion",
-            "generate",
-            "inference",
+            "llm_",
+            ".llm",
+            "_llm",
+            "chat_completion",
+            "text_completion",
+            "generate_content",
+            "model_inference",
+            "model_predict",
         ]
 
         for operation in expected_operations:
@@ -74,7 +77,21 @@ class TestModelPatterns:
         """Test that model patterns include popular model name patterns."""
         patterns = get_model_patterns()
 
-        expected_models = ["gpt", "claude", "llama", "gemini", "mistral", "palm"]
+        expected_models = [
+            "gpt-",
+            "gpt4",
+            "gpt_",
+            "claude-",
+            "claude_",
+            "llama-",
+            "llama_",
+            "gemini-",
+            "gemini_",
+            "mistral-",
+            "mistral_",
+            "palm-",
+            "palm_",
+        ]
 
         for model in expected_models:
             assert model in patterns
