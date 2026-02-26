@@ -1,116 +1,249 @@
+#!/usr/bin/env python3
 """
-HoneyHive + Strands Agents integration example.
+Strands Agents + HoneyHive integration example.
 
-Demonstrates two patterns:
-1) Agent with a tool
-2) Multi-agent orchestration (agents-as-tools)
+Demonstrates three agent patterns with HoneyHive tracing:
 
-Requirements:
-    pip install honeyhive strands-agents
+1) Single agent with tool calls and multi-turn session continuity
+2) Multi-agent delegation (agents-as-tools)
+3) Swarm multi-agent collaboration
 
-Environment variables:
-    HH_API_KEY, HH_PROJECT, ANTHROPIC_API_KEY
+Strands has native OpenTelemetry tracing -- no external instrumentor is
+needed.  HoneyHiveTracer.init() sets a global TracerProvider that Strands
+picks up automatically.
+
+Install:
+    uv pip install honeyhive 'strands-agents[openai]'
+
+Run:
+    uv run python examples/integrations/strands_agents_integration.py
+
+Environment:
+    HH_API_KEY
+    HH_PROJECT
+    HH_API_URL          (optional)
+    OPENAI_API_KEY
+    HH_SOURCE           (optional, defaults to "python_sdk_example")
 """
 
 import os
-from contextlib import contextmanager
+
+from strands import Agent, tool
+from strands.models.openai import OpenAIModel
 
 from honeyhive import HoneyHiveTracer
 
-# --- HoneyHive setup (initialize BEFORE importing Strands) ---
-
-HoneyHiveTracer.init(
-    api_key=os.environ["HH_API_KEY"],
-    project=os.environ["HH_PROJECT"],
-    session_name="strands-agents-example",
-)
-
-from strands import Agent, tool  # noqa: E402
-from strands.models.anthropic import AnthropicModel  # noqa: E402
+MODEL_ID = os.getenv("STRANDS_MODEL", "gpt-4.1-mini")
 
 
-def get_model():
-    return AnthropicModel(
-        client_args={"api_key": os.environ["ANTHROPIC_API_KEY"]},
-        model_id=os.getenv("STRANDS_ANTHROPIC_MODEL", "claude-sonnet-4-20250514"),
-        max_tokens=1024,
+# ---------------------------------------------------------------------------
+# Mock tools  (customer-support domain, deterministic data)
+# ---------------------------------------------------------------------------
+
+
+def _get_model() -> OpenAIModel:
+    return OpenAIModel(
+        client_args={"api_key": os.environ["OPENAI_API_KEY"]},
+        model_id=MODEL_ID,
+        params={"max_tokens": 1024, "temperature": 0.0},
     )
 
 
-@contextmanager
-def semconv_opt_in(value: str | None):
-    """Temporarily set OTEL semconv mode for Strands spans."""
-    key = "OTEL_SEMCONV_STABILITY_OPT_IN"
-    previous = os.environ.get(key)
-    if value is None:
-        os.environ.pop(key, None)
-    else:
-        os.environ[key] = value
-    try:
-        yield
-    finally:
-        if previous is None:
-            os.environ.pop(key, None)
-        else:
-            os.environ[key] = previous
-
-
-# --- Pattern 1: Agent with a tool ---
+@tool
+def lookup_order_status(order_id: str) -> dict:
+    """Return current order status including shipment state and ETA."""
+    statuses = {
+        "ORD-1001": {"state": "shipped", "eta_days": 2},
+        "ORD-1002": {"state": "processing", "eta_days": 5},
+        "ORD-1003": {"state": "delayed", "eta_days": 8},
+    }
+    status = statuses.get(order_id.upper())
+    if status:
+        return {"status": "success", "order_id": order_id.upper(), **status}
+    return {"status": "not_found", "order_id": order_id.upper()}
 
 
 @tool
-def calculator(expression: str) -> str:
-    """Evaluate a basic arithmetic expression."""
-    return str(eval(expression, {"__builtins__": {}}, {}))
+def lookup_policy(topic: str) -> dict:
+    """Return support policy snippet for a given topic (refund, cancellation, shipping)."""
+    policies = {
+        "refund": "Refunds available within 30 days for undelivered or damaged items.",
+        "cancellation": (
+            "Cancellation allowed before shipment. "
+            "Delayed orders can request assisted cancellation."
+        ),
+        "shipping": (
+            "Standard shipping 3-5 business days. " "Delays trigger proactive outreach."
+        ),
+    }
+    key = topic.lower().strip()
+    summary = policies.get(key)
+    if summary:
+        return {"status": "success", "topic": key, "summary": summary}
+    return {"status": "not_found", "topic": key}
 
 
-def run_agent_with_tool(label: str):
+# ---------------------------------------------------------------------------
+# Scenario 1 -- Single agent with tools + session continuity (two turns)
+# ---------------------------------------------------------------------------
+
+
+def run_single_agent_scenario() -> None:
+    """Single support agent handles two turns, demonstrating session continuity."""
     agent = Agent(
-        model=get_model(),
-        tools=[calculator],
-        system_prompt="You are a helpful assistant. Use tools when useful.",
+        name="support_generalist",
+        model=_get_model(),
+        tools=[lookup_order_status, lookup_policy],
+        system_prompt=(
+            "You are SupportGeneralist. Use tools for order and policy "
+            "questions. Address the customer by name when known. "
+            "Keep responses concise."
+        ),
     )
-    print(label, agent("What is 25 * 4? Use the calculator tool."))
+
+    # Turn 1 -- order status inquiry
+    agent(
+        "Hi, my name is Alex Kim. Can you check the status of order ORD-1002 "
+        "and tell me when it will arrive?"
+    )
+
+    # Turn 2 -- follow-up about delayed order (same conversation history)
+    agent(
+        "Thanks. I also placed order ORD-1003 and it seems delayed. "
+        "What is your cancellation policy for delayed orders?"
+    )
 
 
-# Default Strands behavior (GenAI semconv v1.36.0-compatible emission)
-with semconv_opt_in(None):
-    run_agent_with_tool("Agent with tool (default semconv):")
-
-# Opt in to latest experimental GenAI semconv emission (v1.37.0+)
-with semconv_opt_in("gen_ai_latest_experimental"):
-    run_agent_with_tool("Agent with tool (latest semconv opt-in):")
-
-
-# --- Pattern 2: Multi-agent orchestration ---
+# ---------------------------------------------------------------------------
+# Scenario 2 -- Multi-agent delegation (agents-as-tools)
+# ---------------------------------------------------------------------------
 
 
 @tool
-def research_agent(query: str) -> str:
-    """Route factual questions to a research specialist."""
+def ask_order_specialist(question: str) -> str:
+    """Delegate order/shipment questions to the order specialist agent."""
     specialist = Agent(
-        model=get_model(), system_prompt="You are a research specialist."
+        name="order_specialist",
+        model=_get_model(),
+        tools=[lookup_order_status],
+        system_prompt=(
+            "You are OrderSpecialist. Use lookup_order_status for order "
+            "questions and answer with status plus ETA. Be concise."
+        ),
     )
-    return str(specialist(query))
+    return str(specialist(question))
 
 
 @tool
-def math_agent(problem: str) -> str:
-    """Route math problems to a math specialist."""
+def ask_policy_specialist(question: str) -> str:
+    """Delegate refund/cancellation/shipping policy questions to the policy specialist."""
     specialist = Agent(
-        model=get_model(),
-        system_prompt="You are a math specialist. Solve step-by-step.",
+        name="policy_specialist",
+        model=_get_model(),
+        tools=[lookup_policy],
+        system_prompt=(
+            "You are PolicySpecialist. Use lookup_policy for refund, "
+            "cancellation, or shipping policy questions. Be concise."
+        ),
     )
-    return str(specialist(problem))
+    return str(specialist(question))
 
 
-orchestrator = Agent(
-    model=get_model(),
-    tools=[research_agent, math_agent],
-    system_prompt=(
-        "Route queries to the correct specialist:\n"
-        "- Factual questions -> research_agent\n"
-        "- Math problems -> math_agent"
-    ),
-)
-print("Multi-agent orchestrator:", orchestrator("What is the square root of 144?"))
+def run_delegation_scenario() -> None:
+    """Coordinator delegates to specialist sub-agents wrapped as tools."""
+    coordinator = Agent(
+        name="support_coordinator",
+        model=_get_model(),
+        tools=[ask_order_specialist, ask_policy_specialist],
+        system_prompt=(
+            "You are SupportCoordinator. For order/shipment questions "
+            "delegate to ask_order_specialist. For policy questions "
+            "delegate to ask_policy_specialist. Combine results into "
+            "a concise final answer."
+        ),
+    )
+
+    coordinator(
+        "Order ORD-1003 is delayed. What is the current status, "
+        "and can I cancel and get a refund?"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Scenario 3 -- Swarm multi-agent collaboration
+# ---------------------------------------------------------------------------
+
+
+def run_swarm_scenario() -> None:
+    """Swarm of agents collaborate to resolve a complex support request."""
+    from strands.multiagent import Swarm
+
+    researcher = Agent(
+        name="researcher",
+        model=_get_model(),
+        tools=[lookup_order_status],
+        system_prompt=(
+            "You are a research specialist. Gather order information using "
+            "lookup_order_status. When done, hand off to the resolver."
+        ),
+    )
+
+    resolver = Agent(
+        name="resolver",
+        model=_get_model(),
+        tools=[lookup_policy],
+        system_prompt=(
+            "You are a resolution specialist. Using the research context, "
+            "look up relevant policies with lookup_policy and draft a "
+            "concise support resolution. When done, hand off to the reviewer."
+        ),
+    )
+
+    reviewer = Agent(
+        name="reviewer",
+        model=_get_model(),
+        system_prompt=(
+            "You are a quality reviewer. Review the proposed resolution for "
+            "accuracy and customer-friendliness. Provide a final summary."
+        ),
+    )
+
+    swarm = Swarm(
+        nodes=[researcher, resolver, reviewer],
+        entry_point=researcher,
+        max_handoffs=6,
+        max_iterations=5,
+        execution_timeout=120.0,
+        node_timeout=60.0,
+    )
+
+    swarm(
+        "Customer Jordan Lee has order ORD-1001 which was supposed to arrive "
+        "today but tracking has not updated. They want to know the status "
+        "and whether a refund is possible."
+    )
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+
+def main() -> None:
+    tracer = HoneyHiveTracer.init(
+        api_key=os.getenv("HH_API_KEY"),
+        project=os.getenv("HH_PROJECT"),
+        session_name="strands_agents_integration_example",
+        source=os.getenv("HH_SOURCE", "python_sdk_example"),
+    )
+
+    try:
+        run_single_agent_scenario()
+        run_delegation_scenario()
+        run_swarm_scenario()
+    finally:
+        tracer.force_flush()
+
+
+if __name__ == "__main__":
+    main()
