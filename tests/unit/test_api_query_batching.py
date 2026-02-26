@@ -225,6 +225,27 @@ class TestExperimentsListRunsBatching:
         # Metrics should be deduplicated and order-preserved.
         assert result.metrics == ["accuracy", "f1", "latency"]
         assert result.pagination.total == total
+        # total_unfiltered should be the sum of each batch's total_unfiltered.
+        assert result.pagination.total_unfiltered == total
+
+    @patch("honeyhive.api.client.experiments_svc")
+    def test_page_and_limit_stripped_from_batches(self, mock_svc: MagicMock) -> None:
+        """page/limit params should not be forwarded to batch requests."""
+        total = QUERY_BATCH_SIZE + 10
+        all_ids = [f"run_{i}" for i in range(total)]
+
+        mock_svc.getRuns.side_effect = [
+            _make_runs_response(all_ids[:QUERY_BATCH_SIZE]),
+            _make_runs_response(all_ids[QUERY_BATCH_SIZE:]),
+        ]
+
+        api = _make_api(ExperimentsAPI)
+        api.list_runs(run_ids=all_ids, page=3, limit=25)
+
+        # Neither batch call should include page or limit.
+        for call in mock_svc.getRuns.call_args_list:
+            assert "page" not in call.kwargs
+            assert "limit" not in call.kwargs
 
     @patch("honeyhive.api.client.experiments_svc")
     def test_none_run_ids_passes_through(self, mock_svc: MagicMock) -> None:

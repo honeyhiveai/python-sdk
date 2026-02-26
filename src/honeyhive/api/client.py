@@ -16,9 +16,10 @@ Usage::
     configs = await client.configurations.list_async(project="my-project")
 """
 
+import asyncio
 import logging
 import warnings
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, TypeVar, Union
 
 import httpx
 
@@ -53,6 +54,7 @@ from honeyhive._generated.models import (
     GetExperimentRunsResponse,
     GetExperimentRunsSchemaResponse,
     GetMetricsResponse,
+    Pagination,
     GetSessionResponse,
     PostEventRequest,
     PostEventResponse,
@@ -111,7 +113,9 @@ logger = logging.getLogger(__name__)
 QUERY_BATCH_SIZE = 100
 
 
-def _chunk_list(items: List[str], size: int) -> List[List[str]]:
+T = TypeVar("T")
+
+def _chunk_list(items: List[T], size: int) -> List[List[T]]:
     """Split a list into chunks of the given size."""
     return [items[i : i + size] for i in range(0, len(items), size)]
 
@@ -222,10 +226,19 @@ class DatapointsAPI(BaseAPI):
         # Batch if the list is large enough to risk exceeding URL length limits.
         if datapoint_ids and len(datapoint_ids) > QUERY_BATCH_SIZE:
             all_datapoints: List[Any] = []
-            for batch in _chunk_list(datapoint_ids, QUERY_BATCH_SIZE):
-                resp = datapoints_svc.getDatapoints(
-                    self._api_config, datapoint_ids=batch, dataset_name=dataset_name
-                )
+            batches = _chunk_list(datapoint_ids, QUERY_BATCH_SIZE)
+            for i, batch in enumerate(batches):
+                try:
+                    resp = datapoints_svc.getDatapoints(
+                        self._api_config,
+                        datapoint_ids=batch,
+                        dataset_name=dataset_name,
+                    )
+                except Exception:
+                    logger.warning(
+                        "Batch %d/%d failed (%d IDs)", i + 1, len(batches), len(batch)
+                    )
+                    raise
                 all_datapoints.extend(resp.datapoints)
             # Skip re-validation — items are already validated Datapoint instances.
             return GetDatapointsResponse.model_construct(datapoints=all_datapoints)
@@ -269,11 +282,19 @@ class DatapointsAPI(BaseAPI):
         """
         # Batch if the list is large enough to risk exceeding URL length limits.
         if datapoint_ids and len(datapoint_ids) > QUERY_BATCH_SIZE:
-            all_datapoints: List[Any] = []
-            for batch in _chunk_list(datapoint_ids, QUERY_BATCH_SIZE):
-                resp = await datapoints_svc_async.getDatapoints(
-                    self._api_config, datapoint_ids=batch, dataset_name=dataset_name
+            batches = _chunk_list(datapoint_ids, QUERY_BATCH_SIZE)
+            resps = await asyncio.gather(
+                *(
+                    datapoints_svc_async.getDatapoints(
+                        self._api_config,
+                        datapoint_ids=batch,
+                        dataset_name=dataset_name,
+                    )
+                    for batch in batches
                 )
+            )
+            all_datapoints: List[Any] = []
+            for resp in resps:
                 all_datapoints.extend(resp.datapoints)
             # Skip re-validation — items are already validated Datapoint instances.
             return GetDatapointsResponse.model_construct(datapoints=all_datapoints)
@@ -1238,19 +1259,34 @@ class ExperimentsAPI(BaseAPI):
         self, *, run_ids: List[str], **kwargs: Any
     ) -> GetExperimentRunsResponse:
         """Fetch runs in batches and merge the responses."""
+        # Pagination doesn't apply when batching by IDs — each batch must
+        # return all matching runs for its chunk.
+        kwargs.pop("page", None)
+        kwargs.pop("limit", None)
+
         all_evaluations: List[Any] = []
         all_metrics: List[str] = []
         total = 0
+        total_unfiltered = 0
 
-        for batch in _chunk_list(run_ids, QUERY_BATCH_SIZE):
-            resp = experiments_svc.getRuns(
-                self._api_config, run_ids=batch, **kwargs
-            )
+        batches = _chunk_list(run_ids, QUERY_BATCH_SIZE)
+        for i, batch in enumerate(batches):
+            try:
+                resp = experiments_svc.getRuns(
+                    self._api_config, run_ids=batch, **kwargs
+                )
+            except Exception:
+                logger.warning(
+                    "Batch %d/%d failed (%d run IDs)",
+                    i + 1,
+                    len(batches),
+                    len(batch),
+                )
+                raise
             all_evaluations.extend(resp.evaluations)
             all_metrics.extend(resp.metrics)
             total += resp.pagination.total
-
-        from honeyhive._generated.models.Pagination import Pagination
+            total_unfiltered += resp.pagination.total_unfiltered
 
         return GetExperimentRunsResponse.model_construct(
             evaluations=all_evaluations,
@@ -1259,7 +1295,7 @@ class ExperimentsAPI(BaseAPI):
                 page=1,
                 limit=total,
                 total=total,
-                total_unfiltered=total,
+                total_unfiltered=total_unfiltered,
                 total_pages=1,
                 has_next=False,
                 has_prev=False,
@@ -1360,20 +1396,30 @@ class ExperimentsAPI(BaseAPI):
     async def _batched_list_runs_async(
         self, *, run_ids: List[str], **kwargs: Any
     ) -> GetExperimentRunsResponse:
-        """Fetch runs in batches (async) and merge the responses."""
+        """Fetch runs in batches (async, parallel) and merge the responses."""
+        # Strip pagination params — each batch fetches its full slice.
+        kwargs.pop("page", None)
+        kwargs.pop("limit", None)
+
+        batches = _chunk_list(run_ids, QUERY_BATCH_SIZE)
+        resps = await asyncio.gather(
+            *(
+                experiments_svc_async.getRuns(
+                    self._api_config, run_ids=batch, **kwargs
+                )
+                for batch in batches
+            )
+        )
+
         all_evaluations: List[Any] = []
         all_metrics: List[str] = []
         total = 0
-
-        for batch in _chunk_list(run_ids, QUERY_BATCH_SIZE):
-            resp = await experiments_svc_async.getRuns(
-                self._api_config, run_ids=batch, **kwargs
-            )
+        total_unfiltered = 0
+        for resp in resps:
             all_evaluations.extend(resp.evaluations)
             all_metrics.extend(resp.metrics)
             total += resp.pagination.total
-
-        from honeyhive._generated.models.Pagination import Pagination
+            total_unfiltered += resp.pagination.total_unfiltered
 
         return GetExperimentRunsResponse.model_construct(
             evaluations=all_evaluations,
@@ -1382,7 +1428,7 @@ class ExperimentsAPI(BaseAPI):
                 page=1,
                 limit=total,
                 total=total,
-                total_unfiltered=total,
+                total_unfiltered=total_unfiltered,
                 total_pages=1,
                 has_next=False,
                 has_prev=False,
