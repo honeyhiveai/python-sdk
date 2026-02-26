@@ -22,6 +22,8 @@ permissions:
   contents: write
   pull-requests: write
 
+concurrency: generate-changelog
+
 jobs:
   generate-changelog:
     runs-on: ubuntu-latest
@@ -213,7 +215,7 @@ jobs:
             - Count of user-facing vs internal-only changes
             - Any breaking changes highlighted
           
-          claude_args: "--allowedTools Read Edit Write 'Bash(git log:*)' 'Bash(git show:*)' 'Bash(git diff:*)' 'Bash(git diff-tree:*)' 'Bash(git rev-parse:*)' 'Bash(git rev-list:*)' 'Bash(cat:*)' 'Bash(ls:*)' 'Bash(head:*)' 'Bash(tail:*)' 'Bash(date:*)' 'Bash(grep:*)'"
+          claude_args: "--model claude-opus-4-6 --allowedTools Read Edit Write 'Bash(git log:*)' 'Bash(git show:*)' 'Bash(git diff:*)' 'Bash(git diff-tree:*)' 'Bash(git rev-parse:*)' 'Bash(git rev-list:*)' 'Bash(cat:*)' 'Bash(ls:*)' 'Bash(head:*)' 'Bash(tail:*)' 'Bash(date:*)' 'Bash(grep:*)'"
 
       - name: Check for changelog changes
         id: changes
