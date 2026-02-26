@@ -16,9 +16,10 @@ Usage::
     configs = await client.configurations.list_async(project="my-project")
 """
 
+import asyncio
 import logging
 import warnings
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, TypeVar, Union
 
 import httpx
 
@@ -54,6 +55,7 @@ from honeyhive._generated.models import (
     GetExperimentRunsSchemaResponse,
     GetMetricsResponse,
     GetSessionResponse,
+    Pagination,
     PostEventRequest,
     PostEventResponse,
     PostExperimentRunRequest,
@@ -104,6 +106,19 @@ from honeyhive.utils.retry import RetryConfig
 from ._base import BaseAPI
 
 logger = logging.getLogger(__name__)
+
+# Maximum number of array items to send in a single query string request.
+# Real-world URL length limits (8-16 KB) cap practical array sizes at ~170-340
+# items for typical 26-char IDs. Batching at 100 keeps us safely within bounds.
+QUERY_BATCH_SIZE = 100
+
+
+T = TypeVar("T")
+
+
+def _chunk_list(items: List[T], size: int) -> List[List[T]]:
+    """Split a list into chunks of the given size."""
+    return [items[i : i + size] for i in range(0, len(items), size)]
 
 
 class ConfigurationsAPI(BaseAPI):
@@ -202,10 +217,33 @@ class DatapointsAPI(BaseAPI):
     ) -> GetDatapointsResponse:
         """List datapoints.
 
+        When datapoint_ids exceeds QUERY_BATCH_SIZE, requests are automatically
+        batched to stay within URL length limits and the results are merged.
+
         Args:
             datapoint_ids: Optional list of datapoint IDs to fetch.
             dataset_name: Optional dataset name to filter by.
         """
+        # Batch if the list is large enough to risk exceeding URL length limits.
+        if datapoint_ids and len(datapoint_ids) > QUERY_BATCH_SIZE:
+            all_datapoints: List[Any] = []
+            batches = _chunk_list(datapoint_ids, QUERY_BATCH_SIZE)
+            for i, batch in enumerate(batches):
+                try:
+                    resp = datapoints_svc.getDatapoints(
+                        self._api_config,
+                        datapoint_ids=batch,
+                        dataset_name=dataset_name,
+                    )
+                except Exception:
+                    logger.warning(
+                        "Batch %d/%d failed (%d IDs)", i + 1, len(batches), len(batch)
+                    )
+                    raise
+                all_datapoints.extend(resp.datapoints)
+            # Skip re-validation — items are already validated Datapoint instances.
+            return GetDatapointsResponse.model_construct(datapoints=all_datapoints)
+
         return datapoints_svc.getDatapoints(
             self._api_config, datapoint_ids=datapoint_ids, dataset_name=dataset_name
         )
@@ -236,10 +274,32 @@ class DatapointsAPI(BaseAPI):
     ) -> GetDatapointsResponse:
         """List datapoints asynchronously.
 
+        When datapoint_ids exceeds QUERY_BATCH_SIZE, requests are automatically
+        batched to stay within URL length limits and the results are merged.
+
         Args:
             datapoint_ids: Optional list of datapoint IDs to fetch.
             dataset_name: Optional dataset name to filter by.
         """
+        # Batch if the list is large enough to risk exceeding URL length limits.
+        if datapoint_ids and len(datapoint_ids) > QUERY_BATCH_SIZE:
+            batches = _chunk_list(datapoint_ids, QUERY_BATCH_SIZE)
+            resps = await asyncio.gather(
+                *(
+                    datapoints_svc_async.getDatapoints(
+                        self._api_config,
+                        datapoint_ids=batch,
+                        dataset_name=dataset_name,
+                    )
+                    for batch in batches
+                )
+            )
+            all_datapoints: List[Any] = []
+            for resp in resps:
+                all_datapoints.extend(resp.datapoints)
+            # Skip re-validation — items are already validated Datapoint instances.
+            return GetDatapointsResponse.model_construct(datapoints=all_datapoints)
+
         return await datapoints_svc_async.getDatapoints(
             self._api_config, datapoint_ids=datapoint_ids, dataset_name=dataset_name
         )
@@ -1147,6 +1207,9 @@ class ExperimentsAPI(BaseAPI):
     ) -> GetExperimentRunsResponse:
         """List experiment runs.
 
+        When run_ids exceeds QUERY_BATCH_SIZE, requests are automatically
+        batched to stay within URL length limits and the results are merged.
+
         Args:
             dataset_id: Filter by dataset ID.
             page: Page number for pagination.
@@ -1158,6 +1221,20 @@ class ExperimentsAPI(BaseAPI):
             sort_by: Sort by field.
             sort_order: Sort order (asc/desc).
         """
+        # Batch if the list is large enough to risk exceeding URL length limits.
+        if run_ids and len(run_ids) > QUERY_BATCH_SIZE:
+            return self._batched_list_runs(
+                dataset_id=dataset_id,
+                page=page,
+                limit=limit,
+                run_ids=run_ids,
+                name=name,
+                status=status,
+                dateRange=dateRange,
+                sort_by=sort_by,
+                sort_order=sort_order,
+            )
+
         return experiments_svc.getRuns(
             self._api_config,
             dataset_id=dataset_id,
@@ -1169,6 +1246,53 @@ class ExperimentsAPI(BaseAPI):
             dateRange=dateRange,
             sort_by=sort_by,
             sort_order=sort_order,
+        )
+
+    def _batched_list_runs(
+        self, *, run_ids: List[str], **kwargs: Any
+    ) -> GetExperimentRunsResponse:
+        """Fetch runs in batches and merge the responses."""
+        # Pagination doesn't apply when batching by IDs — each batch must
+        # return all matching runs for its chunk.
+        kwargs.pop("page", None)
+        kwargs.pop("limit", None)
+
+        all_evaluations: List[Any] = []
+        all_metrics: List[str] = []
+        total = 0
+        total_unfiltered = 0
+
+        batches = _chunk_list(run_ids, QUERY_BATCH_SIZE)
+        for i, batch in enumerate(batches):
+            try:
+                resp = experiments_svc.getRuns(
+                    self._api_config, run_ids=batch, **kwargs
+                )
+            except Exception:
+                logger.warning(
+                    "Batch %d/%d failed (%d run IDs)",
+                    i + 1,
+                    len(batches),
+                    len(batch),
+                )
+                raise
+            all_evaluations.extend(resp.evaluations)
+            all_metrics.extend(resp.metrics)
+            total += resp.pagination.total
+            total_unfiltered += resp.pagination.total_unfiltered
+
+        return GetExperimentRunsResponse.model_construct(
+            evaluations=all_evaluations,
+            metrics=list(dict.fromkeys(all_metrics)),  # deduplicate, preserve order
+            pagination=Pagination(
+                page=1,
+                limit=total,
+                total=total,
+                total_unfiltered=total_unfiltered,
+                total_pages=1,
+                has_next=False,
+                has_prev=False,
+            ),
         )
 
     def get_run(self, run_id: str) -> GetExperimentRunResponse:
@@ -1221,6 +1345,9 @@ class ExperimentsAPI(BaseAPI):
     ) -> GetExperimentRunsResponse:
         """List experiment runs asynchronously.
 
+        When run_ids exceeds QUERY_BATCH_SIZE, requests are automatically
+        batched to stay within URL length limits and the results are merged.
+
         Args:
             dataset_id: Filter by dataset ID.
             page: Page number for pagination.
@@ -1232,6 +1359,20 @@ class ExperimentsAPI(BaseAPI):
             sort_by: Sort by field.
             sort_order: Sort order (asc/desc).
         """
+        # Batch if the list is large enough to risk exceeding URL length limits.
+        if run_ids and len(run_ids) > QUERY_BATCH_SIZE:
+            return await self._batched_list_runs_async(
+                dataset_id=dataset_id,
+                page=page,
+                limit=limit,
+                run_ids=run_ids,
+                name=name,
+                status=status,
+                dateRange=dateRange,
+                sort_by=sort_by,
+                sort_order=sort_order,
+            )
+
         return await experiments_svc_async.getRuns(
             self._api_config,
             dataset_id=dataset_id,
@@ -1243,6 +1384,46 @@ class ExperimentsAPI(BaseAPI):
             dateRange=dateRange,
             sort_by=sort_by,
             sort_order=sort_order,
+        )
+
+    async def _batched_list_runs_async(
+        self, *, run_ids: List[str], **kwargs: Any
+    ) -> GetExperimentRunsResponse:
+        """Fetch runs in batches (async, parallel) and merge the responses."""
+        # Strip pagination params — each batch fetches its full slice.
+        kwargs.pop("page", None)
+        kwargs.pop("limit", None)
+
+        batches = _chunk_list(run_ids, QUERY_BATCH_SIZE)
+        resps = await asyncio.gather(
+            *(
+                experiments_svc_async.getRuns(self._api_config, run_ids=batch, **kwargs)
+                for batch in batches
+            )
+        )
+
+        all_evaluations: List[Any] = []
+        all_metrics: List[str] = []
+        total = 0
+        total_unfiltered = 0
+        for resp in resps:
+            all_evaluations.extend(resp.evaluations)
+            all_metrics.extend(resp.metrics)
+            total += resp.pagination.total
+            total_unfiltered += resp.pagination.total_unfiltered
+
+        return GetExperimentRunsResponse.model_construct(
+            evaluations=all_evaluations,
+            metrics=list(dict.fromkeys(all_metrics)),  # deduplicate, preserve order
+            pagination=Pagination(
+                page=1,
+                limit=total,
+                total=total,
+                total_unfiltered=total_unfiltered,
+                total_pages=1,
+                has_next=False,
+                has_prev=False,
+            ),
         )
 
     async def get_run_async(self, run_id: str) -> GetExperimentRunResponse:

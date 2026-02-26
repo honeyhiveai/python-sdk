@@ -1,5 +1,11 @@
 ## [Unreleased]
 
+### Fixed
+
+- **API Client: Large query string arrays no longer fail with 414/431 errors**
+  - Methods that pass arrays in query strings (`datapoints.list(datapoint_ids=...)`, `experiments.list_runs(run_ids=...)`) now automatically batch requests when the list exceeds 100 items and merge the results transparently
+  - No changes to the public API — existing code works as before, just without silent truncation or HTTP errors on large lists
+
 ## [1.0.0rc17] - 2026-02-25
 
 ### Added
