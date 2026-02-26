@@ -26,40 +26,60 @@ def get_model_patterns() -> List[str]:
     Returns:
         List of string patterns for model detection
     """
-    # Core LLM provider patterns - dynamically extensible
+    # High-confidence LLM provider patterns
     provider_patterns = [
         "openai.chat.completions",
         "openai.completions",
         "anthropic.messages",
         "bedrock.invoke_model",
         "google.generativeai",
+        "chatcompletion",
     ]
 
-    # Generic LLM operation patterns - dynamic detection
+    # LLM operation patterns - require specific prefixes/suffixes to
+    # avoid matching generic words like "chat" or "generate"
     operation_patterns = [
         "llm.",
-        "model.",
-        "chat",
-        "completion",
-        "generate",
-        "inference",
+        "llm_",
+        ".llm",
+        "_llm",
+        "chat_completion",
+        "text_completion",
+        "generate_content",
+        "model_inference",
+        "model_predict",
     ]
 
-    # Popular model name patterns - dynamically updated
+    # Popular model name patterns with delimiter-awareness
     model_name_patterns = [
-        "gpt",
-        "claude",
-        "llama",
-        "gemini",
-        "mistral",
-        "palm",
+        "gpt-",
+        "gpt4",
+        "gpt_",
+        "claude-",
+        "claude_",
+        "llama-",
+        "llama_",
+        "gemini-",
+        "gemini_",
+        "mistral-",
+        "mistral_",
+        "palm-",
+        "palm_",
     ]
 
-    # Combine all patterns dynamically
+    # Compound AI/ML patterns
+    compound_patterns = [
+        "ai_model",
+        "ml_predict",
+        "nlp_",
+    ]
+
+    # Combine all patterns
     all_patterns = []
     all_patterns.extend(provider_patterns)
     all_patterns.extend(operation_patterns)
     all_patterns.extend(model_name_patterns)
+    all_patterns.extend(compound_patterns)
 
     return all_patterns
 
