@@ -1,5 +1,11 @@
 ## [Unreleased]
 
+### Fixed
+
+- **Tracing: OTLP JSON exporter now preserves attribute types**
+  - Token counts (`input_tokens`, `output_tokens`) and other numeric attributes are no longer converted to strings during export
+  - Array and tuple values (e.g., `finish_reasons`) are now serialized as proper OTLP arrays instead of Python repr strings
+
 ## [1.0.0rc17] - 2026-02-25
 
 ### Added
