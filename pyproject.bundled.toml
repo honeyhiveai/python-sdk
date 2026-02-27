@@ -59,6 +59,7 @@ dev = [
     "docker>=7.0.0",
     "build>=1.0.0",
     "hatchling>=1.18.0",
+    "twine>=4.0.0",  # For publishing packages to PyPI
 ]
 
 # Documentation

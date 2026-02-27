@@ -60,6 +60,7 @@ dev = [
     "docker>=7.0.0",  # For Lambda container tests
     "build>=1.0.0",  # For building packages
     "hatchling>=1.18.0",  # Build backend
+    "twine>=4.0.0",  # For publishing packages to PyPI
 ]
 
 # Documentation
