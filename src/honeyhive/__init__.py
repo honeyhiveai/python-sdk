@@ -6,7 +6,7 @@ HoneyHive Python SDK - LLM Observability and Evaluation Platform
 __version__ = "1.0.0rc9.post2"
 
 # Bundled package version (used by honeyhive-bundled PyPI package)
-__version_bundled__ = "1.1.0a1"
+__version_bundled__ = "1.1.0"
 
 # Main API client
 from .api import HoneyHive
