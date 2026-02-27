@@ -1,17 +1,21 @@
 ## [Unreleased]
 
+### Added
+
 ### Fixed
 
-- **API Client: Large query string arrays no longer fail with 414/431 errors**
+### Changed
+
+- **API Client: Large queries are batched**
   - Methods that pass arrays in query strings (`datapoints.list(datapoint_ids=...)`, `experiments.list_runs(run_ids=...)`) now automatically batch requests when the list exceeds 100 items and merge the results transparently
   - No changes to the public API — existing code works as before, just without silent truncation or HTTP errors on large lists
+
+- **API Client: SDK identification headers on all HTTP requests** (#268)
+  - All HTTP requests now include `hh-sdk-version`, `hh-sdk-language`, and `hh-sdk-package` headers
 
 ## [1.0.0rc17] - 2026-02-25
 
 ### Added
-
-- **API Client: SDK identification headers on all HTTP requests** (#268)
-  - All HTTP requests now include `hh-sdk-version`, `hh-sdk-language`, and `hh-sdk-package` headers
 
 - **Experiments: Git context stamped on experiment run metadata** (#205)
   - `evaluate()` now automatically collects git metadata (commit hash, branch, author, remote URL, dirty status) and attaches it to the run's `metadata.git` field
