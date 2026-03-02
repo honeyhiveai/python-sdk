@@ -1065,6 +1065,29 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                     )
                     return "tool"
 
+            # Priority 4.5: gen_ai.operation.name (GenAI semantic conventions)
+            # Standard OTel GenAI instrumentation used by Strands, PydanticAI v3+, etc.
+            op_name = attributes.get("gen_ai.operation.name")
+            if op_name:
+                op_name_str = str(op_name)
+                OPERATION_NAME_TO_EVENT_TYPE = {
+                    "chat": "model",
+                    "text_completion": "model",
+                    "generate_content": "model",
+                    "invoke_agent": "chain",
+                    "create_agent": "chain",
+                    "execute_tool": "tool",
+                }
+                event_type = OPERATION_NAME_TO_EVENT_TYPE.get(op_name_str)
+                if event_type:
+                    self._safe_log(
+                        "debug",
+                        "✅ Event type from gen_ai.operation.name: %s (%s)",
+                        event_type,
+                        op_name_str,
+                    )
+                    return event_type
+
             # Priority 5: Dynamic pattern matching using utility function
             self._safe_log(
                 "debug", "🔍 Using dynamic pattern matching for span: '%s'", span.name
