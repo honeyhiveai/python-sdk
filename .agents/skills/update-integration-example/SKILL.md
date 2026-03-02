@@ -55,7 +55,7 @@ Target: `python-sdk/examples/integrations/{{framework}}_example.py`
 - One comprehensive example covering major agent patterns
 - Use official framework style and current APIs
 - HoneyHive integration should be minimal: init tracer + instrumentor
-- Domain: customer support with order status/policy lookup mock tools, order IDs ORD-1001 to ORD-1003 (match existing examples like `google_adk_example.py` and `pydantic_ai_example.py`)
+- Domain: customer support with order status/policy lookup mock tools, order IDs ORD-1001 to ORD-1003 (match existing examples like `crewai_integration.py` and `pydantic_ai_integration.py`)
 - Never use HoneyHive-specific themes. Never copy scenarios from the framework's official docs
 - Include install instructions with explicit packages (uv and/or pip)
 
