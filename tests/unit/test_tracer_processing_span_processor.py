@@ -778,9 +778,7 @@ class TestHoneyHiveSpanProcessorAgentDetection:
             assert result == "tool"
 
     @patch("honeyhive.utils.logger.safe_log")
-    def test_detect_agent_ignores_empty_agent_name(
-        self, mock_safe_log: Mock
-    ) -> None:
+    def test_detect_agent_ignores_empty_agent_name(self, mock_safe_log: Mock) -> None:
         """Test that empty string agent_name is ignored."""
         processor = HoneyHiveSpanProcessor()
         mock_span = Mock(spec=Span)
