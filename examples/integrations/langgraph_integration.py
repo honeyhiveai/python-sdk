@@ -1,213 +1,284 @@
+#!/usr/bin/env python3
 """
 LangGraph + HoneyHive integration example.
 
-Patterns:
-  1) Agent with tool calling loop (canonical LangGraph pattern)
-  2) Routing workflow with structured output + conditional edges
+Demonstrates three LangGraph patterns with HoneyHive tracing:
 
-Requirements:
-    pip install honeyhive langgraph langchain-openai openinference-instrumentation-langchain
+1) Single agent with tools (create_agent)
+2) Multi-agent delegation via subgraphs (coordinator + specialists)
+3) Multi-turn conversation with checkpointing (session continuity)
 
-Environment variables:
-    HH_API_KEY, HH_PROJECT, OPENAI_API_KEY
+Install:
+    uv pip install honeyhive langgraph langchain langchain-openai openinference-instrumentation-langchain
+
+Run:
+    uv run python examples/integrations/langgraph_integration.py
+
+Environment:
+    HH_API_KEY
+    HH_PROJECT
+    OPENAI_API_KEY
+    HH_SOURCE (optional, defaults to "python_sdk_example")
 """
 
-import operator
 import os
-from typing import Annotated, Literal, TypedDict
+from typing import Literal, TypedDict
 
-from langchain.messages import AnyMessage, HumanMessage, SystemMessage, ToolMessage
-from langchain.tools import tool
+from langchain.agents import create_agent
+from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
+from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
 from openinference.instrumentation.langchain import LangChainInstrumentor
 from pydantic import BaseModel, Field
 
 from honeyhive import HoneyHiveTracer
 
-# --- HoneyHive setup (add these 3 lines to any LangGraph app) ---
+MODEL = "gpt-4o-mini"
 
-tracer = HoneyHiveTracer.init(
-    api_key=os.environ["HH_API_KEY"],
-    project=os.environ["HH_PROJECT"],
-    session_name="langgraph-example",
-)
-LangChainInstrumentor().instrument(tracer_provider=tracer.provider)
 
-# --- Tools ---
-
-model = ChatOpenAI(model="gpt-4o-mini")
+# -- Mock tools (customer support domain, shared across examples) --
 
 
 @tool
-def calculator(a: float, b: float, operation: str) -> str:
-    """Perform arithmetic on two numbers.
+def lookup_order_status(order_id: str) -> dict:
+    """Look up the current status of a customer order.
 
     Args:
-        a: First number
-        b: Second number
-        operation: One of 'add', 'subtract', 'multiply', 'divide'
+        order_id: The order identifier (e.g., ORD-1001)
     """
-    ops = {
-        "add": lambda x, y: x + y,
-        "subtract": lambda x, y: x - y,
-        "multiply": lambda x, y: x * y,
-        "divide": lambda x, y: x / y if y else "err",
+    statuses = {
+        "ORD-1001": {"state": "shipped", "eta_days": 2},
+        "ORD-1002": {"state": "processing", "eta_days": 5},
+        "ORD-1003": {"state": "delayed", "eta_days": 8},
     }
-    fn = ops.get(operation)
-    return str(fn(a, b)) if fn else f"Unknown operation: {operation}"
+    status = statuses.get(order_id.upper())
+    if status:
+        return {"status": "success", "order_id": order_id.upper(), **status}
+    return {"status": "not_found", "order_id": order_id.upper()}
 
 
 @tool
-def knowledge_base(topic: str) -> str:
-    """Look up information on a topic.
+def lookup_policy(topic: str) -> dict:
+    """Look up company support policy on a given topic.
 
     Args:
-        topic: The topic to look up
+        topic: Policy topic — one of 'refund', 'cancellation', or 'shipping'
     """
-    topics = {
-        "renewable energy": "Solar and wind generate 30% of global electricity. Costs dropped 90% since 2010.",
-        "machine learning": "ML models learn patterns from data. Key types: supervised, unsupervised, reinforcement.",
+    policies = {
+        "refund": {
+            "summary": "Refunds available within 30 days for undelivered or damaged items.",
+            "window_days": 30,
+        },
+        "cancellation": {
+            "summary": "Cancellation allowed before shipment. Delayed orders can request assisted cancellation.",
+            "window_days": 2,
+        },
+        "shipping": {
+            "summary": "Standard shipping 3-5 business days. Delays trigger proactive outreach.",
+            "window_days": 5,
+        },
     }
-    for k, v in topics.items():
-        if k in topic.lower():
-            return v
-    return f"No match for '{topic}'."
+    key = topic.lower().strip()
+    result = policies.get(key)
+    if result:
+        return {"status": "success", "topic": key, **result}
+    return {"status": "not_found", "topic": key}
 
 
-# --- Pattern 1: Agent with tool calling loop ---
-# The LLM decides which tools to call via bind_tools.
-# A loop runs until no more tool calls remain.
-
-tools = [calculator, knowledge_base]
-tools_by_name = {t.name: t for t in tools}
-model_with_tools = model.bind_tools(tools)
+# ---------------------------------------------------------------------------
+# Scenario 1: Single agent with tools (create_agent)
+# ---------------------------------------------------------------------------
+# Uses LangGraph's create_agent — the recommended high-level way to build a
+# tool-calling agent. Two turns demonstrate tool usage.
 
 
-class AgentState(TypedDict):
-    messages: Annotated[list[AnyMessage], operator.add]
+def run_single_agent_scenario() -> None:
+    model = ChatOpenAI(model=MODEL)
+    agent = create_agent(
+        model,
+        tools=[lookup_order_status, lookup_policy],
+        name="support_agent",
+        system_prompt=(
+            "You are a customer support agent. Use lookup_order_status to "
+            "check order details and lookup_policy for policy questions. "
+            "Keep responses concise and customer-friendly."
+        ),
+    )
+
+    prompts = [
+        "What is the status of order ORD-1002?",
+        "Order ORD-1003 is delayed. What is the cancellation policy?",
+    ]
+
+    for prompt in prompts:
+        result = agent.invoke({"messages": [HumanMessage(content=prompt)]})
+        print(f"[Single Agent] {result['messages'][-1].content[:120]}")
 
 
-def llm_call(state: AgentState):
-    """LLM decides whether to call a tool or respond."""
-    return {
-        "messages": [
-            model_with_tools.invoke(
-                [
-                    SystemMessage(
-                        content="You are a helpful assistant. Use tools when needed."
+# ---------------------------------------------------------------------------
+# Scenario 2: Multi-agent delegation via subgraphs
+# ---------------------------------------------------------------------------
+# A coordinator StateGraph delegates to specialist subgraph agents. This
+# shows the low-level graph-building API and agent hierarchy.
+
+
+def run_multi_agent_scenario() -> None:
+    model = ChatOpenAI(model=MODEL)
+
+    order_specialist = create_agent(
+        model,
+        tools=[lookup_order_status],
+        name="order_specialist",
+        system_prompt=(
+            "You are an order specialist. Use lookup_order_status to answer "
+            "order questions. Return status and ETA in one sentence."
+        ),
+    )
+
+    policy_specialist = create_agent(
+        model,
+        tools=[lookup_policy],
+        name="policy_specialist",
+        system_prompt=(
+            "You are a policy specialist. Use lookup_policy to answer "
+            "refund, cancellation, and shipping questions. Be concise."
+        ),
+    )
+
+    class CoordinatorState(TypedDict):
+        question: str
+        category: str
+        answer: str
+
+    class RouteDecision(BaseModel):
+        category: Literal["order", "policy", "general"] = Field(
+            description="Route the question to the right specialist"
+        )
+
+    router_llm = model.with_structured_output(RouteDecision)
+
+    def classify(state: CoordinatorState):
+        result = router_llm.invoke(
+            [
+                SystemMessage(
+                    content=(
+                        "Classify the customer question as 'order' (about a specific "
+                        "order status/delivery), 'policy' (about refund/cancellation/"
+                        "shipping rules), or 'general'."
                     )
-                ]
-                + state["messages"]
-            )
-        ]
-    }
+                ),
+                HumanMessage(content=state["question"]),
+            ]
+        )
+        return {"category": result.category}
 
+    def handle_order(state: CoordinatorState):
+        result = order_specialist.invoke(
+            {"messages": [HumanMessage(content=state["question"])]}
+        )
+        return {"answer": result["messages"][-1].content}
 
-def tool_node(state: AgentState):
-    """Execute tool calls from the LLM response."""
-    results = []
-    for tc in state["messages"][-1].tool_calls:
-        result = tools_by_name[tc["name"]].invoke(tc["args"])
-        results.append(ToolMessage(content=str(result), tool_call_id=tc["id"]))
-    return {"messages": results}
+    def handle_policy(state: CoordinatorState):
+        result = policy_specialist.invoke(
+            {"messages": [HumanMessage(content=state["question"])]}
+        )
+        return {"answer": result["messages"][-1].content}
 
+    def handle_general(state: CoordinatorState):
+        response = model.invoke(
+            [
+                SystemMessage(content="Answer concisely as a support agent."),
+                HumanMessage(content=state["question"]),
+            ]
+        )
+        return {"answer": response.content}
 
-def should_continue(state: AgentState) -> Literal["tool_node", "__end__"]:
-    if state["messages"][-1].tool_calls:
-        return "tool_node"
-    return END
-
-
-agent = (
-    StateGraph(AgentState)
-    .add_node("llm_call", llm_call)
-    .add_node("tool_node", tool_node)
-    .add_edge(START, "llm_call")
-    .add_conditional_edges("llm_call", should_continue, ["tool_node", END])
-    .add_edge("tool_node", "llm_call")
-    .compile()
-)
-
-result = agent.invoke({"messages": [HumanMessage(content="What is 256 divided by 8?")]})
-print(result["messages"][-1].content)
-
-result = agent.invoke({"messages": [HumanMessage(content="Look up renewable energy")]})
-print(result["messages"][-1].content)
-
-
-# --- Pattern 2: Routing workflow with structured output ---
-# Classify the question, then route to a specialized handler node.
-
-
-class Route(BaseModel):
-    category: Literal["math", "knowledge", "general"] = Field(
-        description="The category of the question"
+    coordinator = (
+        StateGraph(CoordinatorState)
+        .add_node("classify", classify)
+        .add_node("order", handle_order)
+        .add_node("policy", handle_policy)
+        .add_node("general", handle_general)
+        .add_edge(START, "classify")
+        .add_conditional_edges(
+            "classify",
+            lambda state: state["category"],
+            {"order": "order", "policy": "policy", "general": "general"},
+        )
+        .add_edge("order", END)
+        .add_edge("policy", END)
+        .add_edge("general", END)
+        .compile()
     )
 
+    questions = [
+        "Where is my order ORD-1001?",
+        "What is your refund policy?",
+    ]
 
-class RouterState(TypedDict):
-    question: str
-    category: str
-    answer: str
+    for q in questions:
+        result = coordinator.invoke({"question": q, "category": "", "answer": ""})
+        print(f"[Multi-Agent] {result['category']}: {result['answer'][:120]}")
 
 
-router_llm = model.with_structured_output(Route)
+# ---------------------------------------------------------------------------
+# Scenario 3: Multi-turn conversation with checkpointing
+# ---------------------------------------------------------------------------
+# Uses MemorySaver to persist conversation state across turns with the same
+# thread_id. Demonstrates session continuity — the agent remembers context
+# from previous turns.
 
 
-def classify(state: RouterState):
-    result = router_llm.invoke(
-        [
-            SystemMessage(content="Classify as 'math', 'knowledge', or 'general'."),
-            HumanMessage(content=state["question"]),
-        ]
+def run_multi_turn_scenario() -> None:
+    model = ChatOpenAI(model=MODEL)
+    memory = MemorySaver()
+
+    agent = create_agent(
+        model,
+        tools=[lookup_order_status, lookup_policy],
+        name="support_agent_with_memory",
+        system_prompt=(
+            "You are a customer support agent with memory of the conversation. "
+            "Use tools to look up orders and policies. Reference previous "
+            "context when the customer follows up."
+        ),
+        checkpointer=memory,
     )
-    return {"category": result.category}
+
+    thread = {"configurable": {"thread_id": "customer-session-001"}}
+
+    turns = [
+        "Can you check the status of order ORD-1003?",
+        "That order is delayed. What are my cancellation options?",
+        "OK, go ahead and summarize everything we discussed about that order.",
+    ]
+
+    for turn in turns:
+        result = agent.invoke({"messages": [HumanMessage(content=turn)]}, config=thread)
+        print(f"[Multi-Turn] {result['messages'][-1].content[:120]}")
 
 
-def handle_math(state: RouterState):
-    response = model.invoke(f"Solve this math problem: {state['question']}")
-    return {"answer": response.content}
+# -- Main --
 
 
-def handle_knowledge(state: RouterState):
-    # Use tool directly for lookup, then summarize
-    result = knowledge_base.invoke(state["question"])
-    response = model.invoke(
-        f"Question: {state['question']}\nFacts: {result}\nBrief answer."
+def main() -> None:
+    tracer = HoneyHiveTracer.init(
+        api_key=os.getenv("HH_API_KEY"),
+        project=os.getenv("HH_PROJECT"),
+        session_name="langgraph-example",
+        source=os.getenv("HH_SOURCE", "python_sdk_example"),
     )
-    return {"answer": response.content}
+    LangChainInstrumentor().instrument(tracer_provider=tracer.provider)
+
+    try:
+        run_single_agent_scenario()
+        run_multi_agent_scenario()
+        run_multi_turn_scenario()
+    finally:
+        tracer.force_flush()
 
 
-def handle_general(state: RouterState):
-    response = model.invoke(f"Answer concisely: {state['question']}")
-    return {"answer": response.content}
-
-
-router = (
-    StateGraph(RouterState)
-    .add_node("classify", classify)
-    .add_node("math", handle_math)
-    .add_node("knowledge", handle_knowledge)
-    .add_node("general", handle_general)
-    .add_edge(START, "classify")
-    .add_conditional_edges(
-        "classify",
-        lambda state: state["category"],
-        {"math": "math", "knowledge": "knowledge", "general": "general"},
-    )
-    .add_edge("math", END)
-    .add_edge("knowledge", END)
-    .add_edge("general", END)
-    .compile()
-)
-
-result = router.invoke(
-    {"question": "What is 42 times 15?", "category": "", "answer": ""}
-)
-print(f"Route: {result['category']} | {result['answer']}")
-
-result = router.invoke(
-    {"question": "Tell me about machine learning", "category": "", "answer": ""}
-)
-print(f"Route: {result['category']} | {result['answer']}")
+if __name__ == "__main__":
+    main()
