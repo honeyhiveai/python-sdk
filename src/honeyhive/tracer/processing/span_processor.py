@@ -953,12 +953,15 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         """Dynamically detect event type using priority-based patterns.
 
         Priority Order:
-        1. honeyhive_event_type_raw - Set by @trace decorator (highest priority)
-        2. honeyhive_event_type - Alternative explicit format
-        3. openinference.span.kind - Standard instrumentor convention
+        1. honeyhive_event_type (non-default) - Already processed, skip
+        2. honeyhive_event_type_raw - Set by @trace decorator (highest priority)
+        3. honeyhive_event_type - Alternative explicit format (non-"tool")
+        4. openinference.span.kind - Standard instrumentor convention
            (LLM/CHAIN/TOOL/AGENT)
-        4. Span name inference - Pattern matching fallback
-        5. Default to "tool" - Final fallback
+        4.5. gen_ai.operation.name - GenAI semantic conventions
+             (chat/invoke_agent/execute_tool/etc.)
+        5. Dynamic pattern matching - Span name inference fallback
+        6. Default to "tool" - Final fallback
 
         OpenInference span.kind mappings:
         - LLM → model (actual LLM invocations)
@@ -969,6 +972,12 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         - EMBEDDING → tool (embedding generation)
         - RERANKER → tool (reranking operations)
         - GUARDRAIL → tool (guardrail checks)
+
+        gen_ai.operation.name mappings:
+        - chat, text_completion, generate_content → model
+        - invoke_agent, create_agent → chain
+        - execute_tool → tool
+        - embeddings → tool
 
         :param span: The span to analyze for event type
         :type span: Span
@@ -1077,6 +1086,7 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                     "invoke_agent": "chain",
                     "create_agent": "chain",
                     "execute_tool": "tool",
+                    "embeddings": "tool",
                 }
                 event_type = OPERATION_NAME_TO_EVENT_TYPE.get(op_name_str)
                 if event_type:
