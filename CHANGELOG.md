@@ -4,6 +4,12 @@
 
 ### Fixed
 
+- **Tracing: Parent-child span nesting now works correctly**
+  - Spans are now exported in batches so the backend can resolve parent-child relationships in a single request
+  - Previously all spans appeared flat under the session; now nested traces display the correct hierarchy
+  - Spans are automatically flushed every 5 seconds or when 512 spans accumulate, whichever comes first
+  - OTLP payloads now correctly group spans by instrumentation scope
+
 ### Changed
 
 ## [1.0.0rc18] - 2026-02-26
