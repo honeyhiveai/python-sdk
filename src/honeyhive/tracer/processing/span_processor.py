@@ -1065,6 +1065,26 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                     )
                     return "tool"
 
+            # Priority 4.5: Agent detection from OTel GenAI semantic conventions
+            # Spans with gen_ai.agent.name or gen_ai.operation.name=agent are
+            # agent operations, not model calls. This must be checked before
+            # general pattern matching which would incorrectly classify them
+            # as "model" due to the presence of gen_ai.request.model.
+            agent_name = attributes.get("gen_ai.agent.name")
+            operation_name = attributes.get("gen_ai.operation.name")
+            if agent_name or (
+                isinstance(operation_name, str)
+                and operation_name.lower() == "agent"
+            ):
+                self._safe_log(
+                    "debug",
+                    "Event type detected as 'agent' from GenAI semantic "
+                    "conventions (agent_name=%s, operation_name=%s)",
+                    agent_name,
+                    operation_name,
+                )
+                return "agent"
+
             # Priority 5: Dynamic pattern matching using utility function
             self._safe_log(
                 "debug", "🔍 Using dynamic pattern matching for span: '%s'", span.name
