@@ -42,6 +42,7 @@ jobs:
           path: docs-repo
 
       - name: Sync SDK release to product changelog
+        id: claude
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -124,6 +125,16 @@ jobs:
             - Write to `docs-repo/beta/changelog/product.mdx`
 
           claude_args: "--model claude-opus-4-6 --allowedTools Read Edit Write 'Bash(cat:*)' 'Bash(ls:*)' 'Bash(head:*)' 'Bash(tail:*)' 'Bash(grep:*)' 'Bash(git log:*)'"
+
+      - name: Write job summary
+        if: always()
+        run: |
+          echo "## SDK Changelog Sync Result" >> $GITHUB_STEP_SUMMARY
+          if [ -f "${{ steps.claude.outputs.execution_file }}" ]; then
+            tail -50 "${{ steps.claude.outputs.execution_file }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No execution output found." >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: Check for docs changes
         id: changes
