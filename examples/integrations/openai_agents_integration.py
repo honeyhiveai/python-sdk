@@ -340,16 +340,12 @@ async def test_streaming():
 
     print("📖 Streaming output: ", end="", flush=True)
 
-    full_response = ""
-    async for chunk in Runner.stream_async(
+    result = Runner.run_streamed(
         agent, "Tell me a very short 2-sentence story about a curious robot."
-    ):
-        if hasattr(chunk, "text"):
-            print(chunk.text, end="", flush=True)
-            full_response += chunk.text
-        elif isinstance(chunk, str):
-            print(chunk, end="", flush=True)
-            full_response += chunk
+    )
+    async for event in result.stream_events():
+        if hasattr(event, "data") and hasattr(event.data, "delta"):
+            print(event.data.delta, end="", flush=True)
 
     print("\n✅ Streaming complete")
     print("\n📊 Expected in HoneyHive:")
@@ -508,6 +504,7 @@ async def main():
     finally:
         # Cleanup
         print("\n📤 Cleaning up...")
+        HoneyHiveTracer.flush_all()
         agents_instrumentor.uninstrument()
         openai_instrumentor.uninstrument()
         print("✓ Cleanup completed")
