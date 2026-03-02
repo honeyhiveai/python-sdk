@@ -805,9 +805,11 @@ class TestHoneyHiveSpanProcessorOnEnd:
 
     @patch("honeyhive.utils.logger.safe_log")
     def test_on_end_otlp_mode_success(self, mock_safe_log: Mock) -> None:
-        """Test on_end in OTLP mode with successful processing."""
+        """Test on_end in OTLP mode buffers span for batch export."""
         mock_exporter = Mock()
-        mock_exporter.export.return_value = Mock(name="SUCCESS")
+        from opentelemetry.sdk.trace.export import SpanExportResult
+
+        mock_exporter.export.return_value = SpanExportResult.SUCCESS
 
         processor = HoneyHiveSpanProcessor(otlp_exporter=mock_exporter)
 
@@ -817,6 +819,12 @@ class TestHoneyHiveSpanProcessorOnEnd:
 
         processor.on_end(mock_span)
 
+        # In batched mode, span is buffered, not exported immediately
+        mock_exporter.export.assert_not_called()
+        assert len(processor._span_buffer) == 1
+
+        # Flush triggers the actual export
+        processor._flush_span_buffer()
         mock_exporter.export.assert_called_once_with([mock_span])
 
     @patch("honeyhive.utils.logger.safe_log")
@@ -894,9 +902,11 @@ class TestHoneyHiveSpanProcessorSending:
 
     @patch("honeyhive.utils.logger.safe_log")
     def test_send_via_otlp_batched_mode(self, mock_safe_log: Mock) -> None:
-        """Test OTLP sending in batched mode."""
+        """Test OTLP sending in batched mode buffers spans."""
         mock_exporter = Mock()
-        mock_exporter.export.return_value = Mock(name="SUCCESS")
+        from opentelemetry.sdk.trace.export import SpanExportResult
+
+        mock_exporter.export.return_value = SpanExportResult.SUCCESS
 
         processor = HoneyHiveSpanProcessor(
             otlp_exporter=mock_exporter, disable_batch=False
@@ -905,6 +915,12 @@ class TestHoneyHiveSpanProcessorSending:
         mock_span = Mock(spec=ReadableSpan)
         processor._send_via_otlp(mock_span, {}, "session-123")
 
+        # Batched mode: span is buffered, not exported immediately
+        mock_exporter.export.assert_not_called()
+        assert len(processor._span_buffer) == 1
+
+        # Flush triggers the actual export
+        processor._flush_span_buffer()
         mock_exporter.export.assert_called_once_with([mock_span])
 
     @patch("honeyhive.utils.logger.safe_log")
@@ -934,17 +950,24 @@ class TestHoneyHiveSpanProcessorSending:
 
     @patch("honeyhive.utils.logger.safe_log")
     def test_send_via_otlp_with_result_name(self, mock_safe_log: Mock) -> None:
-        """Test OTLP sending with result that has name attribute."""
+        """Test OTLP sending buffers span and flush checks export result."""
         mock_exporter = Mock()
-        mock_result = Mock()
-        mock_result.name = "SUCCESS"
-        mock_exporter.export.return_value = mock_result
+        from opentelemetry.sdk.trace.export import SpanExportResult
+
+        mock_exporter.export.return_value = SpanExportResult.SUCCESS
 
         processor = HoneyHiveSpanProcessor(otlp_exporter=mock_exporter)
 
         mock_span = Mock(spec=ReadableSpan)
         processor._send_via_otlp(mock_span, {}, "session-123")
 
+        # Span is buffered
+        mock_exporter.export.assert_not_called()
+        assert len(processor._span_buffer) == 1
+
+        # Flush exports and checks result
+        result = processor._flush_span_buffer()
+        assert result is True
         mock_exporter.export.assert_called_once_with([mock_span])
         mock_safe_log.assert_called()
 
