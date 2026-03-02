@@ -11,8 +11,9 @@
 # no-else-return: Early return pattern improves readability in complex conditionals
 
 import json
+import threading
 import warnings
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 from opentelemetry import baggage, context
 from opentelemetry.context import Context
@@ -62,6 +63,13 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         self.disable_batch = disable_batch
         self.otlp_exporter = otlp_exporter
         self.tracer_instance = tracer_instance
+
+        # Span buffer for batched export.
+        # Accumulates spans during on_end and flushes them as a single
+        # batch during shutdown/force_flush so the backend can resolve
+        # parent-child relationships within the batch.
+        self._span_buffer: List[ReadableSpan] = []
+        self._buffer_lock = threading.Lock()
 
         # Multi-instance logging architecture uses safe_log utility
         # No need to store logger reference directly
@@ -810,37 +818,94 @@ class HoneyHiveSpanProcessor(SpanProcessor):
     def _send_via_otlp(
         self, span: ReadableSpan, _attributes: dict, _session_id: str
     ) -> None:
-        """Send span via OTLP exporter - ALWAYS exports spans to ensure delivery.
+        """Buffer span for batched OTLP export.
 
-        :param span: The span to send
+        Spans are accumulated in a thread-safe buffer and exported as a
+        single batch during shutdown/force_flush.  This allows the backend's
+        ``resolveParentIdsFromSpans`` to see all related spans in one request
+        and correctly resolve parent-child relationships.
+
+        When ``disable_batch`` is True the span is exported immediately
+        (preserving the original behaviour for callers that need it).
+
+        :param span: The span to buffer/send
         :type span: ReadableSpan
-        :param attributes: Span attributes dictionary
-        :type attributes: dict
-        :param session_id: HoneyHive session ID
-        :type session_id: str
+        :param _attributes: Span attributes dictionary (unused)
+        :type _attributes: dict
+        :param _session_id: HoneyHive session ID (unused)
+        :type _session_id: str
         """
         try:
-            batch_mode = "immediate" if self.disable_batch else "batched"
-            self._safe_log(
-                "debug", "🚀 OTLP EXPORT CALLED - %s MODE", batch_mode.upper()
-            )
+            if not self.otlp_exporter:
+                self._safe_log("warning", "No OTLP exporter available")
+                return
 
-            if self.otlp_exporter:
-                # ALWAYS export spans to ensure delivery to backend
-                # The HoneyHiveOTLPExporter handles the actual OTLP protocol
+            if self.disable_batch:
+                # Immediate mode: export single span right away
                 result = self.otlp_exporter.export([span])
                 self._safe_log(
-                    "debug", "✅ Span exported via OTLP exporter (%s mode)", batch_mode
+                    "debug",
+                    "Span exported via OTLP exporter (immediate mode)",
                 )
-
-                # Log export result for debugging
                 if hasattr(result, "name"):
-                    self._safe_log("debug", "📊 OTLP export result: %s", result.name)
-            else:
-                self._safe_log("warning", "⚠️ No OTLP exporter available")
+                    self._safe_log("debug", "OTLP export result: %s", result.name)
+                return
+
+            # Batched mode: accumulate spans in buffer
+            with self._buffer_lock:
+                self._span_buffer.append(span)
+                buffer_size = len(self._span_buffer)
+
+            self._safe_log(
+                "debug",
+                "Span buffered for batch export (buffer_size=%d)",
+                buffer_size,
+            )
 
         except Exception as e:
-            self._safe_log("error", "❌ Error sending via OTLP: %s", e)
+            self._safe_log("error", "Error in _send_via_otlp: %s", e)
+
+    def _flush_span_buffer(self) -> bool:
+        """Flush all buffered spans to the OTLP exporter as a single batch.
+
+        This ensures the backend receives all related spans together so
+        ``resolveParentIdsFromSpans`` can build the complete parent-child
+        mapping in one pass.
+
+        :return: True if flush succeeded (or buffer was empty), False on error.
+        :rtype: bool
+        """
+        try:
+            with self._buffer_lock:
+                if not self._span_buffer:
+                    return True
+                spans_to_flush = list(self._span_buffer)
+                self._span_buffer.clear()
+
+            if not self.otlp_exporter:
+                self._safe_log("warning", "No OTLP exporter for flush")
+                return False
+
+            self._safe_log(
+                "info",
+                "Flushing %d buffered spans as single OTLP batch",
+                len(spans_to_flush),
+            )
+
+            result = self.otlp_exporter.export(spans_to_flush)
+
+            if hasattr(result, "name"):
+                self._safe_log(
+                    "debug",
+                    "Batch OTLP export result: %s (span_count=%d)",
+                    result.name,
+                    len(spans_to_flush),
+                )
+            return True
+
+        except Exception as e:
+            self._safe_log("error", "Error flushing span buffer: %s", e)
+            return False
 
     def _process_honeyhive_attributes(self, span: Span) -> None:
         """Process all honeyhive_* attributes and map them to backend-expected format.
@@ -1127,9 +1192,13 @@ class HoneyHiveSpanProcessor(SpanProcessor):
     def shutdown(self) -> None:
         """Shutdown the span processor.
 
-        Performs graceful shutdown of the OTLP exporter if available.
+        Flushes any buffered spans as a single batch, then performs
+        graceful shutdown of the OTLP exporter if available.
         """
         try:
+            # Flush buffered spans before shutting down the exporter
+            self._flush_span_buffer()
+
             # Check if we have an OTLP exporter to shutdown
             if hasattr(self, "otlp_exporter") and self.otlp_exporter:
                 if hasattr(self.otlp_exporter, "shutdown"):
@@ -1139,45 +1208,29 @@ class HoneyHiveSpanProcessor(SpanProcessor):
             # Graceful degradation - continue shutdown process
 
     def force_flush(self, timeout_millis: float = 30000) -> bool:
-        """Force flush any pending spans.
+        """Force flush any buffered spans as a single batch.
 
-        This HoneyHive span processor doesn't buffer spans, so this method
-        performs validation and cleanup operations to ensure consistency.
+        Exports all accumulated spans to the backend in one request so
+        parent-child relationships can be resolved, then delegates to the
+        underlying OTLP exporter's ``force_flush`` for transport-level
+        flushing.
 
         :param timeout_millis: Maximum time to wait for flush completion (ms).
-                              Not used by this processor since it doesn't buffer spans.
         :type timeout_millis: float
         :return: True if flush operations completed successfully, False otherwise.
         :rtype: bool
         """
         try:
-            # Check if we have an OTLP exporter to flush
+            # Flush our span buffer first
+            buffer_flushed = self._flush_span_buffer()
+
+            # Then flush the underlying OTLP exporter
             if hasattr(self, "otlp_exporter") and self.otlp_exporter:
                 if hasattr(self.otlp_exporter, "force_flush"):
-                    result = self.otlp_exporter.force_flush(timeout_millis)
-                    return bool(result)
+                    exporter_result = self.otlp_exporter.force_flush(timeout_millis)
+                    return bool(buffer_flushed and exporter_result)
 
-            # Since this processor doesn't buffer spans, we perform validation
-            # and ensure any ongoing operations are completed
-
-            # Validate processor state
-            processor_healthy = True
-
-            # Check if we can access required OpenTelemetry components
-            try:
-                _ = context.get_current()
-                _ = baggage.get_baggage("session_id", context.get_current())
-            except Exception as e:
-                # Graceful degradation following Agent OS standards - never crash host
-                self._safe_log(
-                    "debug",
-                    "Processor health check failed",
-                    honeyhive_data={"error_type": type(e).__name__},
-                )
-                processor_healthy = False
-
-            # Simulate flush completion for compatibility with OpenTelemetry patterns
-            return bool(processor_healthy)
+            return bool(buffer_flushed)
 
         except Exception as e:
             # Graceful degradation following Agent OS standards - never crash host

@@ -13,7 +13,7 @@ spans reach this exporter, as ReadableSpan objects are immutable.
 """
 
 import json
-from typing import Any, Dict, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 import requests
 
@@ -170,6 +170,11 @@ class OTLPJSONExporter(SpanExporter):
     ) -> Dict[str, Any]:
         """Convert spans to OTLP JSON payload format.
 
+        Groups spans by instrumentation scope so that the backend receives
+        proper scope metadata for each span.  All spans share the same
+        resource (from the first span) since they originate from the same
+        SDK instance.
+
         Args:
             spans: Sequence of ReadableSpan objects
 
@@ -179,31 +184,46 @@ class OTLPJSONExporter(SpanExporter):
         if not spans:
             return {"resourceSpans": []}
 
-        # Simplified: use first span's resource, put all spans in one scope
+        # Use first span's resource (shared across all spans in the SDK)
         first_span = spans[0]
-        resource_attrs = []
+        resource_attrs: List[Dict[str, Any]] = []
         if first_span.resource and first_span.resource.attributes:
             resource_attrs = [
                 {"key": k, "value": {"stringValue": str(v)}}
                 for k, v in first_span.resource.attributes.items()
             ]
 
-        # Get scope info from first span (simplified - all spans in one scope)
-        scope_info = {}
-        if (
-            hasattr(first_span, "instrumentation_scope")
-            and first_span.instrumentation_scope
-        ):
-            scope_info["name"] = first_span.instrumentation_scope.name or "unknown"
-            if first_span.instrumentation_scope.version:
-                scope_info["version"] = first_span.instrumentation_scope.version
+        # Group spans by instrumentation scope name
+        scope_groups: Dict[str, List[ReadableSpan]] = {}
+        for span in spans:
+            scope_name = "unknown"
+            if (
+                hasattr(span, "instrumentation_scope")
+                and span.instrumentation_scope
+                and span.instrumentation_scope.name
+            ):
+                scope_name = span.instrumentation_scope.name
+            scope_groups.setdefault(scope_name, []).append(span)
 
-        # Convert all spans
-        span_jsons = [self._span_to_otlp_json(span) for span in spans]
+        # Build one scopeSpans entry per scope
+        scope_spans_list: List[Dict[str, Any]] = []
+        for scope_name, scope_spans in scope_groups.items():
+            scope_info: Dict[str, str] = {"name": scope_name}
+            # Grab version from first span in the group
+            first_in_scope = scope_spans[0]
+            if (
+                hasattr(first_in_scope, "instrumentation_scope")
+                and first_in_scope.instrumentation_scope
+                and first_in_scope.instrumentation_scope.version
+            ):
+                scope_info["version"] = first_in_scope.instrumentation_scope.version
+
+            span_jsons = [self._span_to_otlp_json(s) for s in scope_spans]
+            scope_spans_list.append({"scope": scope_info, "spans": span_jsons})
 
         resource_span = {
             "resource": {"attributes": resource_attrs} if resource_attrs else {},
-            "scopeSpans": [{"scope": scope_info, "spans": span_jsons}],
+            "scopeSpans": scope_spans_list,
         }
 
         return {"resourceSpans": [resource_span]}
