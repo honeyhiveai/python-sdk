@@ -3,7 +3,7 @@ name: update-integration-example
 description: Build or update SDK integration examples for AI frameworks. Use when asked to update, create, or review a framework example in python-sdk/examples/integrations/. Covers framework API research, example writing, smoke testing, span capture, and tracing sanity checks.
 metadata:
   author: sanjeed5
-  version: "0.2"
+  version: "2.0"
 ---
 
 # Update Integration Example
@@ -139,8 +139,8 @@ import json, os, time
 from honeyhive import HoneyHive
 
 time.sleep(10)
-client = HoneyHive(bearer_token=os.getenv("HH_API_KEY"), server_url=os.getenv("HH_API_URL"))
-resp = client.events.get_by_session_id(session_id="<session_id>", project_name=os.getenv("HH_PROJECT"))
+client = HoneyHive(bearer_token=os.environ["HH_API_KEY"], server_url=os.environ["HH_API_URL"])
+resp = client.events.get_by_session_id(session_id="<session_id>", project_name=os.environ["HH_PROJECT"])
 with open("span_dumps/{{framework}}_session.json", "w") as f:
     json.dump([e.to_dict() for e in resp], f, indent=2, default=str)
 ```
