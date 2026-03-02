@@ -1,0 +1,177 @@
+name: Sync SDK Release to Docs
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version to sync (e.g., v1.0.0rc18). Defaults to latest in CHANGELOG.md.'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency: sync-sdk-changelog-to-docs
+
+jobs:
+  sync-changelog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout python-sdk
+        uses: actions/checkout@v6
+
+      - name: Generate Propolis token for docs repo
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.PROPOLIS_APP_ID }}
+          private-key: ${{ secrets.PROPOLIS_PRIVATE_KEY }}
+          owner: honeyhiveai
+          repositories: python-sdk,honeyhive-ai-docs
+
+      - name: Checkout honeyhive-ai-docs
+        uses: actions/checkout@v6
+        with:
+          repository: honeyhiveai/honeyhive-ai-docs
+          ref: fix/docs-concepts  # TODO: switch to main once fix/docs-concepts is merged
+          token: ${{ steps.app-token.outputs.token }}
+          path: docs-repo
+
+      - name: Sync SDK release to product changelog
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ steps.app-token.outputs.token }}
+          prompt: |
+            A new Python SDK release was just published. Determine if it has notable user-facing changes worth adding to the product changelog.
+
+            Release version: ${{ github.event.release.tag_name || inputs.version || '(not specified — use latest entry in CHANGELOG.md)' }}
+
+            ## Files
+
+            - **Source**: `CHANGELOG.md` (in the current directory) — the SDK changelog
+            - **Target**: `docs-repo/beta/changelog/product.mdx` — the Mintlify docs product changelog page
+
+            ## Context
+
+            The product changelog is read by all HoneyHive users, not just SDK developers. It includes Core Platform (UI, backend) and SDK sections. We only want to include SDK changes that are meaningful product experience improvements — not every patch release.
+
+            **Include** (these matter to users):
+            - New SDK features and methods that change what users can do
+            - Ergonomics improvements that make the SDK easier to use
+            - Bug fixes that users would have hit in normal usage
+            - Breaking changes or migration requirements
+
+            **Exclude** (too noisy for product changelog):
+            - CI/CD, test, or documentation-only changes
+            - Internal refactors with no user-visible effect
+            - Debug logging additions
+            - Dependency bumps
+            - Dev tooling changes
+
+            If the release has NO notable user-facing changes, do NOT modify product.mdx. Just output "No user-facing changes to sync" and stop.
+
+            ## Instructions
+
+            1. Read `CHANGELOG.md` and find the entry for the latest release.
+            2. Read `docs-repo/beta/changelog/product.mdx` to understand the existing format and content.
+            3. The target file uses Mintlify `<Update label="...">` components grouped by month. Example:
+               ```
+               <Update label="February 2026">
+                   ## Python SDK
+
+                   ### v1.0.0rc18
+                   - Large query batching — list operations now automatically batch when exceeding 100 items, no API changes needed
+
+               </Update>
+
+               <Update label="January 2026">
+                   ## Core Platform
+
+                   ### Improvements
+                   - Feature description here
+
+                   ## Python SDK
+
+                   ### v1.0.0rc17
+                   - Notable change here
+               </Update>
+               ```
+            4. Check if this release version is already in product.mdx. If so, do NOT modify the file.
+            5. If the release has notable changes to add:
+               - Determine the month for this release from its date
+               - If an `<Update>` block for that month already exists:
+                 - Add a `## Python SDK` section if one doesn't exist in that block, or add a new `### vX.Y.Z` heading under the existing `## Python SDK` section
+                 - Do NOT touch any `## Core Platform` or other non-SDK sections in that block
+               - If no `<Update>` block exists for that month:
+                 - Create a new `<Update label="Month Year">` block with a `## Python SDK` section
+                 - Insert it in chronological order (most recent at top, after frontmatter)
+               - Indent content inside `<Update>` blocks with 4 spaces, matching the existing style
+            6. Preserve the frontmatter exactly as-is.
+            7. Preserve ALL existing content unchanged — only add new SDK entries.
+
+            ## Writing Style
+
+            - Concise, clear, active voice, present tense
+            - 1-2 bullet points per feature, focused on what the user can now do
+            - Include method names and config keys when relevant (e.g., `evaluate()`, `flush()`)
+            - Avoid em dashes, curly quotes, and words like "delve", "leverage", "robust", "seamless"
+            - Strip pre-release suffixes for readability (e.g., `v1.0.0rc18` stays as-is since we're in RC phase)
+            - Write to `docs-repo/beta/changelog/product.mdx`
+
+          claude_args: "--model claude-opus-4-6 --allowedTools Read Edit Write 'Bash(cat:*)' 'Bash(ls:*)' 'Bash(head:*)' 'Bash(tail:*)' 'Bash(grep:*)' 'Bash(git log:*)'"
+
+      - name: Check for docs changes
+        id: changes
+        working-directory: docs-repo
+        run: |
+          if git diff --quiet; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create Pull Request on docs repo
+        if: steps.changes.outputs.has_changes == 'true'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          path: docs-repo
+          base: fix/docs-concepts  # TODO: switch to main once fix/docs-concepts is merged
+          commit-message: "docs: sync Python SDK ${{ github.event.release.tag_name || inputs.version || 'latest' }} to product changelog"
+          branch: changelog/sync-python-sdk-${{ github.event.release.tag_name || inputs.version || 'manual' }}
+          delete-branch: true
+          title: "docs: sync Python SDK ${{ github.event.release.tag_name || inputs.version || 'latest' }} to product changelog"
+          body: |
+            ## Automated SDK Changelog Sync
+
+            This PR was automatically generated when a new Python SDK release was published.
+
+            It adds notable user-facing changes from the release to the `## Python SDK` section in `beta/changelog/product.mdx`.
+
+            Please review the new entries for accuracy and tone before merging.
+          labels: documentation,automated
+
+      - name: Notify Slack on failure
+        if: failure()
+        uses: slackapi/slack-github-action@v2.1.1
+        with:
+          webhook: ${{ secrets.SLACK_CI_FAILURE_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": "SDK changelog sync to docs failed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*SDK Changelog Sync to Docs Failed*\n\nThe automated sync from `python-sdk` release to `honeyhive-ai-docs` product changelog failed.\n\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Failed Run>"
+                  }
+                }
+              ]
+            }
