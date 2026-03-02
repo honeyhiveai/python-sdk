@@ -68,8 +68,14 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         # Accumulates spans during on_end and flushes them as a single
         # batch during shutdown/force_flush so the backend can resolve
         # parent-child relationships within the batch.
+        # Auto-flush triggers when buffer reaches _max_buffer_size or
+        # after _flush_interval_seconds, whichever comes first.
         self._span_buffer: List[ReadableSpan] = []
         self._buffer_lock = threading.Lock()
+        self._max_buffer_size = 512
+        self._flush_interval_seconds = 5.0
+        self._flush_timer: Optional[threading.Timer] = None
+        self._shutdown_flag = False
 
         # Multi-instance logging architecture uses safe_log utility
         # No need to store logger reference directly
@@ -852,9 +858,19 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                 return
 
             # Batched mode: accumulate spans in buffer
+            should_flush = False
             with self._buffer_lock:
                 self._span_buffer.append(span)
                 buffer_size = len(self._span_buffer)
+                if buffer_size >= self._max_buffer_size:
+                    should_flush = True
+                elif self._flush_timer is None and not self._shutdown_flag:
+                    # Start periodic flush timer on first buffered span
+                    self._flush_timer = threading.Timer(
+                        self._flush_interval_seconds, self._timer_flush
+                    )
+                    self._flush_timer.daemon = True
+                    self._flush_timer.start()
 
             self._safe_log(
                 "debug",
@@ -862,8 +878,20 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                 buffer_size,
             )
 
+            if should_flush:
+                self._flush_span_buffer()
+
         except Exception as e:
             self._safe_log("error", "Error in _send_via_otlp: %s", e)
+
+    def _timer_flush(self) -> None:
+        """Called by the periodic flush timer to drain the buffer."""
+        try:
+            with self._buffer_lock:
+                self._flush_timer = None
+            self._flush_span_buffer()
+        except Exception as e:
+            self._safe_log("error", "Error in timer flush: %s", e)
 
     def _flush_span_buffer(self) -> bool:
         """Flush all buffered spans to the OTLP exporter as a single batch.
@@ -871,6 +899,9 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         This ensures the backend receives all related spans together so
         ``resolveParentIdsFromSpans`` can build the complete parent-child
         mapping in one pass.
+
+        The buffer is only cleared after a successful export to prevent
+        data loss on transient failures.
 
         :return: True if flush succeeded (or buffer was empty), False on error.
         :rtype: bool
@@ -880,7 +911,6 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                 if not self._span_buffer:
                     return True
                 spans_to_flush = list(self._span_buffer)
-                self._span_buffer.clear()
 
             if not self.otlp_exporter:
                 self._safe_log("warning", "No OTLP exporter for flush")
@@ -894,13 +924,28 @@ class HoneyHiveSpanProcessor(SpanProcessor):
 
             result = self.otlp_exporter.export(spans_to_flush)
 
-            if hasattr(result, "name"):
+            # Check export result before clearing buffer
+            from opentelemetry.sdk.trace.export import SpanExportResult
+
+            if result != SpanExportResult.SUCCESS:
                 self._safe_log(
-                    "debug",
-                    "Batch OTLP export result: %s (span_count=%d)",
-                    result.name,
+                    "error",
+                    "Batch OTLP export failed (span_count=%d)",
                     len(spans_to_flush),
                 )
+                return False
+
+            # Export succeeded — now safe to clear the buffer
+            with self._buffer_lock:
+                # Remove only the spans we successfully exported;
+                # new spans may have arrived while export was in-flight.
+                self._span_buffer = self._span_buffer[len(spans_to_flush) :]
+
+            self._safe_log(
+                "debug",
+                "Batch OTLP export succeeded (span_count=%d)",
+                len(spans_to_flush),
+            )
             return True
 
         except Exception as e:
@@ -1192,10 +1237,17 @@ class HoneyHiveSpanProcessor(SpanProcessor):
     def shutdown(self) -> None:
         """Shutdown the span processor.
 
-        Flushes any buffered spans as a single batch, then performs
-        graceful shutdown of the OTLP exporter if available.
+        Cancels the periodic flush timer, flushes any buffered spans as a
+        single batch, then performs graceful shutdown of the OTLP exporter.
         """
         try:
+            # Prevent new timers from being started
+            with self._buffer_lock:
+                self._shutdown_flag = True
+                if self._flush_timer is not None:
+                    self._flush_timer.cancel()
+                    self._flush_timer = None
+
             # Flush buffered spans before shutting down the exporter
             self._flush_span_buffer()
 
