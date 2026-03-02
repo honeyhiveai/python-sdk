@@ -10,7 +10,7 @@ metadata:
 
 Update the SDK example for a framework integration. The example is a public-facing reference showing how to use HoneyHive with the framework. It must be correct, comprehensive, and use the framework's current APIs.
 
-This skill does NOT do deep tracing validation. Use the `test-integration` skill for that.
+This skill does NOT do deep tracing validation. 
 
 ## Inputs
 
@@ -23,7 +23,7 @@ These variables are provided when the skill is invoked:
 ## Setup
 
 - The `honeyhiveai/python-sdk` repo has testing env credentials configured — no extra env setup needed.
-- Initialize HoneyHive tracer with `source=devin_integrations_checker`.
+- Initialize HoneyHive tracer with `source=integrations_checker`.
 - Read existing examples in `python-sdk/examples/integrations/` to match style and conventions.
 
 ## Step 1: Research Framework
@@ -43,7 +43,7 @@ Output (post as thread update):
 - Tracing approach: native OTel | OpenInference instrumentor | other
 - Patterns to cover: [list]
 
-If the framework fundamentally changed (dropped OTel, total API redesign), report that and stop.
+If the framework fundamentally changed (dropped OTel, total API redesign), report that to user. 
 
 ## Step 2: Update Example (only if needed)
 
@@ -55,7 +55,7 @@ Target: `python-sdk/examples/integrations/{{framework}}_example.py`
 - One comprehensive example covering major agent patterns
 - Use official framework style and current APIs
 - HoneyHive integration should be minimal: init tracer + instrumentor
-- Domain: customer support with order status/policy lookup mock tools, order IDs ORD-1001 to ORD-1003 (match existing examples like `crewai_integration.py` and `pydantic_ai_integration.py`)
+- Domain: customer support with order status/policy lookup mock tools, order IDs ORD-1001 to ORD-1003 (match existing examples like `openinference_google_adk_example.py` and `pydantic_ai_integration.py`)
 - Never use HoneyHive-specific themes. Never copy scenarios from the framework's official docs
 - Include install instructions with explicit packages (uv and/or pip)
 
@@ -100,7 +100,8 @@ with open("span_dumps/{{framework}}_session.json", "w") as f:
 ```
 
 Verify: Session dump file exists in `span_dumps/`.
-Post thread update with session ID and file paths.
+Post thread update with session ID and link: 
+https://<frontend-host>/datastore/sessions/<session_id>/<project_id>
 
 ## Step 5: Tracing Sanity Check
 
@@ -112,12 +113,12 @@ Quick check (not a full validation). For every raw span, find its ingested event
 - **UI Cleanliness:** Inputs/outputs render cleanly — no empty objects, no raw attribute dumps
 - **Session Context:** Session groups turns correctly
 
-If issues found, list them in the report. Investigate via `test-integration` skill.
+If issues found, list them in the report. 
 
 ## Step 6: Verify in UI
 
-Open https://fe.testing-cp.honeyhive.ai, find the session, take screenshots of different event types.
-Verify: Trace visible with events rendering correctly.
+Open https://fe.testing-cp.honeyhive.ai, find the session ( https://fe.testing-cp.honeyhive.ai/datastore/sessions/<session_id>/<project_id>) , take screenshots of different event types.
+Verify: Trace visible with events rendering correctly. Especially input and output should be cleanly visible for model events and tool calls. 
 
 ## Step 7: Format
 
