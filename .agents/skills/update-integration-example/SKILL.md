@@ -1,16 +1,16 @@
 ---
 name: update-integration-example
-description: Update or create SDK integration examples for AI frameworks. Use when asked to update, create, or review a framework example in honeyhiveai/python-sdk. Covers framework API research, example writing, smoke testing, span capture, and tracing sanity checks.
+description: Build or update SDK integration examples for AI frameworks. Use when asked to update, create, or review a framework example in python-sdk/examples/integrations/. Covers framework API research, example writing, smoke testing, span capture, and tracing sanity checks.
 metadata:
   author: sanjeed5
-  version: "1.0"
+  version: "2.0"
 ---
 
 # Update Integration Example
 
-Update the SDK example for a framework integration. The example is a public-facing reference showing how to use HoneyHive with the framework. It must be correct, comprehensive, and use the framework's current APIs.
+Build or update the SDK example for a framework integration. The example is a public-facing reference that shows how to use HoneyHive with the framework. It must be correct, comprehensive, and follow the framework's current recommended APIs.
 
-This skill does NOT do deep tracing validation. 
+This skill does NOT do deep tracing validation — only a sanity check.
 
 ## Inputs
 
@@ -20,71 +20,117 @@ These variables are provided when the skill is invoked:
 - `{{version}}` — Last-tested version
 - `{{framework}}` — Framework identifier for file paths (e.g., `pydantic_ai`)
 
-## Setup
+## Before You Start
 
-- The `honeyhiveai/python-sdk` repo has testing env credentials configured — no extra env setup needed.
-- Initialize HoneyHive tracer with `source=integrations_checker`.
-- Read existing examples in `python-sdk/examples/integrations/` to match style and conventions.
+Read:
+- `AGENTS.md` — env setup, branch conventions, run instructions
+- Existing examples in `python-sdk/examples/integrations/` for this framework and others (match style and conventions)
+- Use code as source of truth for exact behavior (do not assume docs are up to date)
 
-## Step 1: Research Framework
+`HH_API_KEY`, `HH_API_URL`, and `HH_PROJECT` are expected to be in the environment (via direnv or repo-level config). No manual env setup needed.
 
-Framework APIs change quickly. Research the current state before touching code.
+---
+
+## Step 1: Framework API Research
+
+Framework APIs change quickly. Research the current state before writing code.
+
+> **Sub-agent opportunity**: Launch an explore sub-agent to research the framework's latest docs and changelog while you read the existing example.
 
 Checklist:
-- Current stable version on PyPI (we last tested `{{version}}`) and any breaking changes
-- Major patterns: agent types, orchestration, tools, callbacks/state, sessions
-- Current recommended API surface (not deprecated methods)
-- Tracing path: native OTel vs OpenInference instrumentor vs other
-- All documented multi-agent patterns (delegation, hand-off, graphs, etc.)
+- [ ] Current stable version on PyPI (we last tested `{{version}}`) and any recent breaking changes
+- [ ] Major patterns: agent types, orchestration, tools, callbacks/state, runtime/session
+- [ ] Current recommended API surface (not deprecated methods)
+- [ ] Tracing path: native OTel vs OpenInference instrumentor vs other
+- [ ] **All documented multi-agent patterns** (delegation, hand-off, graphs, etc.) — check the framework's multi-agent docs page specifically
+- [ ] Patterns that a good example should demonstrate
 
-Output (post as thread update):
-- Latest stable version
-- Breaking changes since `{{version}}`: [none | list]
-- Tracing approach: native OTel | OpenInference instrumentor | other
-- Patterns to cover: [list]
+Output:
+- "Latest stable version: X"
+- "Breaking changes since `{{version}}`: [none | list]"
+- "Tracing approach: native OTel | OpenInference instrumentor | other"
+- "Patterns to cover: [...]"
 
-If the framework fundamentally changed (dropped OTel, total API redesign), report that to user. 
+If the framework has fundamentally changed (dropped OTel support, total API redesign), note it in the report and rewrite the example from scratch in Step 2.
 
-## Step 2: Update Example (only if needed)
+---
+
+## Step 2: Build/Update the Example
 
 Target: `python-sdk/examples/integrations/{{framework}}_example.py`
 
-**Gate:** Compare existing example against Step 1 research. If it already uses current APIs, covers all required patterns, and has no deprecated methods — skip to Step 3 and note "already current."
+### Gate: Check if update is needed
 
-**Rules (if updating):**
-- One comprehensive example covering major agent patterns
-- Use official framework style and current APIs
-- HoneyHive integration should be minimal: init tracer + instrumentor
-- Domain: customer support with order status/policy lookup mock tools, order IDs ORD-1001 to ORD-1003 (match existing examples like `openinference_google_adk_example.py` and `pydantic_ai_integration.py`)
-- Never use HoneyHive-specific themes. Never copy scenarios from the framework's official docs
-- Include install instructions with explicit packages (uv and/or pip)
+Compare the existing example against Step 1 research:
+- Does it already cover all required patterns?
+- Is it using the current stable framework APIs (not deprecated ones)?
+- Does the framework version match?
 
-**Must exercise:**
-- Agent names and hierarchy
-- System instructions
-- User input and model output
-- Tool calls (arguments and results)
-- Session continuity across turns
+If the example is already current, skip to Step 3 and note "already current." Do not make changes for the sake of changes.
 
-Verify: No syntax errors. Style matches existing examples.
+### Rules (if updating)
 
-## Step 3: Run Against Testing Environment
+- One comprehensive example covering major agent patterns for the framework
+- Stay close to official framework style and current APIs
+- HoneyHive integration should be minimal and obvious (init tracer + instrumentor)
+- Readable by external SDK users, not internal test code
+- **Never use HoneyHive-specific themes** (ingestion, traces, dashboards). Use generic relatable scenarios
+- **Never copy themes/scenarios from the framework's official docs** 
+- **Share the same domain across examples**: customer support with order status/policy lookup mock tools, order IDs ORD-1001 through ORD-1003 (match existing examples like `openinference_google_adk_example.py` and `pydantic_ai_integration.py`). Reuse this domain unless the framework doesn't fit it
+- Include install instructions with explicit packages (`uv` and/or `pip`)
 
-Add span capture after tracer init:
+### Must showcase
+
+- [ ] Agent names and hierarchy
+- [ ] System instructions
+- [ ] User input and model output
+- [ ] Tool calls (arguments and results)
+- [ ] Session continuity across turns
+
+Verify: No syntax errors. Style matches existing examples in `examples/integrations/`.
+
+---
+
+## Step 3: Smoke Run
+
+Run the example against the testing environment to confirm it executes without errors. Load any environment variables and then:
+
+```bash
+cd python-sdk && uv run python examples/integrations/{{framework}}_example.py
+```
+
+This is a functional check, not a tracing validation. Confirm:
+- [ ] No import errors or missing dependencies
+- [ ] Agent runs and produces output
+- [ ] No crashes or unhandled exceptions
+- [ ] HoneyHive tracer initializes without errors
+
+If the example fails, fix it before proceeding.
+
+---
+
+## Step 4: Capture Spans & Session Dump
+
+After the smoke run, capture raw spans and the ingested session for a tracing sanity check.
+
+### Span capture
+
+Add span capture after tracer init (before instrumentor):
 ```python
 from capture_spans import setup_span_capture
 setup_span_capture("{{framework}}", tracer)
 ```
 
-Use `session_name="{{framework}}-example-update"` and `verbose=True` on the tracer.
+Use `session_name="{{framework}}-example-update"` and `verbose=True` on the tracer so the run is easy to find.
 
+Run with `CAPTURE_SPANS=true`:
 ```bash
 cd python-sdk && CAPTURE_SPANS=true uv run python examples/integrations/{{framework}}_example.py
 ```
 
-Verify: No import errors, agent runs to completion, tracer initializes, raw span dump exists in `span_dumps/`.
+Verify: Raw span dump exists in `span_dumps/`.
 
-## Step 4: Retrieve Session Dump
+### Session dump
 
 Wait ~10s for ingestion propagation, then retrieve the ingested session:
 
@@ -94,33 +140,63 @@ from honeyhive import HoneyHive
 
 time.sleep(10)
 client = HoneyHive(bearer_token=os.environ["HH_API_KEY"], server_url=os.environ["HH_API_URL"])
-result = client.events.get_by_session_id(session_id="<session_id>", project_name=os.environ["HH_PROJECT"])
+resp = client.events.get_by_session_id(session_id="<session_id>", project_name=os.environ["HH_PROJECT"])
 with open("span_dumps/{{framework}}_session.json", "w") as f:
-    json.dump([e.to_dict() for e in result], f, indent=2, default=str)
+    json.dump([e.to_dict() for e in resp], f, indent=2, default=str)
 ```
 
-Verify: Session dump file exists in `span_dumps/`.
-Post thread update with session ID and link: 
-https://<frontend-host>/datastore/sessions/<session_id>/<project_id>
+Save to `span_dumps/` alongside the raw span dump. Leave both dump files in place during the testing cycle — they get cleaned up in Step 7.
+
+---
 
 ## Step 5: Tracing Sanity Check
 
-Quick check (not a full validation). For every raw span, find its ingested event and check:
+Quick sanity check across the span dump, session dump, and UI.
 
-- **Trace Structure:** All spans present, no duplicates, meaningful names, correct nesting
-- **Event Types:** LLM calls are model events, tool calls are tool events, agent spans are agent events
-- **Attributes:** System prompts, conversation history, tool I/O, token counts, model name captured
-- **UI Cleanliness:** Inputs/outputs render cleanly — no empty objects, no raw attribute dumps
-- **Session Context:** Session groups turns correctly
+**Trace Structure:**
+- [ ] All expected spans present (none dropped)
+- [ ] No duplicate spans from multiple instrumentation scopes
+- [ ] Parent-child nesting matches execution flow
 
-If issues found, list them in the report. 
+**Event Type Classification:**
+- [ ] LLM calls are `model` events, tool calls are `tool` events, agent/orchestration spans are `chain` events
+
+**Attribute Completeness:**
+- [ ] System prompts, conversation history, tool args/results present
+- [ ] Token counts and model name present
+
+**UI Cleanliness:**
+- [ ] Inputs and outputs are clean in session dump - this will be shown in UI to user finally
+
+**Session Context:**
+- [ ] Session groups turns correctly
+
+If issues are found, list them in the report.
+
+---
 
 ## Step 6: Verify in UI
 
-Open https://fe.testing-cp.honeyhive.ai, find the session ( https://fe.testing-cp.honeyhive.ai/datastore/sessions/<session_id>/<project_id>) , take screenshots of different event types.
-Verify: Trace visible with events rendering correctly. Especially input and output should be cleanly visible for model events and tool calls. 
+Open https://fe.testing-cp.honeyhive.ai, find the session, and take screenshots of different event types.
 
-## Step 7: Format
+Session link: `https://fe.testing-cp.honeyhive.ai/datastore/sessions/<session_id>/<project_id>`
+
+Verify: Trace is visible with events rendering correctly. Inputs and outputs should be cleanly visible for model events and tool calls. Share screenshots for these if possible.
+
+---
+
+## Step 7: Clean Up
+
+Remove debug scaffolding before committing:
+- Remove `setup_span_capture` import and call
+- Remove `verbose=True` from tracer init (unless it was already there)
+- Revert `session_name` if you changed it
+
+Examples are public-facing SDK code — no debug instrumentation should be committed.
+
+---
+
+## Step 8: Format
 
 ```bash
 cd python-sdk && make format
@@ -128,20 +204,22 @@ cd python-sdk && make format
 
 Verify: Exits 0.
 
-## Step 8: Open PR (only if changes were made)
+---
 
-If you updated the example, open a PR in `honeyhiveai/python-sdk`. Include the report below in the PR description. If no changes, skip.
+## Step 9: Open PR (only if changes were made)
+
+If you updated the example, open a PR in `honeyhiveai/python-sdk`. Include the report below in the PR description. If no changes were made, skip.
+
+---
 
 ## Report
-
-Post in the Slack thread:
 
 ```
 ## Example Update: {{package}}
 
 **File:** python-sdk/examples/integrations/{{framework}}_example.py
 **Framework version:** [version]
-**Status:** Updated | Already current | Blocked
+**Status:** New | Updated | Already current | Blocked
 
 ### Patterns Covered
 - Agent names/hierarchy: [yes/no]
@@ -149,12 +227,13 @@ Post in the Slack thread:
 - User input/model output: [yes/no]
 - Tool calls (args + results): [yes/no]
 - Session continuity: [yes/no]
+- [any additional framework-specific patterns]
 
 ### Changes Made
-- [list, or "No changes"]
+- [list of what changed and why, or "No changes — example already current"]
 
 ### Tracing Issues Found
-- [numbered list with severity, or "None"]
+- [numbered list with category and severity, or "None found"]
 
 ### Links
 - UI trace: [link]
