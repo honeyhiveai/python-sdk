@@ -397,6 +397,14 @@ def _detect_from_span_name_dynamically(
 ) -> Optional[str]:
     """Dynamically detect event type from span name patterns.
 
+    Uses a two-phase approach:
+    1. First check for chain/orchestration patterns (higher priority)
+    2. Then check for model/LLM patterns
+
+    This ordering prevents orchestration spans (e.g., AutoFunctionInvocationLoop,
+    GroupChatManagerActor) from being misclassified as "model" due to substring
+    matches on broad patterns like "chat".
+
     Args:
         span_name: Name of the span
 
@@ -408,24 +416,57 @@ def _detect_from_span_name_dynamically(
 
     span_name_lower = span_name.lower()
 
-    # Dynamic LLM/Model detection patterns - more flexible matching
+    # Phase 1: Chain/orchestration detection (higher priority)
+    # These patterns identify orchestration, workflow, and agent runtime spans
+    # that should be classified as "chain" rather than "model" or "tool".
+    chain_indicators = [
+        "invocationloop",
+        "orchestrat",
+        "workflow",
+        "pipeline",
+        "agent_runtime",
+        "manageractor",
+        "groupchat",
+        "roundrobin",
+        "selector",
+        "swarm",
+        "magentic",
+    ]
+
+    for indicator in chain_indicators:
+        if indicator in span_name_lower:
+            safe_log(
+                tracer_instance,
+                "debug",
+                "Event type inferred as 'chain' from span name pattern",
+                honeyhive_data={
+                    "indicator": indicator,
+                    "span_name": span_name,
+                },
+            )
+            return "chain"
+
+    # Phase 2: Model/LLM detection patterns
+    # NOTE: "chat" is intentionally excluded as a standalone indicator because
+    # it causes false positives (e.g., "GroupChatManagerActor" is not an LLM call).
+    # Instead, we use more specific patterns like "chatcompletion" and "chat.completion".
     llm_indicators = [
         "llm",
-        "model",
         "gpt",
         "claude",
         "llama",
         "gemini",
         "mistral",
         "palm",
-        "chat",
+        "chatcompletion",
+        "chat.completion",
+        "chat_completion",
         "completion",
         "generate",
         "inference",
         "openai",
         "anthropic",
         "bedrock",
-        "google",
         "generativeai",
     ]
 
