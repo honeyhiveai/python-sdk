@@ -1072,7 +1072,7 @@ class HoneyHiveSpanProcessor(SpanProcessor):
             # as "model" due to the presence of gen_ai.request.model.
             agent_name = attributes.get("gen_ai.agent.name")
             operation_name = attributes.get("gen_ai.operation.name")
-            if agent_name or (
+            if (isinstance(agent_name, str) and agent_name) or (
                 isinstance(operation_name, str) and operation_name.lower() == "agent"
             ):
                 self._safe_log(

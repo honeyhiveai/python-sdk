@@ -676,6 +676,129 @@ class TestHoneyHiveSpanProcessorEventTypeDetection:
         mock_safe_log.assert_called()
 
 
+class TestHoneyHiveSpanProcessorAgentDetection:
+    """Test Priority 4.5 agent detection from GenAI semantic conventions."""
+
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_detect_agent_from_gen_ai_agent_name(self, mock_safe_log: Mock) -> None:
+        """Test that gen_ai.agent.name triggers agent detection."""
+        processor = HoneyHiveSpanProcessor()
+        mock_span = Mock(spec=Span)
+        mock_span.name = "agent run"
+        mock_span.attributes = {"gen_ai.agent.name": "support_agent"}
+        mock_span.get_span_context.return_value = Mock(span_id="test-span-id")
+
+        result = processor._detect_event_type(mock_span)
+
+        assert result == "agent"
+
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_detect_agent_from_operation_name(self, mock_safe_log: Mock) -> None:
+        """Test that gen_ai.operation.name=agent triggers agent detection."""
+        processor = HoneyHiveSpanProcessor()
+        mock_span = Mock(spec=Span)
+        mock_span.name = "agent run"
+        mock_span.attributes = {"gen_ai.operation.name": "agent"}
+        mock_span.get_span_context.return_value = Mock(span_id="test-span-id")
+
+        result = processor._detect_event_type(mock_span)
+
+        assert result == "agent"
+
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_detect_agent_from_operation_name_case_insensitive(
+        self, mock_safe_log: Mock
+    ) -> None:
+        """Test that gen_ai.operation.name=Agent (mixed case) triggers agent detection."""
+        processor = HoneyHiveSpanProcessor()
+        mock_span = Mock(spec=Span)
+        mock_span.name = "agent run"
+        mock_span.attributes = {"gen_ai.operation.name": "Agent"}
+        mock_span.get_span_context.return_value = Mock(span_id="test-span-id")
+
+        result = processor._detect_event_type(mock_span)
+
+        assert result == "agent"
+
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_detect_agent_with_both_agent_name_and_request_model(
+        self, mock_safe_log: Mock
+    ) -> None:
+        """Test that agent_name takes priority over request_model (not classified as model)."""
+        processor = HoneyHiveSpanProcessor()
+        mock_span = Mock(spec=Span)
+        mock_span.name = "agent run"
+        mock_span.attributes = {
+            "gen_ai.agent.name": "support_agent",
+            "gen_ai.request.model": "claude-3-haiku",
+        }
+        mock_span.get_span_context.return_value = Mock(span_id="test-span-id")
+
+        result = processor._detect_event_type(mock_span)
+
+        assert result == "agent"
+
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_detect_model_when_only_request_model(self, mock_safe_log: Mock) -> None:
+        """Test that spans with only gen_ai.request.model fall through to pattern matching."""
+        processor = HoneyHiveSpanProcessor()
+        mock_span = Mock(spec=Span)
+        mock_span.name = "chat"
+        mock_span.attributes = {"gen_ai.request.model": "claude-3-haiku"}
+        mock_span.get_span_context.return_value = Mock(span_id="test-span-id")
+
+        with patch(
+            "honeyhive.tracer.processing.span_processor.detect_event_type_from_patterns"
+        ) as mock_detect:
+            mock_detect.return_value = "model"
+
+            result = processor._detect_event_type(mock_span)
+
+            assert result == "model"
+
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_detect_agent_ignores_non_string_agent_name(
+        self, mock_safe_log: Mock
+    ) -> None:
+        """Test that non-string agent_name values are ignored (isinstance guard)."""
+        processor = HoneyHiveSpanProcessor()
+        mock_span = Mock(spec=Span)
+        mock_span.name = "test_span"
+        mock_span.attributes = {"gen_ai.agent.name": 12345}  # Non-string value
+        mock_span.get_span_context.return_value = Mock(span_id="test-span-id")
+
+        with patch(
+            "honeyhive.tracer.processing.span_processor.detect_event_type_from_patterns"
+        ) as mock_detect:
+            mock_detect.return_value = None
+
+            result = processor._detect_event_type(mock_span)
+
+            # Should NOT detect as agent, falls through to pattern matching → default
+            assert result == "tool"
+
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_detect_agent_ignores_empty_agent_name(
+        self, mock_safe_log: Mock
+    ) -> None:
+        """Test that empty string agent_name is ignored."""
+        processor = HoneyHiveSpanProcessor()
+        mock_span = Mock(spec=Span)
+        mock_span.name = "test_span"
+        mock_span.attributes = {"gen_ai.agent.name": ""}
+        mock_span.get_span_context.return_value = Mock(span_id="test-span-id")
+
+        with patch(
+            "honeyhive.tracer.processing.span_processor.detect_event_type_from_patterns"
+        ) as mock_detect:
+            mock_detect.return_value = None
+
+            result = processor._detect_event_type(mock_span)
+
+            # Empty string should not trigger agent detection
+            assert result == "tool"
+
+
 class TestHoneyHiveSpanProcessorOnStart:
     """Test on_start method functionality with all conditional branches."""
 
