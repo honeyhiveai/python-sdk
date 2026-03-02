@@ -452,6 +452,7 @@ def _detect_from_span_name_dynamically(
     # Instead, we use more specific patterns like "chatcompletion" and "chat.completion".
     llm_indicators = [
         "llm",
+        "model",
         "gpt",
         "claude",
         "llama",
