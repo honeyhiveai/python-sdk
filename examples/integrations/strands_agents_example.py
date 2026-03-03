@@ -2,7 +2,9 @@
 """
 Strands Agents + HoneyHive integration example.
 
-Two scenarios demonstrating HoneyHive tracing with Strands Agents:
+Two scenarios demonstrating HoneyHive tracing with Strands Agents,
+each run under both the default (v1.36.0) and latest experimental
+(v1.37.0+) GenAI semantic conventions:
 
 1) Single agent with tool calls and session continuity across turns
 2) Multi-agent delegation via agents-as-tools pattern
@@ -24,6 +26,7 @@ Environment:
 """
 
 import os
+from contextlib import contextmanager
 
 from honeyhive import HoneyHiveTracer
 
@@ -38,6 +41,24 @@ from strands import Agent, tool  # noqa: E402
 from strands.models.anthropic import AnthropicModel  # noqa: E402
 
 MODEL_ID = os.getenv("STRANDS_ANTHROPIC_MODEL", "claude-haiku-4-5-20251001")
+
+
+@contextmanager
+def semconv_opt_in(value: str | None):
+    """Temporarily set OTEL semconv mode for Strands spans."""
+    key = "OTEL_SEMCONV_STABILITY_OPT_IN"
+    previous = os.environ.get(key)
+    if value is None:
+        os.environ.pop(key, None)
+    else:
+        os.environ[key] = value
+    try:
+        yield
+    finally:
+        if previous is None:
+            os.environ.pop(key, None)
+        else:
+            os.environ[key] = previous
 
 
 def get_model():
@@ -162,8 +183,15 @@ def run_delegation_scenario() -> None:
 
 def main() -> None:
     try:
-        run_single_agent_scenario()
-        run_delegation_scenario()
+        # Default Strands behavior (GenAI semconv v1.36.0)
+        with semconv_opt_in(None):
+            run_single_agent_scenario()
+            run_delegation_scenario()
+
+        # Latest experimental GenAI semconv (v1.37.0+)
+        with semconv_opt_in("gen_ai_latest_experimental"):
+            run_single_agent_scenario()
+            run_delegation_scenario()
     finally:
         tracer.force_flush()
 
