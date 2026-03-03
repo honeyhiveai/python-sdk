@@ -6,7 +6,7 @@ Demonstrates three Semantic Kernel patterns with HoneyHive tracing:
 
 1) Single agent with tool calls and multi-turn session continuity
 2) Multi-agent handoff orchestration (triage -> order/policy specialists)
-3) Streaming agent response
+3) Token-level streaming via invoke_stream()
 
 Install:
     uv pip install honeyhive semantic-kernel openinference-instrumentation-openai
@@ -191,7 +191,7 @@ async def run_handoff_scenario() -> None:
 
 
 async def run_streaming_scenario() -> None:
-    """Scenario 3: streaming response via invoke()."""
+    """Scenario 3: token-level streaming via invoke_stream()."""
     agent = ChatCompletionAgent(
         service=OpenAIChatCompletion(ai_model_id=MODEL),
         name="response_drafter",
@@ -200,11 +200,14 @@ async def run_streaming_scenario() -> None:
     )
 
     thread: ChatHistoryAgentThread | None = None
-    async for response in agent.invoke(
+    async for response in agent.invoke_stream(
         messages="Draft a response for a customer whose order ORD-1003 is delayed and wants cancellation options.",
         thread=thread,
     ):
         thread = response.thread
+
+    if thread:
+        await thread.delete()
 
 
 # -- Main --
