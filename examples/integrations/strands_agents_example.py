@@ -61,7 +61,7 @@ def semconv_opt_in(value: str | None):
             os.environ[key] = previous
 
 
-def get_model():
+def get_model() -> AnthropicModel:
     return AnthropicModel(
         client_args={"api_key": os.environ["ANTHROPIC_API_KEY"]},
         model_id=MODEL_ID,
