@@ -33,7 +33,7 @@ Comprehensive examples for popular AI agent frameworks:
 - **[`semantic_kernel_integration.py`](semantic_kernel_integration.py)** - Microsoft Semantic Kernel with OpenAI instrumentor (✅ agents, plugins, function calling, streaming)
 - **[`strands_integration.py`](strands_integration.py)** - AWS Strands with TracerProvider pattern (✅ Bedrock models, streaming, tools)
 - **[`bedrock_integration.py`](bedrock_integration.py)** - AWS Bedrock direct with Bedrock instrumentor (✅ Nova, Titan, Claude, Converse API, streaming)
-- **[`crewai_integration.py`](crewai_integration.py)** - CrewAI crews with OpenInference instrumentors (✅ sequential crew, hierarchical crew with tools)
+- **[`crewai_example.py`](crewai_example.py)** - CrewAI crews with OpenInference instrumentors (✅ sequential crew with tools, hierarchical crew with delegation)
 - **[`langchain_integration.py`](langchain_integration.py)** - LangChain agents with LangChain instrumentor (✅ single-agent+tools, multi-agent routing, session enrichment)
 - **[`langgraph_integration.py`](langgraph_integration.py)** - LangGraph workflows with LangChain instrumentor (✅ state graphs, conditional routing, agent graphs)
 - **[`strands_agents_integration.py`](strands_agents_integration.py)** - Strands Agents SDK with HoneyHive tracing (✅ agent with tools, multi-agent orchestration)
@@ -166,13 +166,14 @@ pip install honeyhive crewai openinference-instrumentation-crewai openinference-
 export OPENAI_API_KEY=sk-...
 export HH_API_KEY=your-honeyhive-key
 export HH_PROJECT=your-project
-python integrations/crewai_integration.py
+python integrations/crewai_example.py
 ```
 
 **Features demonstrated:**
-- ✅ Sequential crew (researcher + writer)
-- ✅ Hierarchical crew with manager and tool-equipped specialists
-- ✅ CrewAI + LiteLLM instrumentors for full trace capture
+- ✅ Sequential crew with tool calls (order investigator + response drafter)
+- ✅ Hierarchical crew with delegation (manager + order/policy specialists)
+- ✅ Session continuity across multiple kickoff turns
+- ✅ CrewAI + LiteLLM instrumentors for trace capture
 
 #### LangGraph
 ```bash
