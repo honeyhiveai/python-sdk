@@ -159,7 +159,7 @@ def run_multi_agent_scenario() -> None:
 
     router_llm = model.with_structured_output(RouteDecision)
 
-    def classify(state: CoordinatorState):
+    def classify(state: CoordinatorState) -> dict:
         result = router_llm.invoke(
             [
                 SystemMessage(
@@ -174,19 +174,19 @@ def run_multi_agent_scenario() -> None:
         )
         return {"category": result.category}
 
-    def handle_order(state: CoordinatorState):
+    def handle_order(state: CoordinatorState) -> dict:
         result = order_specialist.invoke(
             {"messages": [HumanMessage(content=state["question"])]}
         )
         return {"answer": result["messages"][-1].content}
 
-    def handle_policy(state: CoordinatorState):
+    def handle_policy(state: CoordinatorState) -> dict:
         result = policy_specialist.invoke(
             {"messages": [HumanMessage(content=state["question"])]}
         )
         return {"answer": result["messages"][-1].content}
 
-    def handle_general(state: CoordinatorState):
+    def handle_general(state: CoordinatorState) -> dict:
         response = model.invoke(
             [
                 SystemMessage(content="Answer concisely as a support agent."),
