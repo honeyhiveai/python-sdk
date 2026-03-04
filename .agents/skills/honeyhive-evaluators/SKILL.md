@@ -98,7 +98,7 @@ You can also reference a managed dataset by ID:
 ```python
 result = evaluate(
     function=my_function,
-    dataset="dataset_id_here",
+    dataset_id="dataset_id_here",
     evaluators=[my_evaluator],
     name="my-experiment",
 )
@@ -212,10 +212,10 @@ result = evaluate(
     dataset=dataset,
     evaluators=[intent_match],
     name="intent-classifier-v1",
-    # api_key and project are read from HH_API_KEY / HH_PROJECT env vars
-    # or pass explicitly:
+    # project must be passed explicitly (does not auto-read from env):
+    project=os.getenv("HH_PROJECT", "my-project"),
+    # api_key is read from HH_API_KEY env var if not provided:
     # api_key=os.getenv("HH_API_KEY"),
-    # project=os.getenv("HH_PROJECT"),
 )
 
 print(f"Run ID: {result.run_id}")
@@ -230,6 +230,7 @@ result_v1 = evaluate(
     function=classify_vague,
     dataset=dataset,
     evaluators=[intent_match],
+    project=os.getenv("HH_PROJECT", "my-project"),
     name="intent-vague-prompt",
 )
 
@@ -237,6 +238,7 @@ result_v2 = evaluate(
     function=classify_structured,
     dataset=dataset,
     evaluators=[intent_match],
+    project=os.getenv("HH_PROJECT", "my-project"),
     name="intent-structured-prompt",
 )
 
@@ -312,6 +314,7 @@ result = evaluate(
     function=rag_pipeline,
     dataset=my_dataset,
     evaluators=[answer_quality],
+    project=os.getenv("HH_PROJECT", "my-project"),
     name="rag-eval",
 )
 ```
@@ -426,6 +429,7 @@ result = evaluate(
     function=classify_intent,
     dataset=dataset,
     evaluators=[intent_match],
+    project=os.getenv("HH_PROJECT", "my-project"),
     name="intent-classifier-v1",
 )
 
