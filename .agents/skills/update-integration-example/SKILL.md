@@ -43,7 +43,7 @@ Checklist:
 - [ ] Current stable version on PyPI (we last tested `{{version}}`) and any recent breaking changes
 - [ ] Major patterns: agent types, orchestration, tools, callbacks/state, runtime/session
 - [ ] Current recommended API surface (not deprecated methods)
-- [ ] Tracing path: native OTel vs OpenInference instrumentor vs other (some frameworks support both — e.g., Semantic Kernel has native OTel diagnostics AND you can layer an `OpenAIInstrumentor` to capture underlying API calls; use both when available for richer traces)
+- [ ] Tracing path: native OTel vs OpenInference instrumentor vs other. Prefer one primary path first. For Semantic Kernel, native OTel (`SEMANTICKERNEL_EXPERIMENTAL_GENAI_ENABLE_OTEL_DIAGNOSTICS[_SENSITIVE]`) is supported by HoneyHive ingestion; only layer `OpenAIInstrumentor` if you specifically need it and have verified no duplicate/conflicting spans.
 - [ ] **All documented multi-agent patterns** (delegation, hand-off, graphs, etc.) — check the framework's multi-agent docs page specifically
 - [ ] Patterns that a good example should demonstrate
 
@@ -245,3 +245,7 @@ If you updated the example, open a PR in `honeyhiveai/python-sdk`. Include the r
 - UI trace: [link]
 - PR: [link, or "No changes"]
 ```
+
+## Skill Notes
+
+- Keep durable, framework-specific notes in `references/` under this skill directory (Agent Skills optional dir), and keep `SKILL.md` focused on workflow/checklists.
