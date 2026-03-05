@@ -2,15 +2,14 @@
 """
 Strands Agents + HoneyHive integration example.
 
-Two scenarios demonstrating HoneyHive tracing with Strands Agents,
-each run under both the default (v1.36.0) and latest experimental
-(v1.37.0+) GenAI semantic conventions:
+Two scenarios demonstrating HoneyHive tracing with Strands Agents:
 
 1) Single agent with tool calls and session continuity across turns
 2) Multi-agent delegation via agents-as-tools pattern
 
-Strands emits OpenTelemetry spans natively. Initialize HoneyHiveTracer
-before importing Strands so the TracerProvider is set.
+Strands emits OpenTelemetry spans natively — no instrumentor needed.
+Initialize HoneyHiveTracer before any agent calls so the global
+TracerProvider is set when Strands creates its tracer singleton.
 
 Install:
     uv pip install honeyhive strands-agents
@@ -23,42 +22,18 @@ Environment:
     HH_PROJECT
     ANTHROPIC_API_KEY
     HH_SOURCE (optional, defaults to "python_sdk_example")
+    OTEL_SEMCONV_STABILITY_OPT_IN (optional, set to "gen_ai_latest_experimental"
+        to emit v1.37.0+ GenAI semantic conventions instead of the default v1.36.0)
 """
 
 import os
-from contextlib import contextmanager
+
+from strands import Agent, tool
+from strands.models.anthropic import AnthropicModel
 
 from honeyhive import HoneyHiveTracer
 
-tracer = HoneyHiveTracer.init(
-    api_key=os.getenv("HH_API_KEY"),
-    project=os.getenv("HH_PROJECT"),
-    session_name="strands_agents_example",
-    source=os.getenv("HH_SOURCE", "python_sdk_example"),
-)
-
-from strands import Agent, tool  # noqa: E402
-from strands.models.anthropic import AnthropicModel  # noqa: E402
-
 MODEL_ID = os.getenv("STRANDS_ANTHROPIC_MODEL", "claude-haiku-4-5-20251001")
-
-
-@contextmanager
-def semconv_opt_in(value: str | None):
-    """Temporarily set OTEL semconv mode for Strands spans."""
-    key = "OTEL_SEMCONV_STABILITY_OPT_IN"
-    previous = os.environ.get(key)
-    if value is None:
-        os.environ.pop(key, None)
-    else:
-        os.environ[key] = value
-    try:
-        yield
-    finally:
-        if previous is None:
-            os.environ.pop(key, None)
-        else:
-            os.environ[key] = previous
 
 
 def get_model() -> AnthropicModel:
@@ -96,7 +71,8 @@ def lookup_policy(topic: str) -> str:
             "Delayed orders can request assisted cancellation."
         ),
         "shipping": (
-            "Standard shipping 3-5 business days. " "Delays trigger proactive outreach."
+            "Standard shipping 3-5 business days. "
+            "Delays trigger proactive outreach."
         ),
     }
     key = topic.lower().strip()
@@ -182,16 +158,16 @@ def run_delegation_scenario() -> None:
 
 
 def main() -> None:
-    try:
-        # Default Strands behavior (GenAI semconv v1.36.0)
-        with semconv_opt_in(None):
-            run_single_agent_scenario()
-            run_delegation_scenario()
+    tracer = HoneyHiveTracer.init(
+        api_key=os.getenv("HH_API_KEY"),
+        project=os.getenv("HH_PROJECT"),
+        session_name="strands_agents_example",
+        source=os.getenv("HH_SOURCE", "python_sdk_example"),
+    )
 
-        # Latest experimental GenAI semconv (v1.37.0+)
-        with semconv_opt_in("gen_ai_latest_experimental"):
-            run_single_agent_scenario()
-            run_delegation_scenario()
+    try:
+        run_single_agent_scenario()
+        run_delegation_scenario()
     finally:
         tracer.force_flush()
 
