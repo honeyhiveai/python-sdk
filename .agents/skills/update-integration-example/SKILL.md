@@ -3,7 +3,7 @@ name: update-integration-example
 description: Build or update SDK integration examples for AI frameworks. Use when asked to update, create, or review a framework example in python-sdk/examples/integrations/. Covers framework API research, example writing, smoke testing, span capture, and tracing sanity checks.
 metadata:
   author: sanjeed5
-  version: "2.0"
+  version: "2.1"
 ---
 
 # Update Integration Example
@@ -37,11 +37,13 @@ Framework APIs change quickly. Research the current state before writing code.
 
 > **Sub-agent opportunity**: Launch an explore sub-agent to research the framework's latest docs and changelog while you read the existing example.
 
+> **Context7 MCP**: Use the Context7 MCP (`resolve-library-id` then `get-library-docs`) to look up the framework's official docs. Research sub-agents give good high-level patterns but sometimes get import paths, method names, or parameter names wrong. Context7 is the fastest way to verify exact API signatures before writing code.
+
 Checklist:
 - [ ] Current stable version on PyPI (we last tested `{{version}}`) and any recent breaking changes
 - [ ] Major patterns: agent types, orchestration, tools, callbacks/state, runtime/session
 - [ ] Current recommended API surface (not deprecated methods)
-- [ ] Tracing path: native OTel vs OpenInference instrumentor vs other
+- [ ] Tracing path: native OTel vs OpenInference instrumentor vs other (some frameworks support both — e.g., Semantic Kernel has native OTel diagnostics AND you can layer an `OpenAIInstrumentor` to capture underlying API calls; use both when available for richer traces)
 - [ ] **All documented multi-agent patterns** (delegation, hand-off, graphs, etc.) — check the framework's multi-agent docs page specifically
 - [ ] Patterns that a good example should demonstrate
 
@@ -107,6 +109,8 @@ This is a functional check, not a tracing validation. Confirm:
 
 If the example fails, fix it before proceeding.
 
+> **Common failure**: Import paths. Research may report a class lives in one module when it actually lives in another (e.g., `ChatHistoryAgentThread` is in `semantic_kernel.agents`, not `semantic_kernel.contents.chat_history`). When the smoke run hits an `ImportError`, check the installed package directly (`uv run python -c "from <module> import <class>"`) rather than guessing at alternative paths.
+
 ---
 
 ## Step 4: Capture Spans & Session Dump
@@ -139,11 +143,13 @@ import json, os, time
 from honeyhive import HoneyHive
 
 time.sleep(10)
-client = HoneyHive(bearer_token=os.environ["HH_API_KEY"], server_url=os.environ["HH_API_URL"])
-resp = client.events.get_by_session_id(session_id="<session_id>", project_name=os.environ["HH_PROJECT"])
+client = HoneyHive(api_key=os.environ["HH_API_KEY"], server_url=os.environ["HH_API_URL"])
+resp = client.events.get_by_session_id(session_id="<session_id>", project=os.environ["HH_PROJECT"])
 with open("span_dumps/{{framework}}_session.json", "w") as f:
-    json.dump([e.to_dict() for e in resp], f, indent=2, default=str)
+    json.dump([vars(e) for e in resp.events], f, indent=2, default=str)
 ```
+
+> **API gotchas**: The `HoneyHive` client uses `api_key=` (not `bearer_token=`). The `get_by_session_id` method uses `project=` (not `project_name=`). The response is an `EventExportResponse` object — access `.events` for the list, and use `vars(e)` for serialization (events don't have `.to_dict()`).
 
 Save to `span_dumps/` alongside the raw span dump. Leave both dump files in place during the testing cycle — they get cleaned up in Step 7.
 
@@ -177,9 +183,9 @@ If issues are found, list them in the report.
 
 ## Step 6: Verify in UI
 
-Open https://fe.testing-cp.honeyhive.ai, find the session, and take screenshots of different event types.
+Open https://fe.testing-cp-1.honeyhive.ai, find the session, and take screenshots of different event types.
 
-Session link: `https://fe.testing-cp.honeyhive.ai/datastore/sessions/<session_id>/<project_id>`
+Session link: `https://fe.testing-cp-1.honeyhive.ai/datastore/sessions/<session_id>/<project_id>`
 
 Verify: Trace is visible with events rendering correctly. Inputs and outputs should be cleanly visible for model events and tool calls. Share screenshots for these if possible.
 
@@ -196,13 +202,13 @@ Examples are public-facing SDK code — no debug instrumentation should be commi
 
 ---
 
-## Step 8: Format
+## Step 8: Generate & Format
 
 ```bash
-cd python-sdk && make format
+cd python-sdk && make generate && make format
 ```
 
-Verify: Exits 0.
+`make generate` regenerates the client from the OpenAPI spec. CI will block the PR if generated code is stale. Both commands must exit 0.
 
 ---
 
