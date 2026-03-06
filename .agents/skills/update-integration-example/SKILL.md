@@ -123,6 +123,11 @@ setup_span_capture("{{framework}}", tracer)
 
 Use `session_name="{{framework}}-example-update"` and `verbose=True` on the tracer so the run is easy to find.
 
+For a single-tracer/simple flow, print the session ID right after tracer init so it is easy to reuse for the session dump fetch:
+```python
+print(tracer.session_id)
+```
+
 Run with `CAPTURE_SPANS=true`:
 ```bash
 cd python-sdk && CAPTURE_SPANS=true uv run python examples/integrations/{{framework}}_example.py
@@ -144,6 +149,8 @@ resp = client.events.get_by_session_id(session_id="<session_id>", project_name=o
 with open("span_dumps/{{framework}}_session.json", "w") as f:
     json.dump([e.to_dict() for e in resp], f, indent=2, default=str)
 ```
+
+Use the printed `tracer.session_id` as the `<session_id>` value for single-tracer examples.
 
 Save to `span_dumps/` alongside the raw span dump. Leave both dump files in place during the testing cycle — they get cleaned up in Step 7.
 
