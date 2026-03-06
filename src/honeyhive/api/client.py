@@ -130,9 +130,23 @@ def _build_export_timeout() -> httpx.Timeout:
     env_val = os.environ.get("HH_EXPORT_TIMEOUT_SECONDS")
     if env_val is not None:
         try:
-            read = float(env_val)
+            parsed = float(env_val)
+            if parsed > 0:
+                read = parsed
+            else:
+                logger.warning(
+                    "HH_EXPORT_TIMEOUT_SECONDS must be positive, got %s; "
+                    "using default %s",
+                    env_val,
+                    _DEFAULT_EXPORT_READ_TIMEOUT,
+                )
         except (ValueError, TypeError):
-            pass  # ignore invalid values, fall back to default
+            logger.warning(
+                "HH_EXPORT_TIMEOUT_SECONDS is not a valid number: %r; "
+                "using default %s",
+                env_val,
+                _DEFAULT_EXPORT_READ_TIMEOUT,
+            )
     return httpx.Timeout(connect=10.0, read=read, write=30.0, pool=10.0)
 
 

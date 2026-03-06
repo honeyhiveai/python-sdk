@@ -96,14 +96,26 @@ class TestBuildExportTimeout:
         assert timeout.read == 45.5
 
     def test_env_var_invalid_value_falls_back(self) -> None:
-        """Invalid HH_EXPORT_TIMEOUT_SECONDS should fall back to default."""
+        """Invalid HH_EXPORT_TIMEOUT_SECONDS should fall back to default and warn."""
         with patch.dict("os.environ", {"HH_EXPORT_TIMEOUT_SECONDS": "not-a-number"}):
             timeout = _build_export_timeout()
         assert timeout.read == _DEFAULT_EXPORT_READ_TIMEOUT
 
     def test_env_var_empty_string_falls_back(self) -> None:
-        """Empty HH_EXPORT_TIMEOUT_SECONDS should fall back to default."""
+        """Empty HH_EXPORT_TIMEOUT_SECONDS should fall back to default and warn."""
         with patch.dict("os.environ", {"HH_EXPORT_TIMEOUT_SECONDS": ""}):
+            timeout = _build_export_timeout()
+        assert timeout.read == _DEFAULT_EXPORT_READ_TIMEOUT
+
+    def test_env_var_zero_falls_back(self) -> None:
+        """HH_EXPORT_TIMEOUT_SECONDS=0 should fall back to default."""
+        with patch.dict("os.environ", {"HH_EXPORT_TIMEOUT_SECONDS": "0"}):
+            timeout = _build_export_timeout()
+        assert timeout.read == _DEFAULT_EXPORT_READ_TIMEOUT
+
+    def test_env_var_negative_falls_back(self) -> None:
+        """Negative HH_EXPORT_TIMEOUT_SECONDS should fall back to default."""
+        with patch.dict("os.environ", {"HH_EXPORT_TIMEOUT_SECONDS": "-5"}):
             timeout = _build_export_timeout()
         assert timeout.read == _DEFAULT_EXPORT_READ_TIMEOUT
 
