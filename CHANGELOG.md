@@ -2,6 +2,10 @@
 
 ### Added
 
+- **Events API: Configurable export timeout via `HH_EXPORT_TIMEOUT_SECONDS` env var**
+  - Set `HH_EXPORT_TIMEOUT_SECONDS` to override the default 300-second read timeout on `export()` / `export_async()`
+  - Useful for extremely large exports or constrained network environments
+
 ### Fixed
 
 - **Events API: Export no longer times out on large result sets**
