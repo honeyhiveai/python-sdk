@@ -18,6 +18,7 @@ Usage::
 
 import asyncio
 import logging
+import os
 import warnings
 from typing import Any, Dict, List, Optional, TypeVar, Union
 
@@ -112,11 +113,44 @@ logger = logging.getLogger(__name__)
 # items for typical 26-char IDs. Batching at 100 keeps us safely within bounds.
 QUERY_BATCH_SIZE = 100
 
-# Timeout for event export requests.
+# Default read timeout for event export requests (seconds).
 # The default httpx timeout of 5s is too low for large exports (e.g. 7500 events
-# can take 30s+). Keep connect/write/pool short to fail fast on unreachable hosts;
-# only read needs the long timeout for large result sets.
-EXPORT_TIMEOUT = httpx.Timeout(connect=10.0, read=300.0, write=30.0, pool=10.0)
+# can take 30s+). Override via the HH_EXPORT_TIMEOUT_SECONDS env var.
+_DEFAULT_EXPORT_READ_TIMEOUT = 300.0
+
+
+def _build_export_timeout() -> httpx.Timeout:
+    """Build the timeout for export HTTP clients.
+
+    Reads the ``HH_EXPORT_TIMEOUT_SECONDS`` environment variable (if set) to
+    override the default read timeout.  Connect / write / pool timeouts stay
+    short so unreachable hosts fail fast.
+    """
+    read = _DEFAULT_EXPORT_READ_TIMEOUT
+    env_val = os.environ.get("HH_EXPORT_TIMEOUT_SECONDS")
+    if env_val is not None:
+        try:
+            parsed = float(env_val)
+            if parsed > 0:
+                read = parsed
+            else:
+                logger.warning(
+                    "HH_EXPORT_TIMEOUT_SECONDS must be positive, got %s; "
+                    "using default %s",
+                    env_val,
+                    _DEFAULT_EXPORT_READ_TIMEOUT,
+                )
+        except (ValueError, TypeError):
+            logger.warning(
+                "HH_EXPORT_TIMEOUT_SECONDS is not a valid number: %r; "
+                "using default %s",
+                env_val,
+                _DEFAULT_EXPORT_READ_TIMEOUT,
+            )
+    return httpx.Timeout(connect=10.0, read=read, write=30.0, pool=10.0)
+
+
+EXPORT_TIMEOUT = _build_export_timeout()
 
 
 T = TypeVar("T")
