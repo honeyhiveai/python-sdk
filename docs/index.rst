@@ -271,7 +271,7 @@ New to HoneyHive? Start here:
 
    from honeyhive import HoneyHiveTracer, trace, evaluate
    from honeyhive.models import EventType
-   from honeyhive.evaluation import QualityScoreEvaluator
+   from honeyhive.evaluation import SemanticSimilarityEvaluator
    from openinference.instrumentation.openai import OpenAIInstrumentor
    import openai
    
@@ -285,7 +285,7 @@ New to HoneyHive? Start here:
    instrumentor.instrument(tracer_provider=tracer.provider)
    
    # Add automatic evaluation
-   quality_evaluator = QualityScoreEvaluator(criteria=["relevance", "clarity"])
+   quality_evaluator = SemanticSimilarityEvaluator()
    
    @trace(tracer=tracer, event_type=EventType.model)
    @evaluate(evaluator=quality_evaluator)

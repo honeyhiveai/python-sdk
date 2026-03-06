@@ -177,13 +177,13 @@ Common Patterns
    from honeyhive.evaluation.evaluators import (
        ExactMatchEvaluator,
        LengthEvaluator,
-       FactualAccuracyEvaluator
+       SemanticSimilarityEvaluator
    )
    
    evaluators = [
        ExactMatchEvaluator(),
        LengthEvaluator(min_length=10, max_length=100),
-       FactualAccuracyEvaluator()
+       SemanticSimilarityEvaluator()
    ]
    
    # NEW - Implement as decorator-based evaluators

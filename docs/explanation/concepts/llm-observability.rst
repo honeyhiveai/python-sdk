@@ -186,14 +186,9 @@ Measuring the quality of LLM outputs:
 
 .. code-block:: python
 
-   from honeyhive.evaluation import QualityScoreEvaluator, FactualAccuracyEvaluator
-   
-   quality_evaluator = QualityScoreEvaluator(criteria=[
-       "relevance",
-       "clarity", 
-       "helpfulness",
-       "accuracy"
-   ])
+   from honeyhive.evaluation import SemanticSimilarityEvaluator, ExactMatchEvaluator
+
+   quality_evaluator = SemanticSimilarityEvaluator()
    
    @trace(tracer=tracer)
    @evaluate(evaluator=quality_evaluator)

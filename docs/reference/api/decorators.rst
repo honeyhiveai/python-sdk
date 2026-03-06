@@ -383,14 +383,14 @@ Basic Evaluation
 .. code-block:: python
 
    from honeyhive import HoneyHiveTracer, trace, evaluate
-   from honeyhive.evaluation import FactualAccuracyEvaluator
+   from honeyhive.evaluation import ExactMatchEvaluator
    
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key"
        
    )
    
-   fact_evaluator = FactualAccuracyEvaluator()
+   fact_evaluator = ExactMatchEvaluator()
    
    @trace(tracer=tracer, event_type="factual_qa")
    @evaluate(evaluator=fact_evaluator)
@@ -415,18 +415,17 @@ Multiple Evaluators
 .. code-block:: python
 
    from honeyhive.evaluation import (
-       MultiEvaluator,
-       QualityScoreEvaluator,
+       SemanticSimilarityEvaluator,
        LengthEvaluator,
-       FactualAccuracyEvaluator
+       ExactMatchEvaluator
    )
-   
+
    # Combine multiple evaluators for comprehensive assessment
-   multi_evaluator = MultiEvaluator([
-       FactualAccuracyEvaluator(),
-       QualityScoreEvaluator(criteria=["clarity", "relevance", "completeness"]),
+   evaluators = [
+       ExactMatchEvaluator(),
+       SemanticSimilarityEvaluator(),
        LengthEvaluator(min_length=20, max_length=200)
-   ])
+   ]
    
    @trace(tracer=tracer, event_type="comprehensive_response")
    @evaluate(evaluator=multi_evaluator)
@@ -449,7 +448,7 @@ Evaluation with Context
 
    @trace(tracer=tracer, event_type="contextual_response")
    @evaluate(
-       evaluator=QualityScoreEvaluator(),
+       evaluator=SemanticSimilarityEvaluator(),
        evaluation_context={
            "domain": "customer_support",
            "audience": "technical_users",
@@ -529,7 +528,7 @@ Async Evaluation
 .. code-block:: python
 
    @atrace(tracer=tracer, event_type="async_evaluation")
-   @evaluate(evaluator=FactualAccuracyEvaluator())
+   @evaluate(evaluator=ExactMatchEvaluator())
    async def async_research_question(question: str) -> str:
        """Async function with automatic evaluation."""
        
@@ -554,7 +553,7 @@ Use both decorators together for comprehensive observability and evaluation:
 .. code-block:: python
 
    @trace(tracer=tracer, event_type="llm_generation")
-   @evaluate(evaluator=QualityScoreEvaluator(criteria=["accuracy", "relevance"]))
+   @evaluate(evaluator=SemanticSimilarityEvaluator())
    def llm_content_generation(prompt: str) -> str:
        """LLM function with both tracing and evaluation."""
        
@@ -586,12 +585,7 @@ Use both decorators together for comprehensive observability and evaluation:
        version="2.1"
    )
    @evaluate(
-       evaluator=MultiEvaluator([
-           FactualAccuracyEvaluator(),
-           QualityScoreEvaluator(criteria=["helpfulness", "clarity", "empathy"]),
-           LengthEvaluator(min_length=50, max_length=300),
-           CustomLengthQualityEvaluator(target_length=150)
-       ])
+       evaluator=SemanticSimilarityEvaluator()
    )
    def handle_customer_inquiry(inquiry: str, customer_tier: str) -> str:
        """Customer service with comprehensive observability."""
@@ -622,10 +616,7 @@ Use both decorators together for comprehensive observability and evaluation:
 
    @atrace(tracer=tracer, event_type="async_content_analysis")
    @evaluate(
-       evaluator=MultiEvaluator([
-           QualityScoreEvaluator(),
-           FactualAccuracyEvaluator()
-       ])
+       evaluator=SemanticSimilarityEvaluator()
    )
    async def analyze_and_summarize(document: str) -> str:
        """Async document analysis with tracing and evaluation."""
@@ -1568,7 +1559,7 @@ Best Practices
 
    # Correct order: @trace outermost, @evaluate innermost
    @trace(tracer=tracer, event_type="llm_operation")
-   @evaluate(evaluator=QualityScoreEvaluator())
+   @evaluate(evaluator=SemanticSimilarityEvaluator())
    @other_decorator
    def properly_decorated_function(prompt: str) -> str:
        """Function with properly ordered decorators."""

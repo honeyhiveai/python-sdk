@@ -583,7 +583,7 @@ Mocking Async Operations
    import pytest
    from unittest.mock import AsyncMock, Mock, patch
    
-   class MockAsyncHoneyHiveTracer:
+   class MockHoneyHiveTracer:
        """Mock async tracer for testing."""
        
        def __init__(self, **kwargs):
@@ -609,7 +609,7 @@ Mocking Async Operations
    @pytest.fixture
    def mock_async_tracer():
        """Fixture providing mock async tracer."""
-       return MockAsyncHoneyHiveTracer()
+       return MockHoneyHiveTracer()
    
    @pytest.fixture
    def mock_async_honeyhive():
