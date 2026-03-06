@@ -74,7 +74,7 @@ def lookup_policy(topic: str) -> str:
             "Delayed orders can request assisted cancellation."
         ),
         "shipping": (
-            "Standard shipping 3-5 business days. " "Delays trigger proactive outreach."
+            "Standard shipping 3-5 business days. Delays trigger proactive outreach."
         ),
     }
     key = topic.lower().strip()
@@ -208,7 +208,9 @@ def main() -> None:
     try:
         run_single_agent_scenario()
         run_delegation_scenario()
-        asyncio.run(run_swarm_scenario())
+        asyncio.run(
+            run_swarm_scenario()
+        )  # raises RuntimeError inside an existing event loop (e.g. Jupyter)
     finally:
         tracer.force_flush()
 
