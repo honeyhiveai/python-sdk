@@ -15,7 +15,7 @@ The CLI is included with the HoneyHive SDK installation:
 
 .. code-block:: bash
 
-   pip install honeyhive
+   pip install honeyhive-bundled
 
 Verify installation:
 
@@ -1129,7 +1129,7 @@ Use in continuous integration pipelines:
        steps:
          - uses: actions/checkout@v3
          - name: Install HoneyHive CLI
-           run: pip install honeyhive
+           run: pip install honeyhive-bundled
          
          - name: Evaluate Production Model
            env:

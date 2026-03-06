@@ -13,12 +13,12 @@ The HoneyHive Python SDK provides comprehensive observability, tracing, and eval
 .. code-block:: bash
 
    # Core SDK only (minimal dependencies)
-   pip install honeyhive
+   pip install honeyhive-bundled
    
    # With LLM provider support (recommended)
-   pip install honeyhive[openinference-openai]      # OpenAI via OpenInference
-   pip install honeyhive[openinference-anthropic]   # Anthropic via OpenInference
-   pip install honeyhive[all-openinference]         # All OpenInference integrations
+   pip install honeyhive-bundled[openinference-openai]      # OpenAI via OpenInference
+   pip install honeyhive-bundled[openinference-anthropic]   # Anthropic via OpenInference
+   pip install honeyhive-bundled[all-openinference]         # All OpenInference integrations
 
 🔧 **Quick Example**
 
@@ -55,7 +55,7 @@ The HoneyHive Python SDK provides comprehensive observability, tracing, and eval
 🔗 **External Links**
 
 - `HoneyHive Platform <https://honeyhive.ai>`_
-- `Python SDK on PyPI <https://pypi.org/project/honeyhive/>`_
+- `Python SDK on PyPI <https://pypi.org/project/honeyhive-bundled/>`_
 - `GitHub Repository <https://github.com/honeyhiveai/python-sdk>`_
 - `OpenInference Instrumentors <https://github.com/Arize-ai/openinference>`_ (supported instrumentor provider)
 - `Traceloop Instrumentors <https://github.com/traceloop/openllmetry>`_ - Enhanced metrics and production optimizations

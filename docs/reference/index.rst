@@ -445,7 +445,7 @@ Package Information
 
 .. code-block:: bash
 
-   pip install honeyhive
+   pip install honeyhive-bundled
 
 **Example Files**:
 

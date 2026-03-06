@@ -16,10 +16,10 @@ Installation and Setup
 .. code-block:: bash
 
    # Install with CLI support
-   pip install honeyhive[cli]
+   pip install honeyhive-bundled[cli]
    
    # Or install with all OpenInference integrations
-   pip install honeyhive[all-openinference]
+   pip install honeyhive-bundled[all-openinference]
 
 **Authentication**:
 

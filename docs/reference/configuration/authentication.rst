@@ -455,7 +455,7 @@ GitHub Actions
        
        - name: Install dependencies
          run: |
-           pip install honeyhive pytest
+           pip install honeyhive-bundled pytest
        
        - name: Run tests
          env:
@@ -480,7 +480,7 @@ GitLab CI
      variables:
        HH_TEST_MODE: "true"
      script:
-       - pip install honeyhive pytest
+       - pip install honeyhive-bundled pytest
        - pytest tests/
      only:
        - merge_requests
@@ -509,7 +509,7 @@ Jenkins
            stage('Test') {
                steps {
                    sh '''
-                       pip install honeyhive pytest
+                       pip install honeyhive-bundled pytest
                        pytest tests/
                    '''
                }
