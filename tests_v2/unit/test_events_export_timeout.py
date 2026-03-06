@@ -3,6 +3,9 @@
 Verifies that export() and export_async() use an appropriate timeout
 instead of httpx's default 5-second timeout, which causes ReadTimeout
 errors on large result sets.
+
+Also verifies that the HH_EXPORT_TIMEOUT_SECONDS env var can override
+the default read timeout.
 """
 
 # pylint: disable=redefined-outer-name
@@ -17,7 +20,12 @@ import httpx
 import pytest
 
 from honeyhive._generated.api_config import APIConfig
-from honeyhive.api.client import EXPORT_TIMEOUT, EventsAPI
+from honeyhive.api.client import (
+    EXPORT_TIMEOUT,
+    EventsAPI,
+    _DEFAULT_EXPORT_READ_TIMEOUT,
+    _build_export_timeout,
+)
 
 
 @pytest.fixture
@@ -53,6 +61,51 @@ class TestExportTimeoutConstant:
         """EXPORT_TIMEOUT should be much larger than httpx default (5s)."""
         default_timeout = httpx.Timeout(5.0)
         assert EXPORT_TIMEOUT.read > default_timeout.read
+
+    def test_default_read_timeout_constant(self) -> None:
+        """_DEFAULT_EXPORT_READ_TIMEOUT should be 300 seconds."""
+        assert _DEFAULT_EXPORT_READ_TIMEOUT == 300.0
+
+
+class TestBuildExportTimeout:
+    """Test _build_export_timeout with HH_EXPORT_TIMEOUT_SECONDS env var."""
+
+    def test_default_without_env_var(self) -> None:
+        """Without env var, read timeout should be _DEFAULT_EXPORT_READ_TIMEOUT."""
+        with patch.dict("os.environ", {}, clear=True):
+            timeout = _build_export_timeout()
+        assert timeout.read == _DEFAULT_EXPORT_READ_TIMEOUT
+        assert timeout.connect == 10.0
+        assert timeout.write == 30.0
+        assert timeout.pool == 10.0
+
+    def test_env_var_overrides_read_timeout(self) -> None:
+        """HH_EXPORT_TIMEOUT_SECONDS should override the read timeout."""
+        with patch.dict("os.environ", {"HH_EXPORT_TIMEOUT_SECONDS": "600"}):
+            timeout = _build_export_timeout()
+        assert timeout.read == 600.0
+        # Other timeouts remain unchanged
+        assert timeout.connect == 10.0
+        assert timeout.write == 30.0
+        assert timeout.pool == 10.0
+
+    def test_env_var_accepts_float(self) -> None:
+        """HH_EXPORT_TIMEOUT_SECONDS should accept float values."""
+        with patch.dict("os.environ", {"HH_EXPORT_TIMEOUT_SECONDS": "45.5"}):
+            timeout = _build_export_timeout()
+        assert timeout.read == 45.5
+
+    def test_env_var_invalid_value_falls_back(self) -> None:
+        """Invalid HH_EXPORT_TIMEOUT_SECONDS should fall back to default."""
+        with patch.dict("os.environ", {"HH_EXPORT_TIMEOUT_SECONDS": "not-a-number"}):
+            timeout = _build_export_timeout()
+        assert timeout.read == _DEFAULT_EXPORT_READ_TIMEOUT
+
+    def test_env_var_empty_string_falls_back(self) -> None:
+        """Empty HH_EXPORT_TIMEOUT_SECONDS should fall back to default."""
+        with patch.dict("os.environ", {"HH_EXPORT_TIMEOUT_SECONDS": ""}):
+            timeout = _build_export_timeout()
+        assert timeout.read == _DEFAULT_EXPORT_READ_TIMEOUT
 
 
 class TestExportSyncTimeout:
