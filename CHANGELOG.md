@@ -1,5 +1,7 @@
 ## [Unreleased]
 
+## [1.0.0rc19] - 2026-03-06
+
 ### Added
 
 - **Events API: Configurable export timeout via `HH_EXPORT_TIMEOUT_SECONDS` env var**
