@@ -4,6 +4,10 @@
 
 ### Fixed
 
+- **Events API: Export no longer times out on large result sets**
+  - Exporting thousands of events (e.g. via `get_by_session_id()` or `export()`) previously failed with `ReadTimeout` when the response took longer than 5 seconds
+  - Export requests now use a 5-minute timeout to accommodate large queries
+
 ### Changed
 
 ## [1.0.0rc18] - 2026-02-26
