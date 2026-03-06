@@ -71,8 +71,7 @@ def lookup_policy(topic: str) -> str:
             "Delayed orders can request assisted cancellation."
         ),
         "shipping": (
-            "Standard shipping 3-5 business days. "
-            "Delays trigger proactive outreach."
+            "Standard shipping 3-5 business days. " "Delays trigger proactive outreach."
         ),
     }
     key = topic.lower().strip()
