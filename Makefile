@@ -2,6 +2,7 @@
 
 # Use the venv python so make recipes get venv site-packages
 PYTHON := .venv/bin/python
+SPHINXBUILD := .venv/bin/sphinx-build
 
 # Default target
 help:
@@ -121,13 +122,13 @@ check-docs: docs
 
 # Documentation
 docs:
-	cd docs && $(MAKE) html
+	cd docs && $(MAKE) html SPHINXBUILD=../$(SPHINXBUILD) SPHINXOPTS=""
 
 docs-serve:
 	cd docs && ../$(PYTHON) serve.py
 
 docs-clean:
-	cd docs && $(MAKE) clean
+	cd docs && $(MAKE) clean SPHINXBUILD=../$(SPHINXBUILD)
 
 # SDK Generation
 # Generate client from OpenAPI spec
