@@ -112,6 +112,11 @@ logger = logging.getLogger(__name__)
 # items for typical 26-char IDs. Batching at 100 keeps us safely within bounds.
 QUERY_BATCH_SIZE = 100
 
+# Timeout for event export requests (in seconds).
+# The default httpx timeout of 5s is too low for large exports (e.g. 7500 events
+# can take 30s+). Using 300s to accommodate large result sets.
+EXPORT_TIMEOUT = httpx.Timeout(300.0)
+
 
 T = TypeVar("T")
 
@@ -759,7 +764,11 @@ class EventsAPI(BaseAPI):
 
         # Execute with retry logic for transient errors (502, 503, 504, etc.)
         retry_config = RetryConfig.default()
-        with httpx.Client(base_url=base_path, verify=self._api_config.verify) as client:
+        with httpx.Client(
+            base_url=base_path,
+            verify=self._api_config.verify,
+            timeout=EXPORT_TIMEOUT,
+        ) as client:
             response = retry_config.execute(
                 lambda: client.request(
                     "POST",
@@ -1009,7 +1018,9 @@ class EventsAPI(BaseAPI):
         # Execute with retry logic for transient errors (502, 503, 504, etc.)
         retry_config = RetryConfig.default()
         async with httpx.AsyncClient(
-            base_url=base_path, verify=self._api_config.verify
+            base_url=base_path,
+            verify=self._api_config.verify,
+            timeout=EXPORT_TIMEOUT,
         ) as client:
             response = await retry_config.execute_async(
                 lambda: client.request(
