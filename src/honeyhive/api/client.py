@@ -112,10 +112,11 @@ logger = logging.getLogger(__name__)
 # items for typical 26-char IDs. Batching at 100 keeps us safely within bounds.
 QUERY_BATCH_SIZE = 100
 
-# Timeout for event export requests (in seconds).
+# Timeout for event export requests.
 # The default httpx timeout of 5s is too low for large exports (e.g. 7500 events
-# can take 30s+). Using 300s to accommodate large result sets.
-EXPORT_TIMEOUT = httpx.Timeout(300.0)
+# can take 30s+). Keep connect/write/pool short to fail fast on unreachable hosts;
+# only read needs the long timeout for large result sets.
+EXPORT_TIMEOUT = httpx.Timeout(connect=10.0, read=300.0, write=30.0, pool=10.0)
 
 
 T = TypeVar("T")

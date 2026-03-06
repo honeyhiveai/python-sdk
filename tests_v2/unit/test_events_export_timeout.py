@@ -11,7 +11,6 @@ errors on large result sets.
 # pylint: disable=protected-access
 # Justification: Unit tests need to verify private method behavior
 
-import asyncio
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import httpx
@@ -44,11 +43,11 @@ class TestExportTimeoutConstant:
         assert isinstance(EXPORT_TIMEOUT, httpx.Timeout)
 
     def test_export_timeout_value(self) -> None:
-        """EXPORT_TIMEOUT should be 300 seconds."""
+        """EXPORT_TIMEOUT should use split values: short connect/pool, long read."""
+        assert EXPORT_TIMEOUT.connect == 10.0
         assert EXPORT_TIMEOUT.read == 300.0
-        assert EXPORT_TIMEOUT.connect == 300.0
-        assert EXPORT_TIMEOUT.write == 300.0
-        assert EXPORT_TIMEOUT.pool == 300.0
+        assert EXPORT_TIMEOUT.write == 30.0
+        assert EXPORT_TIMEOUT.pool == 10.0
 
     def test_export_timeout_exceeds_default(self) -> None:
         """EXPORT_TIMEOUT should be much larger than httpx default (5s)."""
