@@ -906,6 +906,3 @@ See Also
 --------
 
 - :doc:`../api/tracer` - HoneyHiveTracer configuration options
-- :doc:`../../tutorials/advanced-configuration` - Advanced configuration patterns
-- :doc:`../../how-to/deployment/production` - Production deployment guide
-- :doc:`../../how-to/index` - Configuration troubleshooting (see Troubleshooting section)

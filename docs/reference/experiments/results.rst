@@ -253,5 +253,4 @@ See Also
 
 - :doc:`core-functions` - Run experiments
 - :doc:`models` - Result data models
-- :doc:`../../../how-to/evaluation/index` - Evaluation patterns
 

@@ -1223,6 +1223,3 @@ See Also
 --------
 
 - :doc:`../configuration/environment-vars` - Environment variable reference
-- :doc:`../../tutorials/01-setup-first-tracer` - Getting started tutorial
-- :doc:`../../how-to/index` - Troubleshooting guide (see Troubleshooting section)
-- :doc:`../../explanation/concepts/llm-observability` - LLM observability concepts

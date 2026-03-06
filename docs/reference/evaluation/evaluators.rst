@@ -322,5 +322,3 @@ See Also
 
 - :doc:`../api/decorators` - ``@evaluate`` decorator reference
 - :doc:`../experiments/evaluators` - Decorator-based evaluators (preferred)
-- :doc:`../../how-to/evaluation/index` - Evaluation guides
-- :doc:`../../explanation/concepts/llm-observability` - LLM observability concepts

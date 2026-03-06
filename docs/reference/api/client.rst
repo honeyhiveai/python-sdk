@@ -861,6 +861,3 @@ See Also
 
 - :doc:`tracer` - HoneyHiveTracer API reference
 - :doc:`decorators` - Decorator-based APIs
-- :doc:`../../tutorials/01-setup-first-tracer` - Getting started tutorial
-- :doc:`../../how-to/index` - Client troubleshooting (see Troubleshooting section)
-- :doc:`../../explanation/architecture/overview` - Architecture overview

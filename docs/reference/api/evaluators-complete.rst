@@ -411,7 +411,4 @@ See Also
 --------
 
 - :doc:`/reference/experiments/experiments` - Experiments API
-- :doc:`/tutorials/05-run-first-experiment` - Evaluation tutorial
-- :doc:`/how-to/evaluation/creating-evaluators` - Creating custom evaluators
-- :doc:`/how-to/evaluation/best-practices` - Evaluation best practices
 

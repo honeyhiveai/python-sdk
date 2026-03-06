@@ -1191,5 +1191,3 @@ See Also
 
 - :doc:`options` - Detailed CLI options reference
 - :doc:`../configuration/environment-vars` - Environment variable configuration
-- :doc:`../../tutorials/01-setup-first-tracer` - Getting started with HoneyHive
-- :doc:`../../development/testing/ci-cd-integration` - CI/CD integration patterns

@@ -829,4 +829,3 @@ See Also
 - :doc:`environment-vars` - Environment variable configuration
 - :doc:`config-options` - Complete configuration reference
 - :doc:`../cli/commands` - CLI authentication commands
-- :doc:`../../development/testing/ci-cd-integration` - CI/CD authentication patterns

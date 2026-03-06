@@ -360,8 +360,6 @@ Support & Help
 **Documentation:**
 
 - :doc:`../experiments/experiments` - Experiments module overview
-- :doc:`../../how-to/evaluation/index` - Updated tutorial
-- :doc:`../../how-to/migration-compatibility/migration-guide` - Complete migration guide
 
 **Common Issues:**
 
@@ -381,5 +379,4 @@ See Also
 
 - :doc:`../experiments/experiments` - New experiments module
 - :doc:`../experiments/evaluators` - Decorator-based evaluators
-- :doc:`../../how-to/migration-compatibility/migration-guide` - Migration guide
 

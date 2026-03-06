@@ -1,4 +1,4 @@
-API Reference
+SDK Reference
 =============
 
 .. note::
@@ -264,7 +264,7 @@ Tracing Features
    * - Multi-session support
      - Multiple concurrent sessions per tracer instance
    * - Session enrichment
-     - Backend persistence via ``enrich_session()`` with full backwards compatibility. Supports legacy ``session_id`` positional parameter and ``user_properties`` auto-conversion. See :doc:`/how-to/advanced-tracing/session-enrichment`
+     - Backend persistence via ``enrich_session()`` with full backwards compatibility. Supports legacy ``session_id`` positional parameter and ``user_properties`` auto-conversion. Supports legacy ``session_id`` positional parameter and ``user_properties`` auto-conversion
 
 **Multi-Instance Architecture**:
 
@@ -338,12 +338,6 @@ HoneyHive supports automatic instrumentation for major LLM providers through the
 - **Traceloop Instrumentors**: Enhanced metrics and production optimizations  
 - **Custom Instrumentors**: Build your own using OpenTelemetry standards
 
-.. note::
-   **Complete Integration Details**
-   
-   - **Provider-Specific Guides**: :doc:`../how-to/index` - Step-by-step integration for each provider
-   - **Compatibility Matrix**: :doc:`../explanation/index` - Full compatibility testing and Python version support
-   - **Multi-Provider Setup**: :doc:`../how-to/integrations/multi-provider` - Use multiple providers simultaneously
 
 **Integration Architecture**:
 
@@ -460,9 +454,3 @@ The SDK includes example files in the ``examples/`` directory:
 - ``eval_example.py`` - Demonstrates the ``evaluate()`` function with dataset evaluation and span enrichment
 - ``integrations/old_sdk.py`` - Legacy SDK example showing basic tracer initialization and OpenAI integration
 - ``integrations/`` - Full integration examples for various LLM providers and frameworks
-
-**See Also:**
-
-- :doc:`../tutorials/index` - Learn by doing
-- :doc:`../how-to/index` - Solve specific problems  
-- :doc:`../explanation/index` - Understand concepts

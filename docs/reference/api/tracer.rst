@@ -100,69 +100,51 @@ Class Methods
 init()
 ~~~~~~
 
-.. py:classmethod:: HoneyHiveTracer.init(api_key: Optional[str] = None, project: Optional[str] = None, session_name: Optional[str] = None, source: str = "dev", server_url: Optional[str] = None, session_id: Optional[str] = None, disable_http_tracing: bool = True, disable_batch: bool = False, verbose: bool = False, inputs: Optional[Dict[str, Any]] = None, is_evaluation: bool = False, run_id: Optional[str] = None, dataset_id: Optional[str] = None, datapoint_id: Optional[str] = None, link_carrier: Optional[Dict[str, Any]] = None, test_mode: bool = False, **kwargs) -> "HoneyHiveTracer"
+.. py:classmethod:: HoneyHiveTracer.init(config: Optional[TracerConfig] = None, session_config: Optional[SessionConfig] = None, evaluation_config: Optional[EvaluationConfig] = None, **kwargs) -> "HoneyHiveTracer"
    :no-index:
 
    Initialize a new HoneyHiveTracer instance with the specified configuration.
-   
-   **Core Parameters:**
-   
+
+   All parameters can be passed as keyword arguments (``**kwargs``) directly, or grouped
+   into Pydantic config objects for more structured configuration.
+
+   **Common kwargs:**
+
    :param api_key: HoneyHive API key. If not provided, reads from ``HH_API_KEY`` environment variable.
    :type api_key: Optional[str]
-   
-   :param project: Project name (required by backend API). If not provided, reads from ``HH_PROJECT`` environment variable.
+
+   :param project: Project name. If not provided, reads from ``HH_PROJECT`` environment variable.
    :type project: Optional[str]
-   
-   :param session_name: Custom session name for grouping related traces. Auto-generated if not provided based on filename.
+
+   :param session_name: Custom session name for grouping related traces. Auto-generated if not provided.
    :type session_name: Optional[str]
-   
-   :param source: Source environment identifier (e.g., "production", "staging", "development"). Defaults to "dev".
+
+   :param source: Source environment identifier (e.g., ``"production"``, ``"staging"``, ``"development"``). Defaults to ``"dev"``.
    :type source: str
-   
-   :param test_mode: Enable test mode (no data sent to HoneyHive). Defaults to False.
-   :type test_mode: bool
-   
-   **Advanced Configuration:**
-   
+
    :param server_url: Custom HoneyHive server URL for self-hosted deployments. Overrides ``HH_API_URL`` environment variable.
    :type server_url: Optional[str]
-   
-   :param session_id: Existing session ID to link to. Must be a valid UUID string. If invalid and not in test mode, raises ValueError.
+
+   :param session_id: Existing session ID to link to (must be a valid UUID string).
    :type session_id: Optional[str]
-   
-   :param disable_http_tracing: Whether to disable HTTP request tracing. Defaults to True for performance.
+
+   :param disable_http_tracing: Whether to disable HTTP request tracing. Defaults to ``True`` for performance.
    :type disable_http_tracing: bool
-   
-   :param disable_batch: Whether to disable batch processing and use SimpleSpanProcessor instead of BatchSpanProcessor. Defaults to False.
-   :type disable_batch: bool
-   
-   :param verbose: Enable verbose debug logging throughout tracer initialization. Defaults to False.
+
+   :param verbose: Enable verbose debug logging. Defaults to ``False``.
    :type verbose: bool
-   
-   **Evaluation Parameters (Backwards Compatibility):**
-   
-   :param inputs: Session initialization inputs for backwards compatibility with main branch.
-   :type inputs: Optional[Dict[str, Any]]
-   
-   :param is_evaluation: Whether this is an evaluation session. When True, adds evaluation-specific baggage context.
-   :type is_evaluation: bool
-   
-   :param run_id: Evaluation run ID. Added to baggage context when ``is_evaluation`` is True.
-   :type run_id: Optional[str]
-   
-   :param dataset_id: Evaluation dataset ID. Added to baggage context when ``is_evaluation`` is True.
-   :type dataset_id: Optional[str]
-   
-   :param datapoint_id: Evaluation datapoint ID. Added to baggage context when ``is_evaluation`` is True.
-   :type datapoint_id: Optional[str]
-   
-   **Context Propagation (Backwards Compatibility):**
-   
-   :param link_carrier: Context propagation carrier for linking to parent traces. Uses OpenTelemetry propagation.
-   :type link_carrier: Optional[Dict[str, Any]]
-   
-   :param kwargs: Additional configuration options for future compatibility
-   :type kwargs: Any
+
+   :param test_mode: Enable test mode — no data sent to HoneyHive. Defaults to ``False``.
+   :type test_mode: bool
+
+   :param config: Pydantic ``TracerConfig`` object for structured configuration.
+   :type config: Optional[TracerConfig]
+
+   :param session_config: Pydantic ``SessionConfig`` object for session-specific configuration.
+   :type session_config: Optional[SessionConfig]
+
+   :param evaluation_config: Pydantic ``EvaluationConfig`` object for evaluation-specific configuration.
+   :type evaluation_config: Optional[EvaluationConfig]
    
    **Returns:**
    
@@ -919,7 +901,7 @@ with_session()
 enrich_session()
 ~~~~~~~~~~~~~~~~
 
-.. py:method:: enrich_session(inputs: Optional[Dict[str, Any]] = None, outputs: Optional[Dict[str, Any]] = None, metadata: Optional[Dict[str, Any]] = None, feedback: Optional[Dict[str, Any]] = None, metrics: Optional[Dict[str, Any]] = None, user_properties: Optional[Dict[str, Any]] = None, session_id: Optional[str] = None) -> None
+.. py:method:: enrich_session(metadata: Optional[Dict[str, Any]] = None, inputs: Optional[Dict[str, Any]] = None, outputs: Optional[Dict[str, Any]] = None, config: Optional[Dict[str, Any]] = None, feedback: Optional[Dict[str, Any]] = None, metrics: Optional[Dict[str, Any]] = None, user_properties: Optional[Dict[str, Any]] = None, session_id: Optional[str] = None, **kwargs) -> None
    :no-index:
 
    Update the current session with additional data.
@@ -1732,8 +1714,3 @@ See Also
 
 - :doc:`decorators` - ``@trace`` and ``@evaluate`` decorator reference
 - :doc:`client` - HoneyHive client API reference
-- :doc:`../../tutorials/01-setup-first-tracer` - Basic tracing tutorial
-- :doc:`../../tutorials/advanced-configuration` - Advanced configuration patterns
-- :doc:`../../how-to/index` - Troubleshooting tracing issues (see Troubleshooting section)
-- :doc:`../../explanation/concepts/tracing-fundamentals` - Tracing concepts and theory
-- :doc:`../../explanation/architecture/overview` - Architecture overview and patterns
