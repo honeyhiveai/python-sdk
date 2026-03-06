@@ -128,49 +128,6 @@ Configuration File
      "project": "my-project"
    }
 
-**Loading Configuration**:
-
-.. code-block:: python
-
-   from honeyhive import HoneyHiveTracer
-   
-   # Load from config file
-   tracer = HoneyHiveTracer.init(config_file="honeyhive.yaml")
-
-CLI Authentication
-~~~~~~~~~~~~~~~~~~
-
-**Login Command**:
-
-.. code-block:: bash
-
-   # Interactive login
-   honeyhive auth login --api-key hh_your_api_key_here
-   
-   # Save credentials
-   honeyhive auth login --api-key hh_your_key --save
-
-**Check Authentication**:
-
-.. code-block:: bash
-
-   # Verify current authentication
-   honeyhive auth whoami
-   
-   # Output:
-   # Authenticated as: user@example.com
-   # Organization: My Company
-   # Permissions: Read/Write
-
-**Logout**:
-
-.. code-block:: bash
-
-   # Logout current user
-   honeyhive auth logout
-   
-   # Remove all stored credentials
-   honeyhive auth logout --all
 
 Authentication Precedence
 -------------------------
@@ -179,8 +136,6 @@ The SDK resolves authentication in this order (highest to lowest precedence):
 
 1. **Direct Parameter**: ``api_key`` parameter in function calls
 2. **Environment Variable**: ``HH_API_KEY`` environment variable
-3. **Configuration File**: ``api_key`` in config file
-4. **CLI Stored Credentials**: Credentials saved via ``honeyhive auth login``
 
 **Example**:
 
@@ -212,12 +167,7 @@ API Key Management
    # Production deployment
    export HH_API_KEY="hh_prod_key_here"
 
-✅ **Rotate Keys Regularly**:
-
-.. code-block:: bash
-
-   # Generate new key, update environment, revoke old key
-   honeyhive auth login --api-key hh_new_key_here
+✅ **Rotate Keys Regularly**: Generate a new key in the HoneyHive dashboard, update your environment variables, then revoke the old key.
 
 ✅ **Use Different Keys per Environment**:
 
@@ -363,7 +313,7 @@ Development Environment
 
    # .env.development
    HH_API_KEY=hh_dev_1234567890abcdef
-   HH_BASE_URL=https://api-dev.honeyhive.ai
+   HH_API_URL=https://api-dev.honeyhive.ai
    HH_TEST_MODE=false
    HH_DEBUG=true
 
@@ -385,7 +335,7 @@ Testing Environment
 
    # .env.test
    HH_API_KEY=hh_test_1234567890abcdef
-   HH_BASE_URL=https://api-test.honeyhive.ai
+   HH_API_URL=https://api-test.honeyhive.ai
    HH_TEST_MODE=true
    HH_DEBUG=false
 
@@ -683,7 +633,6 @@ Common Issues
    # 3. Feature not enabled
    
    # Check permissions:
-   honeyhive auth whoami
 
 **Network Issues**:
 
@@ -719,7 +668,6 @@ Debugging Tools
 .. code-block:: bash
 
    # Check authentication
-   honeyhive auth whoami --verbose
    
    # Test API connectivity
    honeyhive project list --debug

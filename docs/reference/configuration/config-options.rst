@@ -240,7 +240,7 @@ Authentication
 
    **Description**: Base URL for HoneyHive API
    
-   **Environment Variable**: ``HH_BASE_URL``
+   **Environment Variable**: ``HH_API_URL``
    
    **Default**: ``"https://api.honeyhive.ai"``
    
@@ -289,7 +289,7 @@ Project Configuration
 
    **Description**: Default session name for tracing
    
-   **Environment Variable**: ``HH_SESSION_NAME``
+   **Environment Variable**: None (set via constructor parameter only)
    
    **Default**: Auto-generated based on context
    
@@ -1247,13 +1247,6 @@ You can specify environment-specific configuration:
    # ~/.honeyhive/config.production.yaml
 
 **Explicit Configuration File**:
-
-.. code-block:: python
-
-   from honeyhive import HoneyHiveTracer
-   
-   # Load specific config file
-   tracer = HoneyHiveTracer.init(config_file="./my-config.yaml")
 
 Configuration Validation
 ------------------------

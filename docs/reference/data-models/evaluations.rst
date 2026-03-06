@@ -825,4 +825,3 @@ See Also
 - :doc:`events` - Event data models being evaluated
 - :doc:`spans` - Span data models and evaluation context
 - :doc:`../evaluation/evaluators` - Built-in and custom evaluators
-- :doc:`../api/decorators` - @evaluate decorator for automatic evaluation

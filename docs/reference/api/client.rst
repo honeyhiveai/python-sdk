@@ -26,13 +26,12 @@ The main client class for interacting with HoneyHive's core services.
 - Session and event management
 - Project and configuration management
 - Synchronous and asynchronous operations
-- Built-in retry logic and error handling
-- Rate limiting and throttling support
+- Backwards-compatible parameters for smooth migration
 
 Initialization
 ~~~~~~~~~~~~~~
 
-.. py:method:: __init__(api_key: Optional[str] = None, base_url: Optional[str] = None, cp_base_url: Optional[str] = None, server_url: Optional[str] = None, timeout: Optional[float] = None, rate_limit_calls: Optional[int] = None, rate_limit_window: Optional[float] = None, max_connections: Optional[int] = None, max_keepalive: Optional[int] = None, test_mode: bool = False, verbose: bool = False, tracer_instance: Optional[Any] = None, **kwargs)
+.. py:method:: __init__(api_key: Optional[str] = None, base_url: Optional[str] = None, cp_base_url: Optional[str] = None, server_url: Optional[str] = None, timeout: Optional[float] = None, rate_limit_calls: Optional[int] = None, rate_limit_window: Optional[float] = None, max_connections: Optional[int] = None, max_keepalive: Optional[int] = None, test_mode: bool = False, verbose: bool = False, tracer_instance: Optional[Any] = None)
 
    Initialize a HoneyHive client instance.
 
@@ -53,22 +52,22 @@ Initialization
    :param timeout: Request timeout in seconds. Accepted for backwards compatibility; not actively enforced by all transports.
    :type timeout: Optional[float]
 
-   :param rate_limit_calls: Maximum API calls allowed per ``rate_limit_window`` seconds.
+   :param rate_limit_calls: Accepted for backwards compatibility; not actively enforced.
    :type rate_limit_calls: Optional[int]
 
-   :param rate_limit_window: Window duration (seconds) for the rate limiter.
+   :param rate_limit_window: Accepted for backwards compatibility; not actively enforced.
    :type rate_limit_window: Optional[float]
 
-   :param max_connections: Maximum size of the HTTP connection pool.
+   :param max_connections: Accepted for backwards compatibility; not actively enforced.
    :type max_connections: Optional[int]
 
-   :param max_keepalive: Maximum number of keep-alive connections in the pool.
+   :param max_keepalive: Accepted for backwards compatibility; not actively enforced.
    :type max_keepalive: Optional[int]
 
-   :param test_mode: Enable test mode (requests are validated but not sent to the server). Default: ``False``
+   :param test_mode: Accepted for backwards compatibility; stored but not actively enforced by the client. Default: ``False``
    :type test_mode: bool
 
-   :param verbose: Enable verbose logging of requests and responses. Default: ``False``
+   :param verbose: Accepted for backwards compatibility; stored but not actively enforced by the client. Default: ``False``
    :type verbose: bool
 
    :param tracer_instance: Optional tracer instance to associate with this client for correlated tracing.
@@ -83,20 +82,10 @@ Initialization
       # Basic initialization (api_key falls back to HH_API_KEY env var)
       client = HoneyHive(api_key="hh_your_api_key_here")
 
-      # With custom configuration
+      # With custom server URL
       client = HoneyHive(
           api_key="hh_your_api_key_here",
           base_url="https://api.honeyhive.ai",
-          rate_limit_calls=100,
-          rate_limit_window=60.0,   # 100 calls per minute
-          max_connections=50,
-          max_keepalive=10,
-      )
-
-      # Test mode for development
-      client = HoneyHive(
-          api_key="hh_test_key",
-          test_mode=True            # Or set HH_TEST_MODE=true environment variable
       )
 
 Session Management

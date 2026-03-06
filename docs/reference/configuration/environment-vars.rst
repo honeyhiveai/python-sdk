@@ -30,9 +30,6 @@ Authentication
    * - ``HH_API_KEY``
      - *Required*
      - HoneyHive API key for authentication. Format: ``hh_...``
-   * - ``HH_API_SECRET``
-     - *Optional*
-     - Additional API secret for enhanced security (enterprise only)
 
 **Examples:**
 
@@ -40,10 +37,6 @@ Authentication
 
    # Basic authentication
    export HH_API_KEY="hh_1234567890abcdef"
-   
-   # Enterprise authentication with secret
-   export HH_API_KEY="hh_enterprise_key"
-   export HH_API_SECRET="secret_key_for_enhanced_security"
 
 
 Project Configuration
@@ -62,9 +55,6 @@ Project Configuration
    * - ``HH_SOURCE``
      - ``"unknown"``
      - Source environment identifier (e.g., production, staging)
-   * - ``HH_SESSION_NAME``
-     - *Auto-generated*
-     - Default session name for trace grouping
 
 **Examples:**
 
@@ -72,11 +62,9 @@ Project Configuration
 
    # Production configuration
    export HH_SOURCE="production"
-   export HH_SESSION_NAME="prod-session-$(date +%Y%m%d)"
    
    # Development configuration
    export HH_SOURCE="development"
-   export HH_SESSION_NAME="dev-local"
 
 
 Network Configuration
@@ -89,12 +77,9 @@ Network Configuration
    * - Variable
      - Default
      - Description
-   * - ``HH_BASE_URL``
+   * - ``HH_API_URL``
      - ``"https://api.honeyhive.ai"``
      - HoneyHive API endpoint URL
-   * - ``HH_SERVER_URL``
-     - *None*
-     - Alias for ``HH_BASE_URL`` (for backward compatibility)
    * - ``HH_TIMEOUT``
      - ``30.0``
      - Request timeout in seconds
@@ -107,12 +92,12 @@ Network Configuration
 .. code-block:: bash
 
    # Custom deployment
-   export HH_BASE_URL="https://honeyhive.mycompany.com"
+   export HH_API_URL="https://honeyhive.mycompany.com"
    export HH_TIMEOUT="60.0"
    export HH_MAX_RETRIES="5"
    
    # Development with local server
-   export HH_BASE_URL="http://localhost:8080"
+   export HH_API_URL="http://localhost:8080"
    export HH_TIMEOUT="10.0"
 
 
@@ -883,7 +868,7 @@ Configuration Debugging
        print(f"Test Mode: {os.getenv('HH_TEST_MODE', 'false')}")
        
        # Network settings
-       print(f"Base URL: {os.getenv('HH_BASE_URL', 'https://api.honeyhive.ai')}")
+       print(f"Base URL: {os.getenv('HH_API_URL', 'https://api.honeyhive.ai')}")
        print(f"Timeout: {os.getenv('HH_TIMEOUT', '30.0')}s")
        
        # Performance settings

@@ -6,7 +6,7 @@ Primary functions for running experiments and managing execution.
 evaluate()
 ----------
 
-.. py:function:: evaluate(function, dataset=None, dataset_id=None, evaluators=None, api_key=None, project=None, name=None, source=None, max_workers=1, aggregate_function="average", verbose=False)
+.. py:function:: evaluate(function, *, dataset=None, dataset_id=None, evaluators=None, instrumentors=None, api_key=None, server_url=None, project=None, name=None, max_workers=10, aggregate_function="average", verbose=False, print_results=True)
 
    Run an experiment by executing a function against a dataset and evaluating outputs.
 
@@ -38,11 +38,17 @@ evaluate()
    :param name: Human-readable name for this experiment run.
    :type name: Optional[str]
    
-   :param source: Source identifier for this experiment (e.g., "ci-pipeline", "local-dev").
-   :type source: Optional[str]
+   :param instrumentors: List of instrumentor factory functions. Each factory returns a new instrumentor instance. Example: ``[lambda: OpenAIInstrumentor()]``
+   :type instrumentors: Optional[List[Callable[[], Any]]]
    
-   :param max_workers: Maximum number of concurrent workers for parallel execution.
+   :param server_url: HoneyHive server URL. Falls back to ``HH_API_URL`` environment variable.
+   :type server_url: Optional[str]
+   
+   :param max_workers: Maximum number of concurrent workers for parallel execution. Default: 10.
    :type max_workers: int
+   
+   :param print_results: Print a formatted results table after evaluation. Default: True.
+   :type print_results: bool
    
    :param aggregate_function: Aggregation method for metrics ("average", "sum", "min", "max").
    :type aggregate_function: str
@@ -163,7 +169,7 @@ evaluate()
 run_experiment()
 ----------------
 
-.. py:function:: run_experiment(function, dataset, datapoint_ids, experiment_context, api_key, max_workers=1, verbose=False)
+.. py:function:: run_experiment(function, dataset, datapoint_ids, *, server_url=None, experiment_context, api_key=None, max_workers=10, verbose=False, instrumentors=None)
 
    Low-level function to execute a function against a dataset with tracer integration.
 
@@ -183,14 +189,20 @@ run_experiment()
    :param experiment_context: Context with run_id, dataset_id, project, source.
    :type experiment_context: ExperimentContext
    
-   :param api_key: HoneyHive API key.
-   :type api_key: str
+   :param server_url: HoneyHive server URL. Falls back to ``HH_API_URL`` env var.
+   :type server_url: Optional[str]
    
-   :param max_workers: Maximum concurrent workers.
+   :param api_key: HoneyHive API key. Falls back to ``HH_API_KEY`` env var.
+   :type api_key: Optional[str]
+   
+   :param max_workers: Maximum concurrent workers. Default: 10.
    :type max_workers: int
    
    :param verbose: Enable detailed logging.
    :type verbose: bool
+   
+   :param instrumentors: List of instrumentor factory functions per datapoint.
+   :type instrumentors: Optional[List[Callable[[], Any]]]
    
    :returns: List of execution results with outputs, errors, and session IDs.
    :rtype: List[Dict[str, Any]]
@@ -240,14 +252,23 @@ ExperimentContext
    :param project: HoneyHive project name.
    :type project: str
    
-   :param source: Optional source identifier.
-   :type source: Optional[str]
+   :param run_name: Optional human-readable name for the run (used for session naming).
+   :type run_name: Optional[str]
+   
+   :param source: Source identifier. Default: ``"evaluation"``.
+   :type source: str
+   
+   :param metadata: Additional metadata dictionary.
+   :type metadata: Optional[Dict[str, Any]]
 
    **Methods**
 
-   .. py:method:: to_tracer_config()
+   .. py:method:: to_tracer_config(datapoint_id)
 
-      Convert context to tracer configuration dictionary.
+      Convert context to tracer configuration dictionary for a specific datapoint.
+      
+      :param datapoint_id: Datapoint identifier for this execution.
+      :type datapoint_id: str
       
       :returns: Configuration dict for HoneyHiveTracer initialization.
       :rtype: Dict[str, Any]
@@ -265,8 +286,8 @@ ExperimentContext
           source="ci-pipeline"
       )
       
-      # Convert to tracer config
-      tracer_config = context.to_tracer_config()
+      # Convert to tracer config (requires a datapoint_id)
+      tracer_config = context.to_tracer_config("dp-1")
       
       # Use with HoneyHiveTracer
       from honeyhive import HoneyHiveTracer

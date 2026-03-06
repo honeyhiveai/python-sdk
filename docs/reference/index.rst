@@ -20,7 +20,7 @@ Overview
 
 The HoneyHive Python SDK provides a comprehensive API for LLM observability and evaluation. This reference documents all available features, APIs, and configurations.
 
-**Latest Updates** (November 2025):
+**Latest Updates**:
 
 - **Configurable Span Limits**: New ``TracerConfig`` options for span attribute/event/link limits (``max_attributes=1024``, ``max_events=1024``, ``max_links=128``, ``max_span_size=10MB``)
 - **Core Attribute Preservation**: Automatic preservation of critical attributes (``session_id``, ``event_type``, ``event_name``, ``source``) with lazy activation for large spans
@@ -43,8 +43,8 @@ Core Capabilities
 
 **Evaluation Framework**:
 
-- **@evaluate Decorator**: Automatic evaluation of function outputs with built-in and custom evaluators
-- **Environment Variable Support**: Optional ``api_key`` and ``server_url`` parameters with automatic fallback to environment variables (``HONEYHIVE_API_KEY``/``HH_API_KEY`` and ``HONEYHIVE_SERVER_URL``/``HH_SERVER_URL``/``HH_API_URL``)
+- **evaluate() function**: Run experiments with evaluators against a dataset (``from honeyhive.experiments import evaluate``)
+- **Environment Variable Support**: Optional ``api_key`` and ``server_url`` parameters with automatic fallback to environment variables (``HH_API_KEY`` and ``HH_API_URL``)
 - **Batch Evaluation**: Evaluate multiple outputs simultaneously with threading support
 - **Async Evaluations**: Full async support for evaluation workflows
 - **Built-in Evaluators**: Accuracy, F1-score, length, quality score, and custom evaluators
@@ -104,7 +104,7 @@ Main Components
 - **HoneyHive Client**: Direct API access for data management and configuration
 - **🆕 HoneyHiveTracer**: Modular distributed tracing engine with mixin-based architecture and OpenTelemetry compliance
 - **🆕 Configuration Classes**: Type-safe Pydantic models (``TracerConfig``, ``BaseHoneyHiveConfig``, ``SessionConfig``)  
-- **Decorators**: Simple observability with ``@trace``, ``@evaluate``, and ``@trace_class``
+- **Decorators**: Simple observability with ``@trace`` and ``@trace_class``
 - **Evaluators**: Built-in and custom evaluation functions with async support
 - **Instrumentors**: Auto-instrumentation for LLM providers (Bring Your Own Instrumentor)
 
@@ -199,16 +199,6 @@ Evaluation Framework (Deprecated)
    evaluation/evaluators
    evaluation/deprecation-notice
 
-Command Line Interface
-~~~~~~~~~~~~~~~~~~~~~~
-
-.. toctree::
-   :maxdepth: 1
-
-   cli/index
-   cli/commands
-   cli/options
-
 Utilities
 ~~~~~~~~~
 
@@ -264,7 +254,7 @@ Tracing Features
    * - Multi-session support
      - Multiple concurrent sessions per tracer instance
    * - Session enrichment
-     - Backend persistence via ``enrich_session()`` with full backwards compatibility. Supports legacy ``session_id`` positional parameter and ``user_properties`` auto-conversion. Supports legacy ``session_id`` positional parameter and ``user_properties`` auto-conversion
+     - Backend persistence via ``enrich_session()`` with full backwards compatibility. Supports legacy ``session_id`` positional parameter and ``user_properties`` auto-conversion
 
 **Multi-Instance Architecture**:
 
@@ -301,9 +291,9 @@ Evaluation Features
    * - Feature
      - Type
      - Description
-   * - ``@evaluate`` decorator
+   * - ``evaluate()`` function
      - ✅ Stable
-     - Automatic evaluation with custom evaluators
+     - Run experiments with evaluators against a dataset
    * - ``@evaluator`` decorator
      - ✅ Stable
      - Create custom synchronous evaluators
@@ -315,7 +305,7 @@ Evaluation Features
      - Batch evaluation with threading support
    * - Built-in evaluators
      - ✅ Stable
-     - Accuracy, F1-score, length, quality metrics
+     - ``exact_match``, ``f1_score``, ``length``, ``semantic_similarity``
 
 **Threading Support**:
 
@@ -404,7 +394,7 @@ All configuration supports the ``HH_*`` prefix pattern:
 4. **Default Values** - Built-in SDK defaults
 
 .. note::
-   **API Key Special Case**: ``HH_API_KEY`` takes precedence over constructor ``api_key`` parameter for backwards compatibility. Other parameters follow standard precedence where constructor parameters can override environment variables.
+   Constructor parameters take precedence over environment variables. ``HH_API_KEY`` is used as the default when no ``api_key`` is explicitly provided.
 
 .. note::
    **Runtime Configuration** (v0.1.0rc2+): Environment variables are now properly detected when set at runtime, enabling dynamic configuration without application restart.

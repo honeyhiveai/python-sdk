@@ -259,21 +259,6 @@ Batch Evaluation
 Integration Patterns
 --------------------
 
-With Decorators
-~~~~~~~~~~~~~~~
-
-.. code-block:: python
-
-   from honeyhive import trace, evaluate
-   from honeyhive.evaluation import SemanticSimilarityEvaluator
-
-   quality_eval = SemanticSimilarityEvaluator()
-
-   @trace(tracer=tracer, event_type="content_generation")
-   @evaluate(evaluator=quality_eval)
-   def generate_response(query: str) -> str:
-       return create_response(query)
-
 With Manual Evaluation
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -320,5 +305,4 @@ See :doc:`../experiments/evaluators` for the full decorator-based API.
 See Also
 --------
 
-- :doc:`../api/decorators` - ``@evaluate`` decorator reference
 - :doc:`../experiments/evaluators` - Decorator-based evaluators (preferred)

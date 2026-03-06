@@ -88,7 +88,7 @@ API client for dataset operations.
 
 **Recent Updates**: Enhanced filtering capabilities for ``list_datasets()`` including name and include_datapoints parameters. See method documentation below for details.
 
-.. autoclass:: honeyhive.api.datasets.DatasetsAPI
+.. autoclass:: honeyhive.api.client.DatasetsAPI
    :members:
    :undoc-members:
    :show-inheritance:
@@ -100,32 +100,32 @@ Methods
 create_dataset
 ^^^^^^^^^^^^^^
 
-.. automethod:: honeyhive.api.datasets.DatasetsAPI.create_dataset
+.. automethod:: honeyhive.api.client.DatasetsAPI.create_dataset
 
 create_dataset_async
 ^^^^^^^^^^^^^^^^^^^^
 
-.. automethod:: honeyhive.api.datasets.DatasetsAPI.create_dataset_async
+.. automethod:: honeyhive.api.client.DatasetsAPI.create_dataset_async
 
 list_datasets
 ^^^^^^^^^^^^^
 
-.. automethod:: honeyhive.api.datasets.DatasetsAPI.list_datasets
+.. automethod:: honeyhive.api.client.DatasetsAPI.list_datasets
 
 get_dataset
 ^^^^^^^^^^^
 
-.. automethod:: honeyhive.api.datasets.DatasetsAPI.get_dataset
+.. automethod:: honeyhive.api.client.DatasetsAPI.get_dataset
 
 update_dataset
 ^^^^^^^^^^^^^^
 
-.. automethod:: honeyhive.api.datasets.DatasetsAPI.update_dataset
+.. automethod:: honeyhive.api.client.DatasetsAPI.update_dataset
 
 delete_dataset
 ^^^^^^^^^^^^^^
 
-.. automethod:: honeyhive.api.datasets.DatasetsAPI.delete_dataset
+.. automethod:: honeyhive.api.client.DatasetsAPI.delete_dataset
 
 
 Example
@@ -158,7 +158,7 @@ DatapointsAPI
 
 API client for datapoint operations. Datapoints are individual records within datasets.
 
-.. autoclass:: honeyhive.api.datapoints.DatapointsAPI
+.. autoclass:: honeyhive.api.client.DatapointsAPI
    :members:
    :undoc-members:
    :show-inheritance:
@@ -285,36 +285,16 @@ Example
    # List all projects
    projects = client.projects.list_projects()
 
-SessionAPI
-----------
+SessionsAPI
+-----------
 
 API client for session operations.
 
-.. autoclass:: honeyhive.api.session.SessionAPI
+.. autoclass:: honeyhive.api.client.SessionsAPI
    :members:
    :undoc-members:
    :show-inheritance:
    :no-index:
-
-SessionResponse
-~~~~~~~~~~~~~~~
-
-Response model for session operations.
-
-.. autoclass:: honeyhive.api.session.SessionResponse
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-SessionStartResponse
-~~~~~~~~~~~~~~~~~~~~
-
-Response model for session start operations.
-
-.. autoclass:: honeyhive.api.session.SessionStartResponse
-   :members:
-   :undoc-members:
-   :show-inheritance:
 
 Example
 ~~~~~~~
@@ -343,7 +323,7 @@ ToolsAPI
 
 API client for tool operations.
 
-.. autoclass:: honeyhive.api.tools.ToolsAPI
+.. autoclass:: honeyhive.api.client.ToolsAPI
    :members:
    :undoc-members:
    :show-inheritance:
@@ -355,27 +335,27 @@ Methods
 create_tool
 ^^^^^^^^^^^
 
-.. automethod:: honeyhive.api.tools.ToolsAPI.create_tool
+.. automethod:: honeyhive.api.client.ToolsAPI.create_tool
 
 list_tools
 ^^^^^^^^^^
 
-.. automethod:: honeyhive.api.tools.ToolsAPI.list_tools
+.. automethod:: honeyhive.api.client.ToolsAPI.list_tools
 
 get_tool
 ^^^^^^^^
 
-.. automethod:: honeyhive.api.tools.ToolsAPI.get_tool
+.. automethod:: honeyhive.api.client.ToolsAPI.get_tool
 
 update_tool
 ^^^^^^^^^^^
 
-.. automethod:: honeyhive.api.tools.ToolsAPI.update_tool
+.. automethod:: honeyhive.api.client.ToolsAPI.update_tool
 
 delete_tool
 ^^^^^^^^^^^
 
-.. automethod:: honeyhive.api.tools.ToolsAPI.delete_tool
+.. automethod:: honeyhive.api.client.ToolsAPI.delete_tool
 
 Example
 ~~~~~~~
@@ -404,31 +384,41 @@ Example
        )
    )
 
-EvaluationsAPI
+ExperimentsAPI
 --------------
 
-API client for evaluation operations.
+API client for experiment run operations. Also accessible as ``client.evaluations`` (backwards compatibility alias).
 
-.. autoclass:: honeyhive.api.evaluations.EvaluationsAPI
+.. autoclass:: honeyhive.api.client.ExperimentsAPI
    :members:
    :undoc-members:
    :show-inheritance:
+
+.. note::
+   ``client.evaluations`` is an alias to ``client.experiments`` for backwards compatibility.
+   Neither exposes a top-level ``evaluate()`` method — use ``honeyhive.experiments.evaluate()``
+   to run experiments. See :doc:`/reference/experiments/core-functions`.
 
 Example
 ~~~~~~~
 
 .. code-block:: python
 
-   from honeyhive import HoneyHive as Client
+   from honeyhive.api import HoneyHive
    
-   client = honeyhive.HoneyHive(api_key="your-api-key")
+   client = HoneyHive(api_key="your-api-key")
    
-   # Run evaluation
-   result = client.evaluations.evaluate(
-       project="your-project",
-       inputs={"query": "What is AI?"},
-       ground_truth="Artificial Intelligence is...",
-       evaluators=["exact_match", "semantic_similarity"]
+   # List experiment runs
+   runs = client.experiments.list_runs(project="your-project")
+   
+   # Get a specific run
+   run = client.experiments.get_run(run_id="run-123")
+   
+   # Compare two runs
+   comparison = client.experiments.compare_runs(
+       new_run_id="run-123",
+       old_run_id="run-456",
+       project_id="your-project"
    )
 
 EventsAPI
@@ -436,7 +426,7 @@ EventsAPI
 
 API client for event operations.
 
-.. autoclass:: honeyhive.api.events.EventsAPI
+.. autoclass:: honeyhive.api.client.EventsAPI
    :members:
    :undoc-members:
    :show-inheritance:

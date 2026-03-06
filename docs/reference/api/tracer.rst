@@ -183,10 +183,7 @@ init()
       * - ``HH_SOURCE``
         - Source identifier
         - "production"
-      * - ``HH_SESSION_NAME``
-        - Session name
-        - Auto-generated from filename
-      * - ``HH_SERVER_URL``
+      * - ``HH_API_URL``
         - Custom server URL
         - "https://api.honeyhive.ai"
       * - ``HH_TEST_MODE``
@@ -1712,5 +1709,5 @@ Best Practices
 See Also
 --------
 
-- :doc:`decorators` - ``@trace`` and ``@evaluate`` decorator reference
+- :doc:`decorators` - ``@trace`` and ``@trace_class`` decorator reference
 - :doc:`client` - HoneyHive client API reference

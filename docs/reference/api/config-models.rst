@@ -365,7 +365,7 @@ HTTPClientConfig
 
 .. py:attribute:: max_connections
    :type: int
-   :value: 100
+   :value: 10
 
    Maximum number of HTTP connections.
    
