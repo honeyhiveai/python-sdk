@@ -22,8 +22,7 @@ Architecture
 
 The configuration system is organized into two main components:
 
-1. **Runtime Configuration** (``global_config.py``) - SDK-wide settings with environment variable loading
-2. **Domain Models** (``config/models/``) - Pydantic models for initialization and validation
+1. **Domain Models** (``config/models/``) - Pydantic models for initialization and validation with environment variable loading
 
 .. mermaid::
 
@@ -112,6 +111,7 @@ Modern Config Objects Usage
    config = TracerConfig(
        api_key="hh_1234567890abcdef",
        project="my-llm-project",
+       session_name="user-chat-session",
        source="production",
        verbose=True,
        disable_http_tracing=True,
@@ -119,7 +119,6 @@ Modern Config Objects Usage
    )
    
    session_config = SessionConfig(
-       session_name="user-chat-session",
        inputs={"user_id": "123", "query": "Hello world"}
    )
    
@@ -228,7 +227,7 @@ Core tracer configuration with validation, inherits from ``BaseHoneyHiveConfig``
      - Source environment identifier (env: ``HH_SOURCE``)
    * - ``server_url``
      - ``Optional[str]``
-     - ``None``
+     - ``"https://api.honeyhive.ai"``
      - Custom HoneyHive server URL (env: ``HH_API_URL``)
    * - ``disable_http_tracing``
      - ``bool``
@@ -241,7 +240,7 @@ Core tracer configuration with validation, inherits from ``BaseHoneyHiveConfig``
 
 **Validation Rules:**
 
-- ``server_url``: Must be valid HTTP/HTTPS URL if provided
+- ``server_url``: Must be a valid HTTP/HTTPS URL
 - ``source``: Must be non-empty string
 
 **Example:**
@@ -253,7 +252,6 @@ Core tracer configuration with validation, inherits from ``BaseHoneyHiveConfig``
    config = TracerConfig(
        api_key="hh_1234567890abcdef",
        project="my-llm-project",
-       session_name="user-chat-session",
        source="production",
        server_url="https://api.honeyhive.ai",
        verbose=True,
@@ -368,53 +366,31 @@ Configuration for HoneyHive API client (future implementation), inherits from ``
      - Type
      - Default
      - Description
-   * - ``base_url``
-     - ``Optional[str]``
-     - ``None``
-     - Base API URL for requests (env: ``HH_API_URL``)
-   * - ``timeout``
-     - ``Optional[float]``
-     - ``None``
-     - Request timeout in seconds (env: ``HH_TIMEOUT``)
-   * - ``max_connections``
-     - ``int``
-     - ``10``
-     - Maximum concurrent connections (env: ``HH_MAX_CONNECTIONS``)
-   * - ``max_keepalive``
-     - ``int``
-     - ``20``
-     - Maximum keepalive connections (env: ``HH_MAX_KEEPALIVE_CONNECTIONS``)
-   * - ``rate_limit_calls``
-     - ``int``
-     - ``100``
-     - Rate limit calls per window (env: ``HH_RATE_LIMIT_CALLS``)
-   * - ``rate_limit_window``
-     - ``float``
-     - ``60.0``
-     - Rate limit window in seconds (env: ``HH_RATE_LIMIT_WINDOW``)
+   * - ``server_url``
+     - ``str``
+     - ``"https://api.honeyhive.ai"``
+     - HoneyHive API server URL (env: ``HH_API_URL``)
+   * - ``http_config``
+     - ``HTTPClientConfig``
+     - *default factory*
+     - Nested HTTP transport configuration (timeout, connections, rate limiting)
 
-**Validation Rules:**
-
-- ``base_url``: Must be valid HTTP/HTTPS URL, trailing slash removed
-- ``timeout``: Must be positive number if provided
-- ``max_connections``, ``max_keepalive``: Must be positive integers
-- ``rate_limit_calls``: Must be positive integer
-- ``rate_limit_window``: Must be positive number
+``APIClientConfig`` inherits from both ``BaseHoneyHiveConfig`` and ``ServerURLMixin``.
+HTTP transport settings (timeout, max_connections, rate_limit_calls, etc.) are set on the nested
+``http_config`` field.
 
 **Example:**
 
 .. code-block:: python
 
    from honeyhive.config.models import APIClientConfig
+   from honeyhive.config.models.http_client import HTTPClientConfig
    
-   # Future usage
+   # With custom HTTP settings
    api_config = APIClientConfig(
        api_key="hh_1234567890abcdef",
-       base_url="https://api.honeyhive.ai",
-       timeout=30.0,
-       max_connections=10,
-       rate_limit_calls=100,
-       rate_limit_window=60.0
+       server_url="https://api.honeyhive.ai",
+       http_config=HTTPClientConfig(timeout=60.0, max_connections=50)
    )
 
 Utility Functions
@@ -478,7 +454,8 @@ Tuple of ``(merged_tracer_config, merged_session_config, merged_evaluation_confi
 Environment Variable Integration
 ================================
 
-All configuration models support automatic environment variable loading using Pydantic's ``Field(env=...)`` feature.
+Configuration models load environment variables via Pydantic validation aliases and
+model initialization helpers.
 
 **Environment Variable Patterns:**
 

@@ -108,26 +108,6 @@ Direct Parameter
 
 **Security Warning**: Never commit API keys directly in code
 
-Configuration File
-~~~~~~~~~~~~~~~~~~
-
-**YAML Configuration**:
-
-.. code-block:: yaml
-
-   # honeyhive.yaml
-   api_key: "hh_your_api_key_here"
-   project: "my-project"
-
-**JSON Configuration**:
-
-.. code-block:: json
-
-   {
-     "api_key": "hh_your_api_key_here", 
-     "project": "my-project"
-   }
-
 
 Authentication Precedence
 -------------------------
@@ -149,7 +129,7 @@ The SDK resolves authentication in this order (highest to lowest precedence):
 
 .. code-block:: bash
 
-   # This takes precedence over config file and CLI
+   # Environment variable is used when no api_key param is passed
    export HH_API_KEY="hh_env_key"
 
 Security Best Practices
@@ -296,12 +276,9 @@ Access Control
 
 .. code-block:: python
 
-   # SDK handles rate limiting automatically
-   tracer = HoneyHiveTracer.init(
-       api_key="hh_your_key",       # Or set HH_API_KEY environment variable
-       project="your-project",      # Or set HH_PROJECT environment variable
-       # Rate limiting is automatic
-   )
+   # The tracer itself does not expose dedicated auth rate-limit settings.
+   # Use your deployment platform's network controls for IP allowlists,
+   # throttling, and egress restrictions.
 
 Environment-Specific Authentication
 -----------------------------------
@@ -315,7 +292,7 @@ Development Environment
    HH_API_KEY=hh_dev_1234567890abcdef
    HH_API_URL=https://api-dev.honeyhive.ai
    HH_TEST_MODE=false
-   HH_DEBUG=true
+   HH_VERBOSE=true
 
 .. code-block:: python
 
@@ -337,7 +314,7 @@ Testing Environment
    HH_API_KEY=hh_test_1234567890abcdef
    HH_API_URL=https://api-test.honeyhive.ai
    HH_TEST_MODE=true
-   HH_DEBUG=false
+   HH_VERBOSE=false
 
 .. code-block:: python
 
@@ -357,18 +334,13 @@ Testing Environment
 Production Environment
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. code-block:: yaml
+.. code-block:: bash
 
-   # production.yaml (deployed securely)
-   api_key: "${HH_API_KEY}"  # Environment variable substitution
-   base_url: "https://api.honeyhive.ai"
-   project: "my-app-prod"
-   test_mode: false
-   debug: false
-   
-   # Security settings
-   verify_ssl: true
-   timeout: 30.0
+   # .env.production
+   HH_API_KEY=hh_prod_secure_key_here
+   HH_PROJECT=my-app-prod
+   HH_API_URL=https://api.honeyhive.ai
+   HH_VERBOSE=false
 
 .. code-block:: bash
 
@@ -530,7 +502,7 @@ Docker Authentication
        secrets:
          - honeyhive_api_key
        environment:
-         - HH_API_KEY_FILE=/run/secrets/honeyhive_api_key
+         - HH_API_KEY=${HH_API_KEY}
    
    secrets:
      honeyhive_api_key:
@@ -653,27 +625,18 @@ Common Issues
 
 .. code-block:: python
 
-   # Debug configuration loading
-   from honeyhive.utils.config import get_config
+   # Debug configuration loading using environment variables directly
+   import os
+   from honeyhive.config.models import TracerConfig
    
-   config = get_config()
-   print(f"Configuration: {config}")
-   print(f"API Key source: {config.get('api_key_source', 'unknown')}")
+   config = TracerConfig()
+   print(f"API key loaded: {bool(config.api_key)}")
+   print(f"Project loaded: {config.project}")
+   print(f"Server URL: {config.server_url}")
+   print(f"Verbose mode: {config.verbose}")
 
 Debugging Tools
 ~~~~~~~~~~~~~~~
-
-**CLI Debugging**:
-
-.. code-block:: bash
-
-   # Check authentication
-   
-   # Test API connectivity
-   honeyhive project list --debug
-   
-   # Validate configuration
-   honeyhive config list
 
 **Python Debugging**:
 
@@ -688,7 +651,7 @@ Debugging Tools
    tracer = HoneyHiveTracer.init(
        api_key="hh_your_key",       # Or set HH_API_KEY environment variable
        project="your-project",      # Or set HH_PROJECT environment variable
-       debug=True                   # Enables debug logging (or set HH_DEBUG_MODE=true)
+       verbose=True                 # Enables debug logging (or set HH_VERBOSE=true)
    )
 
 **Authentication Test Script**:
@@ -776,4 +739,3 @@ See Also
 
 - :doc:`environment-vars` - Environment variable configuration
 - :doc:`config-options` - Complete configuration reference
-- :doc:`../cli/commands` - CLI authentication commands

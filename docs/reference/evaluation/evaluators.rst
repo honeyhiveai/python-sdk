@@ -1,7 +1,7 @@
 Evaluation Framework API Reference
 ==================================
 
-.. deprecated::
+.. deprecated:: 1.0
 
    The ``honeyhive.evaluation`` module is deprecated. Use the decorator-based
    evaluators in :doc:`../experiments/evaluators` instead (``@evaluator``,

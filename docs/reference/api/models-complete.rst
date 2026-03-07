@@ -15,9 +15,9 @@ This section documents all data models used throughout the HoneyHive SDK.
 Generated Models
 ~~~~~~~~~~~~~~~~
 
-All request and response models generated from the API schema.
+Request and response models re-exported from ``honeyhive.models``.
 
-.. automodule:: honeyhive.models.generated
+.. automodule:: honeyhive.models
    :members:
    :undoc-members:
    :show-inheritance:
@@ -27,33 +27,28 @@ All request and response models generated from the API schema.
    **Key Models Included:**
    
    **Request Models:**
-   - ``CreateRunRequest`` - Create experiment runs
+   - ``PostExperimentRunRequest`` - Create experiment runs
    - ``CreateDatasetRequest`` - Create datasets
    - ``CreateProjectRequest`` - Create projects
    - ``CreateToolRequest`` - Create tools
-   - ``UpdateRunRequest``, ``UpdateProjectRequest``, ``UpdateToolRequest`` - Update operations
+   - ``PutExperimentRunRequest``, ``UpdateProjectRequest``, ``UpdateToolRequest`` - Update operations
    
    **Response Models:**
-   - ``CreateRunResponse`` - Run creation response
+   - ``PostExperimentRunResponse`` - Run creation response
    - ``Dataset`` - Dataset information
-   - ``DeleteRunResponse`` - Deletion confirmation
-   - ``GetRunResponse``, ``GetRunsResponse`` - Run retrieval
-   - ``NewRun``, ``OldRun`` - Run comparison models
+   - ``DeleteExperimentRunResponse`` - Deletion confirmation
+   - ``GetExperimentRunResponse``, ``GetRunsResponse`` - Run retrieval
+   - ``ExperimentComparisonResponse`` - Run comparison payload
    
    **Supporting Models:**
    - ``SessionStartRequest``, ``SessionPropertiesBatch`` - Session management
    - ``ExperimentComparisonResponse``, ``ExperimentResultResponse`` - Experiment results
-   - ``FunctionCallParams``, ``SelectedFunction``, ``Parameters`` - Configuration
-   - ``Metric1``, ``Metric2``, ``MetricEdit`` - Metrics
-   - ``Threshold``, ``Operator`` - Evaluation criteria
+   - ``Configuration`` - Saved configuration payloads
+   - ``Metric`` / ``CreateMetricRequest`` - Metrics
+   - ``EventType`` - Tracing decorator event type enum
    
    **Enums:**
-   - ``CallType`` - LLM call types (chat, completion)
-   - ``EnvEnum`` - Environments (dev, staging, prod)
-   - ``PipelineType`` - Pipeline types (event, session)
-   - ``ToolType``, ``ReturnType`` - Tool and return type specifications
-   - ``Type1``, ``Type3``, ``Type4``, ``Type6`` - Type categorizations
-   - ``UUIDType`` - UUID handling
+   - ``EventType`` - Event categories for traced operations
 
 Configuration Models
 --------------------

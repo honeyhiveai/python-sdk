@@ -24,7 +24,6 @@ The HoneyHive Python SDK provides a comprehensive API for LLM observability and 
 
 - **Configurable Span Limits**: New ``TracerConfig`` options for span attribute/event/link limits (``max_attributes=1024``, ``max_events=1024``, ``max_links=128``, ``max_span_size=10MB``)
 - **Core Attribute Preservation**: Automatic preservation of critical attributes (``session_id``, ``event_type``, ``event_name``, ``source``) with lazy activation for large spans
-- **DatasetsAPI Filtering**: Enhanced ``list_datasets()`` with server-side filtering (``name`` and ``include_datapoints`` parameters) for efficient large-scale dataset management
 
 Core Capabilities
 ~~~~~~~~~~~~~~~~~
@@ -47,7 +46,7 @@ Core Capabilities
 - **Environment Variable Support**: Optional ``api_key`` and ``server_url`` parameters with automatic fallback to environment variables (``HH_API_KEY`` and ``HH_API_URL``)
 - **Batch Evaluation**: Evaluate multiple outputs simultaneously with threading support
 - **Async Evaluations**: Full async support for evaluation workflows
-- **Built-in Evaluators**: Accuracy, F1-score, length, quality score, and custom evaluators
+- **Built-in Evaluators**: ``exact_match``, ``f1_score``, ``length``, ``semantic_similarity``, and custom evaluators
 
 **LLM Integration**:
 
@@ -62,7 +61,7 @@ Core Capabilities
 **Performance & Reliability**:
 
 - **Connection Pooling**: Efficient HTTP connection management with configurable limits
-- **Rate Limiting**: Built-in rate limiting for API calls with exponential backoff
+- **HTTP Transport Controls**: Configurable retry, timeout, pool, proxy, redirect, and SSL verification settings via configuration models
 - **Graceful Degradation**: SDK never crashes host application, continues operation on failures
 - **Batch Processing**: Configurable span batching for optimal performance
 - **OTLP Performance Tuning**: Environment variables for batch size and flush interval optimization
@@ -79,7 +78,7 @@ Core Capabilities
 - **Zero Failing Tests Policy**: Comprehensive test quality enforcement framework with anti-skipping rules
 - **Tox-Based Development**: Unified development environments for consistent formatting, linting, and testing
 - **Pre-Commit Integration**: Automated quality gates using tox environments for consistency
-- **Enhanced Quality Gates**: Comprehensive changelog and documentation validation for all significant changes
+- **Enhanced Quality Gates**: Comprehensive change and documentation validation for all significant changes
 - **Documentation Quality Control**: Sphinx-based validation with warnings-as-errors enforcement
 - **Navigation Validation Framework**: Comprehensive validation of documentation structure, toctrees, and cross-references
 - **RST Hierarchy Validation**: Automated checking of reStructuredText section hierarchy consistency
@@ -96,7 +95,7 @@ Core Capabilities
 - **Environment Variables**: Comprehensive configuration via HH_* environment variables
 - **Multi-Environment Support**: Different configurations for development, staging, production
 - **API Key Management**: Secure handling with rotation support and validation
-- **SSL/TLS Configuration**: Corporate environment SSL support with custom certificates
+- **HTTP Security Controls**: SSL verification, redirect handling, and proxy settings via ``HTTPClientConfig``
 
 Main Components
 ~~~~~~~~~~~~~~~
@@ -180,11 +179,6 @@ Experiments Module
    :maxdepth: 1
 
    experiments/experiments
-   experiments/core-functions
-   experiments/evaluators
-   experiments/results
-   experiments/models
-   experiments/utilities
 
 Evaluation Framework (Deprecated)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -380,11 +374,11 @@ The SDK supports three configuration approaches:
 
 All configuration supports the ``HH_*`` prefix pattern:
 
-- **Authentication**: ``HH_API_KEY``, ``HH_SOURCE``
-- **Operational**: ``HH_TEST_MODE``, ``HH_DEBUG_MODE``, ``HH_DISABLE_TRACING``
-- **Performance**: ``HH_TIMEOUT``, ``HH_MAX_CONNECTIONS``, ``HH_RATE_LIMIT_*``, ``HH_BATCH_SIZE``, ``HH_FLUSH_INTERVAL``
+- **Authentication**: ``HH_API_KEY``, ``HH_PROJECT``, ``HH_SOURCE``
+- **Operational**: ``HH_TEST_MODE``, ``HH_VERBOSE``, ``HH_DISABLE_TRACING``
+- **Performance**: ``HH_TIMEOUT``, ``HH_MAX_CONNECTIONS``, ``HH_MAX_KEEPALIVE_CONNECTIONS``, ``HH_POOL_TIMEOUT``, ``HH_RATE_LIMIT_*``, ``HH_BATCH_SIZE``, ``HH_FLUSH_INTERVAL``
 - **OTLP**: ``HH_OTLP_ENABLED``, ``HH_OTLP_ENDPOINT``, ``HH_OTLP_PROTOCOL``, ``HH_OTLP_HEADERS``
-- **Security**: ``HH_SSL_*``, ``HH_PROXY_*``
+- **HTTP Transport**: ``HH_VERIFY_SSL``, ``HH_FOLLOW_REDIRECTS``, ``HH_HTTP_PROXY``, ``HH_HTTPS_PROXY``, ``HH_NO_PROXY``
 
 **Configuration Hierarchy**:
 

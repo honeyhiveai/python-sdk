@@ -27,66 +27,25 @@ Usage Example
 
 .. code-block:: python
 
-   from honeyhive import HoneyHive as Client
+   from honeyhive import HoneyHive
    
    # Initialize the client
-   client = honeyhive.HoneyHive(
-       api_key="your-api-key",
-       project="your-project"
-   )
+   client = HoneyHive(api_key="your-api-key")
    
    # Access API endpoints
-   datasets = client.datasets.list_datasets(project="your-project")
-   metrics = client.metrics.get_metrics(project="your-project")
+   datasets = client.datasets.list(project="your-project")
+   metrics = client.metrics.list(project="your-project")
 
-
-RateLimiter
------------
-
-Rate limiting for API calls to prevent exceeding rate limits.
-
-.. autoclass:: honeyhive.api.client.RateLimiter
-   :members:
-   :undoc-members:
-   :show-inheritance:
-   :special-members: __init__
-
-Example
-~~~~~~~
-
-.. code-block:: python
-
-   from honeyhive.api.client import RateLimiter
-   
-   # Create rate limiter (100 calls per 60 seconds)
-   limiter = RateLimiter(max_calls=100, time_window=60.0)
-   
-   # Check if call is allowed
-   if limiter.can_call():
-       # Make API call
-       pass
-   
-   # Or wait automatically
-   limiter.wait_if_needed()
-   # Make API call
 
 BaseAPI
 -------
 
-Base class for all API endpoint clients.
-
-.. autoclass:: honeyhive.api.base.BaseAPI
-   :members:
-   :undoc-members:
-   :show-inheritance:
-   :special-members: __init__
+Base class for all API endpoint clients. All API classes (``DatasetsAPI``, ``EventsAPI``, etc.) inherit from ``BaseAPI``.
 
 DatasetsAPI
 -----------
 
 API client for dataset operations.
-
-**Recent Updates**: Enhanced filtering capabilities for ``list_datasets()`` including name and include_datapoints parameters. See method documentation below for details.
 
 .. autoclass:: honeyhive.api.client.DatasetsAPI
    :members:
@@ -102,10 +61,10 @@ create_dataset
 
 .. automethod:: honeyhive.api.client.DatasetsAPI.create_dataset
 
-create_dataset_async
-^^^^^^^^^^^^^^^^^^^^
+create_async
+^^^^^^^^^^^^
 
-.. automethod:: honeyhive.api.client.DatasetsAPI.create_dataset_async
+.. automethod:: honeyhive.api.client.DatasetsAPI.create_async
 
 list_datasets
 ^^^^^^^^^^^^^
@@ -133,10 +92,10 @@ Example
 
 .. code-block:: python
 
-   from honeyhive import HoneyHive as Client
+   from honeyhive import HoneyHive
    from honeyhive.models import CreateDatasetRequest
    
-   client = honeyhive.HoneyHive(api_key="your-api-key")
+   client = HoneyHive(api_key="your-api-key")
    
    # Create a dataset
    dataset = client.datasets.create_dataset(
@@ -150,8 +109,8 @@ Example
    # List datasets
    datasets = client.datasets.list_datasets(project="your-project")
    
-   # Get specific dataset
-   dataset = client.datasets.get_dataset(dataset_id="dataset-id")
+   # Get a specific dataset response by ID
+   dataset_response = client.datasets.get_dataset("dataset-id")
 
 DatapointsAPI
 -------------
@@ -168,10 +127,10 @@ Example
 
 .. code-block:: python
 
-   from honeyhive import HoneyHive as Client
+   from honeyhive import HoneyHive
    from honeyhive.models import CreateDatapointRequest
    
-   client = honeyhive.HoneyHive(api_key="your-api-key")
+   client = HoneyHive(api_key="your-api-key")
    
    # Create a datapoint
    datapoint = client.datapoints.create_datapoint(
@@ -182,18 +141,18 @@ Example
        )
    )
    
-   # List datapoints for a dataset
-   datapoints = client.datapoints.list_datapoints(dataset_id="dataset-id")
+   # List datapoints for a project
+   datapoints = client.datapoints.list(project="your-project")
    
    # Get specific datapoint
-   datapoint = client.datapoints.get_datapoint(datapoint_id="datapoint-id")
+   datapoint = client.datapoints.get("datapoint-id")
 
 ConfigurationsAPI
 -----------------
 
 API client for configuration operations.
 
-.. autoclass:: honeyhive.api.configurations.ConfigurationsAPI
+.. autoclass:: honeyhive.api.client.ConfigurationsAPI
    :members:
    :undoc-members:
    :show-inheritance:
@@ -203,7 +162,7 @@ MetricsAPI
 
 API client for metrics operations.
 
-.. autoclass:: honeyhive.api.metrics.MetricsAPI
+.. autoclass:: honeyhive.api.client.MetricsAPI
    :members:
    :undoc-members:
    :show-inheritance:
@@ -213,16 +172,12 @@ Example
 
 .. code-block:: python
 
-   from honeyhive import HoneyHive as Client
+   from honeyhive import HoneyHive
    
-   client = honeyhive.HoneyHive(api_key="your-api-key")
+   client = HoneyHive(api_key="your-api-key")
    
-   # Get metrics for a project
-   metrics = client.metrics.get_metrics(
-       project="your-project",
-       start_time="2024-01-01T00:00:00Z",
-       end_time="2024-01-31T23:59:59Z"
-   )
+   # List metrics for a project
+   metrics = client.metrics.list(project="your-project")
 
 
 ProjectsAPI
@@ -230,7 +185,7 @@ ProjectsAPI
 
 API client for project operations.
 
-.. autoclass:: honeyhive.api.projects.ProjectsAPI
+.. autoclass:: honeyhive.api.client.ProjectsAPI
    :members:
    :undoc-members:
    :show-inheritance:
@@ -242,40 +197,40 @@ Methods
 create_project
 ^^^^^^^^^^^^^^
 
-.. automethod:: honeyhive.api.projects.ProjectsAPI.create_project
+.. automethod:: honeyhive.api.client.ProjectsAPI.create_project
 
 list_projects
 ^^^^^^^^^^^^^
 
-.. automethod:: honeyhive.api.projects.ProjectsAPI.list_projects
+.. automethod:: honeyhive.api.client.ProjectsAPI.list_projects
 
 get_project
 ^^^^^^^^^^^
 
-.. automethod:: honeyhive.api.projects.ProjectsAPI.get_project
+.. automethod:: honeyhive.api.client.ProjectsAPI.get_project
 
 update_project
 ^^^^^^^^^^^^^^
 
-.. automethod:: honeyhive.api.projects.ProjectsAPI.update_project
+.. automethod:: honeyhive.api.client.ProjectsAPI.update_project
 
 delete_project
 ^^^^^^^^^^^^^^
 
-.. automethod:: honeyhive.api.projects.ProjectsAPI.delete_project
+.. automethod:: honeyhive.api.client.ProjectsAPI.delete_project
 
 Example
 ~~~~~~~
 
 .. code-block:: python
 
-   from honeyhive import HoneyHive as Client
+   from honeyhive import HoneyHive
    from honeyhive.models import CreateProjectRequest
    
-   client = honeyhive.HoneyHive(api_key="your-api-key")
+   client = HoneyHive(api_key="your-api-key")
    
    # Create a project
-   project = client.projects.create_project(
+   project = client.projects.create(
        CreateProjectRequest(
            name="my-llm-project",
            description="Production LLM application"
@@ -301,22 +256,24 @@ Example
 
 .. code-block:: python
 
-   from honeyhive import HoneyHive as Client
+   from honeyhive import HoneyHive
    
-   client = honeyhive.HoneyHive(api_key="your-api-key")
+   client = HoneyHive(api_key="your-api-key")
+   
+   from honeyhive.models import StartSessionRequestBody, SessionStartRequest
    
    # Start a session
-   session = client.session.start_session(
-       project="your-project",
-       session_name="user-interaction",
-       metadata={"user_id": "123"}
+   session = client.sessions.start(
+       StartSessionRequestBody(
+           session=SessionStartRequest(
+               project="your-project",
+               session_name="user-interaction"
+           )
+       )
    )
    
-   # End the session
-   client.session.end_session(
-       session_id=session.session_id,
-       status="completed"
-   )
+   # Get a session by ID
+   event = client.sessions.get(session.session_id)
 
 ToolsAPI
 --------
@@ -362,10 +319,10 @@ Example
 
 .. code-block:: python
 
-   from honeyhive import HoneyHive as Client
+   from honeyhive import HoneyHive
    from honeyhive.models import CreateToolRequest
    
-   client = honeyhive.HoneyHive(api_key="your-api-key")
+   client = HoneyHive(api_key="your-api-key")
    
    # Create a tool
    tool = client.tools.create_tool(
@@ -404,7 +361,7 @@ Example
 
 .. code-block:: python
 
-   from honeyhive.api import HoneyHive
+   from honeyhive import HoneyHive
    
    client = HoneyHive(api_key="your-api-key")
    
@@ -436,20 +393,22 @@ Example
 
 .. code-block:: python
 
-   from honeyhive import HoneyHive as Client
+   from honeyhive import HoneyHive
    
-   client = honeyhive.HoneyHive(api_key="your-api-key")
+   client = HoneyHive(api_key="your-api-key")
    
-   # Send event
-   client.events.send_event(
-       project="your-project",
-       event_type="llm_call",
-       event_data={
-           "model": "gpt-4",
-           "input": "Hello",
-           "output": "Hi there!",
-           "latency": 250
-       }
+   from honeyhive.models import PostEventRequest
+   
+   # Create an event
+   response = client.events.create(
+       PostEventRequest(
+           project="your-project",
+           event_type="model",
+           event_name="gpt-4-call",
+           inputs={"prompt": "Hello"},
+           outputs={"completion": "Hi there!"},
+           metrics={"latency": 250}
+       )
    )
 
 See Also
@@ -458,7 +417,6 @@ See Also
 - :doc:`models-complete` - Request and response models
 - :doc:`errors` - Error handling
 - :doc:`tracer` - Tracer API
-
 
 
 

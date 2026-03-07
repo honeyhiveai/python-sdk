@@ -22,8 +22,6 @@ The HoneyHive SDK supports multiple configuration approaches:
 **📚 Additional Configuration Sources**:
 
 - Environment variables (``HH_*`` prefixed)
-- Configuration files (YAML/JSON)
-- CLI options
 
 Configuration Methods
 ---------------------
@@ -43,6 +41,7 @@ Configuration Methods
          config = TracerConfig(
              api_key="hh_1234567890abcdef",
              project="my-llm-project",
+             session_name="user-chat-session",
              source="production",
              verbose=True,
              disable_http_tracing=True,
@@ -50,7 +49,6 @@ Configuration Methods
          )
          
          session_config = SessionConfig(
-             session_name="user-chat-session",
              inputs={"user_id": "123", "query": "Hello world"}
          )
          
@@ -119,7 +117,7 @@ The SDK follows this precedence order (highest to lowest):
 4. **Default Values** - Built-in SDK defaults
 
 .. note::
-   **API Key Special Case**: For backwards compatibility, ``HH_API_KEY`` environment variable takes precedence over both config objects and constructor parameters.
+   Individual parameters (directly passed to ``HoneyHiveTracer()``) always take precedence over config object values, which take precedence over environment variables.
 
 .. seealso::
    **📖 Complete Hybrid Configuration Guide**
@@ -168,7 +166,7 @@ Configuration Classes
 
    **Session-specific configuration for tracer initialization.**
 
-   **Key Fields**: ``session_name``, ``inputs``, ``outputs``, ``metadata``
+   **Key Fields**: ``session_id``, ``inputs``, ``link_carrier``
 
 .. py:class:: honeyhive.config.models.APIClientConfig
    :no-index:
@@ -234,12 +232,12 @@ Authentication
             # API key loaded automatically from environment
             tracer = HoneyHiveTracer(project="my-project")
 
-.. py:data:: base_url
+.. py:data:: server_url
    :type: str
    :value: "https://api.honeyhive.ai"
 
-   **Description**: Base URL for HoneyHive API
-   
+   **Description**: HoneyHive API server URL
+
    **Environment Variable**: ``HH_API_URL``
    
    **Default**: ``"https://api.honeyhive.ai"``
@@ -270,13 +268,13 @@ Project Configuration
 
 .. py:data:: source
    :type: str
-   :value: None
+   :value: "dev"
 
    **Description**: Source identifier for tracing
    
    **Environment Variable**: ``HH_SOURCE``
    
-   **Default**: Auto-detected from environment
+   **Default**: ``"dev"``
    
    **Examples**:
    - ``"chat-service"``
@@ -287,11 +285,11 @@ Project Configuration
    :type: str
    :value: None
 
-   **Description**: Default session name for tracing
+   **Description**: Optional session name for tracing
    
    **Environment Variable**: None (set via constructor parameter only)
    
-   **Default**: Auto-generated based on context
+   **Default**: ``None``
    
    **Format**: Human-readable string
    
@@ -316,20 +314,6 @@ Operational Mode
    - Unit testing
    - Development environments
    - CI/CD pipelines
-
-.. py:data:: debug
-   :type: bool
-   :value: False
-
-   **Description**: Enable debug logging
-   
-   **Environment Variable**: ``HH_DEBUG``
-   
-   **Default**: ``False``
-   
-   **Values**: ``true``, ``false``
-   
-   **Behavior**: Enables verbose logging and debug information
 
 Performance Configuration
 -------------------------
@@ -365,45 +349,41 @@ HTTP Configuration
    
    **Behavior**: Exponential backoff between retries
 
-.. py:data:: retry_delay
-   :type: float
-   :value: 1.0
-
-   **Description**: Initial retry delay in seconds
-   
-   **Environment Variable**: ``HH_RETRY_DELAY``
-   
-   **Default**: ``1.0``
-   
-   **Range**: 0.1 - 60.0
-   
-   **Behavior**: Delay doubles with each retry (exponential backoff)
-
 .. py:data:: max_connections
    :type: int
-   :value: 100
+   :value: 10
 
    **Description**: Maximum number of HTTP connections in pool
    
    **Environment Variable**: ``HH_MAX_CONNECTIONS``
    
-   **Default**: ``100``
+   **Default**: ``10``
    
    **Range**: 1 - 1000
    
    **Use Cases**: Adjust based on concurrency requirements
 
-.. py:data:: connection_pool_size
+.. py:data:: max_keepalive_connections
    :type: int
-   :value: 10
+   :value: 20
 
-   **Description**: HTTP connection pool size
+   **Description**: Maximum keep-alive HTTP connections
    
-   **Environment Variable**: ``HH_CONNECTION_POOL_SIZE``
+   **Environment Variable**: ``HH_MAX_KEEPALIVE_CONNECTIONS``
    
-   **Default**: ``10``
+   **Default**: ``20``
    
-   **Range**: 1 - 100
+   **Range**: 1 - 1000
+
+.. py:data:: pool_timeout
+   :type: float
+   :value: 10.0
+
+   **Description**: Time to wait for an available connection from the pool
+   
+   **Environment Variable**: ``HH_POOL_TIMEOUT``
+   
+   **Default**: ``10.0``
 
 OTLP Configuration
 ~~~~~~~~~~~~~~~~~~
@@ -503,20 +483,6 @@ Tracing Configuration
    **Range**: 1.0 - 300.0
    
    **Behavior**: Automatically flushes pending spans at this interval
-
-.. py:data:: max_queue_size
-   :type: int
-   :value: 2048
-
-   **Description**: Maximum number of spans in memory queue
-   
-   **Environment Variable**: ``HH_MAX_QUEUE_SIZE``
-   
-   **Default**: ``2048``
-   
-   **Range**: 100 - 10000
-   
-   **Behavior**: Oldest spans are dropped when queue is full
 
 OpenTelemetry Span Limits
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -845,180 +811,8 @@ OpenTelemetry Span Limits
    - :doc:`/reference/api/tracer` - Tracer initialization with span limits
    - :doc:`/reference/api/config-models` - Configuration model API reference
 
-Evaluation Configuration
-------------------------
-
-Evaluation Settings
-~~~~~~~~~~~~~~~~~~~
-
-.. py:data:: evaluation_enabled
-   :type: bool
-   :value: True
-
-   **Description**: Enable automatic evaluations
-   
-   **Environment Variable**: ``HH_EVALUATION_ENABLED``
-   
-   **Default**: ``True``
-   
-   **Use Cases**: Disable in high-performance scenarios
-
-.. py:data:: evaluation_timeout
-   :type: float
-   :value: 30.0
-
-   **Description**: Timeout for evaluation operations in seconds
-   
-   **Environment Variable**: ``HH_EVALUATION_TIMEOUT``
-   
-   **Default**: ``30.0``
-   
-   **Range**: 5.0 - 300.0
-
-.. py:data:: evaluation_parallel
-   :type: bool
-   :value: True
-
-   **Description**: Run evaluations in parallel
-   
-   **Environment Variable**: ``HH_EVALUATION_PARALLEL``
-   
-   **Default**: ``True``
-   
-   **Performance**: Parallel execution improves throughput
-
-.. py:data:: evaluation_max_workers
-   :type: int
-   :value: 4
-
-   **Description**: Maximum parallel evaluation workers
-   
-   **Environment Variable**: ``HH_EVALUATION_MAX_WORKERS``
-   
-   **Default**: ``4``
-   
-   **Range**: 1 - 20
-
-Default Evaluators
-~~~~~~~~~~~~~~~~~~
-
-.. py:data:: default_evaluators
-   :type: List[str]
-   :value: []
-
-   **Description**: Default evaluators to run automatically
-   
-   **Environment Variable**: ``HH_DEFAULT_EVALUATORS`` (comma-separated)
-   
-   **Default**: ``[]`` (no automatic evaluators)
-   
-   **Available Evaluators**:
-   - ``"quality"`` - Overall response quality
-   - ``"factual_accuracy"`` - Factual correctness
-   - ``"relevance"`` - Query relevance
-   - ``"toxicity"`` - Content safety
-   - ``"length"`` - Response length appropriateness
-   
-   **Example**: ``"quality,factual_accuracy,relevance"``
-
-Logging Configuration
----------------------
-
-Log Settings
-~~~~~~~~~~~~
-
-.. py:data:: log_level
-   :type: str
-   :value: "INFO"
-
-   **Description**: Logging level for SDK operations
-   
-   **Environment Variable**: ``HH_LOG_LEVEL``
-   
-   **Default**: ``"INFO"``
-   
-   **Values**: ``"DEBUG"``, ``"INFO"``, ``"WARNING"``, ``"ERROR"``, ``"CRITICAL"``
-   
-   **Behavior**: Controls verbosity of SDK logging
-
-.. py:data:: log_format
-   :type: str
-   :value: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-
-   **Description**: Log message format
-   
-   **Environment Variable**: ``HH_LOG_FORMAT``
-   
-   **Default**: Standard format with timestamp, logger name, level, and message
-   
-   **Format**: Python logging format string
-
-.. py:data:: log_file
-   :type: str
-   :value: None
-
-   **Description**: Log file path (if file logging enabled)
-   
-   **Environment Variable**: ``HH_LOG_FILE``
-   
-   **Default**: ``None`` (console logging only)
-   
-   **Example**: ``"/var/log/honeyhive.log"``
-
-.. py:data:: structured_logging
-   :type: bool
-   :value: False
-
-   **Description**: Enable structured JSON logging
-   
-   **Environment Variable**: ``HH_STRUCTURED_LOGGING``
-   
-   **Default**: ``False``
-   
-   **Use Cases**: Production environments, log aggregation systems
-
-Security Configuration
-----------------------
-
-Data Privacy
-~~~~~~~~~~~~
-
-.. py:data:: mask_inputs
-   :type: bool
-   :value: False
-
-   **Description**: Automatically mask sensitive data in inputs
-   
-   **Environment Variable**: ``HH_MASK_INPUTS``
-   
-   **Default**: ``False``
-   
-   **Behavior**: Replaces sensitive data with ``[MASKED]``
-
-.. py:data:: mask_outputs
-   :type: bool
-   :value: False
-
-   **Description**: Automatically mask sensitive data in outputs
-   
-   **Environment Variable**: ``HH_MASK_OUTPUTS``
-   
-   **Default**: ``False``
-
-.. py:data:: sensitive_keys
-   :type: List[str]
-   :value: ["password", "token", "key", "secret"]
-
-   **Description**: Keys to automatically mask in data
-   
-   **Environment Variable**: ``HH_SENSITIVE_KEYS`` (comma-separated)
-   
-   **Default**: Common sensitive field names
-   
-   **Behavior**: Case-insensitive matching
-
-SSL/TLS Configuration
-~~~~~~~~~~~~~~~~~~~~~
+HTTP Transport Controls
+-----------------------
 
 .. py:data:: verify_ssl
    :type: bool
@@ -1032,221 +826,41 @@ SSL/TLS Configuration
    
    **Security**: Only disable for development/testing
 
-.. py:data:: ca_bundle
-   :type: str
+.. py:data:: follow_redirects
+   :type: bool
+   :value: True
+
+   **Description**: Follow HTTP redirects for API requests
+   
+   **Environment Variable**: ``HH_FOLLOW_REDIRECTS``
+   
+   **Default**: ``True``
+
+.. py:data:: http_proxy
+   :type: Optional[str]
    :value: None
 
-   **Description**: Path to custom CA bundle for SSL verification
+   **Description**: HTTP proxy URL for outbound API traffic
    
-   **Environment Variable**: ``HH_CA_BUNDLE``
+   **Environment Variable**: ``HH_HTTP_PROXY``
+
+.. py:data:: https_proxy
+   :type: Optional[str]
+   :value: None
+
+   **Description**: HTTPS proxy URL for outbound API traffic
    
-   **Default**: ``None`` (use system CA bundle)
+   **Environment Variable**: ``HH_HTTPS_PROXY``
+
+.. py:data:: no_proxy
+   :type: Optional[str]
+   :value: None
+
+   **Description**: Comma-separated hosts that should bypass proxy routing
    
-   **Use Cases**: Corporate networks with custom certificates
+   **Environment Variable**: ``HH_NO_PROXY``
 
-Environment-Specific Configuration
-----------------------------------
 
-Development Environment
-~~~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: yaml
-
-   # development.yaml
-   api_key: "hh_dev_key_123..."
-   base_url: "https://api-dev.honeyhive.ai"
-   project: "my-app-dev"
-   test_mode: false
-   debug: true
-   log_level: "DEBUG"
-   
-   # Performance (relaxed for development)
-   timeout: 60.0
-   batch_size: 10
-   flush_interval: 1.0
-   
-   # Evaluation (enabled for testing)
-   evaluation_enabled: true
-   default_evaluators: ["quality", "relevance"]
-
-Staging Environment
-~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: yaml
-
-   # staging.yaml
-   api_key: "hh_staging_key_456..."
-   base_url: "https://api-staging.honeyhive.ai"
-   project: "my-app-staging"
-   test_mode: false
-   debug: false
-   log_level: "INFO"
-   
-   # Performance (production-like)
-   timeout: 30.0
-   batch_size: 100
-   flush_interval: 5.0
-   
-   # Security (moderate)
-   mask_inputs: false
-   mask_outputs: false
-
-Production Environment
-~~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: yaml
-
-   # production.yaml
-   api_key: "hh_prod_key_789..."
-   base_url: "https://api.honeyhive.ai"
-   project: "my-app-prod"
-   test_mode: false
-   debug: false
-   log_level: "WARNING"
-   structured_logging: true
-   
-   # Performance (optimized)
-   timeout: 15.0
-   batch_size: 500
-   flush_interval: 10.0
-   max_queue_size: 5000
-   
-   # Security (strict)
-   mask_inputs: true
-   mask_outputs: true
-   sensitive_keys: ["password", "token", "key", "secret", "api_key", "auth"]
-   
-   # Evaluation (selective)
-   evaluation_enabled: true
-   evaluation_timeout: 10.0
-   default_evaluators: ["toxicity"]
-
-Lambda/Serverless Environment
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: yaml
-
-   # lambda.yaml
-   api_key: "hh_lambda_key_abc..."
-   project: "my-lambda-app"
-   test_mode: false
-   log_level: "ERROR"
-   
-   # Performance (optimized for cold starts)
-   disable_http_tracing: true
-   timeout: 5.0
-   batch_size: 1
-   flush_interval: 1.0
-   max_queue_size: 100
-   
-   # Evaluation (disabled for performance)
-   evaluation_enabled: false
-
-Configuration File Formats
---------------------------
-
-YAML Configuration
-~~~~~~~~~~~~~~~~~~
-
-.. code-block:: yaml
-
-   # honeyhive.yaml
-   api_key: "hh_your_api_key_here"
-   base_url: "https://api.honeyhive.ai"
-   project: "my-project"
-   source: "my-service"
-   
-   # Operational settings
-   test_mode: false
-   debug: false
-   
-   # Performance settings
-   timeout: 30.0
-   max_retries: 3
-   batch_size: 100
-   flush_interval: 5.0
-   
-   # Tracing settings
-   disable_http_tracing: false
-   max_queue_size: 2048
-   
-   # Evaluation settings
-   evaluation_enabled: true
-   evaluation_parallel: true
-   evaluation_timeout: 30.0
-   default_evaluators:
-     - "quality"
-     - "relevance"
-   
-   # Logging settings
-   log_level: "INFO"
-   structured_logging: false
-   
-   # Security settings
-   mask_inputs: false
-   mask_outputs: false
-   sensitive_keys:
-     - "password"
-     - "token"
-     - "key"
-     - "secret"
-
-JSON Configuration
-~~~~~~~~~~~~~~~~~~
-
-.. code-block:: json
-
-   {
-     "api_key": "hh_your_api_key_here",
-     "base_url": "https://api.honeyhive.ai",
-     "project": "my-project",
-     "source": "my-service",
-     "test_mode": false,
-     "debug": false,
-     "timeout": 30.0,
-     "max_retries": 3,
-     "batch_size": 100,
-     "flush_interval": 5.0,
-     "disable_http_tracing": false,
-     "max_queue_size": 2048,
-     "evaluation_enabled": true,
-     "evaluation_parallel": true,
-     "evaluation_timeout": 30.0,
-     "default_evaluators": ["quality", "relevance"],
-     "log_level": "INFO",
-     "structured_logging": false,
-     "mask_inputs": false,
-     "mask_outputs": false,
-     "sensitive_keys": ["password", "token", "key", "secret"]
-   }
-
-Configuration Loading
----------------------
-
-**File Discovery**:
-
-The SDK searches for configuration files in this order:
-
-1. ``./honeyhive.yaml`` (current directory)
-2. ``./honeyhive.json`` (current directory)
-3. ``~/.honeyhive/config.yaml`` (user home directory)
-4. ``~/.honeyhive/config.json`` (user home directory)
-5. ``/etc/honeyhive/config.yaml`` (system-wide)
-
-**Environment-Specific Files**:
-
-You can specify environment-specific configuration:
-
-.. code-block:: bash
-
-   # Set environment
-   export HH_ENVIRONMENT=production
-   
-   # SDK will look for:
-   # ./honeyhive.production.yaml
-   # ~/.honeyhive/config.production.yaml
-
-**Explicit Configuration File**:
 
 Configuration Validation
 ------------------------
@@ -1258,9 +872,8 @@ All configuration values are validated for correct types:
 .. code-block:: python
 
    # These will raise validation errors:
-   timeout = "invalid"  # Must be float
-   batch_size = -1      # Must be positive integer
-   log_level = "INVALID" # Must be valid log level
+   timeout = "invalid"   # Must be float
+   batch_size = -1       # Must be positive integer
 
 **Range Validation**:
 
@@ -1280,9 +893,8 @@ String values are validated for correct format:
 .. code-block:: python
 
    # These will raise validation errors:
-   api_key = "invalid"         # Must start with "hh_"
-   log_level = "invalid"       # Must be valid log level
-   base_url = "not-a-url"      # Must be valid URL
+   api_key = "invalid"          # Must start with "hh_"
+   server_url = "not-a-url"     # Must be a valid URL
 
 Configuration Best Practices
 ----------------------------
@@ -1291,7 +903,7 @@ Configuration Best Practices
 
 1. **Never commit API keys** to version control
 2. **Use environment variables** for secrets in production
-3. **Enable input/output masking** for sensitive data
+3. **Keep transport security enabled** unless you are debugging a local environment
 4. **Use different API keys** for different environments
 
 **Performance**:
@@ -1299,68 +911,19 @@ Configuration Best Practices
 1. **Tune batch size** based on your traffic patterns
 2. **Adjust timeout** based on your network conditions
 3. **Disable HTTP tracing** in high-performance scenarios
-4. **Use appropriate queue sizes** for your memory constraints
+4. **Size connection pools** to match expected concurrency
 
 **Reliability**:
 
 1. **Set appropriate retry limits** for your use case
 2. **Configure timeouts** to prevent hanging operations
-3. **Enable debug logging** during development
-4. **Use structured logging** in production
+3. **Configure flush intervals** appropriately for your environment
 
 **Monitoring**:
 
-1. **Enable appropriate log levels** for your environment
-2. **Monitor queue sizes** and flush intervals
-3. **Track configuration changes** in your deployment pipeline
-4. **Use health checks** to validate configuration
+1. **Track configuration changes** in your deployment pipeline
+2. **Use health checks** to validate configuration
 
-Configuration Examples
-----------------------
-
-**High-Performance Web Service**:
-
-.. code-block:: yaml
-
-   # High-throughput configuration
-   batch_size: 1000
-   flush_interval: 10.0
-   max_queue_size: 10000
-   timeout: 5.0
-   max_retries: 1
-   disable_http_tracing: true
-   evaluation_enabled: false
-
-**Development Environment**:
-
-.. code-block:: yaml
-
-   # Development-friendly configuration
-   debug: true
-   log_level: "DEBUG"
-   test_mode: true
-   batch_size: 1
-   flush_interval: 1.0
-   evaluation_enabled: true
-   default_evaluators: ["quality", "factual_accuracy"]
-
-**Security-Conscious Environment**:
-
-.. code-block:: yaml
-
-   # Security-focused configuration
-   mask_inputs: true
-   mask_outputs: true
-   sensitive_keys: 
-     - "password"
-     - "token"
-     - "key"
-     - "secret"
-     - "api_key"
-     - "auth"
-     - "credential"
-   verify_ssl: true
-   structured_logging: true
 
 See Also
 --------
@@ -1368,4 +931,3 @@ See Also
 - :doc:`environment-vars` - Environment variable details
 - :doc:`authentication` - Authentication configuration
 - :doc:`../api/tracer` - Tracer initialization with configuration
-- :doc:`../cli/options` - CLI configuration options

@@ -162,7 +162,7 @@ Events are accessed via ``client.events``.
 client.events.create()
 ^^^^^^^^^^^^^^^^^^^^^^
 
-.. py:method:: client.events.create(request: PostEventRequest) -> None
+.. py:method:: client.events.create(request: PostEventRequest) -> PostEventResponse
 
    Create a new event within a session. Accepts a ``PostEventRequest`` model object.
 
@@ -247,7 +247,7 @@ client.events.list()
 client.events.create_batch()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. py:method:: client.events.create_batch(data: dict) -> None
+.. py:method:: client.events.create_batch(data: dict) -> PostEventBatchResponse
 
    Create multiple events in a single API call.
 
@@ -278,52 +278,55 @@ Projects are accessed via ``client.projects``.
 client.projects.list()
 ^^^^^^^^^^^^^^^^^^^^^^
 
-.. py:method:: client.projects.list() -> GetProjectsResponse
+.. py:method:: client.projects.list() -> List[Project]
 
    List all accessible projects.
 
-   :returns: A ``GetProjectsResponse`` containing a list of projects.
+   :returns: A list of ``Project`` objects.
 
    .. code-block:: python
 
-      response = client.projects.list()
+      projects = client.projects.list()
 
-      for project in response.projects:
+      for project in projects:
           print(f"Project: {project.name}")
 
 client.projects.create()
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. py:method:: client.projects.create(data: dict) -> CreateProjectResponse
+.. py:method:: client.projects.create(data: CreateProjectRequest) -> Project
 
    Create a new project.
 
-   :param data: Project creation payload. Common keys: ``"name"``, ``"description"``.
-   :type data: dict
+   :param data: A ``CreateProjectRequest`` model object.
 
    .. code-block:: python
 
-      response = client.projects.create({
-          "name": "customer-support-bot",
-          "description": "AI-powered customer support chatbot",
-      })
+      from honeyhive.models import CreateProjectRequest
+
+      project = client.projects.create(CreateProjectRequest(
+          name="customer-support-bot",
+          description="AI-powered customer support chatbot",
+      ))
 
 client.projects.update()
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. py:method:: client.projects.update(data: dict) -> None
+.. py:method:: client.projects.update(data: UpdateProjectRequest) -> None
 
    Update an existing project's metadata.
 
-   :param data: Update payload including ``"name"`` (current name) and fields to update.
-   :type data: dict
+   :param data: An ``UpdateProjectRequest`` model object. Include ``project_id`` and any fields to change.
 
    .. code-block:: python
 
-      client.projects.update({
-          "name": "customer-support-bot",
-          "description": "Updated description",
-      })
+      from honeyhive.models import UpdateProjectRequest
+
+      client.projects.update(UpdateProjectRequest(
+          project_id="proj_abc123",
+          name="customer-support-bot",
+          description="Updated description",
+      ))
 
 client.projects.delete()
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -347,19 +350,19 @@ Configurations are accessed via ``client.configurations``.
 client.configurations.list()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. py:method:: client.configurations.list(project: str) -> GetConfigurationsResponse
+.. py:method:: client.configurations.list(project: str) -> List[Configuration]
 
    List all configurations for a project.
 
    :param project: Project name to filter by.
    :type project: str
-   :returns: A ``GetConfigurationsResponse`` containing a list of configurations.
+   :returns: A list of ``Configuration`` objects.
 
    .. code-block:: python
 
-      response = client.configurations.list(project="my-project")
+      configs = client.configurations.list(project="my-project")
 
-      for config in response.configurations:
+      for config in configs:
           print(f"Config: {config.name} (active: {config.is_active})")
 
 client.configurations.create()
@@ -385,20 +388,24 @@ client.configurations.create()
 client.configurations.update()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. py:method:: client.configurations.update(request: UpdateConfigurationRequest) -> None
+.. py:method:: client.configurations.update(id: str, request: UpdateConfigurationRequest) -> None
 
    Update an existing configuration.
 
-   :param request: An ``UpdateConfigurationRequest`` model object containing the configuration ID and updated fields.
+   :param id: Configuration ID to update.
+   :type id: str
+   :param request: An ``UpdateConfigurationRequest`` model object with updated fields.
 
    .. code-block:: python
 
       from honeyhive.models import UpdateConfigurationRequest
 
-      client.configurations.update(UpdateConfigurationRequest(
-          configuration_id="cfg_abc123",
-          parameters={"model": "gpt-4-turbo", "temperature": 0.5},
-      ))
+      client.configurations.update(
+          "cfg_abc123",
+          UpdateConfigurationRequest(
+              parameters={"model": "gpt-4-turbo", "temperature": 0.5},
+          ),
+      )
 
 client.configurations.delete()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -518,40 +525,8 @@ Concurrent Async Example
 Batch Operations
 ----------------
 
-For high-throughput scenarios, use ``client.events.create_batch()``:
-
-Batch Event Creation
-~~~~~~~~~~~~~~~~~~~~
-
-.. py:method:: client.events.create_batch(data: dict) -> None
-
-   Create multiple events in a single API call.
-
-   :param data: Dict with an ``"events"`` key containing a list of event dicts.
-   :type data: dict
-
-   .. code-block:: python
-
-      from honeyhive import HoneyHive
-
-      client = HoneyHive(api_key="hh_key")
-
-      # Prepare batch of events
-      events_batch = [
-          {
-              "project": "my-project",
-              "session_id": session_id,
-              "event_type": "chain",
-              "event_name": f"process_item_{i}",
-              "inputs": {"item_id": i, "data": f"item_data_{i}"},
-              "outputs": {"result": f"processed_{i}"},
-              "metadata": {"batch_id": "batch_001", "item_index": i},
-          }
-          for i in range(100)
-      ]
-
-      # Create all events in one API call
-      client.events.create_batch({"events": events_batch})
+For high-throughput scenarios, use ``client.events.create_batch()`` as documented in
+the event-management section above.
 
 Error Handling
 --------------
@@ -649,7 +624,7 @@ Advanced Configuration Options
    # Production configuration
    client = HoneyHive(
        api_key="hh_prod_key",               # Or set HH_API_KEY environment variable
-       base_url="https://api.honeyhive.ai", # Or set HH_API_URL environment variable
+       server_url="https://api.honeyhive.ai", # Or set HH_API_URL environment variable
 
        # Rate limiting
        rate_limit_calls=100,
@@ -675,7 +650,7 @@ Environment-Based Configuration
        """Create client with environment-based configuration."""
        return HoneyHive(
            api_key=os.getenv("HH_API_KEY"),
-           base_url=os.getenv("HH_API_URL", "https://api.honeyhive.ai"),
+           server_url=os.getenv("HH_API_URL", "https://api.honeyhive.ai"),
            test_mode=os.getenv("HH_TEST_MODE", "false").lower() == "true",
        )
 
@@ -685,34 +660,34 @@ Environment-Based Configuration
 Integration Patterns
 --------------------
 
-Context Manager Usage
-~~~~~~~~~~~~~~~~~~~~~
+Reusing a Client Instance
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
    from honeyhive import HoneyHive
    from honeyhive.models import PostEventRequest
 
-   # HoneyHive supports use as a context manager for resource cleanup
-   with HoneyHive(api_key="hh_key") as client:  # Or set HH_API_KEY environment variable
-       response = client.sessions.start({
-           "session_name": "my-session",
-           "project": "my-project",
-           "source": "production",
-       })
-       session_id = response.session_id
+   # Instantiate once and reuse across multiple operations
+   client = HoneyHive(api_key="hh_key")  # Or set HH_API_KEY environment variable
 
-       # Multiple operations
-       for i in range(10):
-           client.events.create(PostEventRequest(
-               project="my-project",
-               session_id=session_id,
-               event_type="tool",
-               event_name=f"iteration_{i}",
-               inputs={"iteration": i},
-               outputs={"result": i * 2},
-           ))
-   # Client automatically closed and cleaned up
+   response = client.sessions.start({
+       "session_name": "my-session",
+       "project": "my-project",
+       "source": "production",
+   })
+   session_id = response.session_id
+
+   # Multiple operations
+   for i in range(10):
+       client.events.create(PostEventRequest(
+           project="my-project",
+           session_id=session_id,
+           event_type="tool",
+           event_name=f"iteration_{i}",
+           inputs={"iteration": i},
+           outputs={"result": i * 2},
+       ))
 
 Dependency Injection
 ~~~~~~~~~~~~~~~~~~~~
