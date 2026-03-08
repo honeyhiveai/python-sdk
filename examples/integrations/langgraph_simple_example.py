@@ -5,11 +5,11 @@ Runs a tiny tool-calling agent, flushes traces to HoneyHive prod,
 then queries the API to verify the session and its events landed.
 
 Requirements:
-    pip install honeyhive langgraph langchain-openai openinference-instrumentation-langchain
+    pip install honeyhive langchain langgraph langchain-openai
 
 Environment variables:
     HH_API_KEY      – HoneyHive bearer token for the "LangGraph" project
-    HH_PROJECT      – should be "LangGraph"
+    HH_PROJECT      – should be "LangGraph" (default)
     OPENAI_API_KEY  – OpenAI key (gpt-4o-mini is used)
 """
 
@@ -24,7 +24,6 @@ from langchain.messages import AnyMessage, HumanMessage, SystemMessage, ToolMess
 from langchain.tools import tool
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
-from openinference.instrumentation.langchain import LangChainInstrumentor
 
 from honeyhive import HoneyHiveTracer
 
@@ -38,59 +37,24 @@ if not API_KEY:
 PROJECT = os.environ.get("HH_PROJECT", "LangGraph")
 SERVER_URL = os.environ.get("HH_API_URL", "https://api.honeyhive.ai")
 
-# ── 1. Create session via API and initialise tracer ─────────────────────────
+# ── 1. Initialise HoneyHive tracer ──────────────────────────────────────────
+# HoneyHiveTracer.init() auto-instruments LangChain/LangGraph via traceloop.
+# No manual LangChainInstrumentor call is needed.
 
-# Create session directly to get the real session_id from the server
-print("[setup] Creating HoneyHive session...")
-resp = http_requests.post(
-    f"{SERVER_URL}/session/start",
-    headers={
-        "Authorization": f"Bearer {API_KEY}",
-        "Content-Type": "application/json",
-    },
-    json={
-        "project": PROJECT,
-        "session_name": "langgraph-simple-smoke-test",
-        "source": "sdk-smoke-test",
-    },
-    timeout=15,
-)
-if resp.status_code != 200:
-    print(
-        f"[FAIL] Session creation failed: {resp.status_code} {resp.text}",
-        file=sys.stderr,
-    )
-    sys.exit(1)
-
-session_data = resp.json()
-session_id = session_data.get("session_id")
-if not session_id:
-    print("[FAIL] No session_id in API response.", file=sys.stderr)
-    sys.exit(1)
-
-print(f"[setup] Session created: id={session_id}")
-
-# Initialise the tracer with the pre-created session_id.
+print("[setup] Initialising HoneyHive tracer...")
 tracer = HoneyHiveTracer.init(
     api_key=API_KEY,
     project=PROJECT,
     session_name="langgraph-simple-smoke-test",
-    session_id=session_id,
     server_url=SERVER_URL,
 )
-LangChainInstrumentor().instrument(tracer_provider=tracer.provider)
 
-# The SDK may internally re-create the session and, due to a known
-# model-validation drift (PostSessionStartResponse requires org_id /
-# workspace_id that prod no longer returns), fall back to a new UUID.
-# Record whichever session_id the tracer actually uses so we can
-# validate the right one.
-active_session_id = tracer.session_id or session_id
-print(f"[setup] HoneyHive tracer initialised – active_session_id={active_session_id}")
-if active_session_id != session_id:
-    print(
-        f"[setup]   NOTE: tracer replaced session_id with {active_session_id}"
-    )
+session_id = tracer.session_id
+if not session_id:
+    print("[FAIL] Tracer did not produce a session_id!", file=sys.stderr)
+    sys.exit(1)
+
+print(f"[setup] HoneyHive tracer initialised – session_id={session_id}")
 
 # ── 2. Define a minimal tool-calling agent ───────────────────────────────────
 
@@ -193,7 +157,7 @@ print(f"[run] Final answer: {final_answer}")
 # ── 4. Flush traces and validate ────────────────────────────────────────────
 
 print("\n[validate] Flushing traces...")
-tracer.flush(timeout_millis=15000)
+tracer.flush()
 
 # Give the backend a moment to ingest
 POLL_DELAY = 5
@@ -219,29 +183,19 @@ def hh_get(path: str) -> dict:
     return r.json()
 
 
-# We validate BOTH session IDs: the one the API created and the one the
-# tracer actually uses (they may differ due to model-validation drift).
-validation_ids = list(dict.fromkeys([session_id, active_session_id]))
-print(f"[validate] Will try session id(s): {validation_ids}")
-
 # ── 4a. Verify the session exists ─────────────────────────────────────────
 session_json = None
-validated_sid = None
-for sid in validation_ids:
-    for attempt in range(1, POLL_RETRIES + 1):
-        try:
-            session_json = hh_get(f"session/{sid}")
-            validated_sid = sid
-            break
-        except Exception as exc:
-            print(
-                f"[validate] sid={sid} attempt {attempt}/{POLL_RETRIES}"
-                f" – not ready: {exc}"
-            )
-            if attempt < POLL_RETRIES:
-                time.sleep(POLL_DELAY)
-    if session_json is not None:
+for attempt in range(1, POLL_RETRIES + 1):
+    try:
+        session_json = hh_get(f"session/{session_id}")
         break
+    except Exception as exc:
+        print(
+            f"[validate] attempt {attempt}/{POLL_RETRIES}"
+            f" – session not ready: {exc}"
+        )
+        if attempt < POLL_RETRIES:
+            time.sleep(POLL_DELAY)
 
 if session_json is None:
     print(
@@ -250,28 +204,23 @@ if session_json is None:
     )
     sys.exit(1)
 
-print(f"[validate] Session retrieved: id={validated_sid}")
+print(f"[validate] Session retrieved: id={session_id}")
 
 # ── 4b. Fetch events (spans) for the session ─────────────────────────────
 events = None
-for sid in validation_ids:
-    for attempt in range(1, POLL_RETRIES + 1):
-        try:
-            ev_resp = hh_get(f"session/{sid}")
-            children = ev_resp.get("children", [])
-            if children:
-                events = children
-                validated_sid = sid
-                break
-        except Exception as exc:
-            print(
-                f"[validate] Events sid={sid}"
-                f" attempt {attempt}/{POLL_RETRIES}: {exc}"
-            )
-        if attempt < POLL_RETRIES:
-            time.sleep(POLL_DELAY)
-    if events:
-        break
+for attempt in range(1, POLL_RETRIES + 1):
+    try:
+        ev_resp = hh_get(f"session/{session_id}")
+        children = ev_resp.get("children", [])
+        if children:
+            events = children
+            break
+    except Exception as exc:
+        print(
+            f"[validate] Events attempt {attempt}/{POLL_RETRIES}: {exc}"
+        )
+    if attempt < POLL_RETRIES:
+        time.sleep(POLL_DELAY)
 
 if not events:
     print(
@@ -281,7 +230,7 @@ else:
     num_events = len(events)
     print(
         f"[validate] Found {num_events} event(s)"
-        f" for session {validated_sid}"
+        f" for session {session_id}"
     )
 
     # Basic sanity: we expect at least 2 events (LLM call + tool call)
@@ -299,6 +248,6 @@ else:
 
 print("\n[PASS] LangGraph smoke test completed successfully on prod!")
 print(
-    f"  Session URL: https://app.honeyhive.ai/projects/LangGraph"
-    f"/sessions/{validated_sid}"
+    f"  Session URL: https://app.honeyhive.ai/projects/{PROJECT}"
+    f"/sessions/{session_id}"
 )
