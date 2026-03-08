@@ -1,17 +1,20 @@
 """
-Super-simple LangGraph + HoneyHive end-to-end smoke test.
+LangGraph + HoneyHive demo: single-trace and experiment in one script.
 
-Runs a tiny tool-calling agent, flushes traces to HoneyHive prod,
-then queries the API to verify the session and its events landed.
+Part 1 -- Runs a tool-calling LangGraph agent once and validates the trace.
+Part 2 -- Runs the same agent over a small dataset via ``honeyhive.evaluate``
+          and prints the experiment report.
 
 Requirements:
     pip install honeyhive langchain langgraph langchain-openai
 
 Environment variables:
-    HH_API_KEY      – HoneyHive bearer token for the "LangGraph" project
-    HH_PROJECT      – should be "LangGraph" (default)
-    OPENAI_API_KEY  – OpenAI key (gpt-4o-mini is used)
+    HH_API_KEY      -- HoneyHive bearer token
+    HH_PROJECT      -- project name (default: "LangGraph Demo")
+    OPENAI_API_KEY  -- OpenAI key (gpt-4o-mini is used)
 """
+
+from __future__ import annotations
 
 import operator
 import os
@@ -20,45 +23,34 @@ import time
 from typing import Annotated, Literal, TypedDict
 
 import requests as http_requests
-from langchain.messages import AnyMessage, HumanMessage, SystemMessage, ToolMessage
-from langchain.tools import tool
+from langchain_core.messages import (
+    AnyMessage,
+    HumanMessage,
+    SystemMessage,
+    ToolMessage,
+)
+from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
 
-from honeyhive import HoneyHiveTracer
+from honeyhive import HoneyHiveTracer, evaluate
 
-# ── Configuration ────────────────────────────────────────────────────────────
+# -- Configuration ------------------------------------------------------------
 
 API_KEY = os.environ.get("HH_API_KEY")
 if not API_KEY:
-    print("[FAIL] HH_API_KEY environment variable is required.", file=sys.stderr)
+    print(
+        "[FAIL] HH_API_KEY environment variable is required.",
+        file=sys.stderr,
+    )
     sys.exit(1)
 
-PROJECT = os.environ.get("HH_PROJECT", "LangGraph")
+PROJECT = os.environ.get("HH_PROJECT", "LangGraph Demo")
 SERVER_URL = os.environ.get("HH_API_URL", "https://api.honeyhive.ai")
 
-# ── 1. Initialise HoneyHive tracer ──────────────────────────────────────────
-# HoneyHiveTracer.init() auto-instruments LangChain/LangGraph via traceloop.
-# No manual LangChainInstrumentor call is needed.
+# -- Agent definition ----------------------------------------------------------
 
-print("[setup] Initialising HoneyHive tracer...")
-tracer = HoneyHiveTracer.init(
-    api_key=API_KEY,
-    project=PROJECT,
-    session_name="langgraph-simple-smoke-test",
-    server_url=SERVER_URL,
-)
-
-session_id = tracer.session_id
-if not session_id:
-    print("[FAIL] Tracer did not produce a session_id!", file=sys.stderr)
-    sys.exit(1)
-
-print(f"[setup] HoneyHive tracer initialised – session_id={session_id}")
-
-# ── 2. Define a minimal tool-calling agent ───────────────────────────────────
-
-model = ChatOpenAI(model="gpt-4o-mini")
+llm = ChatOpenAI(model="gpt-4o-mini")
 
 
 @tool
@@ -85,7 +77,7 @@ def multiply(a: float, b: float) -> str:
 
 tools = [add, multiply]
 tools_by_name = {t.name: t for t in tools}
-model_with_tools = model.bind_tools(tools)
+llm_with_tools = llm.bind_tools(tools)
 
 
 class AgentState(TypedDict):
@@ -94,7 +86,7 @@ class AgentState(TypedDict):
 
 def llm_node(state: AgentState) -> dict:
     """Call the LLM, which may request tool use."""
-    response = model_with_tools.invoke(
+    response = llm_with_tools.invoke(
         [SystemMessage(content="You are a calculator assistant. Use tools.")]
         + state["messages"]
     )
@@ -103,7 +95,7 @@ def llm_node(state: AgentState) -> dict:
 
 def tool_node(state: AgentState) -> dict:
     """Execute any tool calls the LLM requested."""
-    results = []
+    results: list[ToolMessage] = []
     last_msg = state["messages"][-1]
     for tc in getattr(last_msg, "tool_calls", []):
         if tc["name"] not in tools_by_name:
@@ -114,9 +106,9 @@ def tool_node(state: AgentState) -> dict:
                 )
             )
             continue
-        result = tools_by_name[tc["name"]].invoke(tc["args"])
+        out = tools_by_name[tc["name"]].invoke(tc["args"])
         results.append(
-            ToolMessage(content=str(result), tool_call_id=tc["id"])
+            ToolMessage(content=str(out), tool_call_id=tc["id"])
         )
     return {"messages": results}
 
@@ -139,115 +131,141 @@ agent = (
     .compile()
 )
 
-# ── 3. Run the agent ────────────────────────────────────────────────────────
 
-print("\n[run] Asking: What is 7 + 3, then multiply the result by 4?")
-result = agent.invoke(
-    {
-        "messages": [
-            HumanMessage(
-                content="What is 7 + 3, then multiply the result by 4?"
-            )
-        ]
-    }
+def run_agent(question: str) -> str:
+    """Run the agent on a question and return the final text answer."""
+    result = agent.invoke(
+        {"messages": [HumanMessage(content=question)]}
+    )
+    return result["messages"][-1].content
+
+
+# =============================================================================
+# PART 1 -- Single trace
+# =============================================================================
+
+print("=" * 60)
+print("PART 1: Single traced agent run")
+print("=" * 60)
+
+tracer = HoneyHiveTracer.init(
+    api_key=API_KEY,
+    project=PROJECT,
+    session_name="langgraph-single-trace",
+    server_url=SERVER_URL,
 )
-final_answer = result["messages"][-1].content
-print(f"[run] Final answer: {final_answer}")
 
-# ── 4. Flush traces and validate ────────────────────────────────────────────
+session_id = tracer.session_id
+if not session_id:
+    print("[FAIL] Tracer did not produce a session_id!", file=sys.stderr)
+    sys.exit(1)
+print(f"[trace] session_id = {session_id}")
 
-print("\n[validate] Flushing traces...")
+question = "What is 7 + 3, then multiply the result by 4?"
+print(f"[trace] Question: {question}")
+answer = run_agent(question)
+print(f"[trace] Answer:   {answer}")
+
 tracer.flush()
+print("[trace] Traces flushed.")
 
-# Give the backend a moment to ingest
+# Quick validation via REST API
 POLL_DELAY = 5
 POLL_RETRIES = 6
-print(f"[validate] Waiting {POLL_DELAY}s for backend ingestion...")
 time.sleep(POLL_DELAY)
 
-# Helper for authenticated GET requests against the HoneyHive REST API.
 auth_headers = {
     "Authorization": f"Bearer {API_KEY}",
     "Content-Type": "application/json",
 }
 
-
-def hh_get(path: str) -> dict:
-    """GET ``SERVER_URL/<path>`` and return parsed JSON."""
-    r = http_requests.get(
-        f"{SERVER_URL}/{path.lstrip('/')}",
-        headers=auth_headers,
-        timeout=15,
-    )
-    r.raise_for_status()
-    return r.json()
-
-
-# ── 4a. Verify the session exists ─────────────────────────────────────────
 session_json = None
 for attempt in range(1, POLL_RETRIES + 1):
     try:
-        session_json = hh_get(f"session/{session_id}")
+        r = http_requests.get(
+            f"{SERVER_URL}/session/{session_id}",
+            headers=auth_headers,
+            timeout=15,
+        )
+        r.raise_for_status()
+        session_json = r.json()
         break
     except Exception as exc:
-        print(
-            f"[validate] attempt {attempt}/{POLL_RETRIES}"
-            f" – session not ready: {exc}"
-        )
+        print(f"[trace] poll {attempt}/{POLL_RETRIES}: {exc}")
         if attempt < POLL_RETRIES:
             time.sleep(POLL_DELAY)
 
 if session_json is None:
-    print(
-        "[FAIL] Could not retrieve session after retries.",
-        file=sys.stderr,
-    )
+    print("[FAIL] Could not retrieve session.", file=sys.stderr)
     sys.exit(1)
 
-print(f"[validate] Session retrieved: id={session_id}")
+children = session_json.get("children", [])
+print(f"[trace] Session retrieved -- {len(children)} event(s)")
+for i, ev in enumerate(children):
+    name = ev.get("event_name", ev.get("name", "?"))
+    print(f"  [{i+1}] {name} (type={ev.get('event_type', '?')})")
 
-# ── 4b. Fetch events (spans) for the session ─────────────────────────────
-events = None
-for attempt in range(1, POLL_RETRIES + 1):
-    try:
-        ev_resp = hh_get(f"session/{session_id}")
-        children = ev_resp.get("children", [])
-        if children:
-            events = children
-            break
-    except Exception as exc:
-        print(
-            f"[validate] Events attempt {attempt}/{POLL_RETRIES}: {exc}"
-        )
-    if attempt < POLL_RETRIES:
-        time.sleep(POLL_DELAY)
-
-if not events:
-    print(
-        "[WARN] No child events found yet (traces may still be arriving)."
-    )
-else:
-    num_events = len(events)
-    print(
-        f"[validate] Found {num_events} event(s)"
-        f" for session {session_id}"
-    )
-
-    # Basic sanity: we expect at least 2 events (LLM call + tool call)
-    if num_events < 2:
-        print(
-            f"[WARN] Expected >= 2 events but got {num_events}."
-            " Traces may still be arriving."
-        )
-
-    # Print event summary
-    for i, ev in enumerate(events):
-        name = ev.get("event_name", ev.get("name", "unknown"))
-        ev_type = ev.get("event_type", "?")
-        print(f"  [{i+1}] {name} (type={ev_type})")
-
-print("\n[PASS] LangGraph smoke test completed successfully on prod!")
 print(
-    f"  Session URL: https://app.honeyhive.ai/projects/{PROJECT}"
-    f"/sessions/{session_id}"
+    f"[trace] URL: https://app.honeyhive.ai/projects/"
+    f"{PROJECT}/sessions/{session_id}"
 )
+
+# =============================================================================
+# PART 2 -- Experiment (evaluate)
+# =============================================================================
+
+print("\n" + "=" * 60)
+print("PART 2: Experiment run")
+print("=" * 60)
+
+# Inline dataset -- each row has inputs + expected ground_truth
+dataset = [
+    {
+        "inputs": {"question": "What is 2 + 3?"},
+        "ground_truth": {"expected": "5"},
+    },
+    {
+        "inputs": {"question": "Multiply 6 by 7."},
+        "ground_truth": {"expected": "42"},
+    },
+    {
+        "inputs": {"question": "Add 10 and 20, then multiply by 2."},
+        "ground_truth": {"expected": "60"},
+    },
+]
+
+
+def task_fn(inputs: dict, ground_truth: dict) -> dict:
+    """Evaluation task: run the agent and return its answer."""
+    q = inputs["question"]
+    ans = run_agent(q)
+    return {"answer": ans}
+
+
+def correctness(outputs: dict, inputs: dict, ground_truth: dict) -> int:
+    """1 if the expected number appears in the answer, else 0."""
+    expected = ground_truth.get("expected", "")
+    return 1 if expected in outputs.get("answer", "") else 0
+
+
+eval_result = evaluate(
+    function=task_fn,
+    dataset=dataset,
+    evaluators=[correctness],
+    api_key=API_KEY,
+    project=PROJECT,
+    name="langgraph-math-experiment",
+    server_url=SERVER_URL,
+)
+
+print(f"\n[experiment] run_id      = {eval_result.run_id}")
+print(f"[experiment] status      = {eval_result.status}")
+print(f"[experiment] dataset_id  = {eval_result.dataset_id}")
+print(f"[experiment] sessions    = {len(eval_result.session_ids)}")
+if eval_result.stats:
+    for metric, values in eval_result.stats.items():
+        print(f"[experiment] {metric}: {values}")
+
+print("\n" + "=" * 60)
+print("[PASS] LangGraph Demo completed successfully.")
+print("=" * 60)
