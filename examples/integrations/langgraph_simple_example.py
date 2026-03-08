@@ -140,7 +140,16 @@ def llm_node(state: AgentState) -> dict:
 def tool_node(state: AgentState) -> dict:
     """Execute any tool calls the LLM requested."""
     results = []
-    for tc in state["messages"][-1].tool_calls:
+    last_msg = state["messages"][-1]
+    for tc in getattr(last_msg, "tool_calls", []):
+        if tc["name"] not in tools_by_name:
+            results.append(
+                ToolMessage(
+                    content=f"Unknown tool: {tc['name']}",
+                    tool_call_id=tc["id"],
+                )
+            )
+            continue
         result = tools_by_name[tc["name"]].invoke(tc["args"])
         results.append(
             ToolMessage(content=str(result), tool_call_id=tc["id"])
