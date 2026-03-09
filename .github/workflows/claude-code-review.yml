@@ -81,6 +81,7 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           trigger_phrase: "@claude review"
           track_progress: true
+          display_report: true
           allowed_bots: "devin-ai-integration"
           prompt: |
             REPO: ${{ github.repository }}
