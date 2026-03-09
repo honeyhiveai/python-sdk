@@ -400,6 +400,7 @@ jobs:
 
       - name: Trigger docs changelog sync
         if: steps.check_pypi.outputs.exists == 'false'
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SYNC_REF: ${{ github.event.inputs.branch || github.ref_name }}
