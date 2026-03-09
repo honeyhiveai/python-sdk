@@ -17,6 +17,7 @@ on:
 
 permissions:
   contents: write  # For creating GitHub releases
+  actions: write  # For dispatching follow-up workflows
   id-token: write  # For trusted publishing to PyPI
 
 env:
@@ -396,3 +397,14 @@ jobs:
           echo "- ✅ Installation test passed" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Published to PyPI" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ GitHub release created" >> $GITHUB_STEP_SUMMARY
+
+      - name: Trigger docs changelog sync
+        if: steps.check_pypi.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SYNC_REF: ${{ github.event.inputs.branch || github.ref_name }}
+          VERSION: v${{ steps.get_version.outputs.version }}
+        run: |
+          echo "🚀 Dispatching docs changelog sync for $VERSION on $SYNC_REF..."
+          gh workflow run sync-changelog-to-docs.yml --ref "$SYNC_REF" -f version="$VERSION"
+          echo "✅ Docs changelog sync dispatched"
