@@ -37,7 +37,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: honeyhiveai/honeyhive-ai-docs
-          ref: fix/docs-concepts  # TODO: switch to main once fix/docs-concepts is merged
+          ref: main
           token: ${{ steps.app-token.outputs.token }}
           path: docs-repo
 
@@ -142,7 +142,7 @@ jobs:
         with:
           token: ${{ steps.app-token.outputs.token }}
           path: docs-repo
-          base: fix/docs-concepts  # TODO: switch to main once fix/docs-concepts is merged
+          base: main
           commit-message: "docs: sync Python SDK ${{ github.event.release.tag_name || inputs.version || 'latest' }} to product changelog"
           branch: changelog/sync-python-sdk-${{ github.event.release.tag_name || inputs.version || 'manual' }}
           delete-branch: true
