@@ -33,8 +33,8 @@ Per project convention (see `.claude/CLAUDE.md`), **always use `tox` for testing
 
 ## Gotchas
 
-- **`tox -e lint` fails at 9.51/10** (threshold 9.99) due to pre-existing cyclic-import warnings and duplicate-code issues. This is a known state, not a regression.
-- **8 unit tests in `test_tracer_infra_environment.py` fail** in container/VM environments because cloud environment detection tests (GCP, Azure, AWS EC2) detect unexpected environment variables. These are pre-existing and environment-specific.
+- **`tox -e lint` fails (pylint scores 9.51/10, threshold is 9.99).** Tox stops at the first failing command, so **mypy never runs**. To run mypy independently: `python -m mypy src/honeyhive --config-file=pyproject.toml`. The pylint violations are a mix of cyclic-import (R0401), duplicate-code (R0801), and other issues; disabling R0401+R0801 only raises the score to ~9.59.
+- **8 unit tests in `test_tracer_infra_environment.py` fail inside Docker** due to a test isolation bug: `/.dockerenv` exists in the container, so `detect_primary_environment_type()` returns `"docker"` before ever checking cloud-provider env vars. The tests mock env vars (e.g., `GOOGLE_CLOUD_PROJECT`) but don't mock `os.path.exists("/.dockerenv")`. These tests pass on bare-metal CI runners.
 - **OTLP warnings** (`No valid export method: OTLP exporter is False`) appear when running with `HH_OTLP_ENABLED=false`; this is expected in test mode.
 - `tox` creates its own virtualenvs under `.tox/` and installs dependencies there, so `.venv` is primarily for IDE support and direct `make` commands (e.g., `make format`, `make typecheck`).
 - Integration tests (`tox -e integration`) require a real `HH_API_KEY` and optional LLM provider API keys; unit tests (`tox -e unit`) run fully offline with mocked credentials.
