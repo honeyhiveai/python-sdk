@@ -20,6 +20,9 @@ Important:
     This file sets those flags at import time and layers
     OpenAIInstrumentor on top so HoneyHive captures rich model
     inputs/outputs while preserving Semantic Kernel agent spans.
+    This example uses OpenAIChatCompletion, so it uses the OpenAI
+    instrumentor. For other model providers, use the matching
+    provider-specific OpenInference instrumentor when one exists.
 
 Environment:
     HH_API_KEY
