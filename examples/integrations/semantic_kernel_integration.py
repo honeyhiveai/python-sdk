@@ -14,6 +14,13 @@ Install:
 Run:
     uv run python examples/integrations/semantic_kernel_integration.py
 
+Important:
+    Semantic Kernel OTel diagnostics flags must be set before importing
+    Semantic Kernel modules to emit native GenAI model/agent spans.
+    This file sets those flags at import time and layers
+    OpenAIInstrumentor on top so HoneyHive captures rich model
+    inputs/outputs while preserving Semantic Kernel agent spans.
+
 Environment:
     HH_API_KEY
     HH_PROJECT
@@ -24,6 +31,12 @@ Environment:
 import asyncio
 import os
 from typing import Annotated
+
+# Must be configured before importing semantic_kernel modules.
+os.environ["SEMANTICKERNEL_EXPERIMENTAL_GENAI_ENABLE_OTEL_DIAGNOSTICS"] = "true"
+os.environ["SEMANTICKERNEL_EXPERIMENTAL_GENAI_ENABLE_OTEL_DIAGNOSTICS_SENSITIVE"] = (
+    "true"
+)
 
 from openinference.instrumentation.openai import OpenAIInstrumentor
 from semantic_kernel.agents import (
@@ -40,17 +53,12 @@ from honeyhive import HoneyHiveTracer
 
 MODEL = "gpt-4o-mini"
 
-os.environ["SEMANTICKERNEL_EXPERIMENTAL_GENAI_ENABLE_OTEL_DIAGNOSTICS"] = "true"
-os.environ["SEMANTICKERNEL_EXPERIMENTAL_GENAI_ENABLE_OTEL_DIAGNOSTICS_SENSITIVE"] = (
-    "true"
-)
-
 
 # -- Mock tools (customer support domain) --
 
 
-class OrderPlugin:
-    """Plugin for order status lookups."""
+class SupportPlugin:
+    """Plugin for order status and policy lookups."""
 
     @kernel_function(description="Look up an order's shipping status by order ID")
     def lookup_order_status(
@@ -65,10 +73,6 @@ class OrderPlugin:
         if status:
             return f"Order {order_id.upper()}: {status['state']}, ETA {status['eta_days']} days"
         return f"Order {order_id.upper()}: not found"
-
-
-class PolicyPlugin:
-    """Plugin for support policy lookups."""
 
     @kernel_function(
         description="Look up support policy by topic (refund, cancellation, shipping)"
@@ -100,7 +104,7 @@ async def run_single_agent_tool_scenario() -> None:
             "to look up order status and policies. Address the customer "
             "by name when possible. Keep responses concise."
         ),
-        plugins=[OrderPlugin(), PolicyPlugin()],
+        plugins=[SupportPlugin()],
     )
 
     thread: ChatHistoryAgentThread | None = None
@@ -127,7 +131,7 @@ async def run_handoff_scenario() -> None:
             "You are an order specialist. Use lookup_order_status to answer "
             "questions about order status and delivery. Be concise."
         ),
-        plugins=[OrderPlugin()],
+        plugins=[SupportPlugin()],
     )
 
     policy_agent = ChatCompletionAgent(
@@ -138,7 +142,7 @@ async def run_handoff_scenario() -> None:
             "You are a policy specialist. Use lookup_policy to answer "
             "questions about refund, cancellation, and shipping policies. Be concise."
         ),
-        plugins=[PolicyPlugin()],
+        plugins=[SupportPlugin()],
     )
 
     triage_agent = ChatCompletionAgent(
@@ -196,7 +200,7 @@ async def run_streaming_scenario() -> None:
         service=OpenAIChatCompletion(ai_model_id=MODEL),
         name="response_drafter",
         instructions="Draft concise customer support responses. Use bullet points.",
-        plugins=[OrderPlugin()],
+        plugins=[SupportPlugin()],
     )
 
     thread: ChatHistoryAgentThread | None = None
@@ -220,7 +224,6 @@ async def main() -> None:
         session_name="semantic_kernel_integration",
         source=os.getenv("HH_SOURCE", "python_sdk_example"),
     )
-
     instrumentor = OpenAIInstrumentor()
     instrumentor.instrument(tracer_provider=tracer.provider)
 
