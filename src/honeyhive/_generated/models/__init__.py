@@ -36,6 +36,7 @@ from .DeleteSessionResponse import *
 from .Event import *
 from .EventComparisonDetail import *
 from .EventDetail import *
+from .EventResponseItem import *
 from .ExperimentRunObject import *
 from .ExperimentSchemaField import *
 from .ExperimentSchemaMappingEntry import *

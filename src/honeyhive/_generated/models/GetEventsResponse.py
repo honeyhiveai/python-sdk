@@ -2,6 +2,8 @@ from typing import *
 
 from pydantic import BaseModel, Field
 
+from .EventResponseItem import EventResponseItem
+
 
 class GetEventsResponse(BaseModel):
     """
@@ -10,6 +12,6 @@ class GetEventsResponse(BaseModel):
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
-    events: List[Any] = Field(validation_alias="events")
+    events: List[EventResponseItem] = Field(validation_alias="events")
 
     totalEvents: float = Field(validation_alias="totalEvents")

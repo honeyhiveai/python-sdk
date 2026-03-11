@@ -2862,6 +2862,80 @@ components:
       required:
         - event_id
       description: Path parameters for DELETE /events/:event_id
+    EventResponseItem:
+      type: object
+      properties:
+        event_id:
+          type: string
+        project_id:
+          type: string
+          minLength: 1
+        tenant:
+          type: string
+          minLength: 1
+        project:
+          type: string
+          description: Project name
+        source:
+          type: string
+          description: Source of the event (e.g., sdk-python)
+        event_name:
+          type: string
+          description: Name of the event
+        event_type:
+          type: string
+          enum:
+            - model
+            - tool
+            - chain
+            - session
+        session_id:
+          type: string
+        parent_id:
+          type:
+            - string
+            - 'null'
+        children_ids:
+          type: array
+          items:
+            type: string
+        config:
+          type: object
+          additionalProperties: {}
+        inputs:
+          type: object
+          additionalProperties: {}
+        outputs:
+          type: object
+          additionalProperties: {}
+        error:
+          type:
+            - string
+            - 'null'
+        start_time:
+          type: number
+        end_time:
+          type: number
+        duration:
+          type: number
+        metadata:
+          type: object
+          additionalProperties: {}
+        feedback:
+          type: object
+          additionalProperties: {}
+        metrics:
+          type: object
+          additionalProperties: {}
+        user_properties:
+          type: object
+          additionalProperties: {}
+      required:
+        - event_id
+        - project_id
+        - tenant
+      additionalProperties: {}
+      description: Event object returned by GET /events
     PostEventResponse:
       type: object
       properties:
@@ -2877,7 +2951,8 @@ components:
       properties:
         events:
           type: array
-          items: {}
+          items:
+            $ref: '#/components/schemas/EventResponseItem'
         totalEvents:
           type: number
       required:
@@ -2966,7 +3041,8 @@ components:
       properties:
         events:
           type: array
-          items: {}
+          items:
+            $ref: '#/components/schemas/EventResponseItem'
         totalEvents:
           type: number
       required:
@@ -3330,6 +3406,8 @@ components:
     PostExperimentRunRequest:
       type: object
       properties:
+        run_id:
+          type: string
         name:
           type: string
         description:
@@ -4598,7 +4676,7 @@ components:
           description: Placeholder - Zod schema not yet implemented
       required:
         - message
-      description: 'TODO: This is a placeholder schema. Proper Zod schemas need to be created in @hive-kube/core-ts for: Sessions, Events, Projects, and Experiment comparison/result endpoints.'
+      description: 'TODO: This is a placeholder schema. Proper Zod schemas need to be created in @hive-kube/iso-core-ts for: Sessions, Events, Projects, and Experiment comparison/result endpoints.'
   parameters: {}
   securitySchemes:
     BearerAuth:

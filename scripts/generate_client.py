@@ -24,6 +24,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 # Get the repo root directory
 REPO_ROOT = Path(__file__).parent.parent
@@ -203,7 +204,91 @@ class HTTPException(Exception):
     return True
 
 
-def post_process(output_dir: Path) -> bool:
+def get_open_additional_properties_schema_names(spec_path: Path) -> set[str]:
+    """Find OpenAPI component schemas with additionalProperties: {}."""
+    try:
+        import yaml
+    except ImportError:
+        print("  ⚠ pyyaml is not installed; skipping additionalProperties patching")
+        return set()
+
+    try:
+        with spec_path.open("r", encoding="utf-8") as spec_file:
+            spec: Any = yaml.safe_load(spec_file) or {}
+    except (OSError, yaml.YAMLError) as exc:
+        print(f"  ⚠ Failed to parse OpenAPI spec for additionalProperties patching: {exc}")
+        return set()
+
+    components = spec.get("components")
+    if not isinstance(components, dict):
+        return set()
+
+    schemas = components.get("schemas")
+    if not isinstance(schemas, dict):
+        return set()
+
+    schema_names: set[str] = set()
+    for schema_name, schema in schemas.items():
+        if not isinstance(schema_name, str) or not isinstance(schema, dict):
+            continue
+
+        additional_properties = schema.get("additionalProperties")
+        if isinstance(additional_properties, dict) and len(additional_properties) == 0:
+            schema_names.add(schema_name)
+
+    return schema_names
+
+
+def patch_model_extra_allow(model_file: Path) -> bool:
+    """Patch model_config in a generated model file to include extra='allow'."""
+    content = model_file.read_text()
+    if '"extra": "allow"' in content or "'extra': 'allow'" in content:
+        return False
+
+    lines = content.splitlines(keepends=True)
+    for index, line in enumerate(lines):
+        if "model_config" not in line:
+            continue
+
+        brace_start = line.find("{")
+        brace_end = line.rfind("}")
+        if brace_start == -1 or brace_end == -1 or brace_end <= brace_start:
+            print(f"  ⚠ Could not patch model_config in {model_file.name} (unexpected format)")
+            return False
+
+        config_body = line[brace_start + 1 : brace_end].strip()
+        if config_body:
+            updated_config_body = f'{config_body}, "extra": "allow"'
+        else:
+            updated_config_body = '"extra": "allow"'
+
+        lines[index] = f'{line[: brace_start + 1]}{updated_config_body}{line[brace_end:]}'
+        model_file.write_text("".join(lines))
+        return True
+
+    print(f"  ⚠ model_config not found in {model_file.name}")
+    return False
+
+
+def patch_additional_properties_models(spec_path: Path, output_dir: Path) -> int:
+    """Enable extra='allow' for generated models backed by additionalProperties: {} schemas."""
+    models_dir = output_dir / "models"
+    if not models_dir.exists():
+        return 0
+
+    schema_names = get_open_additional_properties_schema_names(spec_path)
+    patched_count = 0
+    for schema_name in sorted(schema_names):
+        model_file = models_dir / f"{schema_name}.py"
+        if not model_file.exists():
+            continue
+        if patch_model_extra_allow(model_file):
+            patched_count += 1
+
+    return patched_count
+
+
+def post_process(output_dir: Path, spec_path: Path) -> bool:
     """
     Apply any post-processing customizations to the generated code.
 
@@ -214,6 +299,13 @@ def post_process(output_dir: Path) -> bool:
     # Patch api_config.py with our custom extensions
     if not patch_api_config(output_dir):
         return False
+
+    # Allow unknown fields on models generated from schemas with additionalProperties: {}
+    patched_extra_count = patch_additional_properties_models(spec_path, output_dir)
+    if patched_extra_count > 0:
+        print(
+            f"  ✓ Enabled model_config extra='allow' in {patched_extra_count} model files"
+        )
 
     # Ensure __init__.py exists at the package root
     init_file = output_dir / "__init__.py"
@@ -296,7 +388,7 @@ def main() -> int:
         return 1
 
     # Apply post-processing
-    if not post_process(OUTPUT_DIR):
+    if not post_process(OUTPUT_DIR, spec_path):
         return 1
 
     print()
