@@ -218,12 +218,6 @@ SessionConfig
 
 **Session Fields:**
 
-.. py:attribute:: session_name
-   :type: Optional[str]
-   :value: None
-
-   Custom session name for grouping related traces.
-
 .. py:attribute:: session_id
    :type: Optional[str]
    :value: None
@@ -236,17 +230,11 @@ SessionConfig
 
    Session input parameters.
 
-.. py:attribute:: outputs
+.. py:attribute:: link_carrier
    :type: Optional[Dict[str, Any]]
    :value: None
 
-   Session output parameters.
-
-.. py:attribute:: metadata
-   :type: Optional[Dict[str, Any]]
-   :value: None
-
-   Additional session metadata.
+   Context propagation carrier for distributed tracing.
 
 **Example Usage:**
 
@@ -261,9 +249,8 @@ SessionConfig
    )
    
    session_config = SessionConfig(
-       session_name="user-chat-session",
        inputs={"user_id": "123", "query": "Hello world"},
-       metadata={"version": "1.0", "environment": "production"}
+       link_carrier={"traceparent": "00-...", "baggage": "user_id=123"}
    )
    
    tracer = HoneyHiveTracer(
@@ -365,7 +352,7 @@ HTTPClientConfig
 
 .. py:attribute:: max_connections
    :type: int
-   :value: 100
+   :value: 10
 
    Maximum number of HTTP connections.
    
@@ -425,7 +412,7 @@ HTTPClientConfig
 
    HTTP proxy URL.
    
-   **Environment Variable**: ``HTTP_PROXY``
+   **Environment Variable**: ``HH_HTTP_PROXY`` (falls back to ``HTTP_PROXY``)
 
 .. py:attribute:: https_proxy
    :type: Optional[str]
@@ -433,7 +420,7 @@ HTTPClientConfig
 
    HTTPS proxy URL.
    
-   **Environment Variable**: ``HTTPS_PROXY``
+   **Environment Variable**: ``HH_HTTPS_PROXY`` (falls back to ``HTTPS_PROXY``)
 
 .. py:attribute:: no_proxy
    :type: Optional[str]
@@ -441,7 +428,7 @@ HTTPClientConfig
 
    Comma-separated list of hosts to bypass proxy.
    
-   **Environment Variable**: ``NO_PROXY``
+   **Environment Variable**: ``HH_NO_PROXY`` (falls back to ``NO_PROXY``)
 
 .. py:attribute:: verify_ssl
    :type: bool

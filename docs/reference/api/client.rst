@@ -26,673 +26,507 @@ The main client class for interacting with HoneyHive's core services.
 - Session and event management
 - Project and configuration management
 - Synchronous and asynchronous operations
-- Built-in retry logic and error handling
-- Rate limiting and throttling support
+- Backwards-compatible parameters for smooth migration
 
 Initialization
 ~~~~~~~~~~~~~~
 
-.. py:method:: __init__(api_key: Optional[str] = None, base_url: Optional[str] = None, timeout: float = 30.0, max_retries: int = 3, test_mode: bool = False, **kwargs)
+.. py:method:: __init__(api_key: Optional[str] = None, base_url: Optional[str] = None, cp_base_url: Optional[str] = None, server_url: Optional[str] = None, timeout: Optional[float] = None, rate_limit_calls: Optional[int] = None, rate_limit_window: Optional[float] = None, max_connections: Optional[int] = None, max_keepalive: Optional[int] = None, test_mode: bool = False, verbose: bool = False, tracer_instance: Optional[Any] = None)
 
    Initialize a HoneyHive client instance.
-   
+
    **Parameters:**
-   
+
    :param api_key: HoneyHive API key. If not provided, reads from ``HH_API_KEY`` environment variable.
    :type api_key: Optional[str]
-   
-   :param base_url: Base URL for HoneyHive API. Defaults to "https://api.honeyhive.ai".
+
+   :param base_url: Base URL for the HoneyHive API. Defaults to ``"https://api.honeyhive.ai"``.
    :type base_url: Optional[str]
-   
-   :param timeout: Request timeout in seconds. Default: 30.0
-   :type timeout: float
-   
-   :param max_retries: Maximum number of retry attempts for failed requests. Default: 3
-   :type max_retries: int
-   
-   :param test_mode: Enable test mode (requests are validated but not processed). Default: False
+
+   :param cp_base_url: Base URL for the HoneyHive control-plane API. Used for project and configuration endpoints when separate from the data-plane.
+   :type cp_base_url: Optional[str]
+
+   :param server_url: Legacy alias for ``base_url``. Accepted for backwards compatibility.
+   :type server_url: Optional[str]
+
+   :param timeout: Request timeout in seconds. Accepted for backwards compatibility; not actively enforced by all transports.
+   :type timeout: Optional[float]
+
+   :param rate_limit_calls: Accepted for backwards compatibility; not actively enforced.
+   :type rate_limit_calls: Optional[int]
+
+   :param rate_limit_window: Accepted for backwards compatibility; not actively enforced.
+   :type rate_limit_window: Optional[float]
+
+   :param max_connections: Accepted for backwards compatibility; not actively enforced.
+   :type max_connections: Optional[int]
+
+   :param max_keepalive: Accepted for backwards compatibility; not actively enforced.
+   :type max_keepalive: Optional[int]
+
+   :param test_mode: Accepted for backwards compatibility; stored but not actively enforced by the client. Default: ``False``
    :type test_mode: bool
-   
-   :param kwargs: Additional configuration options
-   :type kwargs: Any
-   
+
+   :param verbose: Accepted for backwards compatibility; stored but not actively enforced by the client. Default: ``False``
+   :type verbose: bool
+
+   :param tracer_instance: Optional tracer instance to associate with this client for correlated tracing.
+   :type tracer_instance: Optional[Any]
+
    **Example:**
-   
+
    .. code-block:: python
-   
+
       from honeyhive import HoneyHive
-      from honeyhive.models import EventType
-      
-      # Basic initialization
-      client = HoneyHive(api_key="hh_your_api_key_here")  # Or set HH_API_KEY environment variable
-      
-      # With custom configuration
+
+      # Basic initialization (api_key falls back to HH_API_KEY env var)
+      client = HoneyHive(api_key="hh_your_api_key_here")
+
+      # With custom server URL
       client = HoneyHive(
-          api_key="hh_your_api_key_here",  # Or set HH_API_KEY environment variable
-          base_url="https://api.honeyhive.ai",  # Or set HH_API_URL environment variable
-          timeout=60.0,
-          max_retries=5
-      )
-      
-      # Test mode for development
-      client = HoneyHive(
-          api_key="hh_test_key",           # Or set HH_API_KEY environment variable
-          test_mode=True                   # Or set HH_TEST_MODE=true environment variable
+          api_key="hh_your_api_key_here",
+          base_url="https://api.honeyhive.ai",
       )
 
 Session Management
 ~~~~~~~~~~~~~~~~~~
 
-create_session()
-^^^^^^^^^^^^^^^^
+Sessions are accessed via ``client.sessions``.
 
-.. py:method:: create_session(project: str, source: Optional[str] = None, session_name: Optional[str] = None, **kwargs) -> dict
+client.sessions.start()
+^^^^^^^^^^^^^^^^^^^^^^^
 
-   Create a new session for grouping related events.
-   
-   **Parameters:**
-   
-   :param project: Project name for the session
-   :type project: str
-   
-   :param source: Source identifier (e.g., "production", "staging")
-   :type source: Optional[str]
-   
-   :param session_name: Custom session name
-   :type session_name: Optional[str]
-   
-   :param kwargs: Additional session metadata
-   :type kwargs: Any
-   
-   **Returns:**
-   
-   :rtype: dict
-   :returns: Session information including session_id
-   
-   **Example:**
-   
+.. py:method:: client.sessions.start(data: dict) -> StartSessionResponse
+
+   Start (create) a new session for grouping related events.
+
+   :param data: Session creation payload. Common keys:
+
+      - ``session_name`` (*str*) — Human-readable name for the session.
+      - ``project`` (*str*) — Project this session belongs to.
+      - ``source`` (*str*) — Source environment (e.g. ``"production"``, ``"staging"``).
+      - ``inputs`` (*dict*) — Initial inputs for the session.
+      - ``user_properties`` (*dict*) — User-level metadata.
+
+   :type data: dict
+   :returns: A ``StartSessionResponse`` object. The session ID is at ``response.session_id``.
+
    .. code-block:: python
-   
-      # Create a basic session
-      session = client.create_session(
-          source="development",
-          session_name="user-onboarding-flow"
-      )
-      
-      print(f"Created session: {session['session_id']}")
-      
-      # Create session with metadata
-      session = client.create_session(
-          source="development",
-          user_id="user_123",
-          conversation_type="customer_support",
-          priority="high"
-      )
 
-get_session()
-^^^^^^^^^^^^^
+      from honeyhive import HoneyHive
 
-.. py:method:: get_session(session_id: str) -> dict
+      client = HoneyHive(api_key="hh_...")
 
-   Retrieve session information by ID.
-   
-   **Parameters:**
-   
-   :param session_id: Unique session identifier
+      response = client.sessions.start({
+          "session_name": "user-onboarding-flow",
+          "project": "my-project",
+          "source": "production",
+          "inputs": {"user_id": "u123"},
+      })
+
+      session_id = response.session_id
+      print(f"Created session: {session_id}")
+
+   .. note::
+
+      Backwards-compatibility aliases ``client.sessions.create_session()`` and
+      ``client.sessions.start_session()`` also exist and behave identically.
+
+client.sessions.get()
+^^^^^^^^^^^^^^^^^^^^^
+
+.. py:method:: client.sessions.get(session_id: str) -> Event
+
+   Retrieve a session (returned as an ``Event`` object) by its ID.
+
+   :param session_id: Unique session identifier.
    :type session_id: str
-   
-   **Returns:**
-   
-   :rtype: dict
-   :returns: Session details and metadata
-   
-   **Example:**
-   
+   :returns: An ``Event`` object containing session details.
+
    .. code-block:: python
-   
-      session_info = client.get_session("session_abc123")
-      
-      print(f"Session project: {session_info['project']}")
-      print(f"Session created: {session_info['created_at']}")
-      print(f"Event count: {session_info['event_count']}")
 
-list_sessions()
-^^^^^^^^^^^^^^^
+      event = client.sessions.get("session_abc123")
 
-.. py:method:: list_sessions(project: Optional[str] = None, source: Optional[str] = None, limit: int = 100, offset: int = 0, **filters) -> dict
+      print(f"Session name: {event.event_name}")
+      print(f"Inputs: {event.inputs}")
 
-   List sessions with optional filtering.
-   
-   **Parameters:**
-   
-   :param project: Filter by project name
-   :type project: Optional[str]
-   
-   :param source: Filter by source identifier
-   :type source: Optional[str]
-   
-   :param limit: Maximum number of sessions to return
-   :type limit: int
-   
-   :param offset: Number of sessions to skip (for pagination)
-   :type offset: int
-   
-   :param filters: Additional filter criteria
-   :type filters: Any
-   
-   **Returns:**
-   
-   :rtype: dict
-   :returns: List of sessions and pagination info
-   
-   **Example:**
-   
-   .. code-block:: python
-   
-      # List all sessions for a project
-      sessions = client.list_sessions(limit=50)
-      
-      for session in sessions['sessions']:
-          print(f"Session {session['session_id']}: {session['session_name']}")
-      
-      # List with filters
-      recent_sessions = client.list_sessions(
-          source="development",
-          created_after="2024-01-01T00:00:00Z",
-          limit=20
-      )
+   .. note::
+
+      A backwards-compatibility alias ``client.sessions.get_session()`` is also available.
 
 Event Management
 ~~~~~~~~~~~~~~~~
 
-create_event()
-^^^^^^^^^^^^^^
+Events are accessed via ``client.events``.
 
-.. py:method:: create_event(session_id: str, event_type: str, event_name: str, inputs: Optional[dict] = None, outputs: Optional[dict] = None, metadata: Optional[dict] = None, **kwargs) -> dict
+client.events.create()
+^^^^^^^^^^^^^^^^^^^^^^
 
-   Create a new event within a session.
-   
-   **Parameters:**
-   
-   :param session_id: Session ID to associate the event with
-   :type session_id: str
-   
-   :param event_type: Type of event. Must be one of: ``"model"``, ``"tool"``, or ``"chain"``
-   :type event_type: str
-   
-   :param event_name: Descriptive name for the event
-   :type event_name: str
-   
-   :param inputs: Input data for the event
-   :type inputs: Optional[dict]
-   
-   :param outputs: Output data from the event
-   :type outputs: Optional[dict]
-   
-   :param metadata: Additional event metadata
-   :type metadata: Optional[dict]
-   
-   :param kwargs: Additional event attributes
-   :type kwargs: Any
-   
-   **Returns:**
-   
-   :rtype: dict
-   :returns: Created event information
-   
-   **Example:**
-   
+.. py:method:: client.events.create(request: PostEventRequest) -> PostEventResponse
+
+   Create a new event within a session. Accepts a ``PostEventRequest`` model object.
+
    .. code-block:: python
-   
-      # Create an LLM call event
-      event = client.create_event(
-          session_id="session_abc123",
-          event_type=EventType.model,
+
+      from honeyhive import HoneyHive
+      from honeyhive.models import PostEventRequest
+
+      client = HoneyHive(api_key="hh_...")
+
+      client.events.create(PostEventRequest(
+          project="my-project",
           event_name="openai_completion",
+          event_type="model",
+          session_id="session_abc123",
           inputs={
               "model": "gpt-4",
               "messages": [{"role": "user", "content": "Hello!"}],
-              "temperature": 0.7
           },
           outputs={
               "response": "Hello! How can I help you today?",
-              "usage": {
-                  "prompt_tokens": 10,
-                  "completion_tokens": 12,
-                  "total_tokens": 22
-              }
           },
-          metadata={
-              "duration_ms": 1500,
-              "model_version": "gpt-4-0613"
+          metadata={"duration_ms": 1500},
+      ))
+
+client.events.update()
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. py:method:: client.events.update(data: dict) -> None
+
+   Update an existing event (e.g. to add feedback or outputs after the fact).
+
+   :param data: Update payload. Common keys: ``event_id``, ``feedback``, ``outputs``, ``metadata``, ``metrics``.
+   :type data: dict
+
+   .. code-block:: python
+
+      client.events.update({
+          "event_id": "event_xyz789",
+          "feedback": {"rating": 5, "comment": "Great response"},
+          "metadata": {"reviewed": True},
+      })
+
+client.events.get_by_session_id()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. py:method:: client.events.get_by_session_id(session_id: str) -> GetEventsResponse
+
+   Retrieve all events belonging to a session.
+
+   :param session_id: Unique session identifier.
+   :type session_id: str
+   :returns: A ``GetEventsResponse`` containing a list of events.
+
+   .. code-block:: python
+
+      response = client.events.get_by_session_id("session_abc123")
+
+      for event in response.events:
+          print(f"Event: {event.event_name} ({event.event_type})")
+
+client.events.list()
+^^^^^^^^^^^^^^^^^^^^
+
+.. py:method:: client.events.list(query: dict) -> GetEventsResponse
+
+   List events matching a query object.
+
+   :param query: Query parameters (project name, filters, date ranges, etc.).
+   :type query: dict
+
+   .. code-block:: python
+
+      response = client.events.list({
+          "project": "my-project",
+          "filters": [{"field": "event_type", "value": "model", "operator": "is"}],
+      })
+
+      for event in response.events:
+          print(event.event_name)
+
+client.events.create_batch()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. py:method:: client.events.create_batch(data: dict) -> PostEventBatchResponse
+
+   Create multiple events in a single API call.
+
+   :param data: Batch payload with an ``"events"`` list.
+   :type data: dict
+
+   .. code-block:: python
+
+      events_batch = [
+          {
+              "project": "my-project",
+              "session_id": session_id,
+              "event_type": "chain",
+              "event_name": f"process_item_{i}",
+              "inputs": {"item_id": i},
+              "outputs": {"result": f"processed_{i}"},
           }
-      )
-      
-      print(f"Created event: {event['event_id']}")
+          for i in range(100)
+      ]
 
-get_event()
-^^^^^^^^^^^
-
-.. py:method:: get_event(event_id: str) -> dict
-
-   Retrieve event information by ID.
-   
-   **Parameters:**
-   
-   :param event_id: Unique event identifier
-   :type event_id: str
-   
-   **Returns:**
-   
-   :rtype: dict
-   :returns: Event details and data
-   
-   **Example:**
-   
-   .. code-block:: python
-   
-      event = client.get_event("event_xyz789")
-      
-      print(f"Event type: {event['event_type']}")
-      print(f"Event name: {event['event_name']}")
-      print(f"Duration: {event['metadata']['duration_ms']}ms")
-
-list_events()
-^^^^^^^^^^^^^
-
-.. py:method:: list_events(session_id: Optional[str] = None, project: Optional[str] = None, event_type: Optional[str] = None, limit: int = 100, offset: int = 0, **filters) -> dict
-
-   List events with optional filtering.
-   
-   **Parameters:**
-   
-   :param session_id: Filter by session ID
-   :type session_id: Optional[str]
-   
-   :param project: Filter by project name
-   :type project: Optional[str]
-   
-   :param event_type: Filter by event type
-   :type event_type: Optional[str]
-   
-   :param limit: Maximum number of events to return
-   :type limit: int
-   
-   :param offset: Number of events to skip (for pagination)
-   :type offset: int
-   
-   :param filters: Additional filter criteria
-   :type filters: Any
-   
-   **Returns:**
-   
-   :rtype: dict
-   :returns: List of events and pagination info
-   
-   **Example:**
-   
-   .. code-block:: python
-   
-      # List events for a session
-      events = client.list_events(session_id="session_abc123")
-      
-      for event in events['events']:
-          print(f"Event: {event['event_name']} ({event['event_type']})")
-      
-      # List LLM call events across all sessions
-      llm_events = client.list_events(
-          event_type=EventType.model,
-          limit=50
-      )
+      client.events.create_batch({"events": events_batch})
 
 Project Management
 ~~~~~~~~~~~~~~~~~~
 
-create_project()
-^^^^^^^^^^^^^^^^
+Projects are accessed via ``client.projects``.
 
-.. py:method:: create_project(name: str, description: Optional[str] = None, **kwargs) -> dict
+client.projects.list()
+^^^^^^^^^^^^^^^^^^^^^^
 
-   Create a new project.
-   
-   **Parameters:**
-   
-   :param name: Project name
-   :type name: str
-   
-   :param description: Project description
-   :type description: Optional[str]
-   
-   :param kwargs: Additional project configuration
-   :type kwargs: Any
-   
-   **Returns:**
-   
-   :rtype: dict
-   :returns: Created project information
-   
-   **Example:**
-   
-   .. code-block:: python
-   
-      project = client.create_project(
-          name="customer-support-bot",
-          description="AI-powered customer support chatbot",
-          team="engineering",
-          environment="production"
-      )
-
-get_project()
-^^^^^^^^^^^^^
-
-.. py:method:: get_project(project_name: str) -> dict
-
-   Retrieve project information.
-   
-   **Parameters:**
-   
-   :param project_name: Name of the project
-   :type project_name: str
-   
-   **Returns:**
-   
-   :rtype: dict
-   :returns: Project details and configuration
-   
-   **Example:**
-   
-   .. code-block:: python
-   
-      project_info = client.get_project("customer-support-bot")
-      
-      print(f"Project: {project_info['name']}")
-      print(f"Created: {project_info['created_at']}")
-      print(f"Total events: {project_info['event_count']}")
-
-list_projects()
-^^^^^^^^^^^^^^^
-
-.. py:method:: list_projects(limit: int = 100, offset: int = 0) -> dict
+.. py:method:: client.projects.list() -> List[Project]
 
    List all accessible projects.
-   
-   **Parameters:**
-   
-   :param limit: Maximum number of projects to return
-   :type limit: int
-   
-   :param offset: Number of projects to skip (for pagination)
-   :type offset: int
-   
-   **Returns:**
-   
-   :rtype: dict
-   :returns: List of projects and pagination info
-   
-   **Example:**
-   
+
+   :returns: A list of ``Project`` objects.
+
    .. code-block:: python
-   
-      projects = client.list_projects()
-      
-      for project in projects['projects']:
-          print(f"Project: {project['name']} - {project['description']}")
+
+      projects = client.projects.list()
+
+      for project in projects:
+          print(f"Project: {project.name}")
+
+client.projects.create()
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. py:method:: client.projects.create(data: CreateProjectRequest) -> Project
+
+   Create a new project.
+
+   :param data: A ``CreateProjectRequest`` model object.
+
+   .. code-block:: python
+
+      from honeyhive.models import CreateProjectRequest
+
+      project = client.projects.create(CreateProjectRequest(
+          name="customer-support-bot",
+          description="AI-powered customer support chatbot",
+      ))
+
+client.projects.update()
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. py:method:: client.projects.update(data: UpdateProjectRequest) -> None
+
+   Update an existing project's metadata.
+
+   :param data: An ``UpdateProjectRequest`` model object. Include ``project_id`` and any fields to change.
+
+   .. code-block:: python
+
+      from honeyhive.models import UpdateProjectRequest
+
+      client.projects.update(UpdateProjectRequest(
+          project_id="proj_abc123",
+          name="customer-support-bot",
+          description="Updated description",
+      ))
+
+client.projects.delete()
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. py:method:: client.projects.delete(name: str) -> None
+
+   Delete a project by name.
+
+   :param name: Name of the project to delete.
+   :type name: str
+
+   .. code-block:: python
+
+      client.projects.delete("customer-support-bot")
 
 Configuration Management
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-get_configuration()
-^^^^^^^^^^^^^^^^^^^
+Configurations are accessed via ``client.configurations``.
 
-.. py:method:: get_configuration(project: str) -> dict
+client.configurations.list()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-   Get project configuration settings.
-   
-   **Parameters:**
-   
-   :param project: Project name
+.. py:method:: client.configurations.list(project: str) -> List[Configuration]
+
+   List all configurations for a project.
+
+   :param project: Project name to filter by.
    :type project: str
-   
-   **Returns:**
-   
-   :rtype: dict
-   :returns: Project configuration
-   
-   **Example:**
-   
+   :returns: A list of ``Configuration`` objects.
+
    .. code-block:: python
-   
-      config = client.get_configuration("my-app")
-      
-      print(f"Sampling rate: {config['sampling_rate']}")
-      print(f"Retention days: {config['retention_days']}")
 
-update_configuration()
-^^^^^^^^^^^^^^^^^^^^^^
+      configs = client.configurations.list(project="my-project")
 
-.. py:method:: update_configuration(project: str, configuration: dict) -> dict
+      for config in configs:
+          print(f"Config: {config.name} (active: {config.is_active})")
 
-   Update project configuration settings.
-   
-   **Parameters:**
-   
-   :param project: Project name
-   :type project: str
-   
-   :param configuration: Configuration updates
-   :type configuration: dict
-   
-   **Returns:**
-   
-   :rtype: dict
-   :returns: Updated configuration
-   
-   **Example:**
-   
+client.configurations.create()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. py:method:: client.configurations.create(request: CreateConfigurationRequest) -> None
+
+   Create a new configuration for a project.
+
+   :param request: A ``CreateConfigurationRequest`` model object.
+
    .. code-block:: python
-   
-      updated_config = client.update_configuration(
-          configuration={
-              "sampling_rate": 0.1,  # 10% sampling
-              "retention_days": 30,
-              "alert_thresholds": {
-                  "error_rate": 0.05,
-                  "latency_p95": 5000
-              }
-          }
+
+      from honeyhive.models import CreateConfigurationRequest
+
+      client.configurations.create(CreateConfigurationRequest(
+          project="my-project",
+          name="v1-config",
+          provider="openai",
+          parameters={"model": "gpt-4", "temperature": 0.7},
+      ))
+
+client.configurations.update()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. py:method:: client.configurations.update(id: str, request: UpdateConfigurationRequest) -> None
+
+   Update an existing configuration.
+
+   :param id: Configuration ID to update.
+   :type id: str
+   :param request: An ``UpdateConfigurationRequest`` model object with updated fields.
+
+   .. code-block:: python
+
+      from honeyhive.models import UpdateConfigurationRequest
+
+      client.configurations.update(
+          "cfg_abc123",
+          UpdateConfigurationRequest(
+              parameters={"model": "gpt-4-turbo", "temperature": 0.5},
+          ),
       )
 
-Async Client
-------------
+client.configurations.delete()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-**AsyncHoneyHive**
+.. py:method:: client.configurations.delete(id: str) -> None
 
-Asynchronous version of the HoneyHive client for non-blocking operations.
+   Delete a configuration by ID.
 
-**Key Features:**
+   :param id: Configuration ID to delete.
+   :type id: str
 
-- Non-blocking API calls
-- Context manager support 
-- Concurrent request handling
-- Same interface as sync client
+   .. code-block:: python
 
-**Example Usage:**
+      client.configurations.delete("cfg_abc123")
+
+Async Operations
+----------------
+
+There is no separate async client class. Every method on every API namespace
+exposes an async variant via the ``_async`` suffix. Use these from within
+``async`` functions or event loops.
 
 .. code-block:: python
 
    import asyncio
-   from honeyhive import AsyncHoneyHive
+   from honeyhive import HoneyHive
 
-   async def async_example():
-       async with AsyncHoneyHive(api_key="your-key") as client:  # Or set HH_API_KEY environment variable
-           session = await client.create_session(
-               session_name="async-session"
-           )
-           
-           event = await client.create_event(
-               session_id=session['session_id'],
-               event_type=EventType.model,
-               event_name="async_completion"
-           )
+   client = HoneyHive(api_key="hh_...")
 
-Asynchronous version of the HoneyHive client for use in async applications.
+   async def main():
+       # Async session start
+       response = await client.sessions.start_async({
+           "session_name": "async-session",
+           "project": "my-project",
+           "source": "production",
+       })
+       session_id = response.session_id
 
-**Key Features:**
+       # Async event creation
+       await client.events.create_async(PostEventRequest(
+           project="my-project",
+           session_id=session_id,
+           event_type="model",
+           event_name="async_completion",
+           inputs={"prompt": "Hello async world!"},
+           outputs={"response": "Hello back!"},
+       ))
 
-- All methods are async/await compatible
-- Built-in connection pooling
-- Concurrent request handling
-- Async context manager support
+   asyncio.run(main())
 
-Initialization
-~~~~~~~~~~~~~~
+The ``_async`` suffix is available on all methods across all namespaces:
 
-.. py:method:: __init__(api_key: Optional[str] = None, base_url: Optional[str] = None, timeout: float = 30.0, max_retries: int = 3, max_connections: int = 100, test_mode: bool = False, **kwargs)
-   :no-index:
+.. list-table::
+   :header-rows: 1
+   :widths: 40 40
 
-   Initialize an async HoneyHive client.
-   
-   **Parameters:**
-   
-   :param api_key: HoneyHive API key
-   :type api_key: Optional[str]
-   
-   :param base_url: Base URL for HoneyHive API
-   :type base_url: Optional[str]
-   
-   :param timeout: Request timeout in seconds
-   :type timeout: float
-   
-   :param max_retries: Maximum retry attempts
-   :type max_retries: int
-   
-   :param max_connections: Maximum concurrent connections
-   :type max_connections: int
-   
-   :param test_mode: Enable test mode
-   :type test_mode: bool
-   
-   :param kwargs: Additional configuration
-   :type kwargs: Any
-   
-   **Example:**
-   
-   .. code-block:: python
-   
-      import asyncio
-      from honeyhive import AsyncHoneyHive
-      
-      async def main():
-          async with AsyncHoneyHive(api_key="hh_your_key") as client:  # Or set HH_API_KEY environment variable
-              # Use async client
-              session = await client.create_session(
-                  source="production"
-              )
-              
-              event = await client.create_event(
-                  session_id=session['session_id'],
-                  event_type=EventType.model,
-                  event_name="async_completion",
-                  inputs={"prompt": "Hello async world!"},
-                  outputs={"response": "Hello back!"}
-              )
-      
-      asyncio.run(main())
+   * - Sync method
+     - Async equivalent
+   * - ``client.sessions.start(data)``
+     - ``await client.sessions.start_async(data)``
+   * - ``client.sessions.get(session_id)``
+     - ``await client.sessions.get_async(session_id)``
+   * - ``client.events.create(request)``
+     - ``await client.events.create_async(request)``
+   * - ``client.events.update(data)``
+     - ``await client.events.update_async(data)``
+   * - ``client.events.get_by_session_id(id)``
+     - ``await client.events.get_by_session_id_async(id)``
+   * - ``client.events.list(query)``
+     - ``await client.events.list_async(query)``
+   * - ``client.events.create_batch(data)``
+     - ``await client.events.create_batch_async(data)``
+   * - ``client.projects.list()``
+     - ``await client.projects.list_async()``
+   * - ``client.projects.create(data)``
+     - ``await client.projects.create_async(data)``
+   * - ``client.configurations.list(project)``
+     - ``await client.configurations.list_async(project)``
+   * - ``client.configurations.create(request)``
+     - ``await client.configurations.create_async(request)``
 
-Async Session Management
+Concurrent Async Example
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-All session management methods have async equivalents:
-
 .. code-block:: python
 
-   async def manage_sessions():
-       async with AsyncHoneyHive(api_key="hh_key") as client:  # Or set HH_API_KEY environment variable
-           # Create session
-           session = await client.create_session(
-               source="production"
-           )
-           
-           # Get session info
-           session_info = await client.get_session(session['session_id'])
-           
-           # List sessions
-           sessions = await client.list_sessions(
-               limit=10
-           )
+   import asyncio
+   from honeyhive import HoneyHive
+   from honeyhive.models import PostEventRequest
 
-Async Event Management
-~~~~~~~~~~~~~~~~~~~~~~
+   client = HoneyHive(api_key="hh_...")
 
-All event management methods have async equivalents:
+   async def process_batch():
+       response = await client.sessions.start_async({
+           "session_name": "batch-session",
+           "project": "my-project",
+       })
+       session_id = response.session_id
 
-.. code-block:: python
+       # Fire off multiple event creations concurrently
+       tasks = [
+           client.events.create_async(PostEventRequest(
+               project="my-project",
+               session_id=session_id,
+               event_type="tool",
+               event_name=f"task_{i}",
+               inputs={"task_id": i},
+               outputs={"result": f"completed_{i}"},
+           ))
+           for i in range(10)
+       ]
+       await asyncio.gather(*tasks)
+       print("Created 10 events concurrently")
 
-   async def manage_events():
-       async with AsyncHoneyHive(api_key="hh_key") as client:  # Or set HH_API_KEY environment variable
-           session = await client.create_session(
-               source="production"
-           )
-           
-           # Create multiple events concurrently
-           tasks = []
-           for i in range(10):
-               task = client.create_event(
-                   session_id=session['session_id'],
-                   event_type=EventType.tool,
-                   event_name=f"task_{i}",
-                   inputs={"task_id": i},
-                   outputs={"result": f"completed_{i}"}
-               )
-               tasks.append(task)
-           
-           # Wait for all events to be created
-           events = await asyncio.gather(*tasks)
-           print(f"Created {len(events)} events concurrently")
+   asyncio.run(process_batch())
 
 Batch Operations
 ----------------
 
-For high-throughput scenarios, both clients support batch operations:
-
-Batch Event Creation
-~~~~~~~~~~~~~~~~~~~~
-
-.. py:method:: create_events_batch(events: List[dict]) -> dict
-
-   Create multiple events in a single API call.
-   
-   **Parameters:**
-   
-   :param events: List of event dictionaries
-   :type events: List[dict]
-   
-   **Returns:**
-   
-   :rtype: dict
-   :returns: Batch creation results
-   
-   **Example:**
-   
-   .. code-block:: python
-   
-      # Prepare batch of events
-      events_batch = []
-      for i in range(100):
-          events_batch.append({
-              "session_id": session_id,
-              "event_type": "chain",
-              "event_name": f"process_item_{i}",
-              "inputs": {"item_id": i, "data": f"item_data_{i}"},
-              "outputs": {"result": f"processed_{i}"},
-              "metadata": {"batch_id": "batch_001", "item_index": i}
-          })
-      
-      # Create all events in one API call
-      result = client.create_events_batch(events_batch)
-      
-      print(f"Created {result['created_count']} events")
-      print(f"Failed: {result['failed_count']} events")
+For high-throughput scenarios, use ``client.events.create_batch()`` as documented in
+the event-management section above.
 
 Error Handling
 --------------
@@ -706,60 +540,61 @@ Exception Types
 
    Base exception for all HoneyHive client errors.
 
-.. py:exception:: HoneyHiveAPIError
+.. py:exception:: APIError
 
-   API-related errors (4xx, 5xx HTTP responses).
-   
+   API-related errors (4xx, 5xx HTTP responses). Imported from ``honeyhive.utils``.
+
    **Attributes:**
-   
+
    - ``status_code``: HTTP status code
-   - ``response``: Raw API response
    - ``message``: Error message
 
 .. py:exception:: HoneyHiveConnectionError
 
-   Connection-related errors (network, timeout).
+   Connection-related errors (network failures, timeouts). Imported from ``honeyhive.utils``.
 
-.. py:exception:: HoneyHiveAuthenticationError
+.. py:exception:: AuthenticationError
 
-   Authentication failures (invalid API key).
+   Authentication failures (invalid or missing API key). Imported from ``honeyhive.utils``.
 
-.. py:exception:: HoneyHiveRateLimitError
+.. py:exception:: RateLimitError
 
-   Rate limiting errors.
-   
+   Rate limiting errors (HTTP 429). Imported from ``honeyhive.utils``.
+
    **Attributes:**
-   
-   - ``retry_after``: Recommended retry delay in seconds
+
+   - ``retry_after``: Recommended retry delay in seconds (may be ``None``)
 
 Error Handling Examples
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
-   from honeyhive import HoneyHive, HoneyHiveAPIError, HoneyHiveRateLimitError
+   from honeyhive import HoneyHive
+   from honeyhive.utils import HoneyHiveError, APIError, RateLimitError, HoneyHiveConnectionError
    import time
-   
+
    client = HoneyHive(api_key="hh_your_key")  # Or set HH_API_KEY environment variable
-   
+
    def robust_api_call():
        max_retries = 3
        for attempt in range(max_retries):
            try:
-               session = client.create_session(
-                   source="production"
-               )
-               return session
-               
-           except HoneyHiveRateLimitError as e:
+               response = client.sessions.start({
+                   "session_name": "my-session",
+                   "project": "my-project",
+               })
+               return response.session_id
+
+           except RateLimitError as e:
                if attempt < max_retries - 1:
                    wait_time = e.retry_after or (2 ** attempt)
                    print(f"Rate limited, waiting {wait_time}s...")
                    time.sleep(wait_time)
                else:
                    raise
-                   
-           except HoneyHiveAPIError as e:
+
+           except APIError as e:
                if e.status_code >= 500 and attempt < max_retries - 1:
                    # Retry on server errors
                    wait_time = 2 ** attempt
@@ -767,7 +602,7 @@ Error Handling Examples
                    time.sleep(wait_time)
                else:
                    raise
-                   
+
            except HoneyHiveConnectionError as e:
                if attempt < max_retries - 1:
                    wait_time = 2 ** attempt
@@ -785,45 +620,22 @@ Advanced Configuration Options
 .. code-block:: python
 
    from honeyhive import HoneyHive
-   
+
    # Production configuration
    client = HoneyHive(
        api_key="hh_prod_key",               # Or set HH_API_KEY environment variable
-       base_url="https://api.honeyhive.ai", # Or set HH_API_URL environment variable
-       timeout=30.0,
-       max_retries=3,
-       
-       # Custom headers
-       headers={
-           "User-Agent": "MyApp/1.0",
-           "X-Custom-Header": "custom-value"
-       },
-       
-       # SSL configuration
-       verify_ssl=True,
-       ssl_cert_path="/path/to/cert.pem",
-       
-       # Proxy configuration
-       proxy_url="http://proxy.company.com:8080",
-       
+       server_url="https://api.honeyhive.ai", # Or set HH_API_URL environment variable
+
        # Rate limiting
        rate_limit_calls=100,
-       rate_limit_period=60,  # 100 calls per minute
-       
+       rate_limit_window=60.0,              # 100 calls per minute
+
        # Connection pooling
        max_connections=50,
-       max_keepalive_connections=10,
-       keepalive_expiry=30.0,
-       
-       # Retry configuration
-       retry_backoff_factor=1.0,
-       retry_backoff_max=60.0,
-       retry_on_status_codes=[429, 502, 503, 504],
-       
-       # Debug mode
-       debug=True,
-       log_requests=True,
-       log_responses=True
+       max_keepalive=10,
+
+       # Verbose logging
+       verbose=True,
    )
 
 Environment-Based Configuration
@@ -833,89 +645,71 @@ Environment-Based Configuration
 
    import os
    from honeyhive import HoneyHive
-   
-   def create_client_from_env():
+
+   def create_client_from_env() -> HoneyHive:
        """Create client with environment-based configuration."""
-       
-       config = {
-           "api_key": os.getenv("HH_API_KEY"),
-           "base_url": os.getenv("HH_BASE_URL", "https://api.honeyhive.ai"),
-           "timeout": float(os.getenv("HH_TIMEOUT", "30.0")),
-           "max_retries": int(os.getenv("HH_MAX_RETRIES", "3")),
-           "test_mode": os.getenv("HH_TEST_MODE", "false").lower() == "true"
-       }
-       
-       # Optional proxy configuration
-       if proxy_url := os.getenv("HH_PROXY_URL"):
-           config["proxy_url"] = proxy_url
-       
-       # Optional SSL configuration
-       if cert_path := os.getenv("HH_SSL_CERT_PATH"):
-           config["ssl_cert_path"] = cert_path
-       
-       return HoneyHive(**config)
-   
+       return HoneyHive(
+           api_key=os.getenv("HH_API_KEY"),
+           server_url=os.getenv("HH_API_URL", "https://api.honeyhive.ai"),
+           test_mode=os.getenv("HH_TEST_MODE", "false").lower() == "true",
+       )
+
    # Usage
    client = create_client_from_env()
 
 Integration Patterns
 --------------------
 
-Context Manager Usage
-~~~~~~~~~~~~~~~~~~~~~
+Reusing a Client Instance
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
-   # Automatic resource cleanup
-   with HoneyHive(api_key="hh_key") as client:  # Or set HH_API_KEY environment variable
-       session = client.create_session(
-           source="production"
-       )
-       
-       # Multiple operations
-       for i in range(10):
-           client.create_event(
-               session_id=session['session_id'],
-               event_type=EventType.tool,
-               event_name=f"iteration_{i}",
-               inputs={"iteration": i},
-               outputs={"result": i * 2}
-           )
-   # Client automatically closed and cleaned up
+   from honeyhive import HoneyHive
+   from honeyhive.models import PostEventRequest
+
+   # Instantiate once and reuse across multiple operations
+   client = HoneyHive(api_key="hh_key")  # Or set HH_API_KEY environment variable
+
+   response = client.sessions.start({
+       "session_name": "my-session",
+       "project": "my-project",
+       "source": "production",
+   })
+   session_id = response.session_id
+
+   # Multiple operations
+   for i in range(10):
+       client.events.create(PostEventRequest(
+           project="my-project",
+           session_id=session_id,
+           event_type="tool",
+           event_name=f"iteration_{i}",
+           inputs={"iteration": i},
+           outputs={"result": i * 2},
+       ))
 
 Dependency Injection
 ~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
-   from typing import Protocol
-   
-   class HoneyHiveClientProtocol(Protocol):
-       def create_session(self, project: str, **kwargs) -> dict: ...
-       def create_event(self, session_id: str, **kwargs) -> dict: ...
-   
+   from honeyhive import HoneyHive
+
    class MyService:
-       def __init__(self, honeyhive_client: HoneyHiveClientProtocol):
+       def __init__(self, honeyhive_client: HoneyHive):
            self.client = honeyhive_client
-       
-       def process_user_request(self, user_id: str, request_data: dict):
+
+       def process_user_request(self, user_id: str, request_data: dict) -> str:
            # Create session for this request
-           session = self.client.create_session(
-               source="development",
-               user_id=user_id
-           )
-           
-           # Process and log events
-           event = self.client.create_event(
-               session_id=session['session_id'],
-               event_type=EventType.session,
-               event_name="process_request",
-               inputs={"user_id": user_id, "request": request_data},
-               outputs={"result": "processed"}
-           )
-           
-           return event
-   
+           response = self.client.sessions.start({
+               "session_name": "process-request",
+               "project": "my-project",
+               "source": "development",
+               "inputs": {"user_id": user_id},
+           })
+           return response.session_id
+
    # Dependency injection
    client = HoneyHive(api_key="hh_key")  # Or set HH_API_KEY environment variable
    service = MyService(honeyhive_client=client)
@@ -925,45 +719,43 @@ Factory Pattern
 
 .. code-block:: python
 
+   import os
+   from honeyhive import HoneyHive
+
    class HoneyHiveClientFactory:
        """Factory for creating configured HoneyHive clients."""
-       
+
        @staticmethod
        def create_production_client(api_key: str) -> HoneyHive:
            return HoneyHive(
-               api_key=api_key,  # Or set HH_API_KEY environment variable
-               timeout=60.0,
-               max_retries=5,
+               api_key=api_key,
                rate_limit_calls=200,
-               rate_limit_period=60
+               rate_limit_window=60.0,  # 200 calls per minute
+               max_connections=50,
+               max_keepalive=10,
            )
-       
+
        @staticmethod
        def create_development_client(api_key: str) -> HoneyHive:
            return HoneyHive(
-               api_key=api_key,      # Or set HH_API_KEY environment variable
-               test_mode=True,       # Or set HH_TEST_MODE=true environment variable
-               timeout=10.0,
-               max_retries=1,
-               debug=True,
-               log_requests=True
+               api_key=api_key,
+               verbose=True,
            )
-       
+
        @staticmethod
        def create_testing_client() -> HoneyHive:
            return HoneyHive(
-               api_key="test_key",   # Or set HH_API_KEY environment variable
-               test_mode=True,       # Or set HH_TEST_MODE=true environment variable
-               timeout=5.0,
-               max_retries=0
+               api_key="test_key",
+               test_mode=True,  # Or set HH_TEST_MODE=true environment variable
            )
-   
+
    # Usage
-   if os.getenv("ENVIRONMENT") == "production":
+   env = os.getenv("ENVIRONMENT", "development")
+   if env == "production":
        client = HoneyHiveClientFactory.create_production_client(
            api_key=os.getenv("HH_API_KEY")
        )
-   elif os.getenv("ENVIRONMENT") == "development":
+   elif env == "development":
        client = HoneyHiveClientFactory.create_development_client(
            api_key=os.getenv("HH_DEV_API_KEY")
        )
@@ -978,60 +770,58 @@ Connection Pooling
 
 .. code-block:: python
 
+   from honeyhive import HoneyHive
+
    # Configure connection pooling for high-throughput applications
    client = HoneyHive(
-       api_key="hh_key",             # Or set HH_API_KEY environment variable
-       max_connections=100,          # Total connection pool size
-       max_keepalive_connections=20, # Persistent connections
-       keepalive_expiry=60.0,        # Connection lifetime
-       connection_timeout=10.0,      # Time to establish connection
-       read_timeout=30.0,           # Time to read response
-       write_timeout=10.0           # Time to send request
+       api_key="hh_key",        # Or set HH_API_KEY environment variable
+       max_connections=100,     # Total connection pool size
+       max_keepalive=20,        # Persistent keep-alive connections
    )
 
 Request Batching
 ~~~~~~~~~~~~~~~~
 
+Use ``client.events.create_batch()`` to send many events in a single API call,
+or ``create_batch_async()`` from async code:
+
 .. code-block:: python
 
    import asyncio
-   from honeyhive import AsyncHoneyHive
-   
+   from honeyhive import HoneyHive
+
+   client = HoneyHive(api_key="hh_key")
+
    async def batch_events_efficiently():
-       async with AsyncHoneyHive(api_key="hh_key") as client:  # Or set HH_API_KEY environment variable
-           session = await client.create_session(
-               source="production"
-           )
-           
-           # Create events in batches for better performance
-           batch_size = 50
-           all_events = []
-           
-           for batch_start in range(0, 1000, batch_size):
-               batch_events = []
-               
-               for i in range(batch_start, min(batch_start + batch_size, 1000)):
-                   batch_events.append({
-                       "session_id": session['session_id'],
-                       "event_type": "batch_item",
-                       "event_name": f"item_{i}",
-                       "inputs": {"item_id": i},
-                       "outputs": {"processed": True}
-                   })
-               
-               # Send batch
-               result = await client.create_events_batch(batch_events)
-               all_events.extend(result['events'])
-               
-               print(f"Processed batch {batch_start//batch_size + 1}")
-           
-           return all_events
+       response = await client.sessions.start_async({
+           "session_name": "batch-session",
+           "project": "my-project",
+           "source": "production",
+       })
+       session_id = response.session_id
+
+       # Create events in batches for better performance
+       batch_size = 50
+       for batch_start in range(0, 1000, batch_size):
+           batch_events = [
+               {
+                   "project": "my-project",
+                   "session_id": session_id,
+                   "event_type": "chain",
+                   "event_name": f"item_{i}",
+                   "inputs": {"item_id": i},
+                   "outputs": {"processed": True},
+               }
+               for i in range(batch_start, min(batch_start + batch_size, 1000))
+           ]
+
+           await client.events.create_batch_async({"events": batch_events})
+           print(f"Processed batch {batch_start // batch_size + 1}")
+
+   asyncio.run(batch_events_efficiently())
 
 See Also
 --------
 
 - :doc:`tracer` - HoneyHiveTracer API reference
 - :doc:`decorators` - Decorator-based APIs
-- :doc:`../../tutorials/01-setup-first-tracer` - Getting started tutorial
-- :doc:`../../how-to/index` - Client troubleshooting (see Troubleshooting section)
-- :doc:`../../explanation/architecture/overview` - Architecture overview

@@ -30,26 +30,20 @@ The ``@trace`` decorator automatically creates spans for function execution with
 
 **Function Signature:**
 
-.. py:decorator:: trace(tracer: HoneyHiveTracer, event_type: Optional[str] = None, include_inputs: bool = True, include_outputs: bool = True, **span_attributes) -> Callable
+.. py:decorator:: trace(event_type: Optional[str] = None, event_name: Optional[str] = None, tracer: Optional[HoneyHiveTracer] = None, **kwargs) -> Callable
 
    Decorator for automatic function tracing with HoneyHive.
-   
+
    **Parameters:**
-   
-   :param tracer: HoneyHiveTracer instance to use for creating spans
-   :type tracer: HoneyHiveTracer
-   
+
    :param event_type: Event type for categorization. Must be one of: ``"model"``, ``"tool"``, or ``"chain"``
    :type event_type: Optional[str]
-   
-   :param include_inputs: Whether to capture function arguments. Default: True
-   :type include_inputs: bool
-   
-   :param include_outputs: Whether to capture function return values. Default: True
-   :type include_outputs: bool
-   
-   :param span_attributes: Additional attributes to set on the span
-   :type span_attributes: Any
+
+   :param event_name: Name of the event. Defaults to the function name if not provided.
+   :type event_name: Optional[str]
+
+   :param tracer: HoneyHiveTracer instance to use for creating spans. If not provided, auto-discovers from context.
+   :type tracer: Optional[HoneyHiveTracer]
    
    **Returns:**
    
@@ -100,20 +94,20 @@ Advanced Configuration
 
    @trace(
        tracer=tracer,
-       include_inputs=False,     # Don't capture sensitive arguments
-       include_outputs=True,     # Do capture return values
        event_type="security_operation"
    )
    def process_payment(credit_card: str, amount: float) -> dict:
        """Secure function tracing without exposing sensitive data."""
-       
+
        # Manual attribute setting for non-sensitive data
-       enrich_span({
-           "payment.amount": amount,
-           "payment.currency": "USD",
-           "operation.type": "payment_processing"
-       })
-       
+       tracer.enrich_span(
+           metadata={
+               "payment.amount": amount,
+               "payment.currency": "USD",
+               "operation.type": "payment_processing"
+           }
+       )
+
        return process_credit_card_payment(credit_card, amount)
 
 **With Initial Span Attributes:**
@@ -133,7 +127,7 @@ Advanced Configuration
        """Function with predefined span attributes."""
        
        # Additional dynamic attributes
-       enrich_span({
+       tracer.enrich_span({
            "batch.size": len(data_batch),
            "batch.timestamp": time.time()
        })
@@ -156,7 +150,7 @@ The ``@trace`` decorator works seamlessly with async functions:
        async with aiohttp.ClientSession() as session:
            url = f"https://api.example.com/users/{user_id}"
            async with session.get(url) as response:
-               enrich_span({
+               tracer.enrich_span({
                    "http.url": url,
                    "http.status_code": response.status,
                    "user.id": user_id
@@ -182,7 +176,7 @@ Use with instance methods, class methods, and static methods:
            """Instance method with tracing."""
            user = fetch_user_from_db(user_id)
            
-           enrich_span({
+           tracer.enrich_span({
                "user.id": user_id,
                "user.found": user is not None,
                "database.table": "users"
@@ -196,7 +190,7 @@ Use with instance methods, class methods, and static methods:
            """Class method with tracing."""
            is_valid = "@" in email and "." in email
            
-           enrich_span({
+           tracer.enrich_span({
                "email.valid": is_valid,
                "validation.type": "email_format"
            })
@@ -211,7 +205,7 @@ Use with instance methods, class methods, and static methods:
            
            hashed = hashlib.sha256(password.encode()).hexdigest()
            
-           enrich_span({
+           tracer.enrich_span({
                "security.operation": "password_hash",
                "input.length": len(password),
                "output.length": len(hashed)
@@ -230,7 +224,7 @@ The decorator automatically captures exceptions with detailed context:
    def operation_that_might_fail(data: list) -> list:
        """Function demonstrating automatic exception capture."""
        
-       enrich_span({
+       tracer.enrich_span({
            "input.data_size": len(data),
            "operation.start_time": time.time()
        })
@@ -244,7 +238,7 @@ The decorator automatically captures exceptions with detailed context:
        # Normal processing
        result = [process_item(item) for item in data]
        
-       enrich_span({
+       tracer.enrich_span({
            "output.result_size": len(result),
            "operation.success": True
        })
@@ -274,7 +268,7 @@ Decorators automatically handle nested function calls with proper parent-child r
    def parent_function(data: dict) -> dict:
        """Parent function that calls other traced functions."""
        
-       enrich_span({
+       tracer.enrich_span({
            "operation.level": "parent",
            "data.keys": list(data.keys())
        })
@@ -289,7 +283,7 @@ Decorators automatically handle nested function calls with proper parent-child r
    def validate_data(data: dict) -> dict:
        """Child function - automatically becomes a child span."""
        
-       enrich_span({
+       tracer.enrich_span({
            "operation.level": "child",
            "validation.rules": ["required_fields", "data_types"],
            "validation.items_count": len(data)
@@ -305,7 +299,7 @@ Decorators automatically handle nested function calls with proper parent-child r
    def process_data(data: dict) -> dict:
        """Another child function - also becomes a child span."""
        
-       enrich_span({
+       tracer.enrich_span({
            "operation.level": "child",
            "processing.algorithm": "advanced",
            "processing.items": len(data)
@@ -337,769 +331,98 @@ Alias for ``@trace`` specifically for async functions (both work identically).
        """Async data processing with tracing."""
        await asyncio.sleep(0.1)  # Simulate async work
        
-       enrich_span({
+       tracer.enrich_span({
            "async.processing_time": 0.1,
            "data.items": len(data)
        })
        
        return {"processed": len(data), "status": "complete"}
 
-@evaluate Decorator
--------------------
-
-.. autofunction:: evaluate
-
-The ``@evaluate`` decorator automatically evaluates function outputs using specified evaluators.
-
-**Function Signature:**
-
-.. py:decorator:: evaluate(evaluator: BaseEvaluator, include_inputs: bool = True, include_outputs: bool = True, evaluation_context: Optional[dict] = None) -> Callable
-   :no-index:
-
-   Decorator for automatic function output evaluation.
-   
-   **Parameters:**
-   
-   :param evaluator: Evaluator instance to use for assessment
-   :type evaluator: BaseEvaluator
-   
-   :param include_inputs: Whether to include inputs in evaluation context. Default: True
-   :type include_inputs: bool
-   
-   :param include_outputs: Whether to include outputs in evaluation context. Default: True
-   :type include_outputs: bool
-   
-   :param evaluation_context: Additional context for evaluation
-   :type evaluation_context: Optional[dict]
-   
-   **Returns:**
-   
-   :rtype: Callable
-   :returns: Decorated function with automatic evaluation
-
-Basic Evaluation
-~~~~~~~~~~~~~~~~
-
-.. code-block:: python
-
-   from honeyhive import HoneyHiveTracer, trace, evaluate
-   from honeyhive.evaluation import FactualAccuracyEvaluator
-   
-   tracer = HoneyHiveTracer.init(
-       api_key="your-api-key"
-       
-   )
-   
-   fact_evaluator = FactualAccuracyEvaluator()
-   
-   @trace(tracer=tracer, event_type="factual_qa")
-   @evaluate(evaluator=fact_evaluator)
-   def answer_factual_question(question: str) -> str:
-       """Answer a factual question with automatic evaluation."""
-       
-       # Simulate LLM call or knowledge lookup
-       if "capital" in question.lower() and "france" in question.lower():
-           return "The capital of France is Paris."
-       elif "largest" in question.lower() and "ocean" in question.lower():
-           return "The Pacific Ocean is the largest ocean on Earth."
-       else:
-           return "I don't have enough information to answer that question."
-   
-   # Function is both traced and evaluated automatically
-   answer = answer_factual_question("What is the capital of France?")
-   # Result: Trace created + Factual accuracy evaluated
-
-Multiple Evaluators
-~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: python
-
-   from honeyhive.evaluation import (
-       MultiEvaluator,
-       QualityScoreEvaluator,
-       LengthEvaluator,
-       FactualAccuracyEvaluator
-   )
-   
-   # Combine multiple evaluators for comprehensive assessment
-   multi_evaluator = MultiEvaluator([
-       FactualAccuracyEvaluator(),
-       QualityScoreEvaluator(criteria=["clarity", "relevance", "completeness"]),
-       LengthEvaluator(min_length=20, max_length=200)
-   ])
-   
-   @trace(tracer=tracer, event_type="comprehensive_response")
-   @evaluate(evaluator=multi_evaluator)
-   def generate_comprehensive_response(prompt: str) -> str:
-       """Generate response evaluated by multiple criteria."""
-       
-       # Simulate response generation
-       if "explain" in prompt.lower():
-           return f"Here's a detailed explanation of {prompt}: [comprehensive answer]"
-       else:
-           return f"Response to: {prompt}"
-   
-   # All evaluators run automatically
-   result = generate_comprehensive_response("Explain quantum computing")
-
-Evaluation with Context
-~~~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: python
-
-   @trace(tracer=tracer, event_type="contextual_response")
-   @evaluate(
-       evaluator=QualityScoreEvaluator(),
-       evaluation_context={
-           "domain": "customer_support",
-           "audience": "technical_users",
-           "expected_tone": "professional_helpful"
-       }
-   )
-   def handle_technical_support(query: str, user_tier: str) -> str:
-       """Technical support with domain-specific evaluation."""
-       
-       # Generate context-aware response
-       if user_tier == "enterprise":
-           response = f"Enterprise support for: {query}. Here's the detailed technical solution..."
-       else:
-           response = f"Standard support for: {query}. Here's the solution..."
-       
-       return response
-
-Custom Evaluators
-~~~~~~~~~~~~~~~~~
-
-.. code-block:: python
-
-   from honeyhive.evaluation import BaseEvaluator
-   
-   class CustomLengthQualityEvaluator(BaseEvaluator):
-       def __init__(self, target_length: int = 100):
-           self.target_length = target_length
-       
-       def evaluate(self, input_text: str, output_text: str, context: dict = None) -> dict:
-           """Custom evaluation based on response length and quality."""
-           length = len(output_text)
-           
-           # Calculate length score
-           length_score = 1.0 - abs(length - self.target_length) / self.target_length
-           length_score = max(0.0, min(1.0, length_score))
-           
-           # Simple quality heuristics
-           quality_score = 0.5
-           if "detailed" in output_text.lower():
-               quality_score += 0.2
-           if "example" in output_text.lower():
-               quality_score += 0.2
-           if len(output_text.split('.')) > 2:  # Multiple sentences
-               quality_score += 0.1
-           
-           overall_score = (length_score + quality_score) / 2
-           
-           return {
-               "score": overall_score,
-               "feedback": f"Length: {length} chars (target: {self.target_length}), Quality indicators: {'good' if quality_score > 0.7 else 'fair'}",
-               "metrics": {
-                   "length_score": length_score,
-                   "quality_score": quality_score,
-                   "actual_length": length,
-                   "target_length": self.target_length
-               }
-           }
-   
-   custom_evaluator = CustomLengthQualityEvaluator(target_length=150)
-   
-   @trace(tracer=tracer, event_type="custom_evaluation")
-   @evaluate(evaluator=custom_evaluator)
-   def generate_targeted_content(topic: str) -> str:
-       """Generate content with custom evaluation criteria."""
-       
-       # Content generation with target length in mind
-       base_content = f"Here's detailed information about {topic}."
-       
-       if len(base_content) < 150:
-           base_content += " This includes comprehensive examples and practical applications that demonstrate the key concepts."
-       
-       return base_content
-
-Async Evaluation
-~~~~~~~~~~~~~~~~
-
-.. code-block:: python
-
-   @atrace(tracer=tracer, event_type="async_evaluation")
-   @evaluate(evaluator=FactualAccuracyEvaluator())
-   async def async_research_question(question: str) -> str:
-       """Async function with automatic evaluation."""
-       
-       # Simulate async research
-       await asyncio.sleep(0.2)
-       
-       # Generate research-based response
-       response = f"Based on research, here's the answer to '{question}': [researched answer]"
-       
-       return response
-   
-   # Usage
-   result = await async_research_question("What are the benefits of renewable energy?")
-
-Combined Decorators
--------------------
-
-Use both decorators together for comprehensive observability and evaluation:
-
-**Standard Combination:**
-
-.. code-block:: python
-
-   @trace(tracer=tracer, event_type="llm_generation")
-   @evaluate(evaluator=QualityScoreEvaluator(criteria=["accuracy", "relevance"]))
-   def llm_content_generation(prompt: str) -> str:
-       """LLM function with both tracing and evaluation."""
-       
-       # Add tracing context
-       enrich_span({
-           "prompt.length": len(prompt),
-           "model.provider": "openai",
-           "model.name": "gpt-4"
-       })
-       
-       # Simulate LLM call
-       response = call_llm_api(prompt)
-       
-       enrich_span({
-           "response.length": len(response),
-           "operation.success": True
-       })
-       
-       return response
-
-**Advanced Multi-Evaluator Combination:**
-
-.. code-block:: python
-
-   @trace(
-       tracer=tracer,
-       event_type="customer_service_ai",
-       service="support_bot",
-       version="2.1"
-   )
-   @evaluate(
-       evaluator=MultiEvaluator([
-           FactualAccuracyEvaluator(),
-           QualityScoreEvaluator(criteria=["helpfulness", "clarity", "empathy"]),
-           LengthEvaluator(min_length=50, max_length=300),
-           CustomLengthQualityEvaluator(target_length=150)
-       ])
-   )
-   def handle_customer_inquiry(inquiry: str, customer_tier: str) -> str:
-       """Customer service with comprehensive observability."""
-       
-       # Add customer context
-       enrich_span({
-           "customer.tier": customer_tier,
-           "inquiry.category": classify_inquiry(inquiry),
-           "inquiry.complexity": get_complexity_score(inquiry)
-       })
-       
-       # Generate response based on tier
-       if customer_tier == "premium":
-           response = generate_premium_response(inquiry)
-       else:
-           response = generate_standard_response(inquiry)
-       
-       enrich_span({
-           "response.type": "generated",
-           "response.personalized": customer_tier == "premium"
-       })
-       
-       return response
-
-**Async Combined Usage:**
-
-.. code-block:: python
-
-   @atrace(tracer=tracer, event_type="async_content_analysis")
-   @evaluate(
-       evaluator=MultiEvaluator([
-           QualityScoreEvaluator(),
-           FactualAccuracyEvaluator()
-       ])
-   )
-   async def analyze_and_summarize(document: str) -> str:
-       """Async document analysis with tracing and evaluation."""
-       
-       enrich_span({
-           "document.length": len(document),
-           "analysis.type": "comprehensive"
-       })
-       
-       # Async analysis
-       analysis = await perform_async_analysis(document)
-       summary = await generate_async_summary(analysis)
-       
-       enrich_span({
-           "summary.length": len(summary),
-           "analysis.duration": time.time() - start_time
-       })
-       
-       return summary
-
 Helper Functions
 ----------------
 
-enrich_span()
-~~~~~~~~~~~~~
+Span Enrichment
+~~~~~~~~~~~~~~~
 
-.. autofunction:: enrich_span
+Use ``tracer.enrich_span()`` to add metadata, metrics, feedback, and other attributes to the currently active span. This is an instance method on ``HoneyHiveTracer``.
 
-Add attributes to the currently active span without needing direct span reference. Supports multiple invocation patterns for flexibility: simple dictionary, keyword arguments, and reserved namespaces for structured data organization.
+**Method Signature:**
 
-**Function Signature:**
-
-.. py:function:: enrich_span(attributes=None, *, metadata=None, metrics=None, feedback=None, inputs=None, outputs=None, config=None, error=None, event_id=None, tracer=None, **kwargs)
+.. py:method:: HoneyHiveTracer.enrich_span(attributes=None, metadata=None, metrics=None, feedback=None, inputs=None, outputs=None, config=None, user_properties=None, error=None, event_id=None, **kwargs)
    :no-index:
 
-   Add attributes to the currently active span with namespace support.
-   
-   **Parameters:**
-   
-   :param attributes: Simple dictionary that routes to metadata namespace. Use for quick metadata enrichment.
+   Add attributes to the currently active span.
+
+   :param attributes: Simple dictionary routed to metadata namespace.
    :type attributes: Optional[Dict[str, Any]]
-   
-   :param metadata: Business context data (user IDs, features, session info). Routes to ``honeyhive_metadata.*`` namespace.
+   :param metadata: Business context data. Routes to ``honeyhive_metadata.*``.
    :type metadata: Optional[Dict[str, Any]]
-   
-   :param metrics: Numeric measurements (latencies, scores, counts). Routes to ``honeyhive_metrics.*`` namespace.
+   :param metrics: Numeric measurements. Routes to ``honeyhive_metrics.*``.
    :type metrics: Optional[Dict[str, Any]]
-   
-   :param feedback: User or system feedback (ratings, thumbs up/down). Routes to ``honeyhive_feedback.*`` namespace.
+   :param feedback: User or system feedback. Routes to ``honeyhive_feedback.*``.
    :type feedback: Optional[Dict[str, Any]]
-   
-   :param inputs: Input data to the operation. Routes to ``honeyhive_inputs.*`` namespace.
+   :param inputs: Input data. Routes to ``honeyhive_inputs.*``.
    :type inputs: Optional[Dict[str, Any]]
-   
-   :param outputs: Output data from the operation. Routes to ``honeyhive_outputs.*`` namespace.
+   :param outputs: Output data. Routes to ``honeyhive_outputs.*``.
    :type outputs: Optional[Dict[str, Any]]
-   
-   :param config: Configuration parameters (model settings, hyperparameters). Routes to ``honeyhive_config.*`` namespace.
+   :param config: Configuration parameters. Routes to ``honeyhive_config.*``.
    :type config: Optional[Dict[str, Any]]
-   
-   :param error: Error message or exception string. Stored as direct ``honeyhive_error`` attribute (not namespaced).
+   :param user_properties: User-specific properties. Routes to ``honeyhive_user_properties.*``.
+   :type user_properties: Optional[Dict[str, Any]]
+   :param error: Error message string. Stored as ``honeyhive_error``.
    :type error: Optional[str]
-   
-   :param event_id: Unique event identifier. Stored as direct ``honeyhive_event_id`` attribute (not namespaced).
+   :param event_id: Unique event identifier. Stored as ``honeyhive_event_id``.
    :type event_id: Optional[str]
-   
-   :param tracer: Optional tracer instance for advanced usage. Usually auto-detected from context.
-   :type tracer: Optional[Any]
-   
-   :param kwargs: Arbitrary keyword arguments that route to metadata namespace. Use for concise inline enrichment.
-   :type kwargs: Any
-   
-   **Returns:**
-   
-   :rtype: UnifiedEnrichSpan
-   :returns: Enrichment object that can be used as context manager or directly
-
-**Multiple Invocation Patterns:**
-
-The function supports four different invocation patterns that can be mixed:
-
-**Pattern 1: Simple Dictionary (Quick Metadata)**
+   :param kwargs: Arbitrary kwargs routed to metadata namespace.
+   :returns: True if enrichment succeeded, False otherwise.
+   :rtype: bool
 
 .. code-block:: python
 
-   # Pass a single dict - routes to metadata namespace
-   enrich_span({
-       "user_id": "user_123",
-       "feature": "chat",
-       "session": "abc"
-   })
-   
-   # Backend storage:
-   # honeyhive_metadata.user_id = "user_123"
-   # honeyhive_metadata.feature = "chat"
-   # honeyhive_metadata.session = "abc"
+   @trace(tracer=tracer, event_type="tool")
+   def process_request(user_id: str, query: str) -> str:
+       tracer.enrich_span(
+           metadata={"user_id": user_id, "query_length": len(query)},
+           metrics={"priority": 1}
+       )
+       return call_llm(query)
 
-**Pattern 2: Keyword Arguments (Concise Enrichment)**
+Session Enrichment
+~~~~~~~~~~~~~~~~~~
 
-.. code-block:: python
+Use ``tracer.enrich_session()`` to add data to the entire session (all spans in the current session).
 
-   # Pass keyword arguments - also route to metadata
-   enrich_span(
-       user_id="user_123",
-       feature="chat",
-       score=0.95
-   )
-   
-   # Backend storage: same as simple dict pattern
+**Method Signature:**
 
-**Pattern 3: Reserved Namespaces (Structured Organization)**
-
-.. code-block:: python
-
-   # Use explicit namespaces for organized data
-   enrich_span(
-       metadata={"user_id": "user_123", "session": "abc"},
-       metrics={"latency_ms": 150, "score": 0.95},
-       feedback={"rating": 5, "helpful": True},
-       inputs={"query": "What is AI?"},
-       outputs={"answer": "AI is..."},
-       config={"model": "gpt-4", "temperature": 0.7},
-       error="Optional error message",
-       event_id="evt_unique_id"
-   )
-   
-   # Each namespace creates nested attributes in backend:
-   # honeyhive_metadata.* for metadata
-   # honeyhive_metrics.* for metrics
-   # honeyhive_feedback.* for feedback
-   # honeyhive_inputs.* for inputs
-   # honeyhive_outputs.* for outputs
-   # honeyhive_config.* for config
-   # honeyhive_error (direct attribute, no nesting)
-   # honeyhive_event_id (direct attribute, no nesting)
-
-**Pattern 4: Mixed Usage (Combine Patterns)**
-
-.. code-block:: python
-
-   # Combine multiple patterns - later values override
-   enrich_span(
-       metadata={"user_id": "user_123"},
-       metrics={"score": 0.95},
-       feature="chat",      # Adds to metadata
-       priority="high"      # Also adds to metadata
-   )
-   
-   # Backend storage:
-   # honeyhive_metadata.user_id = "user_123"
-   # honeyhive_metadata.feature = "chat"
-   # honeyhive_metadata.priority = "high"
-   # honeyhive_metrics.score = 0.95
-
-**Namespace Routing Rules:**
-
-1. **Reserved Parameters** (metadata, metrics, etc.) → Applied first
-2. **attributes Dict** → Applied second, routes to metadata namespace
-3. **kwargs** → Applied last (wins conflicts), routes to metadata namespace
-
-**Context Manager Pattern:**
-
-.. code-block:: python
-
-   # Use as context manager for scoped enrichment
-   with enrich_span(metadata={"operation": "batch_processing"}):
-       # Enrichment is active within this block
-       process_batch_items()
-   
-   # Use with boolean check
-   if enrich_span(user_tier="premium"):
-       # Process for premium users
-       pass
-
-**Usage in Decorated Functions:**
-
-.. code-block:: python
-
-   @trace(tracer=tracer, event_type="user_processing")
-   def process_user_request(user_id: str, request_data: dict):
-       """Process user request with additional context."""
-       
-       # Add business context to the span
-       enrich_span({
-           "user.id": user_id,
-           "user.tier": get_user_tier(user_id),
-           "request.type": request_data.get("type", "unknown"),
-           "request.size": len(str(request_data)),
-           "request.timestamp": time.time()
-       })
-       
-       # Processing logic
-       result = process_request(request_data)
-       
-       # Add result context
-       enrich_span({
-           "result.status": "success",
-           "result.size": len(str(result)),
-           "processing.items_processed": result.get("items_processed", 0)
-       })
-       
-       return result
-
-**Conditional Enrichment:**
-
-.. code-block:: python
-
-   @trace(tracer=tracer, event_type="conditional_processing")
-   def conditional_processing(user_id: str, options: dict):
-       """Example of conditional span enrichment."""
-       
-       # Always add basic info
-       enrich_span({
-           "user.id": user_id,
-           "options.count": len(options)
-       })
-       
-       # Conditionally add detailed info
-       user_tier = get_user_tier(user_id)
-       if user_tier == "premium":
-           enrich_span({
-               "user.tier": user_tier,
-               "user.premium_features": get_premium_features(user_id),
-               "processing.enhanced": True
-           })
-       
-       # Add debug info in development
-       if os.getenv("ENVIRONMENT") == "development":
-           enrich_span({
-               "debug.options": str(options),
-               "debug.stack_depth": len(inspect.stack())
-           })
-
-**In Nested Helper Functions:**
-
-.. code-block:: python
-
-   @trace(tracer=tracer, event_type="main_operation")
-   def main_operation(data: list):
-       """Main operation that calls helper functions."""
-       
-       enrich_span({
-           "main.operation_type": "batch_processing",
-           "main.input_size": len(data)
-       })
-       
-       results = []
-       for item in data:
-           result = process_item(item)  # Helper function adds its own context
-           results.append(result)
-       
-       enrich_span({
-           "main.output_size": len(results),
-           "main.success_rate": len([r for r in results if r.get("success", False)]) / len(results)
-       })
-       
-       return results
-   
-   def process_item(item: dict):
-       """Helper function that enriches the active span."""
-       # This adds to the span created by main_operation
-       enrich_span({
-           "item.id": item.get("id"),
-           "item.type": item.get("type", "unknown"),
-           "item.processing_method": "standard"
-       })
-       
-       # Process the item
-       return {"success": True, "processed_item": item}
-
-enrich_session()
-~~~~~~~~~~~~~~~~
-
-.. autofunction:: enrich_session
-
-Add metadata, metrics, and context to entire sessions (collections of related spans) with backend persistence.
-
-**Function Signature:**
-
-.. py:function:: enrich_session(session_id=None, *, metadata=None, inputs=None, outputs=None, config=None, feedback=None, metrics=None, user_properties=None, **kwargs)
+.. py:method:: HoneyHiveTracer.enrich_session(metadata=None, inputs=None, outputs=None, config=None, feedback=None, metrics=None, user_properties=None, session_id=None, **kwargs)
    :no-index:
 
-   Add metadata and metrics to a session with backend persistence.
-   
-   **Parameters:**
-   
-   :param session_id: Explicit session ID to enrich. If not provided, uses the active session from context.
-   :type session_id: Optional[str]
-   
-   :param metadata: Business context data (user IDs, features, session info).
+   Update the current session with additional data.
+
+   :param metadata: Additional metadata for the session.
    :type metadata: Optional[Dict[str, Any]]
-   
-   :param inputs: Input data for the session (e.g., initial query, configuration).
+   :param inputs: Session input data.
    :type inputs: Optional[Dict[str, Any]]
-   
-   :param outputs: Output data from the session (e.g., final response, results).
+   :param outputs: Session output data.
    :type outputs: Optional[Dict[str, Any]]
-   
-   :param config: Configuration parameters for the session (model settings, hyperparameters).
+   :param config: Configuration data.
    :type config: Optional[Dict[str, Any]]
-   
-   :param feedback: User or system feedback for the session (ratings, quality scores).
+   :param feedback: User feedback or evaluation results.
    :type feedback: Optional[Dict[str, Any]]
-   
-   :param metrics: Numeric measurements for the session (latency, cost, token counts).
+   :param metrics: Performance metrics.
    :type metrics: Optional[Dict[str, Any]]
-   
-   :param user_properties: User-specific properties (user_id, plan, etc.). Stored as a separate field in the backend, not merged into metadata.
+   :param user_properties: User-specific properties.
    :type user_properties: Optional[Dict[str, Any]]
-   
-   :param kwargs: Additional keyword arguments (passed through for extensibility).
-   :type kwargs: Any
-   
-   **Returns:**
-   
-   :rtype: None
-   :returns: None (updates session in backend via API call)
-
-**Key Differences from enrich_span:**
-
-1. **Backend Persistence**: Makes API calls to persist data (expect ~50-200ms per call)
-2. **Session Scope**: Affects the entire session, not just the current span
-3. **Complex Data**: Supports nested dictionaries and lists
-4. **Explicit Session ID**: Can target any session by ID, not just the active one
-
-**Basic Usage:**
+   :param session_id: Explicit session ID override. If not provided, uses tracer's current session.
+   :type session_id: Optional[str]
 
 .. code-block:: python
 
-   from honeyhive import HoneyHiveTracer, enrich_session
-   import openai
-   
-   # Initialize tracer (creates a session automatically)
-   tracer = HoneyHiveTracer.init(
-       project="my-app",
-       session_name="user-123-chat"
+   tracer = HoneyHiveTracer.init(project="my-app")
+   tracer.enrich_session(
+       user_properties={"user_id": "user-123", "plan": "premium"},
+       metadata={"environment": "production"}
    )
-   
-   # Enrich the active session
-   enrich_session(
-       metadata={
-           "user_id": "user_123",
-           "subscription_tier": "premium",
-           "feature": "chat_assistant"
-       },
-       metrics={
-           "total_tokens": 1500,
-           "total_cost": 0.045
-       }
-   )
-   
-   # All subsequent traces in this session will be associated with this metadata
-   client = openai.OpenAI()
-   response = client.chat.completions.create(
-       model="gpt-3.5-turbo",
-       messages=[{"role": "user", "content": "Hello!"}]
-   )
-
-**Enrich Specific Session:**
-
-.. code-block:: python
-
-   from honeyhive import enrich_session
-   
-   # Target a specific session by ID
-   enrich_session(
-       session_id="sess_abc123xyz",
-       metadata={
-           "experiment": "variant_b",
-           "completed": True
-       },
-       feedback={
-           "user_rating": 5,
-           "helpful": True
-       }
-   )
-
-**Backwards Compatible Signatures:**
-
-.. code-block:: python
-
-   # Legacy: positional session_id (still supported)
-   enrich_session(
-       "sess_abc123",  # session_id as first positional arg
-       metadata={"user_id": "user_456"}
-   )
-   
-  # Legacy: user_properties parameter (still supported)
-  enrich_session(
-      session_id="sess_abc123",
-      user_properties={
-          "tier": "premium",
-          "region": "us-east"
-      }
-  )
-  # Result: user_properties stored as a separate field in the backend:
-  # {"user_properties": {"tier": "premium", "region": "us-east"}}
-
-**Session Lifecycle Management:**
-
-.. code-block:: python
-
-   from honeyhive import HoneyHiveTracer, enrich_session
-   import openai
-   from datetime import datetime
-   
-   def managed_workflow(user_id: str, task: str):
-       """Enrich session across lifecycle stages."""
-       
-       tracer = HoneyHiveTracer.init(
-           project="workflows",
-           session_name=f"{task}-{user_id}"
-       )
-       
-       # Start: Add initial metadata
-       enrich_session(
-           metadata={
-               "user_id": user_id,
-               "task": task,
-               "status": "started",
-               "started_at": datetime.now().isoformat()
-           }
-       )
-       
-       try:
-           # In Progress: Update status
-           enrich_session(
-               metadata={"status": "in_progress"}
-           )
-           
-           # Do work
-           client = openai.OpenAI()
-           response = client.chat.completions.create(
-               model="gpt-3.5-turbo",
-               messages=[{"role": "user", "content": f"Help with: {task}"}]
-           )
-           
-           # Success: Add final metadata
-           enrich_session(
-               metadata={
-                   "status": "completed",
-                   "completed_at": datetime.now().isoformat()
-               },
-               outputs={
-                   "result": response.choices[0].message.content
-               }
-           )
-           
-           return response.choices[0].message.content
-           
-       except Exception as e:
-           # Error: Add error metadata
-           enrich_session(
-               metadata={
-                   "status": "failed",
-                   "error_type": type(e).__name__
-               }
-           )
-           raise
-
-**Best Practices:**
-
-- Enrich at key lifecycle points (start, progress, completion)
-- Use consistent naming conventions for metadata keys
-- Add business-relevant context (user IDs, feature flags, experiments)
-- Include performance metrics (cost, latency, token counts)
-- Don't include sensitive data (passwords, API keys, PII)
-- Don't call excessively (it makes API calls)
-
-**See Also:**
-
-- :doc:`/how-to/advanced-tracing/session-enrichment` - Comprehensive session enrichment guide
-- :doc:`/how-to/advanced-tracing/span-enrichment` - Span enrichment patterns
-- :doc:`/how-to/advanced-tracing/advanced-patterns` - Advanced session and tracing patterns
 
 get_logger()
 ~~~~~~~~~~~~
@@ -1144,14 +467,14 @@ Get a structured logger that integrates with HoneyHive tracing.
        
        try:
            # Processing logic
-           enrich_span({
+           tracer.enrich_span({
                "processing.phase": "validation"
            })
            
            validate_data(data)
            logger.debug("Data validation completed")
            
-           enrich_span({
+           tracer.enrich_span({
                "processing.phase": "transformation"
            })
            
@@ -1192,13 +515,13 @@ The logger automatically includes trace context in log entries:
        # This log entry will automatically include:
        # - trace_id: Current trace ID
        # - span_id: Current span ID
-       # - Any custom attributes from enrich_span()
+       # - Any custom attributes from tracer.enrich_span()
        logger.info("Processing user request", extra={
            "user_id": user_id,
            "operation_type": "user_processing"
        })
        
-       enrich_span({
+       tracer.enrich_span({
            "user.id": user_id,
            "operation.logged": True
        })
@@ -1265,14 +588,14 @@ Performance Optimization
        }
        
        # Set all attributes at once
-       enrich_span(attributes)
+       tracer.enrich_span(attributes)
        
        # Process data
        result = process_data_efficiently(data)
        
        # Final attributes
        end_time = time.time()
-       enrich_span({
+       tracer.enrich_span({
            "operation.end_time": end_time,
            "operation.duration": end_time - start_time,
            "output.size": len(result),
@@ -1292,7 +615,7 @@ Error Handling Patterns
    def robust_function_with_custom_error_handling(data: dict):
        """Function with comprehensive error handling patterns."""
        
-       enrich_span({
+       tracer.enrich_span({
            "function.version": "2.0",
            "input.data_keys": list(data.keys())
        })
@@ -1300,16 +623,16 @@ Error Handling Patterns
        try:
            # Main processing logic
            validated_data = validate_input(data)
-           enrich_span({"validation.status": "passed"})
+           tracer.enrich_span({"validation.status": "passed"})
            
            processed_data = process_validated_data(validated_data)
-           enrich_span({"processing.status": "completed"})
+           tracer.enrich_span({"processing.status": "completed"})
            
            return processed_data
            
        except ValueError as e:
            # Handle validation errors
-           enrich_span({
+           tracer.enrich_span({
                "error.type": "validation_error",
                "error.message": str(e),
                "error.recoverable": True,
@@ -1325,7 +648,7 @@ Error Handling Patterns
            
        except ProcessingError as e:
            # Handle processing errors
-           enrich_span({
+           tracer.enrich_span({
                "error.type": "processing_error",
                "error.message": str(e),
                "error.recoverable": False,
@@ -1341,7 +664,7 @@ Error Handling Patterns
            
        except Exception as e:
            # Handle unexpected errors
-           enrich_span({
+           tracer.enrich_span({
                "error.type": "unexpected_error",
                "error.class": type(e).__name__,
                "error.message": str(e),
@@ -1362,7 +685,7 @@ Error Handling Patterns
        def decorator(func):
            @trace(tracer=tracer, event_type="retryable_operation")
            def wrapper(*args, **kwargs):
-               enrich_span({
+               tracer.enrich_span({
                    "retry.max_attempts": max_retries,
                    "retry.backoff_factor": backoff_factor
                })
@@ -1371,14 +694,14 @@ Error Handling Patterns
                
                for attempt in range(max_retries):
                    try:
-                       enrich_span({
+                       tracer.enrich_span({
                            "retry.current_attempt": attempt + 1,
                            "retry.is_retry": attempt > 0
                        })
                        
                        result = func(*args, **kwargs)
                        
-                       enrich_span({
+                       tracer.enrich_span({
                            "retry.success": True,
                            "retry.attempts_used": attempt + 1
                        })
@@ -1389,7 +712,7 @@ Error Handling Patterns
                        last_error = e
                        wait_time = backoff_factor * (2 ** attempt)
                        
-                       enrich_span({
+                       tracer.enrich_span({
                            f"retry.attempt_{attempt + 1}.error": str(e),
                            f"retry.attempt_{attempt + 1}.wait_time": wait_time
                        })
@@ -1402,7 +725,7 @@ Error Handling Patterns
                            })
                            time.sleep(wait_time)
                        else:
-                           enrich_span({
+                           tracer.enrich_span({
                                "retry.success": False,
                                "retry.exhausted": True,
                                "retry.final_error": str(e)
@@ -1422,7 +745,7 @@ Error Handling Patterns
        response = requests.get(url, timeout=5)
        response.raise_for_status()
        
-       enrich_span({
+       tracer.enrich_span({
            "http.url": url,
            "http.status_code": response.status_code,
            "http.response_size": len(response.content)
@@ -1455,7 +778,7 @@ Framework Integration Examples
        if hasattr(g, 'request_start_time'):
            duration = time.time() - g.request_start_time
            try:
-               enrich_span({
+               tracer.enrich_span({
                    "http.method": request.method,
                    "http.url": request.url,
                    "http.status_code": response.status_code,
@@ -1475,7 +798,7 @@ Framework Integration Examples
            "endpoint": "/api/users"
        })
        
-       enrich_span({
+       tracer.enrich_span({
            "user.id": user_id,
            "api.endpoint": "/api/users",
            "api.version": "v1"
@@ -1484,13 +807,13 @@ Framework Integration Examples
        user_data = fetch_user_data(user_id)
        
        if user_data:
-           enrich_span({
+           tracer.enrich_span({
                "user.found": True,
                "user.tier": user_data.get("tier", "standard")
            })
            return jsonify(user_data)
        else:
-           enrich_span({"user.found": False})
+           tracer.enrich_span({"user.found": False})
            return jsonify({"error": "User not found"}), 404
 
 **FastAPI Integration:**
@@ -1521,7 +844,7 @@ Framework Integration Examples
        # Try to enrich any active span with request info
        try:
            duration = time.time() - start_time
-           enrich_span({
+           tracer.enrich_span({
                **request.state.trace_context,
                "request.duration": duration,
                "response.status_code": response.status_code
@@ -1538,9 +861,9 @@ Framework Integration Examples
        
        # Access request context
        if hasattr(request.state, 'trace_context'):
-           enrich_span(request.state.trace_context)
+           tracer.enrich_span(request.state.trace_context)
        
-       enrich_span({
+       tracer.enrich_span({
            "user.id": user_id,
            "endpoint.type": "user_lookup",
            "api.framework": "fastapi"
@@ -1550,13 +873,13 @@ Framework Integration Examples
        user_data = await async_fetch_user(user_id)
        
        if user_data:
-           enrich_span({
+           tracer.enrich_span({
                "user.found": True,
                "user.data_size": len(str(user_data))
            })
            return user_data
        else:
-           enrich_span({"user.found": False})
+           tracer.enrich_span({"user.found": False})
            raise HTTPException(status_code=404, detail="User not found")
 
 Best Practices
@@ -1564,15 +887,7 @@ Best Practices
 
 **Decorator Ordering:**
 
-.. code-block:: python
-
-   # Correct order: @trace outermost, @evaluate innermost
-   @trace(tracer=tracer, event_type="llm_operation")
-   @evaluate(evaluator=QualityScoreEvaluator())
-   @other_decorator
-   def properly_decorated_function(prompt: str) -> str:
-       """Function with properly ordered decorators."""
-       return generate_response(prompt)
+Apply ``@trace`` as the outermost decorator. Use other decorators below it as needed.
 
 **Sensitive Data Handling:**
 
@@ -1580,15 +895,13 @@ Best Practices
 
    @trace(
        tracer=tracer,
-       include_inputs=False,    # Don't log sensitive inputs
-       include_outputs=False,   # Don't log sensitive outputs
-       event_type="security_operation"
+               event_type="security_operation"
    )
    def handle_sensitive_operation(api_key: str, user_data: dict) -> dict:
        """Handle sensitive data without logging it."""
        
        # Add safe metadata manually
-       enrich_span({
+       tracer.enrich_span({
            "operation.type": "data_encryption",
            "user.id": user_data.get("id"),  # Safe to log user ID
            "operation.timestamp": time.time(),
@@ -1738,7 +1051,3 @@ See Also
 - :doc:`tracer` - HoneyHiveTracer API reference
 - :doc:`client` - HoneyHive client API reference
 - :doc:`../evaluation/evaluators` - Built-in evaluators reference
-- :doc:`../../tutorials/01-setup-first-tracer` - Basic tracing tutorial
-- :doc:`../../how-to/evaluation/index` - Evaluation tutorial
-- :doc:`../../how-to/advanced-tracing/custom-spans` - Advanced tracing patterns
-- :doc:`../../explanation/concepts/tracing-fundamentals` - Tracing concepts and theory

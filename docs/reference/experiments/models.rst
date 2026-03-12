@@ -299,4 +299,3 @@ See Also
 
 - :doc:`core-functions` - Functions that return these models
 - :doc:`results` - Retrieve and compare results
-- :doc:`../../../how-to/evaluation/index` - Tutorial

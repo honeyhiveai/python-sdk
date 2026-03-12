@@ -1,4 +1,4 @@
-API Reference
+SDK Reference
 =============
 
 .. note::
@@ -20,11 +20,10 @@ Overview
 
 The HoneyHive Python SDK provides a comprehensive API for LLM observability and evaluation. This reference documents all available features, APIs, and configurations.
 
-**Latest Updates** (November 2025):
+**Latest Updates**:
 
 - **Configurable Span Limits**: New ``TracerConfig`` options for span attribute/event/link limits (``max_attributes=1024``, ``max_events=1024``, ``max_links=128``, ``max_span_size=10MB``)
 - **Core Attribute Preservation**: Automatic preservation of critical attributes (``session_id``, ``event_type``, ``event_name``, ``source``) with lazy activation for large spans
-- **DatasetsAPI Filtering**: Enhanced ``list_datasets()`` with server-side filtering (``name`` and ``include_datapoints`` parameters) for efficient large-scale dataset management
 
 Core Capabilities
 ~~~~~~~~~~~~~~~~~
@@ -43,11 +42,11 @@ Core Capabilities
 
 **Evaluation Framework**:
 
-- **@evaluate Decorator**: Automatic evaluation of function outputs with built-in and custom evaluators
-- **Environment Variable Support**: Optional ``api_key`` and ``server_url`` parameters with automatic fallback to environment variables (``HONEYHIVE_API_KEY``/``HH_API_KEY`` and ``HONEYHIVE_SERVER_URL``/``HH_SERVER_URL``/``HH_API_URL``)
+- **evaluate() function**: Run experiments with evaluators against a dataset (``from honeyhive.experiments import evaluate``)
+- **Environment Variable Support**: Optional ``api_key`` and ``server_url`` parameters with automatic fallback to environment variables (``HH_API_KEY`` and ``HH_API_URL``)
 - **Batch Evaluation**: Evaluate multiple outputs simultaneously with threading support
 - **Async Evaluations**: Full async support for evaluation workflows
-- **Built-in Evaluators**: Accuracy, F1-score, length, quality score, and custom evaluators
+- **Built-in Evaluators**: ``exact_match``, ``f1_score``, ``length``, ``semantic_similarity``, and custom evaluators
 
 **LLM Integration**:
 
@@ -62,7 +61,7 @@ Core Capabilities
 **Performance & Reliability**:
 
 - **Connection Pooling**: Efficient HTTP connection management with configurable limits
-- **Rate Limiting**: Built-in rate limiting for API calls with exponential backoff
+- **HTTP Transport Controls**: Configurable retry, timeout, pool, proxy, redirect, and SSL verification settings via configuration models
 - **Graceful Degradation**: SDK never crashes host application, continues operation on failures
 - **Batch Processing**: Configurable span batching for optimal performance
 - **OTLP Performance Tuning**: Environment variables for batch size and flush interval optimization
@@ -79,7 +78,7 @@ Core Capabilities
 - **Zero Failing Tests Policy**: Comprehensive test quality enforcement framework with anti-skipping rules
 - **Tox-Based Development**: Unified development environments for consistent formatting, linting, and testing
 - **Pre-Commit Integration**: Automated quality gates using tox environments for consistency
-- **Enhanced Quality Gates**: Comprehensive changelog and documentation validation for all significant changes
+- **Enhanced Quality Gates**: Comprehensive change and documentation validation for all significant changes
 - **Documentation Quality Control**: Sphinx-based validation with warnings-as-errors enforcement
 - **Navigation Validation Framework**: Comprehensive validation of documentation structure, toctrees, and cross-references
 - **RST Hierarchy Validation**: Automated checking of reStructuredText section hierarchy consistency
@@ -96,7 +95,7 @@ Core Capabilities
 - **Environment Variables**: Comprehensive configuration via HH_* environment variables
 - **Multi-Environment Support**: Different configurations for development, staging, production
 - **API Key Management**: Secure handling with rotation support and validation
-- **SSL/TLS Configuration**: Corporate environment SSL support with custom certificates
+- **HTTP Security Controls**: SSL verification, redirect handling, and proxy settings via ``HTTPClientConfig``
 
 Main Components
 ~~~~~~~~~~~~~~~
@@ -104,7 +103,7 @@ Main Components
 - **HoneyHive Client**: Direct API access for data management and configuration
 - **🆕 HoneyHiveTracer**: Modular distributed tracing engine with mixin-based architecture and OpenTelemetry compliance
 - **🆕 Configuration Classes**: Type-safe Pydantic models (``TracerConfig``, ``BaseHoneyHiveConfig``, ``SessionConfig``)  
-- **Decorators**: Simple observability with ``@trace``, ``@evaluate``, and ``@trace_class``
+- **Decorators**: Simple observability with ``@trace`` and ``@trace_class``
 - **Evaluators**: Built-in and custom evaluation functions with async support
 - **Instrumentors**: Auto-instrumentation for LLM providers (Bring Your Own Instrumentor)
 
@@ -180,11 +179,6 @@ Experiments Module
    :maxdepth: 1
 
    experiments/experiments
-   experiments/core-functions
-   experiments/evaluators
-   experiments/results
-   experiments/models
-   experiments/utilities
 
 Evaluation Framework (Deprecated)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -198,16 +192,6 @@ Evaluation Framework (Deprecated)
 
    evaluation/evaluators
    evaluation/deprecation-notice
-
-Command Line Interface
-~~~~~~~~~~~~~~~~~~~~~~
-
-.. toctree::
-   :maxdepth: 1
-
-   cli/index
-   cli/commands
-   cli/options
 
 Utilities
 ~~~~~~~~~
@@ -264,7 +248,7 @@ Tracing Features
    * - Multi-session support
      - Multiple concurrent sessions per tracer instance
    * - Session enrichment
-     - Backend persistence via ``enrich_session()`` with full backwards compatibility. Supports legacy ``session_id`` positional parameter and ``user_properties`` auto-conversion. See :doc:`/how-to/advanced-tracing/session-enrichment`
+     - Backend persistence via ``enrich_session()`` with full backwards compatibility. Supports legacy ``session_id`` positional parameter and ``user_properties`` auto-conversion
 
 **Multi-Instance Architecture**:
 
@@ -301,9 +285,9 @@ Evaluation Features
    * - Feature
      - Type
      - Description
-   * - ``@evaluate`` decorator
+   * - ``evaluate()`` function
      - ✅ Stable
-     - Automatic evaluation with custom evaluators
+     - Run experiments with evaluators against a dataset
    * - ``@evaluator`` decorator
      - ✅ Stable
      - Create custom synchronous evaluators
@@ -315,7 +299,7 @@ Evaluation Features
      - Batch evaluation with threading support
    * - Built-in evaluators
      - ✅ Stable
-     - Accuracy, F1-score, length, quality metrics
+     - ``exact_match``, ``f1_score``, ``length``, ``semantic_similarity``
 
 **Threading Support**:
 
@@ -338,12 +322,6 @@ HoneyHive supports automatic instrumentation for major LLM providers through the
 - **Traceloop Instrumentors**: Enhanced metrics and production optimizations  
 - **Custom Instrumentors**: Build your own using OpenTelemetry standards
 
-.. note::
-   **Complete Integration Details**
-   
-   - **Provider-Specific Guides**: :doc:`../how-to/index` - Step-by-step integration for each provider
-   - **Compatibility Matrix**: :doc:`../explanation/index` - Full compatibility testing and Python version support
-   - **Multi-Provider Setup**: :doc:`../how-to/integrations/multi-provider` - Use multiple providers simultaneously
 
 **Integration Architecture**:
 
@@ -396,11 +374,11 @@ The SDK supports three configuration approaches:
 
 All configuration supports the ``HH_*`` prefix pattern:
 
-- **Authentication**: ``HH_API_KEY``, ``HH_SOURCE``
-- **Operational**: ``HH_TEST_MODE``, ``HH_DEBUG_MODE``, ``HH_DISABLE_TRACING``
-- **Performance**: ``HH_TIMEOUT``, ``HH_MAX_CONNECTIONS``, ``HH_RATE_LIMIT_*``, ``HH_BATCH_SIZE``, ``HH_FLUSH_INTERVAL``
+- **Authentication**: ``HH_API_KEY``, ``HH_PROJECT``, ``HH_SOURCE``
+- **Operational**: ``HH_TEST_MODE``, ``HH_VERBOSE``, ``HH_DISABLE_TRACING``
+- **Performance**: ``HH_TIMEOUT``, ``HH_MAX_CONNECTIONS``, ``HH_MAX_KEEPALIVE_CONNECTIONS``, ``HH_POOL_TIMEOUT``, ``HH_RATE_LIMIT_*``, ``HH_BATCH_SIZE``, ``HH_FLUSH_INTERVAL``
 - **OTLP**: ``HH_OTLP_ENABLED``, ``HH_OTLP_ENDPOINT``, ``HH_OTLP_PROTOCOL``, ``HH_OTLP_HEADERS``
-- **Security**: ``HH_SSL_*``, ``HH_PROXY_*``
+- **HTTP Transport**: ``HH_VERIFY_SSL``, ``HH_FOLLOW_REDIRECTS``, ``HH_HTTP_PROXY``, ``HH_HTTPS_PROXY``, ``HH_NO_PROXY``
 
 **Configuration Hierarchy**:
 
@@ -410,7 +388,7 @@ All configuration supports the ``HH_*`` prefix pattern:
 4. **Default Values** - Built-in SDK defaults
 
 .. note::
-   **API Key Special Case**: ``HH_API_KEY`` takes precedence over constructor ``api_key`` parameter for backwards compatibility. Other parameters follow standard precedence where constructor parameters can override environment variables.
+   Constructor parameters take precedence over environment variables. ``HH_API_KEY`` is used as the default when no ``api_key`` is explicitly provided.
 
 .. note::
    **Runtime Configuration** (v0.1.0rc2+): Environment variables are now properly detected when set at runtime, enabling dynamic configuration without application restart.
@@ -451,7 +429,7 @@ Package Information
 
 .. code-block:: bash
 
-   pip install honeyhive
+   pip install honeyhive-bundled
 
 **Example Files**:
 
@@ -460,9 +438,3 @@ The SDK includes example files in the ``examples/`` directory:
 - ``eval_example.py`` - Demonstrates the ``evaluate()`` function with dataset evaluation and span enrichment
 - ``integrations/old_sdk.py`` - Legacy SDK example showing basic tracer initialization and OpenAI integration
 - ``integrations/`` - Full integration examples for various LLM providers and frameworks
-
-**See Also:**
-
-- :doc:`../tutorials/index` - Learn by doing
-- :doc:`../how-to/index` - Solve specific problems  
-- :doc:`../explanation/index` - Understand concepts

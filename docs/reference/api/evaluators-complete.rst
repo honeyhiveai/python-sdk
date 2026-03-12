@@ -196,12 +196,12 @@ Example
            "score": 1.0 if length >= min_length else 0.0
        }
    
-   # Use in evaluation
-   from honeyhive import evaluate
+   # Use with experiments evaluate()
+   from honeyhive.experiments import evaluate
    
    results = evaluate(
-       data=[{"input": "test"}],
-       task=lambda x: {"response": "short"},
+       function=lambda datapoint: {"response": datapoint["inputs"].get("input", "")},
+       dataset=[{"inputs": {"input": "test"}, "ground_truth": {}}],
        evaluators=[length_check]
    )
 
@@ -343,75 +343,38 @@ Evaluation Functions
 evaluate
 ~~~~~~~~
 
-Main function for running evaluations.
+Main function for running experiments with evaluation.
 
-.. autofunction:: honeyhive.evaluation.evaluators.evaluate
-
-Description
-^^^^^^^^^^^
-
-The ``evaluate`` function runs a set of evaluators on your task outputs,
-collecting metrics and results for analysis.
-
-Parameters
-^^^^^^^^^^
-
-- **data** (List[Dict]): Input data for evaluation
-- **task** (Callable): Function that produces outputs
-- **evaluators** (List): List of evaluator functions or objects
-- **project** (str, optional): Project name
-- **run_name** (str, optional): Name for this evaluation run
-- **metadata** (Dict, optional): Additional metadata
-
-Returns
-^^^^^^^
-
-Dict containing:
-- **results**: List of evaluation results
-- **metrics**: Aggregated metrics
-- **summary**: Summary statistics
-
-Example
-^^^^^^^
+.. note::
+   ``evaluate()`` is exported from ``honeyhive.experiments``, not ``honeyhive.evaluation``.
+   The ``honeyhive.evaluation`` module is deprecated — use ``honeyhive.experiments`` for new code.
+   See :doc:`/reference/experiments/core-functions` for full documentation.
 
 .. code-block:: python
 
-   from honeyhive import evaluate, evaluator
-   
+   from honeyhive.experiments import evaluate, evaluator
+
    @evaluator
-   def check_length(inputs, outputs, min_words=5):
-       words = len(outputs["response"].split())
-       return {
-           "word_count": words,
-           "meets_minimum": words >= min_words,
-           "score": 1.0 if words >= min_words else 0.0
-       }
-   
-   # Define your task
-   def my_task(input_data):
-       # Your LLM logic here
-       return {"response": "Generated response"}
-   
-   # Run evaluation
-   results = evaluate(
-       data=[
-           {"prompt": "What is AI?"},
-           {"prompt": "Explain ML"},
+   def check_length(inputs, outputs, ground_truth=None):
+       words = len(outputs.get("response", "").split())
+       return {"word_count": words, "score": 1.0 if words >= 5 else 0.0}
+
+   def my_function(inputs, ground_truth):
+       return {"response": "Generated response for: " + inputs.get("prompt", "")}
+
+   result = evaluate(
+       function=my_function,
+       dataset=[
+           {"inputs": {"prompt": "What is AI?"}, "ground_truth": {}},
+           {"inputs": {"prompt": "Explain ML"}, "ground_truth": {}},
        ],
-       task=my_task,
        evaluators=[check_length],
        project="my-project",
-       run_name="baseline-eval"
+       name="baseline-eval"
    )
-   
-   print(f"Average score: {results['metrics']['average_score']}")
-   print(f"Pass rate: {results['metrics']['pass_rate']}")
 
 See Also
 --------
 
 - :doc:`/reference/experiments/experiments` - Experiments API
-- :doc:`/tutorials/05-run-first-experiment` - Evaluation tutorial
-- :doc:`/how-to/evaluation/creating-evaluators` - Creating custom evaluators
-- :doc:`/how-to/evaluation/best-practices` - Evaluation best practices
 

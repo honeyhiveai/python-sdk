@@ -275,5 +275,4 @@ See Also
 
 - :doc:`client-apis` - API client reference
 - :doc:`/reference/configuration/config-options` - Configuration options
-- :doc:`/tutorials/06-distributed-tracing` - Distributed tracing tutorial
 

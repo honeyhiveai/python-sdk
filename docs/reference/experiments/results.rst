@@ -9,7 +9,7 @@ Functions for retrieving and comparing experiment results from the backend.
 get_run_result()
 ----------------
 
-.. py:function:: get_run_result(client, run_id, aggregate_function="average")
+.. py:function:: get_run_result(client, run_id, project_id, aggregate_function="average")
 
    Retrieve aggregated results for an experiment run from the backend.
 
@@ -21,6 +21,9 @@ get_run_result()
    :param run_id: Experiment run ID
    :type run_id: str
    
+   :param project_id: Project identifier used by the backend result endpoints
+   :type project_id: str
+   
    :param aggregate_function: Aggregation method ("average", "sum", "min", "max")
    :type aggregate_function: str
    
@@ -31,12 +34,12 @@ get_run_result()
 
    .. code-block:: python
 
-      from honeyhive import HoneyHive as Client
+      from honeyhive import HoneyHive
       from honeyhive.experiments import get_run_result
       
-      client = honeyhive.HoneyHive(api_key="your-key")
+      client = HoneyHive(api_key="your-key")
       
-      result = get_run_result(client, run_id="run-abc-123")
+      result = get_run_result(client, run_id="run-abc-123", project_id="project-xyz")
       
       print(f"Status: {result.status}")
       print(f"Success: {result.success}")
@@ -51,17 +54,18 @@ get_run_result()
 
    .. code-block:: python
 
-      # Use median instead of average
+      # Use a different supported backend aggregation
       result = get_run_result(
           client,
           run_id="run-123",
-          aggregate_function="median"
+          project_id="project-xyz",
+          aggregate_function="sum"
       )
 
 get_run_metrics()
 -----------------
 
-.. py:function:: get_run_metrics(client, run_id)
+.. py:function:: get_run_metrics(client, run_id, project_id)
 
    Retrieve raw (non-aggregated) metrics for an experiment run.
 
@@ -74,6 +78,9 @@ get_run_metrics()
    :param run_id: Experiment run ID
    :type run_id: str
    
+   :param project_id: Project identifier used by the backend result endpoints
+   :type project_id: str
+   
    :returns: Dictionary containing raw metrics data
    :rtype: Dict[str, Any]
 
@@ -81,12 +88,16 @@ get_run_metrics()
 
    .. code-block:: python
 
-      from honeyhive import HoneyHive as Client
+      from honeyhive import HoneyHive
       from honeyhive.experiments import get_run_metrics
       
-      client = honeyhive.HoneyHive(api_key="your-key")
+      client = HoneyHive(api_key="your-key")
       
-      metrics = get_run_metrics(client, run_id="run-abc-123")
+      metrics = get_run_metrics(
+          client,
+          run_id="run-abc-123",
+          project_id="project-xyz",
+      )
       
       # Raw metrics include per-datapoint data
       print(f"Raw metrics: {metrics}")
@@ -94,7 +105,7 @@ get_run_metrics()
 compare_runs()
 --------------
 
-.. py:function:: compare_runs(client, new_run_id, old_run_id, aggregate_function="average")
+.. py:function:: compare_runs(client, new_run_id, old_run_id, project_id, aggregate_function="average")
 
    Compare two experiment runs using backend aggregated comparison.
 
@@ -110,6 +121,9 @@ compare_runs()
    :param old_run_id: ID of the old (baseline) run
    :type old_run_id: str
    
+   :param project_id: Project identifier used by the backend comparison endpoint
+   :type project_id: str
+   
    :param aggregate_function: Aggregation method ("average", "sum", "min", "max")
    :type aggregate_function: str
    
@@ -120,15 +134,16 @@ compare_runs()
 
    .. code-block:: python
 
-      from honeyhive import HoneyHive as Client
+      from honeyhive import HoneyHive
       from honeyhive.experiments import compare_runs
       
-      client = honeyhive.HoneyHive(api_key="your-key")
+      client = HoneyHive(api_key="your-key")
       
       comparison = compare_runs(
           client=client,
           new_run_id="run-v2",
-          old_run_id="run-v1"
+          old_run_id="run-v1",
+          project_id="project-xyz",
       )
       
       print(f"Common datapoints: {comparison.common_datapoints}")
@@ -139,7 +154,7 @@ compare_runs()
 
    .. code-block:: python
 
-      comparison = compare_runs(client, "run-new", "run-old")
+      comparison = compare_runs(client, "run-new", "run-old", "project-xyz")
       
       # Check specific metric
       accuracy_delta = comparison.get_metric_delta("accuracy")
@@ -182,7 +197,8 @@ compare_runs()
       comparison = compare_runs(
           client,
           new_run_id=variant.run_id,
-          old_run_id=baseline.run_id
+          old_run_id=baseline.run_id,
+          project_id="project-xyz",
       )
       
       # Decision logic
@@ -207,14 +223,14 @@ Best Practices
    run1 = evaluate(function=model_v1, dataset=dataset, ...)
    run2 = evaluate(function=model_v2, dataset=dataset, ...)
    
-   comparison = compare_runs(client, run2.run_id, run1.run_id)
+   comparison = compare_runs(client, run2.run_id, run1.run_id, "project-xyz")
 
 **2. Cache Results for Analysis**
 
 .. code-block:: python
 
    # Retrieve once, analyze many times
-   result = get_run_result(client, run_id)
+   result = get_run_result(client, run_id, "project-xyz")
    
    # Multiple analyses without re-fetching
    accuracy = result.metrics.get_metric("accuracy")
@@ -225,7 +241,7 @@ Best Practices
 
 .. code-block:: python
 
-   comparison = compare_runs(client, new_id, old_id)
+   comparison = compare_runs(client, new_id, old_id, "project-xyz")
    
    # Some metrics might not exist in both runs
    accuracy_delta = comparison.get_metric_delta("accuracy")
@@ -253,5 +269,3 @@ See Also
 
 - :doc:`core-functions` - Run experiments
 - :doc:`models` - Result data models
-- :doc:`../../../how-to/evaluation/index` - Evaluation patterns
-
