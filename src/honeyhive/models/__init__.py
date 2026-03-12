@@ -11,8 +11,7 @@ from typing import Any, Dict
 class EventType(str, Enum):
     """Event types for tracing decorators.
 
-    Example::
-
+    Usage:
         from honeyhive import trace
         from honeyhive.models import EventType
 

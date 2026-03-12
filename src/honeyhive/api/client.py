@@ -6,7 +6,7 @@ wrapping the auto-generated API code.
 Usage:
     from honeyhive.api import HoneyHive
 
-    client = HoneyHive(api_key="hh-example")
+    client = HoneyHive(api_key="hh_...")
 
     # Sync usage (project falls back to HH_PROJECT env var if not provided)
     configs = client.configurations.list(project="my-project")
@@ -965,7 +965,7 @@ class HoneyHive:
     sync and async methods.
 
     Usage:
-        client = HoneyHive(api_key="hh-example")
+        client = HoneyHive(api_key="hh_...")
 
         # Sync
         configs = client.configurations.list(project="my-project")
@@ -1008,7 +1008,7 @@ class HoneyHive:
         """Initialize the HoneyHive client.
 
         Args:
-            api_key: HoneyHive API key (typically starts with ``hh_``).
+            api_key: HoneyHive API key (typically starts with 'hh_').
                      Falls back to HH_API_KEY environment variable.
             base_url: API base URL for Data Plane/ingestion.
                       Falls back to HH_API_URL env var, then https://api.honeyhive.ai.
