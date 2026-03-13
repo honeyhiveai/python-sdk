@@ -39,6 +39,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          display_report: true
           prompt: |
             Generate BOTH an external customer-facing changelog AND an internal changelog for the HoneyHive Python SDK.
 

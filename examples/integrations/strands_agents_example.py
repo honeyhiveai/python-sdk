@@ -2,10 +2,11 @@
 """
 Strands Agents + HoneyHive integration example.
 
-Two scenarios demonstrating HoneyHive tracing with Strands Agents:
+Three scenarios demonstrating HoneyHive tracing with Strands Agents:
 
 1) Single agent with tool calls and session continuity across turns
 2) Multi-agent delegation via agents-as-tools pattern
+3) Swarm orchestration with autonomous agent handoffs
 
 Strands emits OpenTelemetry spans natively — no instrumentor needed.
 Initialize HoneyHiveTracer before any agent calls so the global
@@ -26,10 +27,12 @@ Environment:
         to emit v1.37.0+ GenAI semantic conventions instead of the default v1.36.0)
 """
 
+import asyncio
 import os
 
 from strands import Agent, tool
 from strands.models.anthropic import AnthropicModel
+from strands.multiagent import Swarm
 
 from honeyhive import HoneyHiveTracer
 
@@ -71,7 +74,7 @@ def lookup_policy(topic: str) -> str:
             "Delayed orders can request assisted cancellation."
         ),
         "shipping": (
-            "Standard shipping 3-5 business days. " "Delays trigger proactive outreach."
+            "Standard shipping 3-5 business days. Delays trigger proactive outreach."
         ),
     }
     key = topic.lower().strip()
@@ -153,6 +156,44 @@ def run_delegation_scenario() -> None:
     )
 
 
+# -- Scenario 3: swarm orchestration with autonomous handoffs --
+
+
+async def run_swarm_scenario() -> None:
+    """Swarm of specialists that hand off to each other autonomously."""
+    order_agent = Agent(
+        name="order_agent",
+        model=get_model(),
+        tools=[lookup_order_status],
+        system_prompt=(
+            "You are an order agent in a support swarm. Use lookup_order_status "
+            "to check orders. If the customer needs policy information, hand off "
+            "to policy_agent. Keep responses concise."
+        ),
+    )
+
+    policy_agent = Agent(
+        name="policy_agent",
+        model=get_model(),
+        tools=[lookup_policy],
+        system_prompt=(
+            "You are a policy agent in a support swarm. Use lookup_policy to "
+            "answer refund, cancellation, and shipping policy questions. If the "
+            "customer needs order status, hand off to order_agent."
+        ),
+    )
+
+    swarm = Swarm(
+        nodes=[order_agent, policy_agent],
+        entry_point=order_agent,
+    )
+
+    await swarm.invoke_async(
+        "Order ORD-1003 is delayed. Check the status and tell me the "
+        "cancellation and refund policies."
+    )
+
+
 # -- Main --
 
 
@@ -167,6 +208,9 @@ def main() -> None:
     try:
         run_single_agent_scenario()
         run_delegation_scenario()
+        asyncio.run(
+            run_swarm_scenario()
+        )  # raises RuntimeError inside an existing event loop (e.g. Jupyter)
     finally:
         tracer.force_flush()
 

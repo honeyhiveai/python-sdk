@@ -37,7 +37,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: honeyhiveai/honeyhive-ai-docs
-          ref: fix/docs-concepts  # TODO: switch to main once fix/docs-concepts is merged
+          ref: main
           token: ${{ steps.app-token.outputs.token }}
           path: docs-repo
 
@@ -46,6 +46,7 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ steps.app-token.outputs.token }}
+          display_report: true
           prompt: |
             A new Python SDK release was just published. Determine if it has notable user-facing changes worth adding to the product changelog.
 
@@ -141,7 +142,7 @@ jobs:
         with:
           token: ${{ steps.app-token.outputs.token }}
           path: docs-repo
-          base: fix/docs-concepts  # TODO: switch to main once fix/docs-concepts is merged
+          base: main
           commit-message: "docs: sync Python SDK ${{ github.event.release.tag_name || inputs.version || 'latest' }} to product changelog"
           branch: changelog/sync-python-sdk-${{ github.event.release.tag_name || inputs.version || 'manual' }}
           delete-branch: true
