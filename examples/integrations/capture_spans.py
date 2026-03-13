@@ -8,11 +8,14 @@ from pathlib import Path
 from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.sdk.trace.export import SpanProcessor
 
+TMP_DUMP_ROOT = Path(".tmp/integration-example-dumps")
+
 
 class SpanCaptureProcessor(SpanProcessor):
     """Captures spans for test case generation."""
 
-    def __init__(self, output_file: str):
+    def __init__(self, output_dir: Path, output_file: str):
+        self.output_dir = output_dir
         self.output_file = output_file
         self.spans = []
 
@@ -73,8 +76,8 @@ class SpanCaptureProcessor(SpanProcessor):
     def shutdown(self):
         """Save captured spans."""
         if self.spans:
-            Path("span_dumps").mkdir(exist_ok=True)
-            output_path = Path("span_dumps") / self.output_file
+            self.output_dir.mkdir(parents=True, exist_ok=True)
+            output_path = self.output_dir / self.output_file
 
             with open(output_path, "w") as f:
                 json.dump(
@@ -101,7 +104,8 @@ def setup_span_capture(integration_name: str, tracer):
         output_file = (
             f"{integration_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         )
-        processor = SpanCaptureProcessor(output_file)
+        output_dir = TMP_DUMP_ROOT / integration_name
+        processor = SpanCaptureProcessor(output_dir=output_dir, output_file=output_file)
         tracer.provider.add_span_processor(processor)
         return processor
     return None

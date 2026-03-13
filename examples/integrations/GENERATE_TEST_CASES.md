@@ -45,10 +45,10 @@ python3 openinference_google_adk_example.py
 python3 autogen_integration.py
 ```
 
-This will create span dump files in `span_dumps/`:
-- `semantic_kernel_YYYYMMDD_HHMMSS.json`
-- `google_adk_YYYYMMDD_HHMMSS.json`
-- `autogen_YYYYMMDD_HHMMSS.json`
+This will create span dump files under `.tmp/integration-example-dumps/`:
+- `.tmp/integration-example-dumps/semantic_kernel/semantic_kernel_YYYYMMDD_HHMMSS.json`
+- `.tmp/integration-example-dumps/google_adk/google_adk_YYYYMMDD_HHMMSS.json`
+- `.tmp/integration-example-dumps/autogen/autogen_YYYYMMDD_HHMMSS.json`
 
 ## Step 2: Convert Spans to Test Cases
 
@@ -59,7 +59,7 @@ python3 convert_spans_to_test_cases.py
 ```
 
 This will:
-1. Read all span dumps from `span_dumps/`
+1. Read all span dumps from `.tmp/integration-example-dumps/`
 2. Extract OpenTelemetry attributes
 3. Map them to the expected HoneyHive event structure
 4. Deduplicate by schema

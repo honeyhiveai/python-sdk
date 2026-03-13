@@ -140,6 +140,7 @@
 .spyderproject
 .spyproject
 .tox/
+.tmp/
 .venv
 .venv/
 .vscode/
