@@ -51,6 +51,9 @@ class MockHoneyHiveTracer:
         self.config.max_events = 1024
         self.config.max_links = 128
         self.config.max_span_size = 10 * 1024 * 1024  # 10MB
+        # Configure config.get() to return proper values (not Mock objects)
+        _config_dict = {"disable_batch": False}
+        self.config.get.side_effect = lambda key, default=None: _config_dict.get(key, default)
 
         # Tracer instance attributes
         self.project_name: Any = "test-project"  # Allow both str and None
@@ -572,8 +575,11 @@ class TestTracerInitialization:
         self, mock_log: Any, mock_processor: Any
     ) -> None:
         """Test main provider components setup edge cases."""
-        # Test with disable_batch=True
+        # Test with disable_batch=True — source code reads config.get("disable_batch")
         self.mock_tracer.disable_batch = True
+        self.mock_tracer.config.get.side_effect = (
+            lambda key, default=None: {"disable_batch": True}.get(key, default)
+        )
         self.mock_tracer.provider = Mock()
         mock_span_processor = Mock()
         mock_processor.return_value = mock_span_processor
