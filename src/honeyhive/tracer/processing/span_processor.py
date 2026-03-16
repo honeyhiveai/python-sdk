@@ -12,7 +12,7 @@
 
 import json
 import warnings
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 from opentelemetry import baggage, context
 from opentelemetry.context import Context
@@ -93,8 +93,8 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         )
 
         # Parse span name filters from tracer config (cached for hot-path performance)
-        self._span_name_include_prefixes: list[str] = []
-        self._span_name_exclude_prefixes: list[str] = []
+        self._span_name_include_prefixes: List[str] = []
+        self._span_name_exclude_prefixes: List[str] = []
         self._parse_span_name_filters()
 
     def _parse_span_name_filters(self) -> None:
@@ -114,7 +114,20 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         if not filters:
             return
 
-        def _get(obj, key, default=None):
+        try:
+            self._do_parse_span_name_filters(filters)
+        except Exception:
+            self._safe_log(
+                "warning",
+                "Failed to parse span_name_filters config, filters disabled",
+            )
+            self._span_name_include_prefixes = []
+            self._span_name_exclude_prefixes = []
+
+    def _do_parse_span_name_filters(self, filters: Any) -> None:
+        """Inner parsing logic for span_name_filters, separated for graceful degradation."""
+
+        def _get(obj: Any, key: str, default: Any = None) -> Any:
             """Get value from dict or object with attributes."""
             if isinstance(obj, dict):
                 return obj.get(key, default)
@@ -174,17 +187,13 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         # Check include filters: span must match at least one
         if self._span_name_include_prefixes:
             if not any(
-                span_name.startswith(p)
-                for p in self._span_name_include_prefixes
+                span_name.startswith(p) for p in self._span_name_include_prefixes
             ):
                 return True  # Drop: doesn't match any include prefix
 
         # Check exclude filters: span must NOT match any
         if self._span_name_exclude_prefixes:
-            if any(
-                span_name.startswith(p)
-                for p in self._span_name_exclude_prefixes
-            ):
+            if any(span_name.startswith(p) for p in self._span_name_exclude_prefixes):
                 return True  # Drop: matches an exclude prefix
 
         return False

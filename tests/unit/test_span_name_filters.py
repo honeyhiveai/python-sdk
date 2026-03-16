@@ -9,6 +9,7 @@ Tests cover:
 
 # pylint: disable=protected-access
 
+from typing import List, Optional
 from unittest.mock import Mock, patch
 
 import pytest
@@ -17,7 +18,6 @@ from opentelemetry.sdk.trace import Span
 from honeyhive.config.models.tracer import SpanNameFilter, SpanNameFilters, TracerConfig
 from honeyhive.tracer.processing.span_processor import HoneyHiveSpanProcessor
 from honeyhive.utils.dotdict import DotDict
-
 
 # -- Pydantic model tests --
 
@@ -35,6 +35,11 @@ class TestSpanNameFilterModels:
         """Test that extra fields are rejected."""
         with pytest.raises(Exception):
             SpanNameFilter(type="prefix", value="foo", unknown="bar")
+
+    def test_span_name_filter_rejects_unsupported_type(self) -> None:
+        """Test that non-'prefix' filter types are rejected by Pydantic."""
+        with pytest.raises(Exception):
+            SpanNameFilter(type="regex", value="a2a.*")
 
     def test_span_name_filters_exclude_only(self) -> None:
         """Test SpanNameFilters with exclude list only."""
@@ -93,7 +98,9 @@ class TestIsSpanExcluded:
     """Test _is_span_excluded filtering logic."""
 
     def _make_processor(
-        self, include_prefixes: list[str] | None = None, exclude_prefixes: list[str] | None = None
+        self,
+        include_prefixes: Optional[List[str]] = None,
+        exclude_prefixes: Optional[List[str]] = None,
     ) -> HoneyHiveSpanProcessor:
         """Helper to create a processor with pre-set filter lists."""
         processor = HoneyHiveSpanProcessor()
@@ -147,9 +154,7 @@ class TestIsSpanExcluded:
 
     def test_multiple_exclude_prefixes(self) -> None:
         """Multiple exclude prefixes — any match causes exclusion."""
-        p = self._make_processor(
-            exclude_prefixes=["a2a.client", "fasta2a.worker"]
-        )
+        p = self._make_processor(exclude_prefixes=["a2a.client", "fasta2a.worker"])
         assert p._is_span_excluded("a2a.client.transports.send") is True
         assert p._is_span_excluded("fasta2a.worker.run_task") is True
         assert p._is_span_excluded("pydantic-ai.agent_run") is False
@@ -242,6 +247,16 @@ class TestParseSpanNameFilters:
         """Config exists but no span_name_filters key — no filters."""
         mock_tracer = Mock()
         mock_tracer.config = DotDict({"api_key": "test"})
+        mock_tracer.verbose = False
+        p = HoneyHiveSpanProcessor(tracer_instance=mock_tracer)
+        assert p._span_name_include_prefixes == []
+        assert p._span_name_exclude_prefixes == []
+
+    def test_malformed_config_degrades_gracefully(self) -> None:
+        """Malformed span_name_filters config doesn't crash — filters disabled."""
+        mock_tracer = Mock()
+        # exclude should be a list, not a string
+        mock_tracer.config = DotDict({"span_name_filters": {"exclude": "not-a-list"}})
         mock_tracer.verbose = False
         p = HoneyHiveSpanProcessor(tracer_instance=mock_tracer)
         assert p._span_name_include_prefixes == []

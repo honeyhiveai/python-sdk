@@ -24,9 +24,9 @@ the host application.
 
 import logging
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
-from pydantic import AliasChoices, Field, field_validator
+from pydantic import AliasChoices, BaseModel, Field, field_validator
 from pydantic_settings import SettingsConfigDict
 
 from .base import BaseHoneyHiveConfig, _safe_validate_string, _safe_validate_url
@@ -35,32 +35,33 @@ from .base import BaseHoneyHiveConfig, _safe_validate_string, _safe_validate_url
 logger = logging.getLogger(__name__)
 
 
-class SpanNameFilter(BaseHoneyHiveConfig):
+class SpanNameFilter(BaseModel):
     """A single span name filter entry.
+
+    Uses BaseModel (not BaseSettings) since these are nested data models
+    that should not read from environment variables.
 
     Attributes:
         type: The filter matching strategy. Only "prefix" is currently supported.
         value: The value to match against span names.
     """
 
-    type: str = Field(
+    type: Literal["prefix"] = Field(
         description='Filter matching strategy. Only "prefix" is currently supported.',
-        examples=["prefix"],
     )
     value: str = Field(
         description="The value to match against span names.",
         examples=["a2a.client.transports.jsonrpc"],
     )
 
-    model_config = SettingsConfigDict(
-        validate_assignment=True,
-        extra="forbid",
-        case_sensitive=False,
-    )
+    model_config = {"validate_assignment": True, "extra": "forbid"}
 
 
-class SpanNameFilters(BaseHoneyHiveConfig):
+class SpanNameFilters(BaseModel):
     """Configuration for filtering spans by name.
+
+    Uses BaseModel (not BaseSettings) since these are nested data models
+    that should not read from environment variables.
 
     Supports both include (allow-list) and exclude (block-list) filters.
     If include is specified, only spans matching at least one include filter are kept.
@@ -82,11 +83,7 @@ class SpanNameFilters(BaseHoneyHiveConfig):
         description="Block-list: drop spans matching any filter.",
     )
 
-    model_config = SettingsConfigDict(
-        validate_assignment=True,
-        extra="forbid",
-        case_sensitive=False,
-    )
+    model_config = {"validate_assignment": True, "extra": "forbid"}
 
 
 class TracerConfig(BaseHoneyHiveConfig):
@@ -175,11 +172,7 @@ class TracerConfig(BaseHoneyHiveConfig):
             "Excluded spans are dropped before enrichment and export."
         ),
         examples=[
-            {
-                "exclude": [
-                    {"type": "prefix", "value": "a2a.client.transports.jsonrpc"}
-                ]
-            }
+            {"exclude": [{"type": "prefix", "value": "a2a.client.transports.jsonrpc"}]}
         ],
     )
 
