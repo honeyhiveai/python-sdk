@@ -12,7 +12,7 @@
 
 import json
 import warnings
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 from opentelemetry import baggage, context
 from opentelemetry.context import Context
@@ -100,6 +100,112 @@ class HoneyHiveSpanProcessor(SpanProcessor):
             self.mode,
             disable_batch,
         )
+
+        # Parse span name filters from tracer config (cached for hot-path performance)
+        self._span_name_include_prefixes: List[str] = []
+        self._span_name_exclude_prefixes: List[str] = []
+        self._parse_span_name_filters()
+
+    def _parse_span_name_filters(self) -> None:
+        """Parse and cache span_name_filters from tracer config.
+
+        Reads span_name_filters from the tracer instance config and caches
+        the prefix values as flat lists for fast matching in on_start/on_end.
+        """
+        try:
+            if not self.tracer_instance:
+                return
+
+            config = getattr(self.tracer_instance, "config", None)
+            if not config:
+                return
+
+            filters = config.get("span_name_filters")
+            if not filters:
+                return
+
+            self._do_parse_span_name_filters(filters)
+        except Exception:
+            self._safe_log(
+                "warning",
+                "Failed to parse span_name_filters config, filters disabled",
+            )
+            self._span_name_include_prefixes = []
+            self._span_name_exclude_prefixes = []
+
+    def _do_parse_span_name_filters(self, filters: Any) -> None:
+        """Inner parsing logic for span_name_filters, separated for graceful degradation."""
+
+        def _get(obj: Any, key: str, default: Any = None) -> Any:
+            """Get value from dict or object with attributes."""
+            if isinstance(obj, dict):
+                return obj.get(key, default)
+            return getattr(obj, key, default)
+
+        # Extract include/exclude filter lists from either Pydantic model or dict
+        for raw_list, target, _label in [
+            (_get(filters, "include"), self._span_name_include_prefixes, "include"),
+            (_get(filters, "exclude"), self._span_name_exclude_prefixes, "exclude"),
+        ]:
+            if not raw_list:
+                continue
+            for entry in raw_list:
+                filter_type = _get(entry, "type")
+                filter_value = _get(entry, "value")
+                if filter_type == "prefix" and filter_value:
+                    target.append(filter_value)
+                elif filter_type:
+                    self._safe_log(
+                        "warning",
+                        "Unsupported span_name_filter type: %s "
+                        "(only 'prefix' is supported)",
+                        filter_type,
+                    )
+
+        if self._span_name_include_prefixes or self._span_name_exclude_prefixes:
+            self._safe_log(
+                "debug",
+                "Span name filters configured: %d include prefixes, "
+                "%d exclude prefixes",
+                len(self._span_name_include_prefixes),
+                len(self._span_name_exclude_prefixes),
+            )
+
+    def _is_span_excluded(self, span_name: str) -> bool:
+        """Check if a span should be excluded (dropped) based on span_name_filters.
+
+        Returns True if the span should be DROPPED.
+
+        Logic:
+        - If include filters exist, span must match at least one include prefix.
+        - If exclude filters exist, span must NOT match any exclude prefix.
+        - If both, span must match include AND not match exclude.
+
+        :param span_name: The name of the span to check
+        :type span_name: str
+        :return: True if the span should be excluded
+        :rtype: bool
+        """
+        # No filters configured - keep all spans (fast path)
+        if (
+            not self._span_name_include_prefixes
+            and not self._span_name_exclude_prefixes
+        ):
+            return False
+
+        # Check include filters: span must match at least one
+        if self._span_name_include_prefixes:
+            if not any(
+                span_name.startswith(p) for p in self._span_name_include_prefixes
+            ):
+                return True  # Drop: doesn't match any include prefix
+
+        # Check exclude filters: span must NOT match any
+        if self._span_name_exclude_prefixes:
+            if any(span_name.startswith(p) for p in self._span_name_exclude_prefixes):
+                return True  # Drop: matches an exclude prefix
+
+        return False
 
     def _safe_log(self, level: str, message: str, *args: Any, **kwargs: Any) -> None:
         """Safely log using the centralized safe_log utility."""
@@ -582,6 +688,15 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         )
 
         try:
+            # Check span name filters — skip enrichment for excluded spans
+            if self._is_span_excluded(span.name):
+                self._safe_log(
+                    "debug",
+                    "Dropping span from on_start (excluded by span_name_filters): %s",
+                    span.name,
+                )
+                return
+
             ctx = self._get_context(parent_context)
             if ctx is None:
                 self._safe_log(
@@ -731,6 +846,15 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         """
         try:
             self._safe_log("debug", f"🟦 ON_END CALLED for span: {span.name}")
+
+            # Check span name filters — skip export for excluded spans
+            if self._is_span_excluded(span.name):
+                self._safe_log(
+                    "debug",
+                    "Dropping span from on_end (excluded by span_name_filters): %s",
+                    span.name,
+                )
+                return
 
             # Get span duration for performance metrics
             span_context = span.get_span_context()

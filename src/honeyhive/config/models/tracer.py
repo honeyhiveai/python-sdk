@@ -24,15 +24,66 @@ the host application.
 
 import logging
 import uuid
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Literal, Optional
 
-from pydantic import AliasChoices, Field, field_validator
+from pydantic import AliasChoices, BaseModel, Field, field_validator
 from pydantic_settings import SettingsConfigDict
 
 from .base import BaseHoneyHiveConfig, _safe_validate_string, _safe_validate_url
 
 # Module logger for graceful degradation warnings
 logger = logging.getLogger(__name__)
+
+
+class SpanNameFilter(BaseModel):
+    """A single span name filter entry.
+
+    Uses BaseModel (not BaseSettings) since these are nested data models
+    that should not read from environment variables.
+
+    Attributes:
+        type: The filter matching strategy. Only "prefix" is currently supported.
+        value: The value to match against span names.
+    """
+
+    type: Literal["prefix"] = Field(
+        description='Filter matching strategy. Only "prefix" is currently supported.',
+    )
+    value: str = Field(
+        description="The value to match against span names.",
+        examples=["a2a.client.transports.jsonrpc"],
+    )
+
+    model_config = {"validate_assignment": True, "extra": "forbid"}
+
+
+class SpanNameFilters(BaseModel):
+    """Configuration for filtering spans by name.
+
+    Uses BaseModel (not BaseSettings) since these are nested data models
+    that should not read from environment variables.
+
+    Supports both include (allow-list) and exclude (block-list) filters.
+    If include is specified, only spans matching at least one include filter are kept.
+    If exclude is specified, spans matching any exclude filter are dropped.
+    If both are specified, a span must match include AND not match exclude.
+
+    Example:
+        >>> filters = SpanNameFilters(
+        ...     exclude=[SpanNameFilter(type="prefix", value="a2a.client.transports")]
+        ... )
+    """
+
+    include: Optional[List[SpanNameFilter]] = Field(
+        default=None,
+        description="Allow-list: only keep spans matching at least one filter.",
+    )
+    exclude: Optional[List[SpanNameFilter]] = Field(
+        default=None,
+        description="Block-list: drop spans matching any filter.",
+    )
+
+    model_config = {"validate_assignment": True, "extra": "forbid"}
 
 
 class TracerConfig(BaseHoneyHiveConfig):
@@ -111,6 +162,18 @@ class TracerConfig(BaseHoneyHiveConfig):
         default=False,
         description="Disable all tracing functionality",
         validation_alias=AliasChoices("HH_DISABLE_TRACING", "disable_tracing"),
+    )
+
+    span_name_filters: Optional[SpanNameFilters] = Field(
+        default=None,
+        description=(
+            "Filter spans by name using include/exclude lists. "
+            "Each filter entry specifies a type ('prefix') and value to match. "
+            "Excluded spans are dropped before enrichment and export."
+        ),
+        examples=[
+            {"exclude": [{"type": "prefix", "value": "a2a.client.transports.jsonrpc"}]}
+        ],
     )
 
     # OpenTelemetry Span Limits Configuration

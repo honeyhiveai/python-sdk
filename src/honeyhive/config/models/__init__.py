@@ -52,7 +52,13 @@ from .http_client import HTTPClientConfig
 from .otlp import OTLPConfig
 
 # Tracer configurations
-from .tracer import EvaluationConfig, SessionConfig, TracerConfig
+from .tracer import (
+    EvaluationConfig,
+    SessionConfig,
+    SpanNameFilter,
+    SpanNameFilters,
+    TracerConfig,
+)
 
 # Note: TracingConfig merged into TracerConfig to eliminate duplication
 
@@ -63,6 +69,8 @@ __all__ = [
     "TracerConfig",
     "SessionConfig",
     "EvaluationConfig",
+    "SpanNameFilter",
+    "SpanNameFilters",
     # API client domain
     "APIClientConfig",
     # HTTP client domain
