@@ -287,13 +287,14 @@ class TestSpanFilterIntegration:
                     "exclude": [
                         {"type": "prefix", "value": "a2a.client.transports"},
                     ],
-                }
+                },
+                "disable_batch": True,
             }
         )
         mock_tracer.verbose = False
         mock_exporter = Mock()
         return HoneyHiveSpanProcessor(
-            tracer_instance=mock_tracer, otlp_exporter=mock_exporter
+            tracer_instance=mock_tracer, otlp_exporter=mock_exporter, disable_batch=True
         )
 
     def _make_mock_span(self, name: str) -> Mock:
