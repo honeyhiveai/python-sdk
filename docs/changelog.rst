@@ -17,14 +17,6 @@ Latest Release Notes
 Current Version Highlights
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**✨ NEW: Batched Async Span Export (Unreleased)**
-
-* **Background Export**: When ``disable_batch=False`` (the default), spans are now queued and exported asynchronously in a background thread via OpenTelemetry's ``BatchSpanProcessor``, eliminating ~100-1200ms of blocking latency per ``span.end()`` call
-* **Configurable Batching**: New parameters ``max_queue_size``, ``schedule_delay_millis``, ``max_export_batch_size``, and ``export_timeout_millis`` on ``HoneyHiveSpanProcessor`` for tuning batch behavior
-* **Synchronous Mode Preserved**: ``disable_batch=True`` retains the previous synchronous inline export for Lambda/serverless environments
-* **Graceful Shutdown**: ``shutdown()`` and ``force_flush()`` properly drain the internal ``BatchSpanProcessor`` queue
-* **Files**: ``src/honeyhive/tracer/processing/span_processor.py``, ``src/honeyhive/tracer/instrumentation/initialization.py``
-
 **🐛 FIXED: Metrics Table Printing Empty Values (Unreleased)**
 
 * **Root Cause**: SDK expected metrics as dynamic top-level keys but backend returns them in a ``details`` array format per OpenAPI spec
