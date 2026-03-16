@@ -138,7 +138,10 @@ init()
    
    :param verbose: Enable verbose debug logging throughout tracer initialization. Defaults to False.
    :type verbose: bool
-   
+
+   :param span_name_filters: Filter spans by name to control which spans are exported to HoneyHive. Accepts a dictionary with ``exclude`` and/or ``include`` keys, each containing a list of filter entries. Each filter entry is a dict with ``type`` (currently only ``"prefix"``) and ``value`` (the prefix to match against span names). When ``include`` is specified, only spans matching at least one include prefix are kept. When ``exclude`` is specified, spans matching any exclude prefix are dropped. When both are specified, a span must match an include prefix and not match any exclude prefix. Filtered spans are dropped before enrichment or export. Example: ``{"exclude": [{"type": "prefix", "value": "a2a.client.transports"}]}``.
+   :type span_name_filters: Optional[Dict[str, List[Dict[str, str]]]]
+
    **Evaluation Parameters (Backwards Compatibility):**
    
    :param inputs: Session initialization inputs for backwards compatibility with main branch.
