@@ -1,11 +1,26 @@
 #!/usr/bin/env python3
 """
-Simple Anthropic Integration with HoneyHive
+Anthropic + HoneyHive integration example.
 
-This example shows the simplest way to add HoneyHive tracing to Anthropic Claude calls.
-Zero code changes to your existing Anthropic usage!
+Demonstrates Anthropic tool use with HoneyHive tracing:
+
+1) Single turn with tool calls (order status + policy lookup)
+2) Multi-turn conversation with tool use and session continuity
+
+Install:
+    uv pip install honeyhive openinference-instrumentation-anthropic anthropic
+
+Run:
+    uv run python examples/integrations/openinference_anthropic_example.py
+
+Environment:
+    HH_API_KEY
+    HH_PROJECT
+    ANTHROPIC_API_KEY
+    HH_SOURCE (optional, defaults to "python_sdk_example")
 """
 
+import json
 import os
 
 import anthropic
@@ -13,79 +28,176 @@ from openinference.instrumentation.anthropic import AnthropicInstrumentor
 
 from honeyhive import HoneyHiveTracer
 
+MODEL = "claude-haiku-4-5-20251001"
 
-def main():
-    """Simple Anthropic integration example."""
-    print("🚀 Simple Anthropic + HoneyHive Integration")
-    print("=" * 42)
 
-    # 1. Initialize HoneyHive tracer FIRST (without instrumentors)
+# -- Mock tools (shared customer-support domain) --
+
+
+def lookup_order_status(order_id: str) -> dict:
+    """Return mock order status for deterministic support flows."""
+    statuses = {
+        "ORD-1001": {"state": "shipped", "eta_days": 2},
+        "ORD-1002": {"state": "processing", "eta_days": 5},
+        "ORD-1003": {"state": "delayed", "eta_days": 8},
+    }
+    status = statuses.get(order_id.upper())
+    if status:
+        return {"status": "success", "order_id": order_id.upper(), "order": status}
+    return {"status": "not_found", "order_id": order_id.upper()}
+
+
+def lookup_policy(topic: str) -> dict:
+    """Return mock support policy snippets."""
+    policies = {
+        "refund": {
+            "summary": "Refunds are available within 30 days for undelivered or damaged items.",
+            "window_days": 30,
+        },
+        "cancellation": {
+            "summary": "Cancellation is allowed before shipment. Delayed orders can request assisted cancellation.",
+            "window_days": 2,
+        },
+        "shipping": {
+            "summary": "Standard shipping takes 3-5 business days. Delays can trigger proactive support outreach.",
+            "window_days": 5,
+        },
+    }
+    key = topic.lower().strip()
+    result = policies.get(key)
+    if result:
+        return {"status": "success", "topic": key, "policy": result}
+    return {"status": "not_found", "topic": key}
+
+
+TOOLS = [
+    {
+        "name": "lookup_order_status",
+        "description": "Look up the current status of a customer order.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "order_id": {
+                    "type": "string",
+                    "description": "Order ID, e.g. ORD-1001",
+                }
+            },
+            "required": ["order_id"],
+        },
+    },
+    {
+        "name": "lookup_policy",
+        "description": "Look up a support policy by topic (refund, cancellation, or shipping).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "topic": {
+                    "type": "string",
+                    "description": "Policy topic: refund, cancellation, or shipping",
+                }
+            },
+            "required": ["topic"],
+        },
+    },
+]
+
+TOOL_DISPATCH = {
+    "lookup_order_status": lookup_order_status,
+    "lookup_policy": lookup_policy,
+}
+
+SYSTEM_PROMPT = (
+    "You are a customer support agent. Use the provided tools to "
+    "look up order status and policies. Keep responses concise "
+    "and customer-friendly."
+)
+
+
+def chat_turn(
+    client: anthropic.Anthropic, messages: list, system: str = SYSTEM_PROMPT
+) -> str:
+    """Send messages to Anthropic and resolve any tool calls until a final response."""
+    response = client.messages.create(
+        model=MODEL,
+        max_tokens=1024,
+        system=system,
+        tools=TOOLS,
+        messages=messages,
+    )
+
+    while response.stop_reason == "tool_use":
+        tool_results = []
+        for block in response.content:
+            if block.type == "tool_use":
+                result = TOOL_DISPATCH[block.name](**block.input)
+                tool_results.append(
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": block.id,
+                        "content": json.dumps(result),
+                    }
+                )
+        messages.append({"role": "assistant", "content": response.content})
+        messages.append({"role": "user", "content": tool_results})
+
+        response = client.messages.create(
+            model=MODEL,
+            max_tokens=1024,
+            system=system,
+            tools=TOOLS,
+            messages=messages,
+        )
+
+    messages.append({"role": "assistant", "content": response.content})
+    return response.content[0].text
+
+
+def run_single_turn_scenario(client: anthropic.Anthropic) -> None:
+    """Scenario 1: single turn requiring multiple tool calls."""
+    messages = [
+        {
+            "role": "user",
+            "content": (
+                "Check order ORD-1002 and tell me the current shipping policy."
+            ),
+        },
+    ]
+    chat_turn(client, messages)
+
+
+def run_multi_turn_scenario(client: anthropic.Anthropic) -> None:
+    """Scenario 2: multi-turn conversation with tool use across turns."""
+    messages: list = []
+
+    prompts = [
+        "What's the status of order ORD-1001?",
+        "It seems delayed. What is the cancellation policy for delayed orders?",
+    ]
+
+    for prompt in prompts:
+        messages.append({"role": "user", "content": prompt})
+        chat_turn(client, messages)
+
+
+def main() -> None:
+    """Run Anthropic example scenarios and emit HoneyHive traces."""
     tracer = HoneyHiveTracer.init(
-        api_key=os.getenv("HH_API_KEY", "your-honeyhive-key"),
-        project=os.getenv("HH_PROJECT", "anthropic-simple-demo"),
-        source=__file__.split("/")[-1],  # Use script name for visibility
-        # ✅ NO instrumentors parameter - follow documented pattern
+        api_key=os.getenv("HH_API_KEY"),
+        project=os.getenv("HH_PROJECT"),
+        session_name="openinference_anthropic_example",
+        source=os.getenv("HH_SOURCE", "python_sdk_example"),
     )
-    print("✓ HoneyHive tracer initialized")
+    instrumentor = AnthropicInstrumentor()
+    instrumentor.instrument(tracer_provider=tracer.provider)
 
-    # 2. Initialize instrumentor separately with tracer_provider
-    anthropic_instrumentor = AnthropicInstrumentor()
-    anthropic_instrumentor.instrument(tracer_provider=tracer.provider)
-    print("✓ Anthropic instrumentor initialized with HoneyHive tracer_provider")
-
-    # 2. Use Anthropic exactly as you normally would
-    client = anthropic.Anthropic(
-        api_key=os.getenv("ANTHROPIC_API_KEY", "your-anthropic-key")
-    )
-
-    # 3. Make Anthropic calls - they're traced via the Anthropic instrumentor!
-    print("\n📞 Making Anthropic API calls...")
+    client = anthropic.Anthropic()
 
     try:
-        # Simple message creation
-        response = client.messages.create(
-            model="claude-3-haiku-20240307",
-            max_tokens=100,
-            temperature=0.1,
-            messages=[
-                {
-                    "role": "user",
-                    "content": "Explain what machine learning is in simple terms.",
-                }
-            ],
-        )
-
-        print(f"✓ Response: {response.content[0].text}")
-        print(f"✓ Input tokens: {response.usage.input_tokens}")
-        print(f"✓ Output tokens: {response.usage.output_tokens}")
-
-        # Another call - also traced via instrumentor
-        response2 = client.messages.create(
-            model="claude-3-haiku-20240307",
-            max_tokens=50,
-            messages=[
-                {
-                    "role": "user",
-                    "content": "Give me a practical example of machine learning in everyday life.",
-                }
-            ],
-        )
-
-        print(f"✓ Example: {response2.content[0].text}")
-
-        print("\n🎉 All calls traced to HoneyHive via Anthropic instrumentor!")
-        print("Check your HoneyHive dashboard to see the traces.")
-
-    except Exception as e:
-        print(f"❌ Error: {e}")
-        print("Make sure to set ANTHROPIC_API_KEY environment variable")
-
+        run_single_turn_scenario(client)
+        run_multi_turn_scenario(client)
     finally:
-        # Cleanup
-        print("\n📤 Flushing traces...")
         tracer.force_flush()
-        anthropic_instrumentor.uninstrument()
-        print("✓ Cleanup completed")
+        instrumentor.uninstrument()
 
 
 if __name__ == "__main__":

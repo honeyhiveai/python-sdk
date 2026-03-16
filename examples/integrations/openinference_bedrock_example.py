@@ -1,12 +1,27 @@
 #!/usr/bin/env python3
 """
-Simple AWS Bedrock Integration with HoneyHive
+AWS Bedrock + HoneyHive integration example.
 
-This example shows the simplest way to add HoneyHive tracing to AWS Bedrock calls.
-Zero code changes to your existing Bedrock usage!
+Demonstrates AWS Bedrock Converse API with tool use and HoneyHive tracing:
+
+1) Single turn with tool calls (order status + policy lookup)
+2) Multi-turn conversation with tool use and session continuity
+
+Install:
+    uv pip install honeyhive openinference-instrumentation-bedrock boto3
+
+Run:
+    uv run python examples/integrations/openinference_bedrock_example.py
+
+Environment:
+    HH_API_KEY
+    HH_PROJECT
+    AWS_ACCESS_KEY_ID
+    AWS_SECRET_ACCESS_KEY
+    AWS_DEFAULT_REGION       (optional, defaults to "us-east-1")
+    HH_SOURCE (optional, defaults to "python_sdk_example")
 """
 
-import json
 import os
 
 import boto3
@@ -14,87 +29,196 @@ from openinference.instrumentation.bedrock import BedrockInstrumentor
 
 from honeyhive import HoneyHiveTracer
 
+MODEL_ID = "anthropic.claude-3-5-sonnet-20241022-v2:0"
 
-def main():
-    """Simple AWS Bedrock integration example."""
-    print("🚀 Simple AWS Bedrock + HoneyHive Integration")
-    print("=" * 45)
 
-    # 1. Initialize HoneyHive with Bedrock instrumentor
-    tracer = HoneyHiveTracer.init(
-        api_key=os.getenv("HH_API_KEY", "your-honeyhive-key"),
-        project=os.getenv("HH_PROJECT", "bedrock-simple-demo"),
-        source=os.getenv("HH_SOURCE", "development"),
+# -- Mock tools (shared customer-support domain) --
+
+
+def lookup_order_status(order_id: str) -> dict:
+    """Return mock order status for deterministic support flows."""
+    statuses = {
+        "ORD-1001": {"state": "shipped", "eta_days": 2},
+        "ORD-1002": {"state": "processing", "eta_days": 5},
+        "ORD-1003": {"state": "delayed", "eta_days": 8},
+    }
+    status = statuses.get(order_id.upper())
+    if status:
+        return {"status": "success", "order_id": order_id.upper(), "order": status}
+    return {"status": "not_found", "order_id": order_id.upper()}
+
+
+def lookup_policy(topic: str) -> dict:
+    """Return mock support policy snippets."""
+    policies = {
+        "refund": {
+            "summary": "Refunds are available within 30 days for undelivered or damaged items.",
+            "window_days": 30,
+        },
+        "cancellation": {
+            "summary": "Cancellation is allowed before shipment. Delayed orders can request assisted cancellation.",
+            "window_days": 2,
+        },
+        "shipping": {
+            "summary": "Standard shipping takes 3-5 business days. Delays can trigger proactive support outreach.",
+            "window_days": 5,
+        },
+    }
+    key = topic.lower().strip()
+    result = policies.get(key)
+    if result:
+        return {"status": "success", "topic": key, "policy": result}
+    return {"status": "not_found", "topic": key}
+
+
+TOOL_CONFIG = {
+    "tools": [
+        {
+            "toolSpec": {
+                "name": "lookup_order_status",
+                "description": "Look up the current status of a customer order.",
+                "inputSchema": {
+                    "json": {
+                        "type": "object",
+                        "properties": {
+                            "order_id": {
+                                "type": "string",
+                                "description": "Order ID, e.g. ORD-1001",
+                            }
+                        },
+                        "required": ["order_id"],
+                    }
+                },
+            }
+        },
+        {
+            "toolSpec": {
+                "name": "lookup_policy",
+                "description": "Look up a support policy by topic (refund, cancellation, or shipping).",
+                "inputSchema": {
+                    "json": {
+                        "type": "object",
+                        "properties": {
+                            "topic": {
+                                "type": "string",
+                                "description": "Policy topic: refund, cancellation, or shipping",
+                            }
+                        },
+                        "required": ["topic"],
+                    }
+                },
+            }
+        },
+    ]
+}
+
+TOOL_DISPATCH = {
+    "lookup_order_status": lookup_order_status,
+    "lookup_policy": lookup_policy,
+}
+
+SYSTEM_PROMPT = [
+    {
+        "text": (
+            "You are a customer support agent. Use the provided tools to "
+            "look up order status and policies. Keep responses concise "
+            "and customer-friendly."
+        )
+    }
+]
+
+
+def chat_turn(client, messages: list) -> str:
+    """Send messages via Bedrock Converse and resolve tool calls until a final response."""
+    response = client.converse(
+        modelId=MODEL_ID,
+        system=SYSTEM_PROMPT,
+        messages=messages,
+        toolConfig=TOOL_CONFIG,
     )
-    print("✓ HoneyHive tracer initialized")
 
-    # Initialize instrumentor separately with tracer_provider
-    bedrock_instrumentor = BedrockInstrumentor()
-    bedrock_instrumentor.instrument(tracer_provider=tracer.provider)
-    print("✓ HoneyHive tracer initialized with Bedrock instrumentor")
+    while response["stopReason"] == "tool_use":
+        assistant_msg = response["output"]["message"]
+        messages.append(assistant_msg)
 
-    # 2. Set up AWS Bedrock client exactly as you normally would
+        tool_results = []
+        for block in assistant_msg["content"]:
+            if "toolUse" in block:
+                tool_use = block["toolUse"]
+                result = TOOL_DISPATCH[tool_use["name"]](**tool_use["input"])
+                tool_results.append(
+                    {
+                        "toolResult": {
+                            "toolUseId": tool_use["toolUseId"],
+                            "content": [{"json": result}],
+                        }
+                    }
+                )
+        messages.append({"role": "user", "content": tool_results})
+
+        response = client.converse(
+            modelId=MODEL_ID,
+            system=SYSTEM_PROMPT,
+            messages=messages,
+            toolConfig=TOOL_CONFIG,
+        )
+
+    assistant_msg = response["output"]["message"]
+    messages.append(assistant_msg)
+    return assistant_msg["content"][0]["text"]
+
+
+def run_single_turn_scenario(client) -> None:
+    """Scenario 1: single turn requiring multiple tool calls."""
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "text": "Check order ORD-1002 and tell me the current shipping policy."
+                }
+            ],
+        },
+    ]
+    chat_turn(client, messages)
+
+
+def run_multi_turn_scenario(client) -> None:
+    """Scenario 2: multi-turn conversation with tool use across turns."""
+    messages: list = []
+
+    prompts = [
+        "What's the status of order ORD-1001?",
+        "It seems delayed. What is the cancellation policy for delayed orders?",
+    ]
+
+    for prompt in prompts:
+        messages.append({"role": "user", "content": [{"text": prompt}]})
+        chat_turn(client, messages)
+
+
+def main() -> None:
+    """Run Bedrock example scenarios and emit HoneyHive traces."""
+    tracer = HoneyHiveTracer.init(
+        api_key=os.getenv("HH_API_KEY"),
+        project=os.getenv("HH_PROJECT"),
+        session_name="openinference_bedrock_example",
+        source=os.getenv("HH_SOURCE", "python_sdk_example"),
+    )
+    instrumentor = BedrockInstrumentor()
+    instrumentor.instrument(tracer_provider=tracer.provider)
+
     client = boto3.client(
         "bedrock-runtime",
         region_name=os.getenv("AWS_DEFAULT_REGION", "us-east-1"),
-        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
-        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
     )
 
-    # 3. Make Bedrock calls - they're traced via the Bedrock instrumentor!
-    print("\n📞 Making AWS Bedrock API calls...")
-
     try:
-        # Claude via Bedrock
-        claude_request = {
-            "prompt": "\n\nHuman: What is artificial intelligence?\n\nAssistant:",
-            "max_tokens_to_sample": 150,
-            "temperature": 0.1,
-            "top_p": 0.9,
-        }
-
-        response = client.invoke_model(
-            modelId="anthropic.claude-v2",
-            body=json.dumps(claude_request),
-            contentType="application/json",
-            accept="application/json",
-        )
-
-        result = json.loads(response["body"].read())
-        print(f"✓ Claude response: {result['completion'].strip()}")
-
-        # Amazon Titan via Bedrock - also traced via instrumentor
-        print("\n🔧 Trying Amazon Titan model...")
-
-        titan_request = {
-            "inputText": "Give me a fun fact about space.",
-            "textGenerationConfig": {
-                "maxTokenCount": 100,
-                "temperature": 0.1,
-                "topP": 0.9,
-            },
-        }
-
-        titan_response = client.invoke_model(
-            modelId="amazon.titan-text-express-v1",
-            body=json.dumps(titan_request),
-            contentType="application/json",
-            accept="application/json",
-        )
-
-        titan_result = json.loads(titan_response["body"].read())
-        titan_text = titan_result.get("results", [{}])[0].get("outputText", "")
-        print(f"✓ Titan response: {titan_text.strip()}")
-
-        print("\n🎉 All calls traced to HoneyHive via Bedrock instrumentor!")
-        print("Check your HoneyHive dashboard to see the traces.")
-
-    except Exception as e:
-        print(f"❌ Error: {e}")
-        print("Make sure to set AWS credentials:")
-        print("  - AWS_ACCESS_KEY_ID")
-        print("  - AWS_SECRET_ACCESS_KEY")
-        print("  - AWS_DEFAULT_REGION (optional)")
+        run_single_turn_scenario(client)
+        run_multi_turn_scenario(client)
+    finally:
+        tracer.force_flush()
+        instrumentor.uninstrument()
 
 
 if __name__ == "__main__":

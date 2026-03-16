@@ -1,34 +1,38 @@
 #!/usr/bin/env python3
 """
-OpenAI + HoneyHive integration example.
+Azure OpenAI + HoneyHive integration example.
 
-Demonstrates OpenAI function calling with HoneyHive tracing:
+Demonstrates Azure OpenAI function calling with HoneyHive tracing:
 
 1) Single turn with parallel tool calls (order status + policy lookup)
 2) Multi-turn conversation with tool use and session continuity
+
+Note: Azure OpenAI uses the same OpenAI instrumentor since it uses the same SDK.
 
 Install:
     uv pip install honeyhive openinference-instrumentation-openai openai
 
 Run:
-    uv run python examples/integrations/openinference_openai_example.py
+    uv run python examples/integrations/openinference_azure_openai_example.py
 
 Environment:
     HH_API_KEY
     HH_PROJECT
-    OPENAI_API_KEY
+    AZURE_OPENAI_API_KEY
+    AZURE_OPENAI_ENDPOINT
+    AZURE_OPENAI_DEPLOYMENT  (optional, defaults to "gpt-4o-mini")
     HH_SOURCE (optional, defaults to "python_sdk_example")
 """
 
 import json
 import os
 
-import openai
+from openai import AzureOpenAI
 from openinference.instrumentation.openai import OpenAIInstrumentor
 
 from honeyhive import HoneyHiveTracer
 
-MODEL = "gpt-4o-mini"
+DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4o-mini")
 
 
 # -- Mock tools (shared customer-support domain) --
@@ -113,10 +117,10 @@ TOOL_DISPATCH = {
 }
 
 
-def chat_turn(client: openai.OpenAI, messages: list) -> str:
-    """Send messages to OpenAI and resolve any tool calls until a final response."""
+def chat_turn(client: AzureOpenAI, messages: list) -> str:
+    """Send messages to Azure OpenAI and resolve any tool calls until a final response."""
     response = client.chat.completions.create(
-        model=MODEL,
+        model=DEPLOYMENT,
         messages=messages,
         tools=TOOLS,
     )
@@ -135,7 +139,7 @@ def chat_turn(client: openai.OpenAI, messages: list) -> str:
                 }
             )
         response = client.chat.completions.create(
-            model=MODEL,
+            model=DEPLOYMENT,
             messages=messages,
             tools=TOOLS,
         )
@@ -145,7 +149,7 @@ def chat_turn(client: openai.OpenAI, messages: list) -> str:
     return msg.content
 
 
-def run_single_turn_scenario(client: openai.OpenAI) -> None:
+def run_single_turn_scenario(client: AzureOpenAI) -> None:
     """Scenario 1: single turn requiring multiple tool calls."""
     messages = [
         {
@@ -166,7 +170,7 @@ def run_single_turn_scenario(client: openai.OpenAI) -> None:
     chat_turn(client, messages)
 
 
-def run_multi_turn_scenario(client: openai.OpenAI) -> None:
+def run_multi_turn_scenario(client: AzureOpenAI) -> None:
     """Scenario 2: multi-turn conversation with tool use across turns."""
     messages = [
         {
@@ -190,17 +194,21 @@ def run_multi_turn_scenario(client: openai.OpenAI) -> None:
 
 
 def main() -> None:
-    """Run OpenAI example scenarios and emit HoneyHive traces."""
+    """Run Azure OpenAI example scenarios and emit HoneyHive traces."""
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY"),
         project=os.getenv("HH_PROJECT"),
-        session_name="openinference_openai_example",
+        session_name="openinference_azure_openai_example",
         source=os.getenv("HH_SOURCE", "python_sdk_example"),
     )
     instrumentor = OpenAIInstrumentor()
     instrumentor.instrument(tracer_provider=tracer.provider)
 
-    client = openai.OpenAI()
+    client = AzureOpenAI(
+        api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+        api_version="2024-12-01-preview",
+        azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT", ""),
+    )
 
     try:
         run_single_turn_scenario(client)
