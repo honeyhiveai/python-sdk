@@ -17,6 +17,7 @@ from typing import Any, List, Optional
 from opentelemetry import baggage, context
 from opentelemetry.context import Context
 from opentelemetry.sdk.trace import ReadableSpan, Span, SpanProcessor
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 from ..utils import convert_enum_to_string
 from ..utils.event_type import detect_event_type_from_patterns, extract_raw_attributes
@@ -49,12 +50,22 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         in a future release. OTLP is the only supported export path.
     """
 
+    # Default batch configuration
+    DEFAULT_MAX_QUEUE_SIZE = 2048
+    DEFAULT_SCHEDULE_DELAY_MILLIS = 5000.0
+    DEFAULT_MAX_EXPORT_BATCH_SIZE = 64
+    DEFAULT_EXPORT_TIMEOUT_MILLIS = 30000.0
+
     def __init__(
         self,
         client: Optional[Any] = None,
         disable_batch: bool = False,
         otlp_exporter: Optional[Any] = None,
         tracer_instance: Optional[Any] = None,
+        max_queue_size: Optional[int] = None,
+        schedule_delay_millis: Optional[float] = None,
+        max_export_batch_size: Optional[int] = None,
+        export_timeout_millis: Optional[float] = None,
     ) -> None:
         """Initialize the span processor.
 
@@ -66,11 +77,20 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         :type otlp_exporter: Optional[Any]
         :param tracer_instance: HoneyHive tracer instance for session isolation
         :type tracer_instance: Optional[Any]
+        :param max_queue_size: Max spans queued before dropping (batch mode only)
+        :type max_queue_size: Optional[int]
+        :param schedule_delay_millis: Flush interval in ms (batch mode only)
+        :type schedule_delay_millis: Optional[float]
+        :param max_export_batch_size: Max spans per export call (batch mode only)
+        :type max_export_batch_size: Optional[int]
+        :param export_timeout_millis: Timeout per export call in ms (batch mode only)
+        :type export_timeout_millis: Optional[float]
         """
         self.client = client
         self.disable_batch = disable_batch
         self.otlp_exporter = otlp_exporter
         self.tracer_instance = tracer_instance
+        self._batch_processor: Optional[BatchSpanProcessor] = None
 
         # Multi-instance logging architecture uses safe_log utility
         # No need to store logger reference directly
@@ -88,6 +108,36 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         # OTLP is the only supported export mode
         self.mode = "otlp"
         batch_mode = "immediate" if disable_batch else "batched"
+
+        # When batching is enabled and we have an OTLP exporter, wrap it in
+        # OTel's BatchSpanProcessor for async background export.
+        if not disable_batch and otlp_exporter is not None:
+            resolved_max_queue = max_queue_size or self.DEFAULT_MAX_QUEUE_SIZE
+            resolved_delay = schedule_delay_millis or self.DEFAULT_SCHEDULE_DELAY_MILLIS
+            resolved_batch_size = (
+                max_export_batch_size or self.DEFAULT_MAX_EXPORT_BATCH_SIZE
+            )
+            resolved_timeout = (
+                export_timeout_millis or self.DEFAULT_EXPORT_TIMEOUT_MILLIS
+            )
+            self._batch_processor = BatchSpanProcessor(
+                span_exporter=otlp_exporter,
+                max_queue_size=resolved_max_queue,
+                schedule_delay_millis=resolved_delay,
+                max_export_batch_size=resolved_batch_size,
+                export_timeout_millis=resolved_timeout,
+            )
+            self._safe_log(
+                "debug",
+                "🔧 BatchSpanProcessor created: max_queue_size=%d, "
+                "schedule_delay_millis=%.0f, max_export_batch_size=%d, "
+                "export_timeout_millis=%.0f",
+                resolved_max_queue,
+                resolved_delay,
+                resolved_batch_size,
+                resolved_timeout,
+            )
+
         self._safe_log(
             "debug",
             "🚀 HoneyHiveSpanProcessor initialized in OTLP mode (%s)",
@@ -744,10 +794,7 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                 else:
                     self._safe_log(
                         "debug",
-                        (
-                            "⚠️ DEBUG: No session_id found in tracer "
-                            "instance or baggage"
-                        ),
+                        ("⚠️ DEBUG: No session_id found in tracer instance or baggage"),
                         honeyhive_data={
                             "span_name": span.name,
                             "tracer_instance_id": (
@@ -892,6 +939,21 @@ class HoneyHiveSpanProcessor(SpanProcessor):
 
             # Dump raw span data for debugging
             raw_span_data = self._dump_raw_span_data(span)
+            instrumentation_scope = getattr(span, "instrumentation_scope", None)
+            instrumentation_scope_name = (
+                instrumentation_scope.name if instrumentation_scope else None
+            )
+            instrumentation_scope_version = (
+                instrumentation_scope.version if instrumentation_scope else None
+            )
+            self._safe_log(
+                "debug",
+                "🔎 ON_END instrumentation scope - span: %s, scope_name: %s, scope_version: %s",
+                span.name,
+                instrumentation_scope_name or "unknown",
+                instrumentation_scope_version or "unknown",
+            )
+
             self._safe_log(
                 "debug",
                 "🚀 SPAN PROCESSOR on_end - mode: %s, span: %s\n📊 RAW DATA:\n%s",
@@ -958,12 +1020,20 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                 "debug", "🚀 OTLP EXPORT CALLED - %s MODE", batch_mode.upper()
             )
 
-            if self.otlp_exporter:
-                # ALWAYS export spans to ensure delivery to backend
-                # The HoneyHiveOTLPExporter handles the actual OTLP protocol
+            if self._batch_processor is not None:
+                # Batched async mode: delegate to OTel BatchSpanProcessor
+                # which queues the span and exports in a background thread.
+                self._batch_processor.on_end(span)
+                self._safe_log(
+                    "debug",
+                    "📦 Span enqueued to BatchSpanProcessor (async batch mode)",
+                )
+            elif self.otlp_exporter:
+                # Immediate sync mode (disable_batch=True): export inline
                 result = self.otlp_exporter.export([span])
                 self._safe_log(
-                    "debug", "✅ Span exported via OTLP exporter (%s mode)", batch_mode
+                    "debug",
+                    "✅ Span exported via OTLP exporter (immediate sync mode)",
                 )
 
                 # Log export result for debugging
@@ -1279,11 +1349,25 @@ class HoneyHiveSpanProcessor(SpanProcessor):
     def shutdown(self) -> None:
         """Shutdown the span processor.
 
-        Performs graceful shutdown of the OTLP exporter if available.
+        Performs graceful shutdown of the internal BatchSpanProcessor (which
+        drains its queue and shuts down the exporter), or the OTLP exporter
+        directly in immediate mode.
         """
         try:
-            # Check if we have an OTLP exporter to shutdown
-            if hasattr(self, "otlp_exporter") and self.otlp_exporter:
+            # Shutdown the internal batch processor first — this drains the
+            # queue and calls exporter.shutdown() internally.
+            if self._batch_processor is not None:
+                self._safe_log(
+                    "debug",
+                    "🛑 Shutting down internal BatchSpanProcessor",
+                )
+                self._batch_processor.shutdown()
+                self._safe_log(
+                    "debug",
+                    "✅ Internal BatchSpanProcessor shutdown complete",
+                )
+            elif hasattr(self, "otlp_exporter") and self.otlp_exporter:
+                # Immediate mode: shutdown exporter directly
                 if hasattr(self.otlp_exporter, "shutdown"):
                     self.otlp_exporter.shutdown()
         except Exception as e:
@@ -1293,43 +1377,41 @@ class HoneyHiveSpanProcessor(SpanProcessor):
     def force_flush(self, timeout_millis: float = 30000) -> bool:
         """Force flush any pending spans.
 
-        This HoneyHive span processor doesn't buffer spans, so this method
-        performs validation and cleanup operations to ensure consistency.
+        In batched mode, this drains the internal BatchSpanProcessor queue
+        and blocks until the current batch is exported (or timeout).
+        In immediate mode, delegates to the OTLP exporter's force_flush.
 
         :param timeout_millis: Maximum time to wait for flush completion (ms).
-                              Not used by this processor since it doesn't buffer spans.
         :type timeout_millis: float
         :return: True if flush operations completed successfully, False otherwise.
         :rtype: bool
         """
         try:
-            # Check if we have an OTLP exporter to flush
+            # Batched mode: flush the internal BatchSpanProcessor
+            if self._batch_processor is not None:
+                self._safe_log(
+                    "debug",
+                    "🔄 Force flushing internal BatchSpanProcessor "
+                    "(timeout=%dms)",
+                    int(timeout_millis),
+                )
+                result = self._batch_processor.force_flush(
+                    timeout_millis=int(timeout_millis)
+                )
+                self._safe_log(
+                    "debug",
+                    "✅ BatchSpanProcessor force_flush result: %s",
+                    result,
+                )
+                return bool(result)
+
+            # Immediate mode: flush the exporter directly
             if hasattr(self, "otlp_exporter") and self.otlp_exporter:
                 if hasattr(self.otlp_exporter, "force_flush"):
                     result = self.otlp_exporter.force_flush(timeout_millis)
                     return bool(result)
 
-            # Since this processor doesn't buffer spans, we perform validation
-            # and ensure any ongoing operations are completed
-
-            # Validate processor state
-            processor_healthy = True
-
-            # Check if we can access required OpenTelemetry components
-            try:
-                _ = context.get_current()
-                _ = baggage.get_baggage("session_id", context.get_current())
-            except Exception as e:
-                # Graceful degradation following Agent OS standards - never crash host
-                self._safe_log(
-                    "debug",
-                    "Processor health check failed",
-                    honeyhive_data={"error_type": type(e).__name__},
-                )
-                processor_healthy = False
-
-            # Simulate flush completion for compatibility with OpenTelemetry patterns
-            return bool(processor_healthy)
+            return True
 
         except Exception as e:
             # Graceful degradation following Agent OS standards - never crash host

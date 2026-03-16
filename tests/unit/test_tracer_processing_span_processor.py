@@ -809,7 +809,7 @@ class TestHoneyHiveSpanProcessorOnEnd:
         mock_exporter = Mock()
         mock_exporter.export.return_value = Mock(name="SUCCESS")
 
-        processor = HoneyHiveSpanProcessor(otlp_exporter=mock_exporter)
+        processor = HoneyHiveSpanProcessor(otlp_exporter=mock_exporter, disable_batch=True)
 
         mock_span = Mock(spec=ReadableSpan)
         mock_span.name = "test_operation"
@@ -894,7 +894,7 @@ class TestHoneyHiveSpanProcessorSending:
 
     @patch("honeyhive.utils.logger.safe_log")
     def test_send_via_otlp_batched_mode(self, mock_safe_log: Mock) -> None:
-        """Test OTLP sending in batched mode."""
+        """Test OTLP sending in batched mode enqueues to BatchSpanProcessor."""
         mock_exporter = Mock()
         mock_exporter.export.return_value = Mock(name="SUCCESS")
 
@@ -905,7 +905,9 @@ class TestHoneyHiveSpanProcessorSending:
         mock_span = Mock(spec=ReadableSpan)
         processor._send_via_otlp(mock_span, {}, "session-123")
 
-        mock_exporter.export.assert_called_once_with([mock_span])
+        # In batch mode, export is NOT called inline — span is enqueued
+        mock_exporter.export.assert_not_called()
+        processor.shutdown()
 
     @patch("honeyhive.utils.logger.safe_log")
     def test_send_via_otlp_immediate_mode(self, mock_safe_log: Mock) -> None:
@@ -940,7 +942,7 @@ class TestHoneyHiveSpanProcessorSending:
         mock_result.name = "SUCCESS"
         mock_exporter.export.return_value = mock_result
 
-        processor = HoneyHiveSpanProcessor(otlp_exporter=mock_exporter)
+        processor = HoneyHiveSpanProcessor(otlp_exporter=mock_exporter, disable_batch=True)
 
         mock_span = Mock(spec=ReadableSpan)
         processor._send_via_otlp(mock_span, {}, "session-123")
@@ -1074,7 +1076,7 @@ class TestHoneyHiveSpanProcessorLifecycle:
         mock_exporter = Mock()
         mock_exporter.force_flush.return_value = True
 
-        processor = HoneyHiveSpanProcessor(otlp_exporter=mock_exporter)
+        processor = HoneyHiveSpanProcessor(otlp_exporter=mock_exporter, disable_batch=True)
 
         result = processor.force_flush()
 
@@ -1106,7 +1108,7 @@ class TestHoneyHiveSpanProcessorLifecycle:
         mock_exporter = Mock()
         mock_exporter.force_flush.side_effect = Exception("Flush error")
 
-        processor = HoneyHiveSpanProcessor(otlp_exporter=mock_exporter)
+        processor = HoneyHiveSpanProcessor(otlp_exporter=mock_exporter, disable_batch=True)
 
         result = processor.force_flush()
 
