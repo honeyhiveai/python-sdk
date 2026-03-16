@@ -27,15 +27,48 @@ This guide explains how to generate test cases for the 3 missing providers: **Go
    pip install autogen-agentchat autogen-ext[openai] openinference-instrumentation-openai
    ```
 
-## Step 1: Run Integrations with Span Capture
+## Step 1: Temporarily Add Span Capture
 
-Run each integration with the `CAPTURE_SPANS=true` environment variable:
+None of the public integration examples keep span-capture hooks committed. For each integration, temporarily add the capture hook locally, run the example once with `CAPTURE_SPANS=true`, save the dump under `.tmp/integration-example-dumps/<integration>/`, then remove the temporary capture code before committing.
+
+Use this temporary local patch pattern:
+
+```python
+from capture_spans import setup_span_capture
+
+async def main() -> None:
+    tracer = HoneyHiveTracer.init(...)
+    span_processor = setup_span_capture("<integration_name>", tracer)
+    ...
+    try:
+        ...
+    finally:
+        if span_processor:
+            span_processor.force_flush()
+        ...
+```
+
+For synchronous examples, apply the same pattern around the main execution path:
+
+```python
+tracer = HoneyHiveTracer.init(...)
+span_processor = setup_span_capture("<integration_name>", tracer)
+
+try:
+    ...
+finally:
+    if span_processor:
+        span_processor.force_flush()
+```
+
+Then run each integration with `CAPTURE_SPANS=true`:
 
 ```bash
 cd examples/integrations
 
-# Run Semantic Kernel
 export CAPTURE_SPANS=true
+
+# Run Semantic Kernel
 python3 semantic_kernel_integration.py
 
 # Run Google ADK
@@ -109,24 +142,10 @@ Each test case follows this schema:
 }
 ```
 
-## Files Modified
+## Notes
 
-The following integration files have been updated with span capture:
-
-1. **semantic_kernel_integration.py**:
-   - Added `from capture_spans import setup_span_capture`
-   - Added `span_processor = setup_span_capture("semantic_kernel", tracer)`
-   - Added cleanup: `if span_processor: span_processor.force_flush()`
-
-2. **openinference_google_adk_example.py**:
-   - Added `from capture_spans import setup_span_capture`
-   - Added `span_processor = setup_span_capture("google_adk", tracer)`
-   - Added cleanup: `if span_processor: span_processor.force_flush()`
-
-3. **autogen_integration.py**:
-   - Added `from capture_spans import setup_span_capture`
-   - Added `span_processor = setup_span_capture("autogen", tracer)`
-   - Added cleanup: `if span_processor: span_processor.force_flush()`
+- Add the span-capture hook locally for each integration, generate the dump, then remove the hook before committing.
+- Keep generated dumps under `.tmp/integration-example-dumps/` rather than tracked paths.
 
 ## Expected Test Cases
 
@@ -150,19 +169,17 @@ After running all 3 integrations, you should have test cases covering:
 - Complex workflows
 
 ### Semantic Kernel
-- Basic agent with plugins
-- Structured output
-- Chat history
-- Multi-turn with tools
-- Multiple models
+- Single agent with tool calls
+- Multi-turn session continuity
+- Multi-agent handoff orchestration
 - Streaming
-- Group chat orchestration
 
 ## Troubleshooting
 
 **No span dumps created?**
 - Ensure `CAPTURE_SPANS=true` is set
 - Check that the integration runs successfully
+- Confirm you temporarily added the local capture hook before running the example
 - Look for error messages during execution
 
 **Empty test cases?**

@@ -172,7 +172,7 @@ python integrations/crewai_integration.py
 **Features demonstrated:**
 - ✅ Single support agent with explicit tool calls
 - ✅ Sequential multi-agent support crew
-- ✅ Session continuity across multiple kickoff turns
+- ✅ Multiple support turns with repeated tool use
 - ✅ CrewAI + OpenAI instrumentors for trace capture
 
 #### LangGraph
