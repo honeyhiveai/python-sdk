@@ -134,7 +134,7 @@ class HoneyHiveSpanProcessor(SpanProcessor):
             return getattr(obj, key, default)
 
         # Extract include/exclude filter lists from either Pydantic model or dict
-        for raw_list, target, label in [
+        for raw_list, target, _label in [
             (_get(filters, "include"), self._span_name_include_prefixes, "include"),
             (_get(filters, "exclude"), self._span_name_exclude_prefixes, "exclude"),
         ]:
