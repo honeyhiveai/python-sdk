@@ -110,6 +110,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      - name: Report CPU core count
+        run: |
+          echo "=== CPU Core Info ==="
+          echo "nproc: $(nproc)"
+          echo "lscpu online CPUs: $(lscpu -p=cpu | grep -v '^#' | wc -l)"
+          lscpu | grep -E 'CPU\(s\)|Thread|Core|Socket'
+          echo "===================="
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v6
         with:
