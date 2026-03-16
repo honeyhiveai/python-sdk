@@ -103,18 +103,18 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         Reads span_name_filters from the tracer instance config and caches
         the prefix values as flat lists for fast matching in on_start/on_end.
         """
-        if not self.tracer_instance:
-            return
-
-        config = getattr(self.tracer_instance, "config", None)
-        if not config:
-            return
-
-        filters = config.get("span_name_filters")
-        if not filters:
-            return
-
         try:
+            if not self.tracer_instance:
+                return
+
+            config = getattr(self.tracer_instance, "config", None)
+            if not config:
+                return
+
+            filters = config.get("span_name_filters")
+            if not filters:
+                return
+
             self._do_parse_span_name_filters(filters)
         except Exception:
             self._safe_log(
