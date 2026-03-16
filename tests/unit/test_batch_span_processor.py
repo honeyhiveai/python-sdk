@@ -10,7 +10,7 @@ Tests the HoneyHiveSpanProcessor's internal BatchSpanProcessor wiring:
 """
 
 import time
-from unittest.mock import Mock, MagicMock, patch, call
+from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
 from opentelemetry.sdk.trace import ReadableSpan
@@ -18,10 +18,10 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor, SpanExportResult
 
 from honeyhive.tracer.processing.span_processor import HoneyHiveSpanProcessor
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_mock_exporter() -> Mock:
     """Create a mock OTLP exporter that satisfies the SpanExporter interface."""
@@ -72,6 +72,7 @@ def _make_mock_span(
 # ---------------------------------------------------------------------------
 # Initialization tests
 # ---------------------------------------------------------------------------
+
 
 class TestBatchProcessorInitialization:
     """Test that the internal BatchSpanProcessor is created/skipped correctly."""
@@ -137,6 +138,7 @@ class TestBatchProcessorInitialization:
 # Export path tests
 # ---------------------------------------------------------------------------
 
+
 class TestBatchExportPath:
     """Test that spans go through the right export path."""
 
@@ -201,9 +203,7 @@ class TestBatchExportPath:
         # Exporter should have been called with all spans in one batch
         assert exporter.export.call_count >= 1
         # Total spans exported across all calls should be 5
-        total_exported = sum(
-            len(c[0][0]) for c in exporter.export.call_args_list
-        )
+        total_exported = sum(len(c[0][0]) for c in exporter.export.call_args_list)
         assert total_exported == 5
 
         processor.shutdown()
@@ -227,9 +227,7 @@ class TestBatchExportPath:
         processor.shutdown()
 
         assert exporter.export.call_count >= 1
-        total_exported = sum(
-            len(c[0][0]) for c in exporter.export.call_args_list
-        )
+        total_exported = sum(len(c[0][0]) for c in exporter.export.call_args_list)
         assert total_exported == 3
 
     def test_batch_mode_auto_flush_on_interval(self) -> None:
@@ -272,9 +270,7 @@ class TestBatchExportPath:
         time.sleep(0.5)
 
         assert exporter.export.call_count >= 1
-        total_exported = sum(
-            len(c[0][0]) for c in exporter.export.call_args_list
-        )
+        total_exported = sum(len(c[0][0]) for c in exporter.export.call_args_list)
         assert total_exported == batch_size
 
         processor.shutdown()
@@ -283,6 +279,7 @@ class TestBatchExportPath:
 # ---------------------------------------------------------------------------
 # force_flush tests
 # ---------------------------------------------------------------------------
+
 
 class TestForceFlush:
     """Test force_flush behavior in both modes."""
@@ -323,6 +320,7 @@ class TestForceFlush:
 # ---------------------------------------------------------------------------
 # shutdown tests
 # ---------------------------------------------------------------------------
+
 
 class TestShutdown:
     """Test shutdown behavior in both modes."""
@@ -365,6 +363,7 @@ class TestShutdown:
 # Error handling tests
 # ---------------------------------------------------------------------------
 
+
 class TestErrorHandling:
     """Test graceful degradation on errors."""
 
@@ -376,9 +375,7 @@ class TestErrorHandling:
             disable_batch=False,
         )
         # Force the batch processor's on_end to raise
-        processor._batch_processor.on_end = Mock(
-            side_effect=RuntimeError("queue full")
-        )
+        processor._batch_processor.on_end = Mock(side_effect=RuntimeError("queue full"))
 
         span = _make_mock_span()
         # Should not raise

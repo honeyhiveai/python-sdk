@@ -809,7 +809,9 @@ class TestHoneyHiveSpanProcessorOnEnd:
         mock_exporter = Mock()
         mock_exporter.export.return_value = Mock(name="SUCCESS")
 
-        processor = HoneyHiveSpanProcessor(otlp_exporter=mock_exporter, disable_batch=True)
+        processor = HoneyHiveSpanProcessor(
+            otlp_exporter=mock_exporter, disable_batch=True
+        )
 
         mock_span = Mock(spec=ReadableSpan)
         mock_span.name = "test_operation"
@@ -942,7 +944,9 @@ class TestHoneyHiveSpanProcessorSending:
         mock_result.name = "SUCCESS"
         mock_exporter.export.return_value = mock_result
 
-        processor = HoneyHiveSpanProcessor(otlp_exporter=mock_exporter, disable_batch=True)
+        processor = HoneyHiveSpanProcessor(
+            otlp_exporter=mock_exporter, disable_batch=True
+        )
 
         mock_span = Mock(spec=ReadableSpan)
         processor._send_via_otlp(mock_span, {}, "session-123")
@@ -1076,7 +1080,9 @@ class TestHoneyHiveSpanProcessorLifecycle:
         mock_exporter = Mock()
         mock_exporter.force_flush.return_value = True
 
-        processor = HoneyHiveSpanProcessor(otlp_exporter=mock_exporter, disable_batch=True)
+        processor = HoneyHiveSpanProcessor(
+            otlp_exporter=mock_exporter, disable_batch=True
+        )
 
         result = processor.force_flush()
 
@@ -1108,7 +1114,9 @@ class TestHoneyHiveSpanProcessorLifecycle:
         mock_exporter = Mock()
         mock_exporter.force_flush.side_effect = Exception("Flush error")
 
-        processor = HoneyHiveSpanProcessor(otlp_exporter=mock_exporter, disable_batch=True)
+        processor = HoneyHiveSpanProcessor(
+            otlp_exporter=mock_exporter, disable_batch=True
+        )
 
         result = processor.force_flush()
 
