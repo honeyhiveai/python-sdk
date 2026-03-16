@@ -17,7 +17,9 @@ class TestCaseGenerator:
     """Generate test cases from span dumps."""
 
     def __init__(
-        self, span_dumps_dir: str = "span_dumps", output_dir: str = "test_cases"
+        self,
+        span_dumps_dir: str = ".tmp/integration-example-dumps",
+        output_dir: str = "test_cases",
     ):
         self.span_dumps_dir = Path(span_dumps_dir)
         self.output_dir = Path(output_dir)
@@ -31,7 +33,7 @@ class TestCaseGenerator:
         """Load all span dump files."""
         span_dumps = []
 
-        for file in self.span_dumps_dir.glob("*.json"):
+        for file in self.span_dumps_dir.rglob("*.json"):
             print(f"📂 Loading {file.name}...")
             with open(file, "r") as f:
                 data = json.load(f)

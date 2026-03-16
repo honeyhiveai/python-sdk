@@ -3,7 +3,7 @@ name: update-integration-example
 description: Build or update SDK integration examples for AI frameworks. Use when asked to update, create, or review a framework example in python-sdk/examples/integrations/. Covers framework API research, example writing, smoke testing, span capture, and tracing sanity checks.
 metadata:
   author: sanjeed5
-  version: "2.0"
+  version: "2.4"
 ---
 
 # Update Integration Example
@@ -37,11 +37,13 @@ Framework APIs change quickly. Research the current state before writing code.
 
 > **Sub-agent opportunity**: Launch an explore sub-agent to research the framework's latest docs and changelog while you read the existing example.
 
+> Use web search to find the framework's official docs, then fetch and read the relevant docs pages directly. For exact imports, method names, and parameters, verify against the docs page and the installed package or source code instead of relying on summaries alone.
+
 Checklist:
 - [ ] Current stable version on PyPI (we last tested `{{version}}`) and any recent breaking changes
 - [ ] Major patterns: agent types, orchestration, tools, callbacks/state, runtime/session
 - [ ] Current recommended API surface (not deprecated methods)
-- [ ] Tracing path: native OTel vs OpenInference instrumentor vs other
+- [ ] Tracing path: native OTel vs OpenInference instrumentor vs other. Prefer the simplest setup that yields complete spans without duplicates or conflicting instrumentation.
 - [ ] **All documented multi-agent patterns** (delegation, hand-off, graphs, etc.) — check the framework's multi-agent docs page specifically
 - [ ] Patterns that a good example should demonstrate
 
@@ -107,11 +109,15 @@ This is a functional check, not a tracing validation. Confirm:
 
 If the example fails, fix it before proceeding.
 
+When docs, release notes, or search results disagree with runtime behavior, use the installed package or source code to resolve the mismatch, then rerun until the example matches reality.
+
 ---
 
 ## Step 4: Capture Spans & Session Dump
 
 After the smoke run, capture raw spans and the ingested session for a tracing sanity check.
+
+Store temporary artifacts in a gitignored scratch directory such as `.tmp/integration-example-dumps/{{framework}}/`. Keep raw dumps and session dumps there rather than in tracked paths.
 
 ### Span capture
 
@@ -128,7 +134,7 @@ Run with `CAPTURE_SPANS=true`:
 cd python-sdk && CAPTURE_SPANS=true uv run python examples/integrations/{{framework}}_example.py
 ```
 
-Verify: Raw span dump exists in `span_dumps/`.
+Verify: Raw span dump exists in `.tmp/integration-example-dumps/{{framework}}/`.
 
 ### Session dump
 
@@ -136,16 +142,19 @@ Wait ~10s for ingestion propagation, then retrieve the ingested session:
 
 ```python
 import json, os, time
+from pathlib import Path
 from honeyhive import HoneyHive
 
 time.sleep(10)
-client = HoneyHive(bearer_token=os.environ["HH_API_KEY"], server_url=os.environ["HH_API_URL"])
-resp = client.events.get_by_session_id(session_id="<session_id>", project_name=os.environ["HH_PROJECT"])
-with open("span_dumps/{{framework}}_session.json", "w") as f:
-    json.dump([e.to_dict() for e in resp], f, indent=2, default=str)
+dump_dir = Path(".tmp/integration-example-dumps/{{framework}}")
+dump_dir.mkdir(parents=True, exist_ok=True)
+client = HoneyHive(api_key=os.environ["HH_API_KEY"], server_url=os.environ["HH_API_URL"])
+resp = client.events.get_by_session_id(session_id="<session_id>")
+with open(dump_dir / "{{framework}}_session.json", "w") as f:
+    json.dump(resp.events, f, indent=2, default=str)
 ```
 
-Save to `span_dumps/` alongside the raw span dump. Leave both dump files in place during the testing cycle — they get cleaned up in Step 7.
+Save the session dump in the same gitignored dump directory as the raw spans. Keep both artifacts during comparison, then remove them in Step 7.
 
 ---
 
@@ -177,9 +186,7 @@ If issues are found, list them in the report.
 
 ## Step 6: Verify in UI
 
-Open https://fe.testing-cp.honeyhive.ai, find the session, and take screenshots of different event types.
-
-Session link: `https://fe.testing-cp.honeyhive.ai/datastore/sessions/<session_id>/<project_id>`
+Open the testing UI for the current environment, find the session, and take screenshots of different event types.
 
 Verify: Trace is visible with events rendering correctly. Inputs and outputs should be cleanly visible for model events and tool calls. Share screenshots for these if possible.
 
@@ -191,18 +198,19 @@ Remove debug scaffolding before committing:
 - Remove `setup_span_capture` import and call
 - Remove `verbose=True` from tracer init (unless it was already there)
 - Revert `session_name` if you changed it
+- Remove temporary artifacts from `.tmp/integration-example-dumps/{{framework}}/` when you no longer need them
 
 Examples are public-facing SDK code — no debug instrumentation should be committed.
 
 ---
 
-## Step 8: Format
+## Step 8: Generate & Format
 
 ```bash
-cd python-sdk && make format
+cd python-sdk && make generate && make format
 ```
 
-Verify: Exits 0.
+`make generate` regenerates the client from the OpenAPI spec. CI will block the PR if generated code is stale. Both commands must exit 0.
 
 ---
 
@@ -239,3 +247,7 @@ If you updated the example, open a PR in `honeyhiveai/python-sdk`. Include the r
 - UI trace: [link]
 - PR: [link, or "No changes"]
 ```
+
+## Skill Notes
+
+- Keep durable, framework-specific notes in `references/` under this skill directory (Agent Skills optional dir), and keep `SKILL.md` focused on workflow/checklists.

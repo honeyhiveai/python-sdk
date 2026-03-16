@@ -10,6 +10,10 @@
 
 ### Fixed
 
+- **Tracing: classify native GenAI operation spans more accurately**
+  - `HoneyHiveSpanProcessor` now maps `gen_ai.operation.name` values like `chat`, `invoke_agent`, and `execute_tool` to the correct HoneyHive event types before falling back to OpenInference heuristics
+  - Improves event typing for frameworks that emit standard GenAI semantic convention attributes natively, including Strands and Semantic Kernel
+
 - **Events API: Export no longer times out on large result sets**
   - Exporting thousands of events (e.g. via `get_by_session_id()` or `export()`) previously failed with `ReadTimeout` when the response took longer than 5 seconds
   - Export requests now use a 5-minute timeout to accommodate large queries

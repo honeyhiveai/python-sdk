@@ -162,18 +162,18 @@ python integrations/bedrock_integration.py
 
 #### CrewAI
 ```bash
-pip install honeyhive crewai openinference-instrumentation-crewai openinference-instrumentation-litellm
+pip install honeyhive crewai openinference-instrumentation-crewai openinference-instrumentation-openai
 export OPENAI_API_KEY=sk-...
 export HH_API_KEY=your-honeyhive-key
 export HH_PROJECT=your-project
-python integrations/crewai_example.py
+python integrations/crewai_integration.py
 ```
 
 **Features demonstrated:**
-- ✅ Sequential crew with tool calls (order investigator + response drafter)
-- ✅ Hierarchical crew with delegation (manager + order/policy specialists)
-- ✅ Session continuity across multiple kickoff turns
-- ✅ CrewAI + LiteLLM instrumentors for trace capture
+- ✅ Single support agent with explicit tool calls
+- ✅ Sequential multi-agent support crew
+- ✅ Multiple support turns with repeated tool use
+- ✅ CrewAI + OpenAI instrumentors for trace capture
 
 #### LangGraph
 ```bash

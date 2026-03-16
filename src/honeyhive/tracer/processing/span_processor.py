@@ -23,6 +23,15 @@ from ..utils.event_type import detect_event_type_from_patterns, extract_raw_attr
 
 # No module-level logger - use tracer instance logger
 
+_GENAI_OP_TO_EVENT_TYPE = {
+    "chat": "model",
+    "text_completion": "model",
+    "generate_content": "model",
+    "invoke_agent": "chain",
+    "create_agent": "chain",
+    "execute_tool": "tool",
+}
+
 
 # Removed _get_config_value_dynamically_from_tracer - replaced by unified config
 # Use tracer.config.get(key) instead
@@ -1024,7 +1033,26 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                 )
                 return str(direct_type)
 
-            # Priority 4: OpenInference span.kind attribute (standard
+            # Priority 4: gen_ai.operation.name (GenAI semantic conventions)
+            op_name = attributes.get("gen_ai.operation.name")
+            if op_name:
+                op_name_str = str(op_name).lower()
+                event_type = _GENAI_OP_TO_EVENT_TYPE.get(op_name_str)
+                if event_type:
+                    self._safe_log(
+                        "debug",
+                        "✅ Event type from gen_ai.operation.name: %s (%s)",
+                        event_type,
+                        op_name,
+                    )
+                    return event_type
+                self._safe_log(
+                    "debug",
+                    "Unknown gen_ai.operation.name value: %s, falling through",
+                    op_name,
+                )
+
+            # Priority 5: OpenInference span.kind attribute (standard
             # instrumentor convention)
             span_kind = attributes.get("openinference.span.kind")
             if span_kind:

@@ -1,17 +1,27 @@
 """
 HoneyHive + CrewAI integration example.
 
-Based on CrewAI docs (https://docs.crewai.com) with HoneyHive tracing on top.
+Demonstrates two CrewAI patterns with HoneyHive tracing:
 
-Demonstrates two patterns:
-1) Sequential crew - researcher + writer (from quickstart)
-2) Hierarchical crew - manager delegates to tool-equipped specialists
+1) Single support agent with explicit tool calls and session continuity
+2) Sequential multi-agent crew (investigator + response drafter)
 
-Requirements:
-    pip install honeyhive crewai openinference-instrumentation-crewai openinference-instrumentation-litellm
+Install:
+    uv pip install honeyhive crewai openinference-instrumentation-crewai openinference-instrumentation-openai
 
-Environment variables:
-    HH_API_KEY, HH_PROJECT, OPENAI_API_KEY (or LITELLM provider keys)
+Run:
+    uv run python examples/integrations/crewai_integration.py
+
+Environment:
+    HH_API_KEY
+    HH_PROJECT
+    OPENAI_API_KEY
+    HH_API_URL (optional, defaults to production)
+
+Known gap:
+    Current OpenInference + CrewAI instrumentation surfaces custom tool usage
+    inside model/tool-call payloads, but does not yet emit separate standalone
+    tool events for these function tools in HoneyHive.
 """
 
 import os
@@ -19,144 +29,170 @@ import os
 from crewai import Agent, Crew, Process, Task
 from crewai.tools import tool
 from openinference.instrumentation.crewai import CrewAIInstrumentor
-from openinference.instrumentation.litellm import LiteLLMInstrumentor
+from openinference.instrumentation.openai import OpenAIInstrumentor
 
 from honeyhive import HoneyHiveTracer
 
-# --- HoneyHive setup (add these 3 lines to any CrewAI app) ---
+MODEL = "openai/gpt-4o-mini"
+
+
+@tool("OrderStatusLookup")
+def lookup_order_status(order_id: str) -> str:
+    """Look up the current status and ETA for a customer order."""
+    statuses = {
+        "ORD-1001": {"state": "shipped", "eta_days": 2},
+        "ORD-1002": {"state": "processing", "eta_days": 5},
+        "ORD-1003": {"state": "delayed", "eta_days": 8},
+    }
+    status = statuses.get(order_id.upper())
+    if status:
+        return (
+            f"Order {order_id.upper()}: {status['state']}, "
+            f"estimated delivery in {status['eta_days']} days."
+        )
+    return f"Order {order_id.upper()}: not found in the system."
+
+
+@tool("PolicyLookup")
+def lookup_policy(topic: str) -> str:
+    """Look up support policy by topic: refund, cancellation, or shipping."""
+    policies = {
+        "refund": (
+            "Refunds are available within 30 days for undelivered or damaged items. "
+            "Proof of purchase is required."
+        ),
+        "cancellation": (
+            "Cancellation is allowed before shipment. Delayed orders can request "
+            "assisted cancellation."
+        ),
+        "shipping": (
+            "Standard shipping takes 3-5 business days. Delays beyond 7 days "
+            "trigger proactive support outreach."
+        ),
+    }
+    result = policies.get(topic.strip().lower())
+    if result:
+        return f"Policy ({topic.strip().lower()}): {result}"
+    return "No policy found. Try: refund, cancellation, shipping."
+
 
 tracer = HoneyHiveTracer.init(
     api_key=os.environ["HH_API_KEY"],
     project=os.environ["HH_PROJECT"],
     session_name="crewai-example",
+    server_url=os.environ.get("HH_API_URL"),
 )
 
 CrewAIInstrumentor().instrument(tracer_provider=tracer.provider)
-LiteLLMInstrumentor().instrument(tracer_provider=tracer.provider)
+OpenAIInstrumentor().instrument(tracer_provider=tracer.provider)
 
 
-# --- Pattern 1: Sequential crew (CrewAI quickstart) ---
-# https://docs.crewai.com/quickstart
-
-researcher = Agent(
-    role="{topic} Senior Data Researcher",
-    goal="Uncover cutting-edge developments in {topic}",
-    backstory=(
-        "You're a seasoned researcher with a knack for uncovering the latest "
-        "developments in {topic}. Known for finding the most relevant information "
-        "and presenting it clearly and concisely."
-    ),
-    llm="openai/gpt-4o-mini",
-    verbose=False,
-)
-
-reporting_analyst = Agent(
-    role="{topic} Reporting Analyst",
-    goal="Create detailed reports based on {topic} data analysis and research findings",
-    backstory=(
-        "You're a meticulous analyst with a keen eye for detail. You turn complex "
-        "data into clear and concise reports that are easy to understand and act on."
-    ),
-    llm="openai/gpt-4o-mini",
-    verbose=False,
-)
-
-research_task = Task(
-    description=(
-        "Conduct a thorough research about {topic}. "
-        "Make sure you find any interesting and relevant information given "
-        "the current year is 2026."
-    ),
-    expected_output="A list with 5 bullet points of the most relevant information about {topic}.",
-    agent=researcher,
-)
-
-reporting_task = Task(
-    description=(
-        "Review the context you got and expand each topic into a full section for a report. "
-        "Make sure the report is detailed and contains any and all relevant information."
-    ),
-    expected_output="A fully fledged report with the main topics, each with a full section of information.",
-    agent=reporting_analyst,
-    context=[research_task],
-)
-
-sequential_crew = Crew(
-    agents=[researcher, reporting_analyst],
-    tasks=[research_task, reporting_task],
-    process=Process.sequential,
-    verbose=False,
-)
-
-print("--- Pattern 1: Sequential crew ---")
-result = sequential_crew.kickoff(inputs={"topic": "AI Agents"})
-print(result)
-
-
-# --- Pattern 2: Hierarchical crew with tools ---
-# https://docs.crewai.com/learn/hierarchical-process
-# https://docs.crewai.com/learn/create-custom-tools
-
-
-@tool("Calculator")
-def calculator(expression: str) -> str:
-    """Evaluate a basic arithmetic expression like '17 * 3 + 5'."""
-    allowed = set("0123456789+-*/(). ")
-    if not set(expression).issubset(allowed):
-        return "Only basic arithmetic symbols are allowed."
-    try:
-        return str(eval(expression, {"__builtins__": {}}, {}))
-    except Exception:
-        return "Invalid arithmetic expression."
-
-
-@tool("PolicyLookup")
-def policy_lookup(topic: str) -> str:
-    """Look up internal company policy by topic. Available topics: soc2, pii, retention."""
-    policies = {
-        "soc2": "SOC 2 covers security, availability, processing integrity, confidentiality, and privacy.",
-        "pii": "PII must be redacted before sharing with external systems. Retain per data policy.",
-        "retention": "Default data retention is 30 days unless legal requirements require longer.",
-    }
-    return policies.get(
-        topic.strip().lower(), "No policy found. Try: soc2, pii, retention."
+def run_single_agent_support_scenario() -> None:
+    """Run a single support agent across two turns with direct tool usage."""
+    support_generalist = Agent(
+        role="Support Generalist",
+        goal="Resolve order and policy questions using the available tools",
+        backstory=(
+            "You are a customer support generalist. Use tools for order status and "
+            "policy questions, then reply with short, customer-friendly answers."
+        ),
+        tools=[lookup_order_status, lookup_policy],
+        llm=MODEL,
+        verbose=False,
     )
 
+    prompts = [
+        (
+            "Check order ORD-1002 and summarize the current shipping status for "
+            "the customer."
+        ),
+        (
+            "For delayed order ORD-1003, explain the cancellation policy and "
+            "recommended next steps."
+        ),
+    ]
 
-math_expert = Agent(
-    role="Math Expert",
-    goal="Solve arithmetic problems accurately using the Calculator tool",
-    backstory="You are a mathematician. Always use the Calculator tool for calculations.",
-    tools=[calculator],
-    llm="openai/gpt-4o-mini",
-    verbose=False,
-)
+    print("--- Pattern 1: Single support agent with tool calls ---")
+    for turn_number, prompt in enumerate(prompts, start=1):
+        task = Task(
+            description=prompt,
+            expected_output=(
+                "A concise support response that uses tools when needed and includes "
+                "the final customer-facing answer."
+            ),
+            agent=support_generalist,
+        )
+        crew = Crew(
+            agents=[support_generalist],
+            tasks=[task],
+            process=Process.sequential,
+            verbose=False,
+        )
+        print(f"Turn {turn_number}: {prompt}")
+        print(crew.kickoff())
+        print()
 
-compliance_expert = Agent(
-    role="Compliance Expert",
-    goal="Answer policy and compliance questions using the PolicyLookup tool",
-    backstory="You are a compliance officer. Always use PolicyLookup for policy questions.",
-    tools=[policy_lookup],
-    llm="openai/gpt-4o-mini",
-    verbose=False,
-)
 
-support_task = Task(
-    description=(
-        "Answer these two questions:\n"
-        "1. What is 24 * 7 + 15?\n"
-        "2. What does our data retention policy say?"
-    ),
-    expected_output="Clear answers to both questions, labeled 1 and 2.",
-)
+def run_sequential_support_crew() -> None:
+    """Run a two-agent crew that investigates then drafts the response."""
+    order_investigator = Agent(
+        role="Order Investigator",
+        goal="Investigate order and policy details with the support tools",
+        backstory=(
+            "You are a support investigator who always calls tools before making "
+            "claims about order status or customer policy."
+        ),
+        tools=[lookup_order_status, lookup_policy],
+        llm=MODEL,
+        verbose=False,
+    )
 
-hierarchical_crew = Crew(
-    agents=[math_expert, compliance_expert],
-    tasks=[support_task],
-    process=Process.hierarchical,
-    manager_llm="openai/gpt-4o-mini",
-    verbose=False,
-)
+    response_drafter = Agent(
+        role="Response Drafter",
+        goal="Turn support findings into a polished customer response",
+        backstory=(
+            "You write short, empathetic support responses that summarize findings "
+            "and suggest a clear next step."
+        ),
+        llm=MODEL,
+        verbose=False,
+    )
 
-print("\n--- Pattern 2: Hierarchical crew with tools ---")
-print(hierarchical_crew.kickoff())
+    investigation_task = Task(
+        description=(
+            "Investigate order ORD-1003. Use OrderStatusLookup and the most relevant "
+            "policy tool call to determine whether the customer can cancel and what "
+            "they should expect next."
+        ),
+        expected_output=(
+            "A concise investigation summary with the order status, the relevant "
+            "policy, and one recommended next step."
+        ),
+        agent=order_investigator,
+    )
+
+    response_task = Task(
+        description=(
+            "Write the final customer response using the investigation summary. Keep "
+            "it friendly, direct, and no longer than 5 sentences."
+        ),
+        expected_output="A polished customer support response.",
+        agent=response_drafter,
+        context=[investigation_task],
+    )
+
+    support_crew = Crew(
+        agents=[order_investigator, response_drafter],
+        tasks=[investigation_task, response_task],
+        process=Process.sequential,
+        verbose=False,
+    )
+
+    print("--- Pattern 2: Sequential multi-agent support crew ---")
+    print(support_crew.kickoff())
+
+
+if __name__ == "__main__":
+    run_single_agent_support_scenario()
+    run_sequential_support_crew()
+    tracer.force_flush()
