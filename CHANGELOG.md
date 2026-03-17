@@ -1,5 +1,7 @@
 ## [Unreleased]
 
+## [1.0.0rc20] - 2026-03-17
+
 ### Added
 
 - **Tracer: `span_name_filters` parameter on `HoneyHiveTracer.init()`** — include/exclude spans by name prefix to filter noisy framework internals
