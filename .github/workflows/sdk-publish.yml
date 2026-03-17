@@ -1,19 +1,14 @@
 ---
 name: Publish to PyPI
 
-# Trigger on push to main when version file changes OR manual trigger
+# Trigger only via manual dispatch
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'src/honeyhive/__init__.py'
   workflow_dispatch:
     inputs:
       branch:
-        description: 'Branch to publish from (e.g., complete-refactor for RC testing)'
+        description: 'Branch to publish from (e.g., federated-sdk-release-candidate for RC testing)'
         required: false
-        default: 'main'
+        default: 'federated-sdk-release-candidate'
 
 permissions:
   contents: write  # For creating GitHub releases
