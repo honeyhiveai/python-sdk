@@ -39,6 +39,7 @@ class MockHoneyHiveTracer:
     def __init__(self) -> None:
         # Core configuration attributes
         self.config = Mock()
+        self.config.get = lambda key, default=None: getattr(self.config, key, default)
         self.config.api_key = "test-api-key"
         self.config.server_url = "https://test.api.honeyhive.ai"
         self.config.otlp_enabled = True
@@ -51,6 +52,7 @@ class MockHoneyHiveTracer:
         self.config.max_events = 1024
         self.config.max_links = 128
         self.config.max_span_size = 10 * 1024 * 1024  # 10MB
+        self.config.disable_batch = False
 
         # Tracer instance attributes
         self.project_name: Any = "test-project"  # Allow both str and None
@@ -573,7 +575,7 @@ class TestTracerInitialization:
     ) -> None:
         """Test main provider components setup edge cases."""
         # Test with disable_batch=True
-        self.mock_tracer.disable_batch = True
+        self.mock_tracer.config.disable_batch = True
         self.mock_tracer.provider = Mock()
         mock_span_processor = Mock()
         mock_processor.return_value = mock_span_processor

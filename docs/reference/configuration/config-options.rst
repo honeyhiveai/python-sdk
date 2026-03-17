@@ -1131,14 +1131,13 @@ Lambda/Serverless Environment
    project: "my-lambda-app"
    test_mode: false
    log_level: "ERROR"
-   
-   # Performance (optimized for cold starts)
+
+   # Synchronous export — the Lambda runtime may freeze before
+   # the background BatchSpanProcessor thread can flush.
+   disable_batch: true
    disable_http_tracing: true
    timeout: 5.0
-   batch_size: 1
-   flush_interval: 1.0
-   max_queue_size: 100
-   
+
    # Evaluation (disabled for performance)
    evaluation_enabled: false
 

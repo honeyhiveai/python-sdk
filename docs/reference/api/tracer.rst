@@ -133,7 +133,7 @@ init()
    :param disable_http_tracing: Whether to disable HTTP request tracing. Defaults to True for performance.
    :type disable_http_tracing: bool
    
-   :param disable_batch: Whether to disable batch processing and use SimpleSpanProcessor instead of BatchSpanProcessor. Defaults to False.
+   :param disable_batch: When ``False`` (default), spans are queued and exported asynchronously in a background thread via OpenTelemetry's ``BatchSpanProcessor``. When ``True``, each span is exported synchronously inline on ``span.end()``. Use ``True`` for Lambda/serverless or when you need guaranteed delivery before ``on_end()`` returns.
    :type disable_batch: bool
    
    :param verbose: Enable verbose debug logging throughout tracer initialization. Defaults to False.

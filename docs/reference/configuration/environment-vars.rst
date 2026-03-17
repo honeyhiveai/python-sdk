@@ -261,7 +261,7 @@ Backwards Compatibility Configuration
      - Enable verbose debug logging throughout tracer initialization
    * - ``HH_DISABLE_BATCH``
      - ``false``
-     - Use SimpleSpanProcessor instead of BatchSpanProcessor for immediate export
+     - When ``true``, disables async batched export and sends each span synchronously inline on ``span.end()``. Use for Lambda/serverless or debugging.
 
 **Examples:**
 

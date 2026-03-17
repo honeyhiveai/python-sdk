@@ -366,7 +366,7 @@ def _setup_main_provider_components(
     try:
         tracer_instance.span_processor = HoneyHiveSpanProcessor(
             client=getattr(tracer_instance, "client", None),
-            disable_batch=getattr(tracer_instance, "disable_batch", False),
+            disable_batch=tracer_instance.config.get("disable_batch", False),
             otlp_exporter=otlp_exporter,
             tracer_instance=tracer_instance,
         )
@@ -475,7 +475,7 @@ def _setup_main_provider(
     try:
         tracer_instance.span_processor = HoneyHiveSpanProcessor(
             client=getattr(tracer_instance, "client", None),
-            disable_batch=getattr(tracer_instance, "disable_batch", False),
+            disable_batch=tracer_instance.config.get("disable_batch", False),
             otlp_exporter=otlp_exporter,
             tracer_instance=tracer_instance,
         )
@@ -534,7 +534,7 @@ def _setup_independent_provider(
     try:
         tracer_instance.span_processor = HoneyHiveSpanProcessor(
             client=getattr(tracer_instance, "client", None),
-            disable_batch=getattr(tracer_instance, "disable_batch", False),
+            disable_batch=tracer_instance.config.get("disable_batch", False),
             otlp_exporter=otlp_exporter,
             tracer_instance=tracer_instance,
         )

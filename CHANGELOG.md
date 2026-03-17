@@ -3,7 +3,9 @@
 ### Added
 
 - **Tracer: `span_name_filters` parameter on `HoneyHiveTracer.init()`** — include/exclude spans by name prefix to filter noisy framework internals
-
+- **Tracing: Batched async span export via OTel BatchSpanProcessor**
+  - Spans are now queued and exported asynchronously in a background thread when `disable_batch=False` (the default)
+  - `disable_batch=True` preserves the previous synchronous inline export for Lambda/serverless
 ## [1.0.0rc19] - 2026-03-06
 
 ### Added
