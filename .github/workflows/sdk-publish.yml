@@ -1,14 +1,8 @@
 ---
 name: Publish to PyPI
 
-# Trigger on push to main when version file changes OR manual trigger
+# Trigger only via manual dispatch
 on:
-  push:
-    branches:
-      - main
-      - federated-sdk-release-candidate
-    paths:
-      - 'src/honeyhive/__init__.py'
   workflow_dispatch:
     inputs:
       branch:
