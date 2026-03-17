@@ -50,22 +50,12 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         in a future release. OTLP is the only supported export path.
     """
 
-    # Default batch configuration
-    DEFAULT_MAX_QUEUE_SIZE = 512
-    DEFAULT_SCHEDULE_DELAY_MILLIS = 1000.0
-    DEFAULT_MAX_EXPORT_BATCH_SIZE = 32
-    DEFAULT_EXPORT_TIMEOUT_MILLIS = 10000.0
-
     def __init__(
         self,
         client: Optional[Any] = None,
         disable_batch: bool = False,
         otlp_exporter: Optional[Any] = None,
         tracer_instance: Optional[Any] = None,
-        max_queue_size: Optional[int] = None,
-        schedule_delay_millis: Optional[float] = None,
-        max_export_batch_size: Optional[int] = None,
-        export_timeout_millis: Optional[float] = None,
     ) -> None:
         """Initialize the span processor.
 
@@ -77,14 +67,6 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         :type otlp_exporter: Optional[Any]
         :param tracer_instance: HoneyHive tracer instance for session isolation
         :type tracer_instance: Optional[Any]
-        :param max_queue_size: Max spans queued before dropping (batch mode only)
-        :type max_queue_size: Optional[int]
-        :param schedule_delay_millis: Flush interval in ms (batch mode only)
-        :type schedule_delay_millis: Optional[float]
-        :param max_export_batch_size: Max spans per export call (batch mode only)
-        :type max_export_batch_size: Optional[int]
-        :param export_timeout_millis: Timeout per export call in ms (batch mode only)
-        :type export_timeout_millis: Optional[float]
         """
         self.client = client
         self.disable_batch = disable_batch
@@ -111,31 +93,14 @@ class HoneyHiveSpanProcessor(SpanProcessor):
 
         # When batching is enabled and we have an OTLP exporter, wrap it in
         # OTel's BatchSpanProcessor for async background export.
+        # Uses OTel's upstream defaults (queue=2048, delay=5000ms, batch=512, timeout=30s).
         if not disable_batch and otlp_exporter is not None:
-            resolved_max_queue = max_queue_size or self.DEFAULT_MAX_QUEUE_SIZE
-            resolved_delay = schedule_delay_millis or self.DEFAULT_SCHEDULE_DELAY_MILLIS
-            resolved_batch_size = (
-                max_export_batch_size or self.DEFAULT_MAX_EXPORT_BATCH_SIZE
-            )
-            resolved_timeout = (
-                export_timeout_millis or self.DEFAULT_EXPORT_TIMEOUT_MILLIS
-            )
             self._batch_processor = BatchSpanProcessor(
                 span_exporter=otlp_exporter,
-                max_queue_size=resolved_max_queue,
-                schedule_delay_millis=resolved_delay,
-                max_export_batch_size=resolved_batch_size,
-                export_timeout_millis=resolved_timeout,
             )
             self._safe_log(
                 "debug",
-                "🔧 BatchSpanProcessor created: max_queue_size=%d, "
-                "schedule_delay_millis=%.0f, max_export_batch_size=%d, "
-                "export_timeout_millis=%.0f",
-                resolved_max_queue,
-                resolved_delay,
-                resolved_batch_size,
-                resolved_timeout,
+                "🔧 BatchSpanProcessor created with OTel defaults",
             )
 
         self._safe_log(

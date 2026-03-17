@@ -6,11 +6,10 @@ Tests the HoneyHiveSpanProcessor's internal BatchSpanProcessor wiring:
 - Spans are enqueued (not exported inline) in batch mode
 - force_flush drains the batch queue
 - shutdown drains and stops the batch processor
-- Config params are passed through correctly
 """
 
 import time
-from unittest.mock import MagicMock, Mock, call, patch
+from unittest.mock import Mock
 
 import pytest
 from opentelemetry.sdk.trace import ReadableSpan
@@ -69,6 +68,30 @@ def _make_mock_span(
     return span
 
 
+def _make_batch_processor(
+    exporter: Mock,
+    schedule_delay_millis: float = 60000.0,
+    max_export_batch_size: int = 512,
+) -> HoneyHiveSpanProcessor:
+    """Create a HoneyHiveSpanProcessor with a custom BatchSpanProcessor.
+
+    Since HoneyHiveSpanProcessor defers to OTel's defaults, tests that need
+    specific batch timing construct the BatchSpanProcessor directly.
+    """
+    processor = HoneyHiveSpanProcessor(
+        otlp_exporter=exporter,
+        disable_batch=False,
+    )
+    # Replace the default BatchSpanProcessor with one using test-specific config
+    processor._batch_processor.shutdown()
+    processor._batch_processor = BatchSpanProcessor(
+        span_exporter=exporter,
+        schedule_delay_millis=schedule_delay_millis,
+        max_export_batch_size=max_export_batch_size,
+    )
+    return processor
+
+
 # ---------------------------------------------------------------------------
 # Initialization tests
 # ---------------------------------------------------------------------------
@@ -86,7 +109,6 @@ class TestBatchProcessorInitialization:
         )
         assert processor._batch_processor is not None
         assert isinstance(processor._batch_processor, BatchSpanProcessor)
-        # Cleanup
         processor.shutdown()
 
     def test_immediate_mode_skips_batch_processor(self) -> None:
@@ -107,29 +129,14 @@ class TestBatchProcessorInitialization:
         )
         assert processor._batch_processor is None
 
-    def test_default_batch_config_values(self) -> None:
-        """Defaults are applied when no explicit config is passed."""
+    def test_uses_otel_defaults(self) -> None:
+        """BatchSpanProcessor is created with OTel upstream defaults (no custom config)."""
         exporter = _make_mock_exporter()
         processor = HoneyHiveSpanProcessor(
             otlp_exporter=exporter,
             disable_batch=False,
         )
-        # We can't directly inspect BatchSpanProcessor internals easily,
-        # but we can verify the processor was created without error.
-        assert processor._batch_processor is not None
-        processor.shutdown()
-
-    def test_custom_batch_config_values(self) -> None:
-        """Custom batch config params are accepted without error."""
-        exporter = _make_mock_exporter()
-        processor = HoneyHiveSpanProcessor(
-            otlp_exporter=exporter,
-            disable_batch=False,
-            max_queue_size=512,
-            schedule_delay_millis=1000.0,
-            max_export_batch_size=32,
-            export_timeout_millis=10000.0,
-        )
+        # Verify processor was created without error — OTel defaults are used internally
         assert processor._batch_processor is not None
         processor.shutdown()
 
@@ -163,12 +170,7 @@ class TestBatchExportPath:
     def test_batch_mode_does_not_call_exporter_directly(self) -> None:
         """In batch mode, the exporter is NOT called inline from _send_via_otlp."""
         exporter = _make_mock_exporter()
-        processor = HoneyHiveSpanProcessor(
-            otlp_exporter=exporter,
-            disable_batch=False,
-            # Use a long delay so the batch worker doesn't auto-flush
-            schedule_delay_millis=60000.0,
-        )
+        processor = _make_batch_processor(exporter, schedule_delay_millis=60000.0)
 
         span = _make_mock_span()
         processor._send_via_otlp(span, {}, "test-session")
@@ -180,13 +182,7 @@ class TestBatchExportPath:
     def test_batch_mode_exports_on_flush(self) -> None:
         """Spans enqueued in batch mode are exported when force_flush is called."""
         exporter = _make_mock_exporter()
-        processor = HoneyHiveSpanProcessor(
-            otlp_exporter=exporter,
-            disable_batch=False,
-            # Long delay to prevent auto-flush during test
-            schedule_delay_millis=60000.0,
-            max_export_batch_size=64,
-        )
+        processor = _make_batch_processor(exporter, schedule_delay_millis=60000.0)
 
         # Enqueue several spans
         for i in range(5):
@@ -202,7 +198,6 @@ class TestBatchExportPath:
 
         # Exporter should have been called with all spans in one batch
         assert exporter.export.call_count >= 1
-        # Total spans exported across all calls should be 5
         total_exported = sum(len(c[0][0]) for c in exporter.export.call_args_list)
         assert total_exported == 5
 
@@ -211,11 +206,7 @@ class TestBatchExportPath:
     def test_batch_mode_exports_on_shutdown(self) -> None:
         """Remaining queued spans are drained on shutdown."""
         exporter = _make_mock_exporter()
-        processor = HoneyHiveSpanProcessor(
-            otlp_exporter=exporter,
-            disable_batch=False,
-            schedule_delay_millis=60000.0,
-        )
+        processor = _make_batch_processor(exporter, schedule_delay_millis=60000.0)
 
         for i in range(3):
             span = _make_mock_span(name=f"shutdown-span-{i}")
@@ -233,13 +224,8 @@ class TestBatchExportPath:
     def test_batch_mode_auto_flush_on_interval(self) -> None:
         """Spans are auto-flushed after schedule_delay_millis."""
         exporter = _make_mock_exporter()
-        processor = HoneyHiveSpanProcessor(
-            otlp_exporter=exporter,
-            disable_batch=False,
-            # Very short flush interval for testing
-            schedule_delay_millis=100.0,
-            max_export_batch_size=64,
-        )
+        # Very short flush interval for testing
+        processor = _make_batch_processor(exporter, schedule_delay_millis=100.0)
 
         span = _make_mock_span(name="auto-flush-span")
         processor._send_via_otlp(span, {}, "test-session")
@@ -254,10 +240,9 @@ class TestBatchExportPath:
         """Spans are auto-flushed when max_export_batch_size is reached."""
         exporter = _make_mock_exporter()
         batch_size = 4
-        processor = HoneyHiveSpanProcessor(
-            otlp_exporter=exporter,
-            disable_batch=False,
-            schedule_delay_millis=60000.0,  # Long delay
+        processor = _make_batch_processor(
+            exporter,
+            schedule_delay_millis=60000.0,
             max_export_batch_size=batch_size,
         )
 
