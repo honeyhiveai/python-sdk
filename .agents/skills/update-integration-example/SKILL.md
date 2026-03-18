@@ -1,14 +1,14 @@
 ---
 name: update-integration-example
-description: Build or update SDK integration examples for AI frameworks. Use when asked to update, create, or review a framework example in python-sdk/examples/integrations/. Covers framework API research, example writing, smoke testing, span capture, and tracing sanity checks.
+description: Build or update SDK integration examples for AI frameworks. Use when asked to update, create, or review a framework example in python-sdk/examples/integrations/. Covers framework API research, example writing, smoke testing, span capture, tracing sanity checks, and creating/updating the corresponding integration doc in honeyhive-ai-docs.
 metadata:
   author: sanjeed5
-  version: "2.4"
+  version: "2.5"
 ---
 
 # Update Integration Example
 
-Build or update the SDK example for a framework integration. The example is a public-facing reference that shows how to use HoneyHive with the framework. It must be correct, comprehensive, and follow the framework's current recommended APIs.
+Build or update the SDK example for a framework integration, then create or update the corresponding integration doc in `honeyhiveai/honeyhive-ai-docs`. The example is a public-facing reference that shows how to use HoneyHive with the framework. It must be correct, comprehensive, and follow the framework's current recommended APIs. The integration doc is the user-facing documentation page derived from the example.
 
 This skill does NOT do deep tracing validation — only a sanity check.
 
@@ -220,6 +220,85 @@ If you updated the example, open a PR in `honeyhiveai/python-sdk`. Include the r
 
 ---
 
+## Step 10: Create/Update Integration Doc in honeyhive-ai-docs
+
+After the SDK example is complete and verified, create or update the corresponding integration documentation page in `honeyhiveai/honeyhive-ai-docs`.
+
+### Before you start
+
+Read:
+- `honeyhive-ai-docs/AGENTS.md` for docs writing guidelines and conventions
+- Existing beta integration docs in `beta/integrations/` for style reference (e.g., `pydantic-ai.mdx`, `google-adk.mdx`, `strands.mdx`)
+
+Key rules from the docs repo:
+- **All new/updated pages go in `beta/`** (not root-level `integrations/`)
+- Internal links must use `/beta/` prefix
+- Snippet imports use root `/snippets/` paths
+- New pages must be added to the Beta Integrations section of `docs.json`
+- PRs target the `fix/docs-concepts` branch
+
+### Gate: Check if doc update is needed
+
+Compare the existing doc (if any) at `beta/integrations/{{framework}}.mdx` against the SDK example from Step 2:
+- Does the doc exist?
+- Does it reflect the current SDK example code and framework version?
+- Does it cover the same patterns the example demonstrates?
+
+If the doc is already current, note "docs already current" in the report and skip the rest of this step.
+
+> **File naming convention**: Replace underscores with hyphens for the doc filename. `{{framework}}` in file paths here refers to this hyphenated form (e.g., `pydantic_ai` -> `pydantic-ai.mdx`, `google_adk` -> `google-adk.mdx`).
+
+### Structure
+
+Follow the established beta integration doc pattern. Use existing docs like `pydantic-ai.mdx`, `google-adk.mdx`, or `strands.mdx` as templates. The doc should include:
+
+1. **Frontmatter** - title and description
+2. **Snippet import** - `import RuntimeTracerSetupCallout from "/snippets/runtime-tracer-setup-callout.mdx";`
+3. **Intro paragraph** - One paragraph describing the framework and how HoneyHive integrates (OTel native, OpenInference instrumentor, etc.)
+4. **Quick Start** - Tip callout, RuntimeTracerSetupCallout snippet, install command, minimal init code
+5. **Compatibility table** - Python version and framework version requirements
+6. **What Gets Traced** - Bullet list of automatically captured spans
+7. **Example sections** - Derived from the SDK example. Include at least:
+   - Single agent with tools
+   - Multi-agent pattern (if the framework supports it)
+   - Code should be self-contained and runnable, using `os.getenv("HH_API_KEY")` and `os.getenv("HH_PROJECT")`
+8. **Troubleshooting** - Common issues (traces not appearing, missing env vars, init order)
+9. **Related** - CardGroup linking to enriching traces, custom spans, distributed tracing
+10. **Resources** - Links to the framework's official docs
+
+### Rules
+
+- Code in the doc must be **simplified from the SDK example** - shorter, focused on showing the integration pattern, not every feature
+- Use the same domain/scenario as the SDK example where possible, but keep code blocks concise
+- Follow the docs repo `AGENTS.md` writing principles: concise, clear, active voice, scannable
+- No em dashes, no curly quotes, no filler words ("delve", "leverage", "robust", "seamless")
+- Do not duplicate SDK docstrings or full parameter tables
+- Screenshots of traces in HoneyHive UI are optional but encouraged if available from Step 6
+
+### Navigation
+
+If this is a **new** integration doc:
+1. Add the page to `docs.json` under the Beta product > Integrations tab > appropriate group (Agent Frameworks, Model Providers, etc.)
+2. Place it in alphabetical order within its group, or alongside related frameworks
+
+### Open PR
+
+Open a PR in `honeyhiveai/honeyhive-ai-docs` targeting the `fix/docs-concepts` branch.
+
+Include in the PR description:
+- What was added/changed
+- A "Pages to review" table with Mintlify staging links:
+
+```markdown
+## Pages to review
+
+| Page | Staging link |
+|------|-------------|
+| {{framework}} integration (new/updated) | [link](https://honeyhiveai-docs-<branch>.mintlify.app/beta/integrations/<framework>) |
+```
+
+---
+
 ## Report
 
 ```
@@ -243,9 +322,15 @@ If you updated the example, open a PR in `honeyhiveai/python-sdk`. Include the r
 ### Tracing Issues Found
 - [numbered list with category and severity, or "None found"]
 
+### Integration Doc
+- **File:** honeyhive-ai-docs/beta/integrations/{{framework}}.mdx
+- **Status:** New | Updated | Already current | Skipped
+- **Docs PR:** [link, or "No changes"]
+
 ### Links
 - UI trace: [link]
-- PR: [link, or "No changes"]
+- SDK PR: [link, or "No changes"]
+- Docs PR: [link, or "No changes"]
 ```
 
 ## Skill Notes
