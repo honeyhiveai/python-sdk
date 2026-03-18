@@ -22,7 +22,7 @@ Before writing any example, determine the integration type:
 - Init tracer → init instrumentor → make 2-3 simple API calls → cleanup
 - No tools, no agents, no multi-turn orchestration
 - Show the provider's simplest chat/completion API
-- Keep the example under ~80 lines
+- Keep it concise
 - Example pattern: `openinference_openai_example.py`
 
 ### Agent Framework Integrations (ADK, PydanticAI, CrewAI, LangGraph, etc.)
