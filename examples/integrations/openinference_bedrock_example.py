@@ -43,7 +43,7 @@ def main() -> None:
     instrumentor = BedrockInstrumentor()
     instrumentor.instrument(tracer_provider=tracer.provider)
 
-    # 3. Use Bedrock as usual — all calls are traced automatically
+    # 3. Use Bedrock as usual - all calls are traced automatically
     client = boto3.client(
         "bedrock-runtime",
         region_name=os.getenv("AWS_DEFAULT_REGION", "us-east-1"),
@@ -62,7 +62,7 @@ def main() -> None:
         )
         print(f"Response: {response['output']['message']['content'][0]['text']}")
 
-        # A follow-up call — also traced
+        # A follow-up call - also traced
         response2 = client.converse(
             modelId=MODEL_ID,
             messages=[

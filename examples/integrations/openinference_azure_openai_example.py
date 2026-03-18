@@ -43,7 +43,7 @@ def main() -> None:
     instrumentor = OpenAIInstrumentor()
     instrumentor.instrument(tracer_provider=tracer.provider)
 
-    # 3. Use Azure OpenAI as usual — all calls are traced automatically
+    # 3. Use Azure OpenAI as usual - all calls are traced automatically
     client = AzureOpenAI(
         api_key=os.getenv("AZURE_OPENAI_API_KEY"),
         api_version="2024-12-01-preview",
@@ -61,7 +61,7 @@ def main() -> None:
         )
         print(f"Response: {response.choices[0].message.content}")
 
-        # A follow-up call — also traced
+        # A follow-up call - also traced
         response2 = client.chat.completions.create(
             model=DEPLOYMENT,
             messages=[

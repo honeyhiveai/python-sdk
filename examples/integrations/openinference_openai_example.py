@@ -39,7 +39,7 @@ def main() -> None:
     instrumentor = OpenAIInstrumentor()
     instrumentor.instrument(tracer_provider=tracer.provider)
 
-    # 3. Use OpenAI as usual — all calls are traced automatically
+    # 3. Use OpenAI as usual - all calls are traced automatically
     client = openai.OpenAI()
 
     try:
@@ -53,7 +53,7 @@ def main() -> None:
         )
         print(f"Response: {response.choices[0].message.content}")
 
-        # A follow-up call — also traced
+        # A follow-up call - also traced
         response2 = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[

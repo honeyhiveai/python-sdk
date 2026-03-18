@@ -42,7 +42,7 @@ def main() -> None:
     instrumentor = GoogleGenAIInstrumentor()
     instrumentor.instrument(tracer_provider=tracer.provider)
 
-    # 3. Use Gemini as usual — all calls are traced automatically
+    # 3. Use Gemini as usual - all calls are traced automatically
     client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 
     try:
@@ -54,7 +54,7 @@ def main() -> None:
         )
         print(f"Response: {response.text}")
 
-        # Chat session — also traced
+        # Chat session - also traced
         chat = client.chats.create(model=MODEL)
         chat_response = chat.send_message("Tell me a fun fact about that city.")
         print(f"Chat: {chat_response.text}")
