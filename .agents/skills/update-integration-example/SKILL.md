@@ -1,14 +1,14 @@
 ---
 name: update-integration-example
-description: Build or update SDK integration examples for AI frameworks. Use when asked to update, create, or review a framework example in python-sdk/examples/integrations/. Covers framework API research, example writing, smoke testing, span capture, and tracing sanity checks.
+description: Build or update SDK integration examples for AI frameworks. Use when asked to update, create, or review a framework example in python-sdk/examples/integrations/. Covers framework API research, example writing, smoke testing, span capture, tracing sanity checks, and creating/updating the corresponding integration doc in honeyhive-ai-docs.
 metadata:
   author: sanjeed5
-  version: "2.4"
+  version: "2.5"
 ---
 
 # Update Integration Example
 
-Build or update the SDK example for a framework integration. The example is a public-facing reference that shows how to use HoneyHive with the framework. It must be correct, comprehensive, and follow the framework's current recommended APIs.
+Build or update the SDK example for a framework integration, then create or update the corresponding integration doc in `honeyhiveai/honeyhive-ai-docs`. The example is a public-facing reference that shows how to use HoneyHive with the framework. It must be correct, comprehensive, and follow the framework's current recommended APIs. The integration doc is the user-facing documentation page derived from the example.
 
 This skill does NOT do deep tracing validation — only a sanity check.
 
@@ -220,6 +220,21 @@ If you updated the example, open a PR in `honeyhiveai/python-sdk`. Include the r
 
 ---
 
+## Step 10: Create/Update Integration Doc in honeyhive-ai-docs
+
+After the SDK example is complete and verified, create or update the corresponding integration doc in `honeyhiveai/honeyhive-ai-docs`.
+
+> **File naming**: Replace underscores with hyphens for doc filenames (e.g., `pydantic_ai` -> `pydantic-ai.mdx`).
+
+1. Clone or navigate to `honeyhive-ai-docs`. Branch off the base branch documented in that repo's `AGENTS.md`.
+2. Read that repo's `AGENTS.md` for writing guidelines, versioning rules, and navigation config.
+3. Use existing beta integration docs in `beta/integrations/` as templates (e.g., `pydantic-ai.mdx`, `google-adk.mdx`, `strands.mdx`).
+4. Create or update `beta/integrations/{{framework}}.mdx`. Simplify code from the SDK example - focus on the integration pattern, not every feature. Include screenshots from Step 6 if available.
+5. If this is a new page, add it to the navigation config as documented in `AGENTS.md`.
+6. Open a PR following that repo's PR conventions.
+
+---
+
 ## Report
 
 ```
@@ -243,9 +258,15 @@ If you updated the example, open a PR in `honeyhiveai/python-sdk`. Include the r
 ### Tracing Issues Found
 - [numbered list with category and severity, or "None found"]
 
+### Integration Doc
+- **File:** honeyhive-ai-docs/beta/integrations/{{framework}}.mdx
+- **Status:** New | Updated | Already current | Skipped
+- **Docs PR:** [link, or "No changes"]
+
 ### Links
 - UI trace: [link]
-- PR: [link, or "No changes"]
+- SDK PR: [link, or "No changes"]
+- Docs PR: [link, or "No changes"]
 ```
 
 ## Skill Notes
