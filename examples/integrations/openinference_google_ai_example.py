@@ -56,7 +56,7 @@ def main() -> None:
 
         # Chat session - also traced
         chat = client.chats.create(model=MODEL)
-        chat_response = chat.send_message("Tell me a fun fact about that city.")
+        chat_response = chat.send_message("Tell me a fun fact about Paris.")
         print(f"Chat: {chat_response.text}")
     finally:
         tracer.force_flush()

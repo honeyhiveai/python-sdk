@@ -62,7 +62,7 @@ def main() -> None:
             messages=[
                 {
                     "role": "user",
-                    "content": "Tell me a fun fact about that city.",
+                    "content": "Tell me a fun fact about Paris.",
                 }
             ],
         )

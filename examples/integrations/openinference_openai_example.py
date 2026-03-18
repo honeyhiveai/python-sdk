@@ -57,7 +57,7 @@ def main() -> None:
         response2 = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "user", "content": "Tell me a fun fact about that city."},
+                {"role": "user", "content": "Tell me a fun fact about Paris."},
             ],
             max_tokens=100,
         )

@@ -68,7 +68,7 @@ def main() -> None:
             messages=[
                 {
                     "role": "user",
-                    "content": [{"text": "Tell me a fun fact about that city."}],
+                    "content": [{"text": "Tell me a fun fact about Paris."}],
                 }
             ],
             inferenceConfig={"maxTokens": 100},
