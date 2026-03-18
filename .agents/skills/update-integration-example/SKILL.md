@@ -224,6 +224,18 @@ If you updated the example, open a PR in `honeyhiveai/python-sdk`. Include the r
 
 After the SDK example is complete and verified, create or update the corresponding integration documentation page in `honeyhiveai/honeyhive-ai-docs`.
 
+### Setup
+
+Clone or navigate to the `honeyhive-ai-docs` repo. Create a new branch off `fix/docs-concepts`:
+
+```bash
+# If not already cloned
+git clone https://github.com/honeyhiveai/honeyhive-ai-docs.git
+cd honeyhive-ai-docs
+git checkout fix/docs-concepts && git pull
+git checkout -b devin/$(date +%s)-{{framework}}-integration-doc
+```
+
 ### Before you start
 
 Read:
@@ -237,6 +249,8 @@ Key rules from the docs repo:
 - New pages must be added to the Beta Integrations section of `docs.json`
 - PRs target the `fix/docs-concepts` branch
 
+> **File naming convention**: Replace underscores with hyphens for the doc filename. Throughout Step 10, `{{framework}}` in doc file paths refers to this hyphenated form (e.g., `pydantic_ai` -> `pydantic-ai.mdx`, `google_adk` -> `google-adk.mdx`).
+
 ### Gate: Check if doc update is needed
 
 Compare the existing doc (if any) at `beta/integrations/{{framework}}.mdx` against the SDK example from Step 2:
@@ -245,8 +259,6 @@ Compare the existing doc (if any) at `beta/integrations/{{framework}}.mdx` again
 - Does it cover the same patterns the example demonstrates?
 
 If the doc is already current, note "docs already current" in the report and skip the rest of this step.
-
-> **File naming convention**: Replace underscores with hyphens for the doc filename. `{{framework}}` in file paths here refers to this hyphenated form (e.g., `pydantic_ai` -> `pydantic-ai.mdx`, `google_adk` -> `google-adk.mdx`).
 
 ### Structure
 
