@@ -1,9 +1,20 @@
 #!/usr/bin/env python3
 """
-Simple Anthropic Integration with HoneyHive
+Anthropic + HoneyHive integration example.
 
-This example shows the simplest way to add HoneyHive tracing to Anthropic Claude calls.
-Zero code changes to your existing Anthropic usage!
+Demonstrates simple Anthropic message creation with HoneyHive tracing.
+All Anthropic calls are automatically traced via the OpenInference instrumentor.
+
+Install:
+    pip install honeyhive openinference-instrumentation-anthropic anthropic
+
+Run:
+    python examples/integrations/openinference_anthropic_example.py
+
+Environment:
+    HH_API_KEY
+    HH_PROJECT
+    ANTHROPIC_API_KEY
 """
 
 import os
@@ -14,78 +25,51 @@ from openinference.instrumentation.anthropic import AnthropicInstrumentor
 from honeyhive import HoneyHiveTracer
 
 
-def main():
-    """Simple Anthropic integration example."""
-    print("🚀 Simple Anthropic + HoneyHive Integration")
-    print("=" * 42)
-
-    # 1. Initialize HoneyHive tracer FIRST (without instrumentors)
+def main() -> None:
+    """Run simple Anthropic message calls with HoneyHive tracing."""
+    # 1. Initialize HoneyHive tracer
     tracer = HoneyHiveTracer.init(
-        api_key=os.getenv("HH_API_KEY", "your-honeyhive-key"),
-        project=os.getenv("HH_PROJECT", "anthropic-simple-demo"),
-        source=__file__.split("/")[-1],  # Use script name for visibility
-        # ✅ NO instrumentors parameter - follow documented pattern
-    )
-    print("✓ HoneyHive tracer initialized")
-
-    # 2. Initialize instrumentor separately with tracer_provider
-    anthropic_instrumentor = AnthropicInstrumentor()
-    anthropic_instrumentor.instrument(tracer_provider=tracer.provider)
-    print("✓ Anthropic instrumentor initialized with HoneyHive tracer_provider")
-
-    # 2. Use Anthropic exactly as you normally would
-    client = anthropic.Anthropic(
-        api_key=os.getenv("ANTHROPIC_API_KEY", "your-anthropic-key")
+        api_key=os.getenv("HH_API_KEY"),
+        project=os.getenv("HH_PROJECT"),
+        session_name="openinference_anthropic_example",
+        source=os.getenv("HH_SOURCE", "python_sdk_example"),
     )
 
-    # 3. Make Anthropic calls - they're traced via the Anthropic instrumentor!
-    print("\n📞 Making Anthropic API calls...")
+    # 2. Instrument the Anthropic SDK
+    instrumentor = AnthropicInstrumentor()
+    instrumentor.instrument(tracer_provider=tracer.provider)
+
+    # 3. Use Anthropic as usual - all calls are traced automatically
+    client = anthropic.Anthropic()
 
     try:
-        # Simple message creation
         response = client.messages.create(
-            model="claude-3-haiku-20240307",
+            model="claude-haiku-4-5-20251001",
             max_tokens=100,
-            temperature=0.1,
             messages=[
                 {
                     "role": "user",
-                    "content": "Explain what machine learning is in simple terms.",
+                    "content": "What is the capital of France?",
                 }
             ],
         )
+        print(f"Response: {response.content[0].text}")
 
-        print(f"✓ Response: {response.content[0].text}")
-        print(f"✓ Input tokens: {response.usage.input_tokens}")
-        print(f"✓ Output tokens: {response.usage.output_tokens}")
-
-        # Another call - also traced via instrumentor
+        # A follow-up call - also traced
         response2 = client.messages.create(
-            model="claude-3-haiku-20240307",
-            max_tokens=50,
+            model="claude-haiku-4-5-20251001",
+            max_tokens=100,
             messages=[
                 {
                     "role": "user",
-                    "content": "Give me a practical example of machine learning in everyday life.",
+                    "content": "Tell me a fun fact about Paris.",
                 }
             ],
         )
-
-        print(f"✓ Example: {response2.content[0].text}")
-
-        print("\n🎉 All calls traced to HoneyHive via Anthropic instrumentor!")
-        print("Check your HoneyHive dashboard to see the traces.")
-
-    except Exception as e:
-        print(f"❌ Error: {e}")
-        print("Make sure to set ANTHROPIC_API_KEY environment variable")
-
+        print(f"Follow-up: {response2.content[0].text}")
     finally:
-        # Cleanup
-        print("\n📤 Flushing traces...")
         tracer.force_flush()
-        anthropic_instrumentor.uninstrument()
-        print("✓ Cleanup completed")
+        instrumentor.uninstrument()
 
 
 if __name__ == "__main__":

@@ -12,6 +12,28 @@ Build or update the SDK example for a framework integration, then create or upda
 
 This skill does NOT do deep tracing validation — only a sanity check.
 
+## Integration Type: Model Provider vs Agent Framework
+
+Before writing any example, determine the integration type:
+
+### Model Provider Integrations (OpenAI, Anthropic, Azure OpenAI, AWS Bedrock, Gemini, etc.)
+
+**Simple LLM call examples only.** These demonstrate basic tracing setup with the provider's SDK.
+- Init tracer → init instrumentor → make 2-3 simple API calls → cleanup
+- No tools, no agents, no multi-turn orchestration
+- Show the provider's simplest chat/completion API
+- Keep it concise
+- Example pattern: `openinference_openai_example.py`
+
+### Agent Framework Integrations (ADK, PydanticAI, CrewAI, LangGraph, etc.)
+
+**Comprehensive agent examples with tools.** These demonstrate the framework's agent patterns.
+- Agent names/hierarchy, system instructions, tool calls, session continuity
+- Use the shared customer support domain (order status/policy lookup mock tools)
+- Follow the full checklist in Step 2 below
+
+If the integration is a model provider, skip the agent-specific checklist items in Step 2 (tool calls, agent hierarchy, session continuity) and write a simple example instead.
+
 ## Inputs
 
 These variables are provided when the skill is invoked:
@@ -81,13 +103,18 @@ If the example is already current, skip to Step 3 and note "already current." Do
 - **Share the same domain across examples**: customer support with order status/policy lookup mock tools, order IDs ORD-1001 through ORD-1003 (match existing examples like `openinference_google_adk_example.py` and `pydantic_ai_integration.py`). Reuse this domain unless the framework doesn't fit it
 - Include install instructions with explicit packages (`uv` and/or `pip`)
 
-### Must showcase
+### Must showcase (agent framework integrations only)
 
 - [ ] Agent names and hierarchy
 - [ ] System instructions
 - [ ] User input and model output
 - [ ] Tool calls (arguments and results)
 - [ ] Session continuity across turns
+
+For **model provider** integrations, only showcase:
+- [ ] Tracer + instrumentor initialization
+- [ ] 2-3 simple API calls (basic chat completions / message creation)
+- [ ] Proper cleanup (flush + uninstrument)
 
 Verify: No syntax errors. Style matches existing examples in `examples/integrations/`.
 

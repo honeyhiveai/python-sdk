@@ -1,75 +1,66 @@
 #!/usr/bin/env python3
 """
-Simple Google AI Integration with HoneyHive
+Google Gemini + HoneyHive integration example.
 
-This example shows the simplest way to add HoneyHive tracing to Google AI (Gemini) calls.
-Zero code changes to your existing Google AI usage!
+Demonstrates simple Gemini content generation with HoneyHive tracing.
+All Gemini calls are automatically traced via the OpenInference instrumentor.
+
+Install:
+    pip install honeyhive openinference-instrumentation-google-genai google-genai
+
+Run:
+    python examples/integrations/openinference_google_ai_example.py
+
+Environment:
+    HH_API_KEY
+    HH_PROJECT
+    GOOGLE_API_KEY
 """
 
 import os
 
-import google.generativeai as genai
-from openinference.instrumentation.google_generativeai import (
-    GoogleGenerativeAIInstrumentor,
-)
+from google import genai
+from google.genai import types
+from openinference.instrumentation.google_genai import GoogleGenAIInstrumentor
 
 from honeyhive import HoneyHiveTracer
 
+MODEL = "gemini-2.0-flash"
 
-def main():
-    """Simple Google AI integration example."""
-    print("🚀 Simple Google AI + HoneyHive Integration")
-    print("=" * 42)
 
-    # 1. Initialize HoneyHive with Google AI instrumentor
+def main() -> None:
+    """Run simple Gemini content generation with HoneyHive tracing."""
+    # 1. Initialize HoneyHive tracer
     tracer = HoneyHiveTracer.init(
-        api_key=os.getenv("HH_API_KEY", "your-honeyhive-key"),
-        project=os.getenv("HH_PROJECT", "google-ai-simple-demo"),
-        source=os.getenv("HH_SOURCE", "development"),
+        api_key=os.getenv("HH_API_KEY"),
+        project=os.getenv("HH_PROJECT"),
+        session_name="openinference_google_ai_example",
+        source=os.getenv("HH_SOURCE", "python_sdk_example"),
     )
-    print("✓ HoneyHive tracer initialized")
 
-    # Initialize instrumentor separately with tracer_provider
-    google_ai_instrumentor = GoogleGenerativeAIInstrumentor()
-    google_ai_instrumentor.instrument(tracer_provider=tracer.provider)
-    print("✓ HoneyHive tracer initialized with Google AI instrumentor")
+    # 2. Instrument the Google GenAI SDK
+    instrumentor = GoogleGenAIInstrumentor()
+    instrumentor.instrument(tracer_provider=tracer.provider)
 
-    # 2. Configure Google AI exactly as you normally would
-    genai.configure(api_key=os.getenv("GOOGLE_API_KEY", "your-google-key"))
-    model = genai.GenerativeModel("gemini-pro")
-
-    # 3. Make Google AI calls - they're traced via the Google AI instrumentor!
-    print("\n📞 Making Google AI API calls...")
+    # 3. Use Gemini as usual - all calls are traced automatically
+    client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 
     try:
         # Simple content generation
-        response = model.generate_content(
-            "What are the main benefits of renewable energy?",
-            generation_config=genai.types.GenerationConfig(
-                max_output_tokens=150, temperature=0.1
-            ),
+        response = client.models.generate_content(
+            model=MODEL,
+            contents="What is the capital of France?",
+            config=types.GenerateContentConfig(max_output_tokens=100),
         )
+        print(f"Response: {response.text}")
 
-        print(f"✓ Response: {response.text}")
-
-        # Chat session - also traced via instrumentor
-        print("\n💬 Starting chat session...")
-        chat = model.start_chat(history=[])
-
-        chat_response1 = chat.send_message("Hello! I'm learning about AI.")
-        print(f"✓ Chat 1: {chat_response1.text}")
-
-        chat_response2 = chat.send_message("What should I learn first?")
-        print(f"✓ Chat 2: {chat_response2.text}")
-
-        print(f"✓ Chat history length: {len(chat.history)}")
-
-        print("\n🎉 All calls traced to HoneyHive via Google AI instrumentor!")
-        print("Check your HoneyHive dashboard to see the traces.")
-
-    except Exception as e:
-        print(f"❌ Error: {e}")
-        print("Make sure to set GOOGLE_API_KEY environment variable")
+        # Chat session - also traced
+        chat = client.chats.create(model=MODEL)
+        chat_response = chat.send_message("Tell me a fun fact about Paris.")
+        print(f"Chat: {chat_response.text}")
+    finally:
+        tracer.force_flush()
+        instrumentor.uninstrument()
 
 
 if __name__ == "__main__":
