@@ -147,28 +147,36 @@ class DecisionForest:
                 span.set_attribute("hh.event_type", "model")
                 span.set_attribute("variant.name", variant["name"])
 
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": (
-                            f"{variant['prompt']}\n\n"
-                            "Given the search results and the question, "
-                            "provide your answer as a JSON object with:\n"
-                            '- "answer": your answer to the question\n'
-                            '- "confidence": 0.0-1.0 confidence\n'
-                            '- "key_evidence": list of key facts supporting your answer\n'
-                            "Output ONLY valid JSON."
-                        ),
-                    },
-                    {
-                        "role": "user",
-                        "content": f"Question: {query}\n\nSearch Results:\n{search_context}",
-                    },
-                ],
-                temperature=0.3,
-            )
+            try:
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": (
+                                f"{variant['prompt']}\n\n"
+                                "Given the search results and the question, "
+                                "provide your answer as a JSON object with:\n"
+                                '- "answer": your answer to the question\n'
+                                '- "confidence": 0.0-1.0 confidence\n'
+                                '- "key_evidence": list of key facts supporting your answer\n'
+                                "Output ONLY valid JSON."
+                            ),
+                        },
+                        {
+                            "role": "user",
+                            "content": f"Question: {query}\n\nSearch Results:\n{search_context}",
+                        },
+                    ],
+                    temperature=0.3,
+                )
+            except Exception as e:
+                self.tracer.enrich_span(metadata={"error": str(e)})
+                return {
+                    "answer": f"Error: {e}",
+                    "confidence": 0.0,
+                    "variant_name": variant["name"],
+                }
 
             result = _parse_variant_response(
                 response.choices[0].message.content or "{}"
@@ -234,21 +242,31 @@ class DecisionForest:
                 )
             variant_summary = "\n\n".join(variant_summary_parts)
 
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": CONSENSUS_SYSTEM_PROMPT},
-                    {
-                        "role": "user",
-                        "content": (
-                            f"Question: {query}\n\n"
-                            f"Variant Answers ({len(variant_results)} perspectives):\n\n"
-                            f"{variant_summary}"
-                        ),
-                    },
-                ],
-                temperature=0.0,
-            )
+            try:
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": CONSENSUS_SYSTEM_PROMPT},
+                        {
+                            "role": "user",
+                            "content": (
+                                f"Question: {query}\n\n"
+                                f"Variant Answers ({len(variant_results)} perspectives):\n\n"
+                                f"{variant_summary}"
+                            ),
+                        },
+                    ],
+                    temperature=0.0,
+                )
+            except Exception as e:
+                self.tracer.enrich_span(metadata={"error": str(e)})
+                return {
+                    "final_answer": f"Error during consensus: {e}",
+                    "confidence": 0.0,
+                    "agreement_level": "error",
+                    "key_facts": [],
+                    "dissenting_views": [],
+                }
 
             result = _parse_consensus_response(
                 response.choices[0].message.content or "{}"

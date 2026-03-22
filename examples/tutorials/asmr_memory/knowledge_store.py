@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 import threading
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
@@ -49,9 +49,13 @@ class Finding:
     timestamp: Optional[str] = None
     event_date: Optional[str] = None
     confidence: float = 1.0
-    supersedes: Optional[str] = None  # ID of finding this updates/replaces
+    supersedes: Optional[str] = (
+        None  # Description of what this finding updates/replaces
+    )
     metadata: Dict[str, Any] = field(default_factory=dict)
-    created_at: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    created_at: str = field(
+        default_factory=lambda: datetime.now(tz=timezone.utc).isoformat()
+    )
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -169,18 +173,22 @@ class KnowledgeStore:
         return results
 
     def get_superseded_chain(self, finding_id: str) -> List[Finding]:
-        """Get the chain of findings that supersede each other (knowledge updates)."""
+        """Get findings related to a knowledge update chain.
+
+        The supersedes field contains a content description of what was
+        replaced, so this searches for findings whose content matches.
+        """
         chain = []
-        current_id = finding_id
-        visited = set()
-        while current_id and current_id not in visited:
-            visited.add(current_id)
-            finding = self._findings.get(current_id)
-            if finding:
-                chain.append(finding)
-                current_id = finding.supersedes
-            else:
-                break
+        finding = self._findings.get(finding_id)
+        if not finding:
+            return chain
+        chain.append(finding)
+
+        if finding.supersedes:
+            supersedes_lower = finding.supersedes.lower()
+            for f in self._findings.values():
+                if f.id != finding_id and supersedes_lower in f.content.lower():
+                    chain.append(f)
         return chain
 
     def get_stats(self) -> Dict[str, Any]:

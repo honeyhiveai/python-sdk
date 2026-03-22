@@ -196,17 +196,21 @@ class ObserverAgents:
                 span.set_attribute("agent.name", "fact_hunter")
                 span.set_attribute("sessions.count", len(sessions))
 
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": FACT_HUNTER_SYSTEM_PROMPT},
-                    {
-                        "role": "user",
-                        "content": f"Extract factual knowledge from these conversation sessions:\n\n{session_text}",
-                    },
-                ],
-                temperature=0.1,
-            )
+            try:
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": FACT_HUNTER_SYSTEM_PROMPT},
+                        {
+                            "role": "user",
+                            "content": f"Extract factual knowledge from these conversation sessions:\n\n{session_text}",
+                        },
+                    ],
+                    temperature=0.1,
+                )
+            except Exception as e:
+                self.tracer.enrich_span(metadata={"error": str(e)})
+                return []
 
             raw_findings = _parse_agent_response(
                 response.choices[0].message.content or "[]"
@@ -243,17 +247,21 @@ class ObserverAgents:
                 span.set_attribute("agent.name", "context_weaver")
                 span.set_attribute("sessions.count", len(sessions))
 
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": CONTEXT_WEAVER_SYSTEM_PROMPT},
-                    {
-                        "role": "user",
-                        "content": f"Identify patterns and implications from these conversation sessions:\n\n{session_text}",
-                    },
-                ],
-                temperature=0.2,
-            )
+            try:
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": CONTEXT_WEAVER_SYSTEM_PROMPT},
+                        {
+                            "role": "user",
+                            "content": f"Identify patterns and implications from these conversation sessions:\n\n{session_text}",
+                        },
+                    ],
+                    temperature=0.2,
+                )
+            except Exception as e:
+                self.tracer.enrich_span(metadata={"error": str(e)})
+                return []
 
             raw_findings = _parse_agent_response(
                 response.choices[0].message.content or "[]"
@@ -290,17 +298,21 @@ class ObserverAgents:
                 span.set_attribute("agent.name", "timeline_tracker")
                 span.set_attribute("sessions.count", len(sessions))
 
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": TIMELINE_TRACKER_SYSTEM_PROMPT},
-                    {
-                        "role": "user",
-                        "content": f"Extract temporal information and track knowledge evolution from these sessions:\n\n{session_text}",
-                    },
-                ],
-                temperature=0.1,
-            )
+            try:
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": TIMELINE_TRACKER_SYSTEM_PROMPT},
+                        {
+                            "role": "user",
+                            "content": f"Extract temporal information and track knowledge evolution from these sessions:\n\n{session_text}",
+                        },
+                    ],
+                    temperature=0.1,
+                )
+            except Exception as e:
+                self.tracer.enrich_span(metadata={"error": str(e)})
+                return []
 
             raw_findings = _parse_agent_response(
                 response.choices[0].message.content or "[]"

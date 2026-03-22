@@ -120,17 +120,27 @@ class SearchAgents:
                 span.set_attribute("hh.event_type", "tool")
                 span.set_attribute("agent.name", "direct_seeker")
 
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": DIRECT_SEEKER_SYSTEM_PROMPT},
-                    {
-                        "role": "user",
-                        "content": f"Question: {query}\n\nKnowledge Base:\n{context}",
-                    },
-                ],
-                temperature=0.0,
-            )
+            try:
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": DIRECT_SEEKER_SYSTEM_PROMPT},
+                        {
+                            "role": "user",
+                            "content": f"Question: {query}\n\nKnowledge Base:\n{context}",
+                        },
+                    ],
+                    temperature=0.0,
+                )
+            except Exception as e:
+                self.tracer.enrich_span(metadata={"error": str(e)})
+                return {
+                    "relevant_findings": [],
+                    "answer": f"Error: {e}",
+                    "confidence": 0.0,
+                    "reasoning": "API call failed",
+                    "agent": "direct_seeker",
+                }
 
             result = _parse_search_response(response.choices[0].message.content or "{}")
             result["agent"] = "direct_seeker"
@@ -151,17 +161,27 @@ class SearchAgents:
                 span.set_attribute("hh.event_type", "tool")
                 span.set_attribute("agent.name", "inference_engine")
 
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": INFERENCE_ENGINE_SYSTEM_PROMPT},
-                    {
-                        "role": "user",
-                        "content": f"Question: {query}\n\nKnowledge Base:\n{context}",
-                    },
-                ],
-                temperature=0.2,
-            )
+            try:
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": INFERENCE_ENGINE_SYSTEM_PROMPT},
+                        {
+                            "role": "user",
+                            "content": f"Question: {query}\n\nKnowledge Base:\n{context}",
+                        },
+                    ],
+                    temperature=0.2,
+                )
+            except Exception as e:
+                self.tracer.enrich_span(metadata={"error": str(e)})
+                return {
+                    "relevant_findings": [],
+                    "answer": f"Error: {e}",
+                    "confidence": 0.0,
+                    "reasoning": "API call failed",
+                    "agent": "inference_engine",
+                }
 
             result = _parse_search_response(response.choices[0].message.content or "{}")
             result["agent"] = "inference_engine"
@@ -182,17 +202,27 @@ class SearchAgents:
                 span.set_attribute("hh.event_type", "tool")
                 span.set_attribute("agent.name", "temporal_reasoner")
 
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": TEMPORAL_REASONER_SYSTEM_PROMPT},
-                    {
-                        "role": "user",
-                        "content": f"Question: {query}\n\nKnowledge Base:\n{context}",
-                    },
-                ],
-                temperature=0.1,
-            )
+            try:
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": TEMPORAL_REASONER_SYSTEM_PROMPT},
+                        {
+                            "role": "user",
+                            "content": f"Question: {query}\n\nKnowledge Base:\n{context}",
+                        },
+                    ],
+                    temperature=0.1,
+                )
+            except Exception as e:
+                self.tracer.enrich_span(metadata={"error": str(e)})
+                return {
+                    "relevant_findings": [],
+                    "answer": f"Error: {e}",
+                    "confidence": 0.0,
+                    "reasoning": "API call failed",
+                    "agent": "temporal_reasoner",
+                }
 
             result = _parse_search_response(response.choices[0].message.content or "{}")
             result["agent"] = "temporal_reasoner"
@@ -215,10 +245,9 @@ class SearchAgents:
 
             # Build context from knowledge store
             text_results = self.store.search_text(query)
+            if not text_results:
+                text_results = self.store.get_all()
             context = self.store.to_context_string(text_results)
-
-            if not context.strip():
-                context = self.store.to_context_string(self.store.get_all())
 
             # Run all three search agents
             direct_result = self._run_direct_seeker(query, context)
