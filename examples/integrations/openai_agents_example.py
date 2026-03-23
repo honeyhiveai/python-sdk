@@ -24,7 +24,7 @@ Environment:
 import asyncio
 import os
 
-from agents import Agent, Runner, SQLiteSession, function_tool, handoff
+from agents import Agent, Runner, SQLiteSession, function_tool
 from openinference.instrumentation.openai_agents import OpenAIAgentsInstrumentor
 
 from honeyhive import HoneyHiveTracer
