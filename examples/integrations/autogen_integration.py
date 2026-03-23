@@ -1,466 +1,236 @@
 #!/usr/bin/env python3
 """
-AutoGen Integration Example with HoneyHive
+AutoGen AgentChat + HoneyHive integration example.
 
-This example demonstrates how to integrate Microsoft AutoGen with HoneyHive using the
-OpenInference OpenAI instrumentor for comprehensive observability and tracing.
+Demonstrates three AgentChat patterns with HoneyHive tracing:
 
-AutoGen is a multi-agent orchestration framework that enables complex AI workflows.
+1) Single agent with tool calls and session continuity across turns
+2) Multi-agent Swarm with handoffs between specialists
+3) SelectorGroupChat with model-based speaker selection
 
-Requirements:
-    pip install honeyhive autogen-agentchat autogen-ext[openai] openinference-instrumentation-openai
+Install:
+    uv pip install honeyhive autogen-agentchat autogen-ext[openai] \
+        openinference-instrumentation-autogen-agentchat
 
-Environment Variables:
-    HH_API_KEY: Your HoneyHive API key
-    HH_PROJECT: Your HoneyHive project name
-    OPENAI_API_KEY: Your OpenAI API key
+Run:
+    uv run python examples/integrations/autogen_integration.py
+
+Environment:
+    HH_API_KEY
+    HH_PROJECT
+    OPENAI_API_KEY
+    HH_SOURCE (optional, defaults to "python_sdk_example")
 """
 
 import asyncio
 import os
-import sys
-from pathlib import Path
-from typing import Optional
+
+from autogen_agentchat.agents import AssistantAgent
+from autogen_agentchat.conditions import TextMentionTermination
+from autogen_agentchat.teams import SelectorGroupChat, Swarm
+from autogen_ext.models.openai import OpenAIChatCompletionClient
+from openinference.instrumentation.autogen_agentchat import AutogenAgentChatInstrumentor
+
+from honeyhive import HoneyHiveTracer
+
+MODEL = "gpt-4o-mini"
 
 
-async def main():
-    """Main example demonstrating AutoGen integration with HoneyHive."""
+# -- Mock tools (customer support domain, shared across integration examples) --
 
-    # Check required environment variables
-    hh_api_key = os.getenv("HH_API_KEY")
-    hh_project = os.getenv("HH_PROJECT")
-    openai_api_key = os.getenv("OPENAI_API_KEY")
 
-    if not all([hh_api_key, hh_project, openai_api_key]):
-        print("❌ Missing required environment variables:")
-        print("   - HH_API_KEY: Your HoneyHive API key")
-        print("   - HH_PROJECT: Your HoneyHive project name")
-        print("   - OPENAI_API_KEY: Your OpenAI API key")
-        print("\nSet these environment variables and try again.")
-        return False
+def lookup_order_status(order_id: str) -> dict:
+    """Look up the current status of a customer order by order ID."""
+    statuses = {
+        "ORD-1001": {"state": "shipped", "eta_days": 2},
+        "ORD-1002": {"state": "processing", "eta_days": 5},
+        "ORD-1003": {"state": "delayed", "eta_days": 8},
+    }
+    status = statuses.get(order_id.upper())
+    if status:
+        return {"status": "success", "order_id": order_id.upper(), **status}
+    return {"status": "not_found", "order_id": order_id.upper()}
+
+
+def lookup_policy(topic: str) -> dict:
+    """Look up customer support policy. Topics: refund, cancellation, shipping."""
+    policies = {
+        "refund": "Refunds available within 30 days for undelivered or damaged items.",
+        "cancellation": (
+            "Cancellation allowed before shipment. "
+            "Delayed orders can request assisted cancellation."
+        ),
+        "shipping": (
+            "Standard shipping 3-5 business days. Delays trigger proactive outreach."
+        ),
+    }
+    key = topic.lower().strip()
+    summary = policies.get(key)
+    if summary:
+        return {"status": "success", "topic": key, "summary": summary}
+    return {"status": "not_found", "topic": key}
+
+
+# -- Scenario 1: single agent with tools + session continuity --
+
+
+async def run_single_agent_scenario(model_client: OpenAIChatCompletionClient) -> None:
+    """Single support agent handling two turns with shared conversation history."""
+    agent = AssistantAgent(
+        name="support_agent",
+        model_client=model_client,
+        tools=[lookup_order_status, lookup_policy],
+        system_message=(
+            "You are a customer support agent. Use the lookup tools to answer "
+            "order and policy questions. Keep responses concise and friendly."
+        ),
+    )
+
+    # Turn 1: order status inquiry
+    await agent.run(
+        task="Check order ORD-1002 and let me know the current shipping status."
+    )
+
+    # Turn 2: follow-up on a different order (agent retains conversation history)
+    await agent.run(
+        task="Order ORD-1003 seems delayed. What's the cancellation policy?"
+    )
+
+
+# -- Scenario 2: Swarm with handoffs between specialists --
+
+
+async def run_swarm_scenario(model_client: OpenAIChatCompletionClient) -> None:
+    """Swarm team where a triage agent hands off to order and policy specialists."""
+    order_specialist = AssistantAgent(
+        name="order_specialist",
+        model_client=model_client,
+        tools=[lookup_order_status],
+        handoffs=["triage_agent"],
+        system_message=(
+            "You are an order specialist. Use lookup_order_status to check orders. "
+            "After answering, hand off back to triage_agent to finalize."
+        ),
+        description="Handles order status and delivery questions.",
+    )
+
+    policy_specialist = AssistantAgent(
+        name="policy_specialist",
+        model_client=model_client,
+        tools=[lookup_policy],
+        handoffs=["triage_agent"],
+        system_message=(
+            "You are a policy specialist. Use lookup_policy for refund, "
+            "cancellation, and shipping policy questions. "
+            "After answering, hand off back to triage_agent to finalize."
+        ),
+        description="Handles refund, cancellation, and shipping policy questions.",
+    )
+
+    triage_agent = AssistantAgent(
+        name="triage_agent",
+        model_client=model_client,
+        handoffs=["order_specialist", "policy_specialist"],
+        system_message=(
+            "You are a triage agent. Route order questions to order_specialist "
+            "and policy questions to policy_specialist. Once you have all the "
+            "information, provide a final summary and say TERMINATE."
+        ),
+        description="Routes customer requests to the right specialist.",
+    )
+
+    termination = TextMentionTermination("TERMINATE")
+    team = Swarm(
+        [triage_agent, order_specialist, policy_specialist],
+        termination_condition=termination,
+    )
+
+    await team.run(
+        task="My order ORD-1001 hasn't arrived. What's the status and "
+        "what's the refund policy if it doesn't come?"
+    )
+
+
+# -- Scenario 3: SelectorGroupChat with model-based speaker selection --
+
+
+async def run_selector_group_chat_scenario(
+    model_client: OpenAIChatCompletionClient,
+) -> None:
+    """SelectorGroupChat where a model picks the best agent to speak next."""
+    order_agent = AssistantAgent(
+        name="order_agent",
+        model_client=model_client,
+        tools=[lookup_order_status],
+        system_message=(
+            "You are an order agent. Use lookup_order_status to check orders. "
+            "Report the status clearly."
+        ),
+        description="Looks up order status and delivery information.",
+    )
+
+    policy_agent = AssistantAgent(
+        name="policy_agent",
+        model_client=model_client,
+        tools=[lookup_policy],
+        system_message=(
+            "You are a policy agent. Use lookup_policy for refund, "
+            "cancellation, and shipping questions."
+        ),
+        description="Answers refund, cancellation, and shipping policy questions.",
+    )
+
+    resolution_agent = AssistantAgent(
+        name="resolution_agent",
+        model_client=model_client,
+        system_message=(
+            "You are a resolution agent. Synthesize information from other agents "
+            "into a final customer-friendly response. Say TERMINATE when done."
+        ),
+        description="Drafts the final customer response from gathered context.",
+    )
+
+    termination = TextMentionTermination("TERMINATE")
+    team = SelectorGroupChat(
+        [order_agent, policy_agent, resolution_agent],
+        model_client=model_client,
+        termination_condition=termination,
+    )
+
+    await team.run(
+        task="Order ORD-1003 is delayed. Check the status and explain the "
+        "cancellation and refund policies, then draft a final response."
+    )
+
+
+# -- Main --
+
+
+async def main() -> None:
+    """Run AutoGen AgentChat scenarios and emit HoneyHive traces."""
+    tracer = HoneyHiveTracer.init(
+        api_key=os.getenv("HH_API_KEY"),
+        project=os.getenv("HH_PROJECT"),
+        session_name="autogen_integration_example",
+        source=os.getenv("HH_SOURCE", "python_sdk_example"),
+    )
+    instrumentor = AutogenAgentChatInstrumentor()
+    instrumentor.instrument(tracer_provider=tracer.provider)
+
+    model_client = OpenAIChatCompletionClient(
+        model=MODEL,
+        api_key=os.getenv("OPENAI_API_KEY"),
+    )
 
     try:
-        # Import required packages
-        from autogen_agentchat.agents import AssistantAgent
-        from autogen_agentchat.tools import AgentTool
-        from autogen_ext.models.openai import OpenAIChatCompletionClient
-        from capture_spans import setup_span_capture
-        from openinference.instrumentation.openai import OpenAIInstrumentor
-
-        from honeyhive import HoneyHiveTracer
-        from honeyhive.tracer.instrumentation.decorators import trace
-
-        print("🚀 AutoGen + HoneyHive Integration Example")
-        print("=" * 50)
-
-        # 1. Initialize the OpenAI instrumentor (AutoGen uses OpenAI under the hood)
-        print("🔧 Setting up OpenAI instrumentor for AutoGen...")
-        openai_instrumentor = OpenAIInstrumentor()
-        print("✓ OpenAI instrumentor initialized")
-
-        # 2. Initialize HoneyHive tracer
-        print("🔧 Setting up HoneyHive tracer...")
-        tracer = HoneyHiveTracer.init(
-            api_key=hh_api_key,
-            project=hh_project,
-            session_name=Path(__file__).stem,
-            source="autogen_integration",
-            verbose=True,
-        )
-        print("✓ HoneyHive tracer initialized")
-
-        # Setup span capture
-        span_processor = setup_span_capture("autogen", tracer)
-
-        # 3. Instrument OpenAI with HoneyHive tracer
-        openai_instrumentor.instrument(tracer_provider=tracer.provider)
-        print("✓ OpenAI instrumented with HoneyHive tracer")
-
-        # 4. Initialize AutoGen model client
-        print("\n🤖 Initializing AutoGen model client...")
-        model_client = OpenAIChatCompletionClient(
-            model="gpt-4o-mini", api_key=openai_api_key
-        )
-        print("✓ Model client initialized")
-
-        # Run test scenarios
-        print("\n" + "=" * 50)
-        print("Running AutoGen Integration Tests")
-        print("=" * 50)
-
-        # 5. Test basic agent
-        print("\n💬 Testing basic assistant agent...")
-        result1 = await test_basic_agent(tracer, model_client)
-        print(f"✓ Basic agent completed: {result1[:100]}...")
-
-        # 6. Test agent with system message
-        print("\n📋 Testing agent with system message...")
-        result2 = await test_agent_with_system_message(tracer, model_client)
-        print(f"✓ System message completed: {result2[:100]}...")
-
-        # 7. Test agent with tools
-        print("\n🔧 Testing agent with tools...")
-        result3 = await test_agent_with_tools(tracer, model_client)
-        print(f"✓ Tools completed: {result3[:100]}...")
-
-        # 8. Test streaming
-        print("\n🌊 Testing streaming responses...")
-        result4 = await test_streaming(tracer, model_client)
-        print(f"✓ Streaming completed: {result4} chunks")
-
-        # 9. Test multi-turn conversation
-        print("\n🔄 Testing multi-turn conversation...")
-        result5 = await test_multi_turn(tracer, model_client)
-        print(f"✓ Multi-turn completed: {result5} turns")
-
-        # 10. Test multi-agent collaboration
-        print("\n👥 Testing multi-agent collaboration...")
-        result6 = await test_multi_agent(tracer, model_client)
-        print(f"✓ Multi-agent completed: {result6[:100]}...")
-
-        # 11. Test agent handoffs
-        print("\n🤝 Testing agent handoffs...")
-        result7 = await test_agent_handoffs(tracer, model_client)
-        print(f"✓ Agent handoffs completed: {result7[:100]}...")
-
-        # 12. Test complex workflow
-        print("\n🎯 Testing complex workflow...")
-        result8 = await test_complex_workflow(tracer, model_client)
-        print(f"✓ Complex workflow completed: {result8[:100]}...")
-
-        # 13. Clean up
-        print("\n🧹 Cleaning up...")
+        await run_single_agent_scenario(model_client)
+        await run_swarm_scenario(model_client)
+        await run_selector_group_chat_scenario(model_client)
+    finally:
         await model_client.close()
-        openai_instrumentor.uninstrument()
-        # Cleanup span capture
-        if span_processor:
-            span_processor.force_flush()
-
         tracer.force_flush()
-        print("✓ Cleanup completed")
-
-        print("\n🎉 AutoGen integration example completed successfully!")
-        print(f"📊 Check your HoneyHive project '{hh_project}' for trace data")
-
-        return True
-
-    except ImportError as e:
-        print(f"❌ Import error: {e}")
-        print("\n💡 Install required packages:")
-        print(
-            "   pip install honeyhive autogen-agentchat autogen-ext[openai] openinference-instrumentation-openai"
-        )
-        return False
-
-    except Exception as e:
-        print(f"❌ Example failed: {e}")
-        import traceback
-
-        traceback.print_exc()
-        return False
-
-
-async def test_basic_agent(tracer: "HoneyHiveTracer", model_client) -> str:
-    """Test 1: Basic assistant agent."""
-
-    from autogen_agentchat.agents import AssistantAgent
-
-    from honeyhive.tracer.instrumentation.decorators import trace
-
-    @trace(event_type="chain", event_name="test_basic_agent", tracer=tracer)
-    async def _test():
-        agent = AssistantAgent(name="assistant", model_client=model_client)
-
-        response = await agent.run(task="Say 'Hello World!' in a friendly way.")
-        return response.messages[-1].content if response.messages else "No response"
-
-    return await _test()
-
-
-async def test_agent_with_system_message(
-    tracer: "HoneyHiveTracer", model_client
-) -> str:
-    """Test 2: Agent with custom system message."""
-
-    from autogen_agentchat.agents import AssistantAgent
-
-    from honeyhive.tracer.instrumentation.decorators import trace
-
-    @trace(
-        event_type="chain", event_name="test_agent_with_system_message", tracer=tracer
-    )
-    async def _test():
-        agent = AssistantAgent(
-            name="pirate_assistant",
-            model_client=model_client,
-            system_message="You are a helpful pirate assistant. Always respond in pirate speak!",
-        )
-
-        response = await agent.run(task="Tell me about the weather.")
-        return response.messages[-1].content if response.messages else "No response"
-
-    return await _test()
-
-
-async def test_agent_with_tools(tracer: "HoneyHiveTracer", model_client) -> str:
-    """Test 3: Agent with specialized tool agents."""
-
-    from autogen_agentchat.agents import AssistantAgent
-    from autogen_agentchat.tools import AgentTool
-
-    from honeyhive.tracer.instrumentation.decorators import trace
-
-    @trace(event_type="chain", event_name="test_agent_with_tools", tracer=tracer)
-    async def _test():
-        # Create weather agent
-        weather_agent = AssistantAgent(
-            name="weather_tool",
-            model_client=model_client,
-            system_message="You provide weather information. When asked about weather in a location, respond with: 'The weather in [location] is sunny and 72°F'",
-            description="Provides weather information for locations.",
-        )
-
-        # Create calculator agent
-        calc_agent = AssistantAgent(
-            name="calculator_tool",
-            model_client=model_client,
-            system_message="You are a calculator. Perform mathematical calculations accurately.",
-            description="Performs mathematical calculations.",
-        )
-
-        # Create tools from agents
-        weather_tool = AgentTool(weather_agent, return_value_as_last_message=True)
-        calc_tool = AgentTool(calc_agent, return_value_as_last_message=True)
-
-        # Create main agent with tools
-        agent = AssistantAgent(
-            name="tool_assistant",
-            model_client=model_client,
-            tools=[weather_tool, calc_tool],
-            system_message="You are a helpful assistant with access to weather and calculator tools. Use them when needed.",
-            max_tool_iterations=5,
-        )
-
-        response = await agent.run(
-            task="What's the weather in Paris and what is 25 * 4?"
-        )
-        return response.messages[-1].content if response.messages else "No response"
-
-    return await _test()
-
-
-async def test_streaming(tracer: "HoneyHiveTracer", model_client) -> int:
-    """Test 4: Streaming responses."""
-
-    from autogen_agentchat.agents import AssistantAgent
-
-    from honeyhive.tracer.instrumentation.decorators import trace
-
-    @trace(event_type="chain", event_name="test_streaming", tracer=tracer)
-    async def _test():
-        agent = AssistantAgent(
-            name="streaming_assistant",
-            model_client=model_client,
-            model_client_stream=True,
-        )
-
-        chunk_count = 0
-        async for message in agent.run_stream(
-            task="Write a haiku about artificial intelligence."
-        ):
-            chunk_count += 1
-            # Process streaming chunks
-
-        return chunk_count
-
-    return await _test()
-
-
-async def test_multi_turn(tracer: "HoneyHiveTracer", model_client) -> int:
-    """Test 5: Multi-turn conversation."""
-
-    from autogen_agentchat.agents import AssistantAgent
-    from autogen_agentchat.messages import TextMessage
-
-    from honeyhive.tracer.instrumentation.decorators import trace
-
-    @trace(event_type="chain", event_name="test_multi_turn", tracer=tracer)
-    async def _test():
-        agent = AssistantAgent(
-            name="conversational_assistant", model_client=model_client
-        )
-
-        # Turn 1
-        response1 = await agent.run(task="What is Python?")
-
-        # Turn 2 - follow-up
-        response2 = await agent.run(task="What are its main features?")
-
-        # Turn 3 - another follow-up
-        response3 = await agent.run(task="Give me an example.")
-
-        return 3  # Number of turns
-
-    return await _test()
-
-
-async def test_multi_agent(tracer: "HoneyHiveTracer", model_client) -> str:
-    """Test 6: Multi-agent collaboration using AgentTool."""
-
-    from autogen_agentchat.agents import AssistantAgent
-    from autogen_agentchat.tools import AgentTool
-
-    from honeyhive.tracer.instrumentation.decorators import trace
-
-    @trace(event_type="chain", event_name="test_multi_agent", tracer=tracer)
-    async def _test():
-        # Create specialized agents
-        math_agent = AssistantAgent(
-            name="math_expert",
-            model_client=model_client,
-            system_message="You are a mathematics expert. Solve math problems accurately.",
-            description="A mathematics expert that can solve complex math problems.",
-        )
-
-        history_agent = AssistantAgent(
-            name="history_expert",
-            model_client=model_client,
-            system_message="You are a history expert. Provide accurate historical information.",
-            description="A history expert with deep knowledge of world history.",
-        )
-
-        # Create tools from agents
-        math_tool = AgentTool(math_agent, return_value_as_last_message=True)
-        history_tool = AgentTool(history_agent, return_value_as_last_message=True)
-
-        # Create orchestrator agent
-        orchestrator = AssistantAgent(
-            name="orchestrator",
-            model_client=model_client,
-            system_message="You are an orchestrator. Use expert agents when needed.",
-            tools=[math_tool, history_tool],
-            max_tool_iterations=5,
-        )
-
-        response = await orchestrator.run(
-            task="What is the square root of 144, and in what year did World War II end?"
-        )
-
-        return response.messages[-1].content if response.messages else "No response"
-
-    return await _test()
-
-
-async def test_agent_handoffs(tracer: "HoneyHiveTracer", model_client) -> str:
-    """Test 7: Agent handoffs for task delegation."""
-
-    from autogen_agentchat.agents import AssistantAgent
-    from autogen_agentchat.tools import AgentTool
-
-    from honeyhive.tracer.instrumentation.decorators import trace
-
-    @trace(event_type="chain", event_name="test_agent_handoffs", tracer=tracer)
-    async def _test():
-        # Create writer agent
-        writer = AssistantAgent(
-            name="writer",
-            model_client=model_client,
-            system_message="You are a creative writer. Write engaging content.",
-            description="A creative writer for content generation.",
-        )
-
-        # Create editor agent
-        editor = AssistantAgent(
-            name="editor",
-            model_client=model_client,
-            system_message="You are an editor. Review and improve written content.",
-            description="An editor that reviews and improves content.",
-        )
-
-        # Create coordinator with handoff capabilities
-        coordinator = AssistantAgent(
-            name="coordinator",
-            model_client=model_client,
-            system_message="You coordinate tasks. First use the writer, then the editor.",
-            tools=[
-                AgentTool(writer, return_value_as_last_message=True),
-                AgentTool(editor, return_value_as_last_message=True),
-            ],
-            max_tool_iterations=5,
-        )
-
-        response = await coordinator.run(
-            task="Write a short paragraph about AI, then edit it for clarity."
-        )
-
-        return response.messages[-1].content if response.messages else "No response"
-
-    return await _test()
-
-
-async def test_complex_workflow(tracer: "HoneyHiveTracer", model_client) -> str:
-    """Test 8: Complex multi-step workflow."""
-
-    from autogen_agentchat.agents import AssistantAgent
-    from autogen_agentchat.tools import AgentTool
-
-    from honeyhive.tracer.instrumentation.decorators import trace
-
-    @trace(event_type="chain", event_name="test_complex_workflow", tracer=tracer)
-    async def _test():
-        # Create research agent
-        researcher = AssistantAgent(
-            name="researcher",
-            model_client=model_client,
-            system_message="You are a researcher. Gather and analyze information on topics. Provide key concepts, applications, and future directions.",
-            description="A researcher that gathers and analyzes information.",
-        )
-
-        # Create analyst agent
-        analyst = AssistantAgent(
-            name="analyst",
-            model_client=model_client,
-            system_message="You are an analyst. Analyze data and provide insights.",
-            description="An analyst that provides insights from data.",
-        )
-
-        # Create report writer agent
-        report_writer = AssistantAgent(
-            name="report_writer",
-            model_client=model_client,
-            system_message="You are a report writer. Create comprehensive reports.",
-            description="A report writer that creates comprehensive documents.",
-        )
-
-        # Create workflow coordinator
-        workflow = AssistantAgent(
-            name="workflow_coordinator",
-            model_client=model_client,
-            system_message="Coordinate a research workflow: research -> analyze -> report.",
-            tools=[
-                AgentTool(researcher, return_value_as_last_message=True),
-                AgentTool(analyst, return_value_as_last_message=True),
-                AgentTool(report_writer, return_value_as_last_message=True),
-            ],
-            max_tool_iterations=10,
-        )
-
-        response = await workflow.run(
-            task="Research quantum computing, analyze its impact, and write a brief report."
-        )
-
-        return response.messages[-1].content if response.messages else "No response"
-
-    return await _test()
+        instrumentor.uninstrument()
 
 
 if __name__ == "__main__":
-    """Run the AutoGen integration example."""
-    success = asyncio.run(main())
-
-    if success:
-        print("\n✅ Example completed successfully!")
-        sys.exit(0)
-    else:
-        print("\n❌ Example failed!")
-        sys.exit(1)
+    asyncio.run(main())
