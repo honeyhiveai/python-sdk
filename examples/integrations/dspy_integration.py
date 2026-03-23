@@ -49,7 +49,10 @@ def lookup_order_status(order_id: str) -> str:
     }
     status = statuses.get(order_id.upper())
     if status:
-        return f"Order {order_id.upper()}: {status['state']}, ETA {status['eta_days']} days"
+        return (
+            f"Order {order_id.upper()}: {status['state']}, "
+            f"ETA {status['eta_days']} days"
+        )
     return f"Order {order_id.upper()}: not found"
 
 
@@ -89,7 +92,7 @@ def run_react_agent_scenario() -> None:
     )
     print(f"Turn 1 answer: {result1.answer}")
 
-    # Turn 2: follow-up about cancellation policy (continuity via shared agent)
+    # Turn 2: follow-up about cancellation policy (reusing the same agent)
     result2 = agent(
         question=(
             "Order ORD-1003 is delayed. What is the cancellation policy "
