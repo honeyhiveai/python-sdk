@@ -26,6 +26,7 @@ Environment:
 
 import asyncio
 import os
+import shutil
 import tempfile
 
 from claude_agent_sdk import (
@@ -40,10 +41,15 @@ from openinference.instrumentation.claude_agent_sdk import ClaudeAgentSDKInstrum
 
 from honeyhive import HoneyHiveTracer
 
-WORK_DIR = tempfile.mkdtemp(prefix="claude_agent_sdk_example_")
+ORDER_DATA = """\
+{
+  "ORD-1001": {"state": "shipped", "eta_days": 2},
+  "ORD-1002": {"state": "processing", "eta_days": 5},
+  "ORD-1003": {"state": "delayed", "eta_days": 8}
+}"""
 
 
-async def run_single_query_scenario() -> None:
+async def run_single_query_scenario(work_dir: str) -> None:
     """Scenario 1: single query() call with tool access.
 
     Uses Write and Read tools to create and inspect a customer order file.
@@ -51,14 +57,10 @@ async def run_single_query_scenario() -> None:
     print("\n--- Scenario 1: Single query with tools ---")
     async for message in query(
         prompt=(
-            "Write a JSON file at {work_dir}/orders.json with this content:\n"
-            "{{\n"
-            '  "ORD-1001": {{"state": "shipped", "eta_days": 2}},\n'
-            '  "ORD-1002": {{"state": "processing", "eta_days": 5}},\n'
-            '  "ORD-1003": {{"state": "delayed", "eta_days": 8}}\n'
-            "}}\n"
+            f"Write a JSON file at {work_dir}/orders.json with this content:\n"
+            f"{ORDER_DATA}\n"
             "Then read it back and summarize the order with the longest ETA."
-        ).format(work_dir=WORK_DIR),
+        ),
         options=ClaudeAgentOptions(
             system_prompt=(
                 "You are a support assistant. Complete file tasks concisely. "
@@ -66,8 +68,10 @@ async def run_single_query_scenario() -> None:
             ),
             allowed_tools=["Bash", "Read", "Write"],
             max_turns=5,
+            # bypassPermissions: allows unrestricted tool use without interactive
+            # prompts. Use only in sandboxed or non-interactive environments.
             permission_mode="bypassPermissions",
-            cwd=WORK_DIR,
+            cwd=work_dir,
         ),
     ):
         if isinstance(message, AssistantMessage):
@@ -78,10 +82,10 @@ async def run_single_query_scenario() -> None:
             print(f"[Cost: ${message.total_cost_usd:.4f}]")
 
 
-async def run_multi_turn_scenario() -> None:
+async def run_multi_turn_scenario(work_dir: str) -> None:
     """Scenario 2: multi-turn conversation with ClaudeSDKClient.
 
-    Demonstrates session continuity — the agent remembers context from turn 1
+    Demonstrates session continuity -- the agent remembers context from turn 1
     when answering turn 2.
     """
     print("\n--- Scenario 2: Multi-turn conversation ---")
@@ -94,7 +98,7 @@ async def run_multi_turn_scenario() -> None:
             allowed_tools=["Bash", "Read"],
             max_turns=3,
             permission_mode="bypassPermissions",
-            cwd=WORK_DIR,
+            cwd=work_dir,
         )
     )
 
@@ -103,7 +107,7 @@ async def run_multi_turn_scenario() -> None:
         # Turn 1: ask about a specific order
         print("Turn 1:")
         await client.query(
-            prompt=(f"Read {WORK_DIR}/orders.json and tell me the status of ORD-1002."),
+            prompt=f"Read {work_dir}/orders.json and tell me the status of ORD-1002.",
         )
         async for message in client.receive_response():
             if isinstance(message, AssistantMessage):
@@ -127,6 +131,8 @@ async def run_multi_turn_scenario() -> None:
 
 async def main() -> None:
     """Run Claude Agent SDK scenarios with HoneyHive tracing."""
+    work_dir = tempfile.mkdtemp(prefix="claude_agent_sdk_example_")
+
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY"),
         project=os.getenv("HH_PROJECT"),
@@ -137,11 +143,12 @@ async def main() -> None:
     instrumentor.instrument(tracer_provider=tracer.provider)
 
     try:
-        await run_single_query_scenario()
-        await run_multi_turn_scenario()
+        await run_single_query_scenario(work_dir)
+        await run_multi_turn_scenario(work_dir)
     finally:
         tracer.force_flush()
         instrumentor.uninstrument()
+        shutil.rmtree(work_dir, ignore_errors=True)
 
 
 if __name__ == "__main__":
