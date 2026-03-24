@@ -116,15 +116,15 @@ jobs:
           echo "📝 Deploying version: $VERSION with alias: $ALIAS"
 
       - name: Build and deploy with mike
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          ALIAS: ${{ steps.version.outputs.alias }}
         run: |
           cd docs
 
           # Build the documentation
           make clean
           make html
-
-          VERSION="${{ steps.version.outputs.version }}"
-          ALIAS="${{ steps.version.outputs.alias }}"
 
           # Initialize mike if this is the first run
           if ! git ls-remote --heads origin gh-pages | grep -q gh-pages; then

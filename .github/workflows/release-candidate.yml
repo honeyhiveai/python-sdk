@@ -206,13 +206,16 @@ jobs:
           retention-days: 30
 
       - name: Generate package metadata
+        env:
+          VERSION_TYPE: ${{ inputs.version_type }}
+          PRE_RELEASE: ${{ inputs.pre_release }}
         run: |
           echo "## 📦 Release Candidate Package Built" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Version:** \`${{ env.RC_VERSION }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** \`$RC_VERSION\`" >> $GITHUB_STEP_SUMMARY
           echo "**Build Date:** $(date -u)" >> $GITHUB_STEP_SUMMARY
-          echo "**Version Type:** ${{ inputs.version_type }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Pre-release Identifier:** ${{ inputs.pre_release }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Version Type:** $VERSION_TYPE" >> $GITHUB_STEP_SUMMARY
+          echo "**Pre-release Identifier:** $PRE_RELEASE" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Package Contents" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
