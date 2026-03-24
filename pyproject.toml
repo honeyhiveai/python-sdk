@@ -113,6 +113,12 @@ openinference-mcp = [
     "openinference-instrumentation-mcp>=1.3.0",
 ]
 
+# LiteLLM (openinference-litellm)
+openinference-litellm = [
+    "openinference-instrumentation-litellm>=0.1.0",
+    "litellm>=1.0.0",
+]
+
 # OpenLLMetry (Traceloop) Alternative Integrations
 # Each integration group includes individual Traceloop instrumentor and commonly used provider SDK
 # Note: Packages are named "opentelemetry-instrumentation-*" but are published by Traceloop
@@ -164,11 +170,13 @@ all-openinference = [
     "openinference-instrumentation-google-genai>=0.1.0",
     "openinference-instrumentation-google-adk>=0.1.0",
     "openinference-instrumentation-bedrock>=0.1.0",
+    "openinference-instrumentation-litellm>=0.1.0",
     "openinference-instrumentation-mcp>=1.3.0",
     "openai>=1.0.0",
     "anthropic>=0.18.0",
     "google-genai>=0.3.0",
     "google-adk>=0.1.0",
+    "litellm>=1.0.0",
     "boto3>=1.26.0",
     "azure-identity>=1.12.0",
 ]
@@ -179,9 +187,11 @@ openinference-llm-providers = [
     "openinference-instrumentation-anthropic>=0.1.0",
     "openinference-instrumentation-google-genai>=0.1.0",
     "openinference-instrumentation-bedrock>=0.1.0",
+    "openinference-instrumentation-litellm>=0.1.0",
     "openai>=1.0.0",
     "anthropic>=0.18.0",
     "google-genai>=0.3.0",
+    "litellm>=1.0.0",
     "boto3>=1.26.0",
 ]
 
