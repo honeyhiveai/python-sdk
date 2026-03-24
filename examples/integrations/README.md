@@ -12,6 +12,7 @@ Lightweight, community-driven instrumentors following OpenTelemetry standards:
 - **[`openinference_google_ai_example.py`](openinference_google_ai_example.py)** - Google AI integration
 - **[`openinference_google_adk_example.py`](openinference_google_adk_example.py)** - Google Agent Development Kit
 - **[`openinference_bedrock_example.py`](openinference_bedrock_example.py)** - AWS Bedrock integration
+- **[`openinference_litellm_example.py`](openinference_litellm_example.py)** - LiteLLM integration (multi-provider routing)
 - **[`openinference_mcp_example.py`](openinference_mcp_example.py)** - MCP (Model Context Protocol) integration
 
 ### **Traceloop Instrumentors**
@@ -263,6 +264,7 @@ For detailed integration guides, see:
 - [Google AI Integration](../../docs/how-to/integrations/google-ai.rst)
 - [Google ADK Integration](../../docs/how-to/integrations/google-adk.rst)
 - [AWS Bedrock Integration](../../docs/how-to/integrations/bedrock.rst)
+- [LiteLLM Integration](../../docs/how-to/integrations/litellm.rst)
 - [Azure OpenAI Integration](../../docs/how-to/integrations/azure-openai.rst)
 - [MCP Integration](../../docs/how-to/integrations/mcp.rst)
 - [Multi-Provider Guide](../../docs/how-to/integrations/multi-provider.rst)
