@@ -29,13 +29,14 @@ jobs:
 
       - name: Check if CHANGELOG.md was modified
         id: changelog_modified
+        env:
+          BASE_BRANCH: ${{ github.base_ref }}
         run: |
           # Get the base branch
-          BASE_BRANCH="${{ github.base_ref }}"
           echo "Base branch: $BASE_BRANCH"
 
           # Check if CHANGELOG.md was modified in this PR
-          if git diff --name-only origin/$BASE_BRANCH...HEAD | grep -q "^CHANGELOG.md$"; then
+          if git diff --name-only "origin/$BASE_BRANCH...HEAD" | grep -q "^CHANGELOG.md$"; then
             echo "modified=true" >> $GITHUB_OUTPUT
             echo "CHANGELOG.md was modified in this PR"
           else
@@ -45,11 +46,11 @@ jobs:
 
       - name: Check for source code changes
         id: source_changes
+        env:
+          BASE_BRANCH: ${{ github.base_ref }}
         run: |
-          BASE_BRANCH="${{ github.base_ref }}"
-
           # Check if there are meaningful source code changes (not just tests/docs)
-          src_changes=$(git diff --name-only origin/$BASE_BRANCH...HEAD | grep -E "^src/" | grep -v "__pycache__" | wc -l)
+          src_changes=$(git diff --name-only "origin/$BASE_BRANCH...HEAD" | grep -E "^src/" | grep -v "__pycache__" | wc -l)
 
           if [ "$src_changes" -gt 0 ]; then
             echo "has_src_changes=true" >> $GITHUB_OUTPUT

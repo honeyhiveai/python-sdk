@@ -52,8 +52,10 @@ jobs:
 
       - name: Check if tests should run
         id: check-tests
+        env:
+          SKIP_TESTS: ${{ inputs.skip_tests }}
         run: |
-          if [ "${{ inputs.skip_tests }}" = "true" ]; then
+          if [ "$SKIP_TESTS" = "true" ]; then
             echo "should-run=false" >> $GITHUB_OUTPUT
             echo "⚠️ Tests will be SKIPPED (emergency release mode)"
           else
@@ -63,8 +65,11 @@ jobs:
 
       - name: Check if AWS tests should run
         id: check-aws
+        env:
+          FORCE_AWS_TESTS: ${{ inputs.force_aws_tests }}
+          SKIP_TESTS: ${{ inputs.skip_tests }}
         run: |
-          if [ "${{ inputs.force_aws_tests }}" = "true" ] && [ "${{ inputs.skip_tests }}" = "false" ]; then
+          if [ "$FORCE_AWS_TESTS" = "true" ] && [ "$SKIP_TESTS" = "false" ]; then
             echo "should-run=true" >> $GITHUB_OUTPUT
             echo "✅ AWS Lambda tests will be executed"
           else
@@ -74,8 +79,11 @@ jobs:
 
       - name: Generate version info
         id: version
+        env:
+          VERSION_TYPE: ${{ inputs.version_type }}
+          PRE_RELEASE: ${{ inputs.pre_release }}
         run: |
-          echo "info=${{ inputs.version_type }}-${{ inputs.pre_release }}" >> $GITHUB_OUTPUT
+          echo "info=$VERSION_TYPE-$PRE_RELEASE" >> $GITHUB_OUTPUT
 
   # Call the full Tox test suite
   full-test-suite:
@@ -128,6 +136,9 @@ jobs:
           pip install build hatchling twine
 
       - name: Configure version for release candidate
+        env:
+          VERSION_TYPE: ${{ inputs.version_type }}
+          PRE_RELEASE: ${{ inputs.pre_release }}
         run: |
           # Get current version from pyproject.toml
           current_version=$(python -c \
@@ -141,7 +152,7 @@ jobs:
           patch=${VERSION_PARTS[2]}
 
           # Increment based on version type
-          case "${{ inputs.version_type }}" in
+          case "$VERSION_TYPE" in
             "major")
               major=$((major + 1))
               minor=0
@@ -157,7 +168,7 @@ jobs:
           esac
 
           # Create release candidate version
-          rc_version="${major}.${minor}.${patch}${{ inputs.pre_release }}$(date +%Y%m%d%H%M)"
+          rc_version="${major}.${minor}.${patch}${PRE_RELEASE}$(date +%Y%m%d%H%M)"
           echo "Release candidate version: $rc_version"
           echo "RC_VERSION=$rc_version" >> $GITHUB_ENV
 

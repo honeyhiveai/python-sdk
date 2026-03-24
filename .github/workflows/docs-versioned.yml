@@ -93,10 +93,13 @@ jobs:
 
       - name: Determine version and alias
         id: version
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+          INPUT_ALIAS: ${{ github.event.inputs.alias }}
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            VERSION="${{ github.event.inputs.version }}"
-            ALIAS="${{ github.event.inputs.alias }}"
+            VERSION="$INPUT_VERSION"
+            ALIAS="$INPUT_ALIAS"
           elif [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             VERSION="${GITHUB_REF#refs/tags/v}"
             ALIAS="stable"

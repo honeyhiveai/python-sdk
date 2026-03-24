@@ -53,13 +53,15 @@ jobs:
 
       - name: Wait for deployment to complete
         if: github.event_name == 'workflow_run'
+        env:
+          WORKFLOW_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
         run: |
           echo "🕐 Waiting for deployment to fully complete and propagate..."
           echo "📡 GitHub Pages deployment can take up to 10 minutes to fully propagate"
           sleep 120  # Wait 2 minutes for immediate availability
 
           # Check if deployment was successful first
-          if [ "${{ github.event.workflow_run.conclusion }}" != "success" ]; then
+          if [ "$WORKFLOW_CONCLUSION" != "success" ]; then
             echo "❌ Documentation deployment failed - skipping validation"
             exit 0
           fi
@@ -75,9 +77,11 @@ jobs:
 
       - name: Validate custom URL documentation
         if: github.event_name == 'workflow_dispatch'
+        env:
+          VALIDATION_BASE_URL: ${{ github.event.inputs.base_url }}
         run: |
           python docs/utils/validate_navigation.py \
-            --base-url "${{ github.event.inputs.base_url }}" \
+            --base-url "$VALIDATION_BASE_URL" \
             --timeout 15
 
       - name: Report results
