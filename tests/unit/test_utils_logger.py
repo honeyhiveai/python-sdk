@@ -245,7 +245,7 @@ class TestHoneyHiveFormatter:
         )
         record.honeyhive_data = {
             "span_count": 4,
-            "json_payload": "{\"huge\": \"data\"" + "x" * 10000 + "}",
+            "json_payload": '{"huge": "data"' + "x" * 10000 + "}",
         }
 
         # Act
