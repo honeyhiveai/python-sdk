@@ -29,17 +29,14 @@ import os
 import shutil
 import tempfile
 
-from claude_agent_sdk import (
-    AssistantMessage,
-    ClaudeAgentOptions,
-    ClaudeSDKClient,
-    ResultMessage,
-    TextBlock,
-    query,
-)
 from openinference.instrumentation.claude_agent_sdk import ClaudeAgentSDKInstrumentor
 
 from honeyhive import HoneyHiveTracer
+
+# claude_agent_sdk is imported inside each function so that the references
+# resolve to the instrumented (wrapped) versions.  Importing at module level
+# would capture the *original* functions before the instrumentor patches them,
+# which causes query() spans to be silently lost.
 
 ORDER_DATA = """\
 {
@@ -54,6 +51,14 @@ async def run_single_query_scenario(work_dir: str) -> None:
 
     Uses Write and Read tools to create and inspect a customer order file.
     """
+    from claude_agent_sdk import (
+        AssistantMessage,
+        ClaudeAgentOptions,
+        ResultMessage,
+        TextBlock,
+        query,
+    )
+
     print("\n--- Scenario 1: Single query with tools ---")
     async for message in query(
         prompt=(
@@ -88,6 +93,13 @@ async def run_multi_turn_scenario(work_dir: str) -> None:
     Demonstrates session continuity -- the agent remembers context from turn 1
     when answering turn 2.
     """
+    from claude_agent_sdk import (
+        AssistantMessage,
+        ClaudeAgentOptions,
+        ClaudeSDKClient,
+        TextBlock,
+    )
+
     print("\n--- Scenario 2: Multi-turn conversation ---")
     client = ClaudeSDKClient(
         options=ClaudeAgentOptions(
