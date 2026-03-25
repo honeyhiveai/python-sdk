@@ -675,6 +675,105 @@ class TestHoneyHiveSpanProcessorEventTypeDetection:
         assert result == "tool"
         mock_safe_log.assert_called()
 
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_detect_event_type_agent_name_returns_chain(
+        self, mock_safe_log: Mock
+    ) -> None:
+        """Test Priority 5: gen_ai.agent.name without request model → chain."""
+        processor = HoneyHiveSpanProcessor()
+        mock_span = Mock(spec=Span)
+        mock_span.name = "Agent run"
+        mock_span.attributes = {
+            "gen_ai.agent.name": "my_agent",
+        }
+        mock_span.get_span_context.return_value = Mock(span_id="test-span-id")
+
+        result = processor._detect_event_type(mock_span)
+
+        assert result == "chain"
+
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_detect_event_type_legacy_agent_name_returns_chain(
+        self, mock_safe_log: Mock
+    ) -> None:
+        """Test Priority 5: legacy agent_name without request model → chain."""
+        processor = HoneyHiveSpanProcessor()
+        mock_span = Mock(spec=Span)
+        mock_span.name = "Agent run"
+        mock_span.attributes = {
+            "agent_name": "my_agent",
+        }
+        mock_span.get_span_context.return_value = Mock(span_id="test-span-id")
+
+        result = processor._detect_event_type(mock_span)
+
+        assert result == "chain"
+
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_detect_event_type_agent_name_with_model_falls_through(
+        self, mock_safe_log: Mock
+    ) -> None:
+        """Test Priority 5: agent name WITH gen_ai.request.model does not return chain."""
+        processor = HoneyHiveSpanProcessor()
+        mock_span = Mock(spec=Span)
+        mock_span.name = "Agent run"
+        mock_span.attributes = {
+            "gen_ai.agent.name": "my_agent",
+            "gen_ai.request.model": "gpt-4",
+        }
+        mock_span.get_span_context.return_value = Mock(span_id="test-span-id")
+
+        with patch(
+            "honeyhive.tracer.processing.span_processor.detect_event_type_from_patterns"
+        ) as mock_detect:
+            mock_detect.return_value = "model"
+
+            result = processor._detect_event_type(mock_span)
+
+            # Should fall through to pattern matching, not return "chain"
+            assert result == "model"
+
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_detect_event_type_empty_agent_name_falls_through(
+        self, mock_safe_log: Mock
+    ) -> None:
+        """Test Priority 5: empty string agent name is not treated as present."""
+        processor = HoneyHiveSpanProcessor()
+        mock_span = Mock(spec=Span)
+        mock_span.name = "some_span"
+        mock_span.attributes = {
+            "gen_ai.agent.name": "",
+        }
+        mock_span.get_span_context.return_value = Mock(span_id="test-span-id")
+
+        with patch(
+            "honeyhive.tracer.processing.span_processor.detect_event_type_from_patterns"
+        ) as mock_detect:
+            mock_detect.return_value = None
+
+            result = processor._detect_event_type(mock_span)
+
+            # Empty agent name should fall through to default
+            assert result == "tool"
+
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_detect_event_type_both_agent_names_returns_chain(
+        self, mock_safe_log: Mock
+    ) -> None:
+        """Test Priority 5: both gen_ai.agent.name and agent_name present → chain."""
+        processor = HoneyHiveSpanProcessor()
+        mock_span = Mock(spec=Span)
+        mock_span.name = "Agent run"
+        mock_span.attributes = {
+            "gen_ai.agent.name": "my_agent",
+            "agent_name": "legacy_agent",
+        }
+        mock_span.get_span_context.return_value = Mock(span_id="test-span-id")
+
+        result = processor._detect_event_type(mock_span)
+
+        assert result == "chain"
+
 
 class TestHoneyHiveSpanProcessorOnStart:
     """Test on_start method functionality with all conditional branches."""
