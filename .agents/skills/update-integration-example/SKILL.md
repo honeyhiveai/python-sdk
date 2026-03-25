@@ -3,7 +3,7 @@ name: update-integration-example
 description: Build or update SDK integration examples for AI frameworks. Use when asked to update, create, or review a framework example in python-sdk/examples/integrations/. Covers framework API research, example writing, smoke testing, span capture, tracing sanity checks, and creating/updating the corresponding integration doc in honeyhive-ai-docs.
 metadata:
   author: sanjeed5
-  version: "2.5"
+  version: "2.6"
 ---
 
 # Update Integration Example
@@ -110,6 +110,35 @@ If the example is already current, skip to Step 3 and note "already current." Do
 - [ ] User input and model output
 - [ ] Tool calls (arguments and results)
 - [ ] Session continuity across turns
+- [ ] `@trace` decorator pattern (see below)
+
+### `@trace` decorator pattern
+
+Every agent framework example should include at least one scenario using the `@trace` decorator to show manual span creation around agent calls. This creates a parent span that groups the agent invocation and any surrounding business logic (validation, post-processing) into a single trace node in HoneyHive.
+
+**Import:**
+```python
+from honeyhive.tracer.instrumentation.decorators import trace
+```
+
+**Usage:**
+```python
+@trace(event_type="chain", event_name="scenario_name", tracer=tracer)
+async def my_scenario():
+    # agent calls + business logic here
+    ...
+```
+
+**Requirements:**
+- `tracer` must be initialized at **module level** (not inside `main()`) so decorators can reference it at decoration time
+- Use `event_type="chain"` for orchestration/workflow spans
+- Use a descriptive `event_name` matching the function's purpose
+- Works with both sync and async functions
+- Add a dedicated scenario (e.g., "escalation workflow") that wraps agent calls with pre/post-processing to demonstrate the pattern clearly
+
+**When to use `@trace` vs instrumentor-only:**
+- Instrumentor alone is sufficient for tracing agent/LLM/tool spans automatically
+- Use `@trace` when you want a **parent span** grouping multiple operations (e.g., agent call + validation + response formatting) into one logical unit
 
 For **model provider** integrations, only showcase:
 - [ ] Tracer + instrumentor initialization
