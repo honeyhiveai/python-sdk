@@ -32,8 +32,7 @@ from autogen_agentchat.teams import SelectorGroupChat, Swarm
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 from openinference.instrumentation.autogen_agentchat import AutogenAgentChatInstrumentor
 
-from honeyhive import HoneyHiveTracer
-from honeyhive.tracer.instrumentation.decorators import trace
+from honeyhive import HoneyHiveTracer, trace
 
 MODEL = "gpt-4o-mini"
 

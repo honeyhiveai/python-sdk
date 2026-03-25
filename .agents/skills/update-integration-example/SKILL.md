@@ -118,7 +118,7 @@ Every agent framework example should include at least one scenario using the `@t
 
 **Import:**
 ```python
-from honeyhive.tracer.instrumentation.decorators import trace
+from honeyhive import trace
 ```
 
 **Usage:**
