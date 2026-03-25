@@ -110,6 +110,37 @@ If the example is already current, skip to Step 3 and note "already current." Do
 - [ ] User input and model output
 - [ ] Tool calls (arguments and results)
 - [ ] Session continuity across turns
+- [ ] `@trace` decorator for custom business logic (see below)
+
+### `@trace` Decorator Pattern
+
+Every agent framework example should include a scenario demonstrating the `@trace` decorator wrapping custom business logic around framework calls. This shows users how to:
+
+1. Create a parent span for an end-to-end workflow using `@trace(event_type="chain")`
+2. Have framework calls (e.g., DSPy modules, PydanticAI agents) captured as child spans
+3. Use `enrich_span()` to attach custom metadata and metrics to the traced span
+
+Example pattern:
+```python
+from honeyhive import HoneyHiveTracer, enrich_span, trace
+
+@trace(event_type="chain")
+def handle_workflow(input_data: str) -> dict:
+    # Framework calls inside become child spans
+    result = framework_module(input=input_data)
+
+    enrich_span(
+        metadata={"key": "value"},  # Custom metadata
+    )
+    enrich_span(
+        metrics={"steps_completed": 1},  # Custom metrics
+    )
+    return {"output": result}
+```
+
+The `event_type` parameter controls how the span appears in HoneyHive UI (`"chain"` for orchestration, `"tool"` for tool-like operations). The function should combine multiple framework calls into a meaningful business workflow.
+
+See `dspy_integration.py` Scenario 4 for a complete implementation.
 
 For **model provider** integrations, only showcase:
 - [ ] Tracer + instrumentor initialization
@@ -277,6 +308,7 @@ After the SDK example is complete and verified, create or update the correspondi
 - User input/model output: [yes/no]
 - Tool calls (args + results): [yes/no]
 - Session continuity: [yes/no]
+- @trace decorator pattern: [yes/no]
 - [any additional framework-specific patterns]
 
 ### Changes Made
