@@ -1127,12 +1127,12 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         4. gen_ai.operation.name - GenAI semantic conventions
            (chat/text_completion/generate_content → model,
             invoke_agent/create_agent → chain, execute_tool → tool)
-        4.5. Agent name attributes (gen_ai.agent.name / agent_name without
-             gen_ai.request.model → chain). Mirrors ingestion Priority 2.6.
-        5. openinference.span.kind - Standard instrumentor convention
+        5. Agent name attributes (gen_ai.agent.name / agent_name without
+           gen_ai.request.model → chain). Mirrors ingestion Priority 2.6.
+        6. openinference.span.kind - Standard instrumentor convention
            (LLM/CHAIN/TOOL/AGENT)
-        6. Span name / attribute pattern matching fallback
-        7. Default to "tool" - Final fallback
+        7. Span name / attribute pattern matching fallback
+        8. Default to "tool" - Final fallback
 
         OpenInference span.kind mappings:
         - LLM → model (actual LLM invocations)
@@ -1217,23 +1217,20 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                     op_name,
                 )
 
-            # Priority 4.5: Agent name attributes override model heuristics
+            # Priority 5: Agent name attributes override model heuristics
             # PydanticAI agent spans carry gen_ai.agent.name / agent_name and
             # often also model_name (because the agent *uses* a model).  The
-            # pattern-matching fallback (Priority 6) would see model_name and
+            # pattern-matching fallback (Priority 7) would see model_name and
             # incorrectly return "model".  Detecting agent names here — before
             # both openinference.span.kind and pattern matching — mirrors the
             # ingestion service's Priority 2.6 and ensures the SDK sends the
             # correct honeyhive_event_type on the wire.
-            has_agent_name = isinstance(
-                attributes.get("gen_ai.agent.name"), str
-            ) and bool(attributes.get("gen_ai.agent.name"))
-            has_agent_name_legacy = isinstance(
-                attributes.get("agent_name"), str
-            ) and bool(attributes.get("agent_name"))
-            has_request_model = isinstance(
-                attributes.get("gen_ai.request.model"), str
-            ) and bool(attributes.get("gen_ai.request.model"))
+            agent_name_val = attributes.get("gen_ai.agent.name")
+            has_agent_name = isinstance(agent_name_val, str) and agent_name_val != ""
+            legacy_name_val = attributes.get("agent_name")
+            has_agent_name_legacy = isinstance(legacy_name_val, str) and legacy_name_val != ""
+            request_model_val = attributes.get("gen_ai.request.model")
+            has_request_model = isinstance(request_model_val, str) and request_model_val != ""
 
             if (has_agent_name or has_agent_name_legacy) and not has_request_model:
                 self._safe_log(
@@ -1245,7 +1242,7 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                 )
                 return "chain"
 
-            # Priority 5: OpenInference span.kind attribute (standard
+            # Priority 6: OpenInference span.kind attribute (standard
             # instrumentor convention)
             span_kind = attributes.get("openinference.span.kind")
             if span_kind:
@@ -1286,7 +1283,7 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                     )
                     return "tool"
 
-            # Priority 5: Dynamic pattern matching using utility function
+            # Priority 7: Dynamic pattern matching using utility function
             self._safe_log(
                 "debug", "🔍 Using dynamic pattern matching for span: '%s'", span.name
             )
@@ -1305,7 +1302,7 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                 )
                 return detected_type
 
-            # Priority 6: Default fallback
+            # Priority 8: Default fallback
             self._safe_log(
                 "debug",
                 "⚠️ No event type pattern matched for '%s', defaulting to 'tool'",
