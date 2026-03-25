@@ -62,7 +62,7 @@ class TestHoneyHiveFormatter:
         """Test formatting log record with all fields included."""
         # Arrange
         mock_now = Mock()
-        mock_now.isoformat.return_value = "2023-01-01T12:00:00+00:00"
+        mock_now.strftime.return_value = "12:00:00"
         mock_datetime.now.return_value = mock_now
 
         formatter = HoneyHiveFormatter(include_timestamp=True, include_level=True)
@@ -79,12 +79,11 @@ class TestHoneyHiveFormatter:
         # Act
         result = formatter.format(record)
 
-        # Assert
-        parsed_result = json.loads(result)
-        assert parsed_result["timestamp"] == "2023-01-01T12:00:00+00:00"
-        assert parsed_result["level"] == "INFO"
-        assert parsed_result["logger"] == "test.logger"
-        assert parsed_result["message"] == "Test message"
+        # Assert - human-readable format
+        assert "[12:00:00]" in result
+        assert "INFO" in result
+        assert "test.logger" in result
+        assert "Test message" in result
         mock_datetime.now.assert_called_once_with(timezone.utc)
 
     def test_format_without_timestamp(self) -> None:
@@ -104,12 +103,11 @@ class TestHoneyHiveFormatter:
         # Act
         result = formatter.format(record)
 
-        # Assert
-        parsed_result = json.loads(result)
-        assert "timestamp" not in parsed_result
-        assert parsed_result["level"] == "WARNING"
-        assert parsed_result["logger"] == "test.logger"
-        assert parsed_result["message"] == "Warning message"
+        # Assert - no timestamp bracket in output
+        assert not result.startswith("[")
+        assert "WARNING" in result
+        assert "test.logger" in result
+        assert "Warning message" in result
 
     def test_format_without_level(self) -> None:
         """Test formatting log record without level."""
@@ -128,12 +126,10 @@ class TestHoneyHiveFormatter:
         # Act
         result = formatter.format(record)
 
-        # Assert
-        parsed_result = json.loads(result)
-        assert "timestamp" not in parsed_result
-        assert "level" not in parsed_result
-        assert parsed_result["logger"] == "test.logger"
-        assert parsed_result["message"] == "Error message"
+        # Assert - no timestamp or level
+        assert "ERROR" not in result
+        assert "test.logger" in result
+        assert "Error message" in result
 
     def test_format_with_honeyhive_data(self) -> None:
         """Test formatting log record with HoneyHive context data."""
@@ -154,12 +150,12 @@ class TestHoneyHiveFormatter:
         # Act
         result = formatter.format(record)
 
-        # Assert
-        parsed_result = json.loads(result)
-        assert parsed_result["logger"] == "test.logger"
-        assert parsed_result["message"] == "Context message"
-        assert parsed_result["session_id"] == "test-123"
-        assert parsed_result["project"] == "test-project"
+        # Assert - key=value pairs appended after pipe separator
+        assert "test.logger" in result
+        assert "Context message" in result
+        assert "session_id=test-123" in result
+        assert "project=test-project" in result
+        assert "|" in result
 
     def test_format_with_exception_info(self) -> None:
         """Test formatting log record with exception information."""
@@ -185,15 +181,13 @@ class TestHoneyHiveFormatter:
         # Act
         result = formatter.format(record)
 
-        # Assert
-        parsed_result = json.loads(result)
-        assert parsed_result["logger"] == "test.logger"
-        assert parsed_result["message"] == "Exception occurred"
-        assert "exception" in parsed_result
-        assert "ValueError: Test exception" in parsed_result["exception"]
+        # Assert - exception traceback appended on new line
+        assert "test.logger" in result
+        assert "Exception occurred" in result
+        assert "ValueError: Test exception" in result
 
-    def test_format_removes_none_values(self) -> None:
-        """Test that formatting removes None values from output."""
+    def test_format_minimal_output(self) -> None:
+        """Test that minimal formatting produces clean output."""
         # Arrange
         formatter = HoneyHiveFormatter(include_timestamp=False, include_level=False)
         record = logging.LogRecord(
@@ -209,12 +203,10 @@ class TestHoneyHiveFormatter:
         # Act
         result = formatter.format(record)
 
-        # Assert
-        parsed_result = json.loads(result)
-        assert "timestamp" not in parsed_result
-        assert "level" not in parsed_result
-        assert parsed_result["logger"] == "test.logger"
-        assert parsed_result["message"] == "Clean message"
+        # Assert - clean output with just logger, separator, and message
+        assert "test.logger" in result
+        assert "Clean message" in result
+        assert "|" not in result  # No honeyhive_data separator
 
 
 class TestHoneyHiveLogger:
@@ -1296,14 +1288,11 @@ class TestEdgeCasesAndErrorHandling:
         # Act
         result = formatter.format(record)
 
-        # Assert
-        parsed_result = json.loads(result)
-        assert parsed_result["nested"]["key"] == "value"
-        assert parsed_result["nested"]["number"] == 42
-        assert parsed_result["list"] == [1, 2, 3]
-        assert parsed_result["boolean"] is True
-        # null_value is removed by the formatter since it filters None values
-        assert "null_value" not in parsed_result
+        # Assert - complex data rendered as key=value pairs
+        assert "nested=" in result
+        assert "list=" in result
+        assert "boolean=True" in result
+        assert "|" in result
 
     @patch("honeyhive.utils.logger._detect_shutdown_conditions")
     def test_safe_log_with_missing_log_method(self, mock_detect_shutdown: Mock) -> None:
