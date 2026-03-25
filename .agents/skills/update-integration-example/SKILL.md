@@ -257,7 +257,6 @@ After the SDK example is complete and verified, create or update the correspondi
 2. Read that repo's `AGENTS.md` for writing guidelines, versioning rules, and navigation config.
 3. Use existing beta integration docs in `beta/integrations/` as templates (e.g., `pydantic-ai.mdx`, `google-adk.mdx`, `strands.mdx`).
 4. Create or update `beta/integrations/{{framework}}.mdx`. Simplify code from the SDK example - focus on the integration pattern, not every feature. Include screenshots from Step 6 if available.
-   - **Do NOT add a Compatibility section** (version requirement tables). These are not included on integration pages.
    - **"What Gets Traced" should only list what the instrumentor captures** — do not include SDK-level features (e.g., session continuity) that aren't instrumentor-related.
 5. If this is a new page, add it to the navigation config as documented in `AGENTS.md`.
 6. Open a PR following that repo's PR conventions.
