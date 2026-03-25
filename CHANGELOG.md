@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+### Fixed
+
+- **Tracing: Agent spans no longer mis-classified as model calls**
+  - PydanticAI agent spans carrying `gen_ai.agent.name` / `agent_name` were incorrectly classified as `"model"` by the pattern-matching fallback because they also carry `model_name`
+  - Added Priority 5 detection: spans with agent name attributes but without `gen_ai.request.model` are now correctly classified as `"chain"`
+  - Mirrors the ingestion service's Priority 2.6 logic so the SDK sends the correct `honeyhive_event_type` on the wire
+
 ## [1.0.0rc20] - 2026-03-17
 
 ### Added
