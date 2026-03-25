@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+### Fixed
+
+- **Verbose mode output is now human-readable** — `verbose=True` debug logs now use a clean text format (`[HH:MM:SS] LEVEL logger - message | key=value`) instead of escaped JSON. Large payload dumps that made output unreadable are replaced with concise summaries.
+
 ## [1.0.0rc20] - 2026-03-17
 
 ### Added
