@@ -2,11 +2,12 @@
 """
 AutoGen AgentChat + HoneyHive integration example.
 
-Demonstrates three AgentChat patterns with HoneyHive tracing:
+Demonstrates four AgentChat patterns with HoneyHive tracing:
 
 1) Single agent with tool calls and session continuity across turns
 2) Multi-agent Swarm with handoffs between specialists
 3) SelectorGroupChat with model-based speaker selection
+4) @trace decorator for wrapping custom business logic around agent calls
 
 Install:
     uv pip install honeyhive autogen-agentchat autogen-ext[openai] \
@@ -32,8 +33,19 @@ from autogen_ext.models.openai import OpenAIChatCompletionClient
 from openinference.instrumentation.autogen_agentchat import AutogenAgentChatInstrumentor
 
 from honeyhive import HoneyHiveTracer
+from honeyhive.tracer.instrumentation.decorators import trace
 
 MODEL = "gpt-4o-mini"
+
+# Initialize HoneyHive tracer at module level so @trace decorators can reference it
+tracer = HoneyHiveTracer.init(
+    api_key=os.getenv("HH_API_KEY"),
+    project=os.getenv("HH_PROJECT"),
+    session_name="autogen_integration_example",
+    source=os.getenv("HH_SOURCE", "python_sdk_example"),
+)
+instrumentor = AutogenAgentChatInstrumentor()
+instrumentor.instrument(tracer_provider=tracer.provider)
 
 
 # -- Mock tools (customer support domain, shared across integration examples) --
@@ -74,6 +86,7 @@ def lookup_policy(topic: str) -> dict:
 # -- Scenario 1: single agent with tools + session continuity --
 
 
+@trace(event_type="chain", event_name="single_agent_scenario", tracer=tracer)
 async def run_single_agent_scenario(model_client: OpenAIChatCompletionClient) -> None:
     """Single support agent handling two turns with shared conversation history."""
     agent = AssistantAgent(
@@ -100,6 +113,7 @@ async def run_single_agent_scenario(model_client: OpenAIChatCompletionClient) ->
 # -- Scenario 2: Swarm with handoffs between specialists --
 
 
+@trace(event_type="chain", event_name="swarm_scenario", tracer=tracer)
 async def run_swarm_scenario(model_client: OpenAIChatCompletionClient) -> None:
     """Swarm team where a triage agent hands off to order and policy specialists."""
     order_specialist = AssistantAgent(
@@ -154,6 +168,7 @@ async def run_swarm_scenario(model_client: OpenAIChatCompletionClient) -> None:
 # -- Scenario 3: SelectorGroupChat with model-based speaker selection --
 
 
+@trace(event_type="chain", event_name="selector_group_chat_scenario", tracer=tracer)
 async def run_selector_group_chat_scenario(
     model_client: OpenAIChatCompletionClient,
 ) -> None:
@@ -203,20 +218,43 @@ async def run_selector_group_chat_scenario(
     )
 
 
+# -- Scenario 4: @trace decorator for custom business logic --
+
+
+@trace(event_type="chain", event_name="escalation_workflow", tracer=tracer)
+async def run_escalation_workflow(model_client: OpenAIChatCompletionClient) -> dict:
+    """Custom business logic wrapping agent calls, traced as a single span.
+
+    The @trace decorator creates a parent span that groups the agent call
+    and any surrounding business logic (validation, post-processing) into
+    one trace node visible in HoneyHive.
+    """
+    agent = AssistantAgent(
+        name="escalation_agent",
+        model_client=model_client,
+        tools=[lookup_order_status, lookup_policy],
+        system_message=(
+            "You are an escalation agent. Check the order status and policy, "
+            "then recommend whether to escalate. Be concise."
+        ),
+    )
+
+    result = await agent.run(
+        task="Order ORD-1003 is delayed and the customer is upset. "
+        "Check the status and cancellation policy, then recommend next steps."
+    )
+
+    # Post-processing logic (also captured inside the @trace span)
+    final_message = result.messages[-1].content if result.messages else ""
+    needs_escalation = "escalat" in final_message.lower()
+    return {"response": final_message, "escalated": needs_escalation}
+
+
 # -- Main --
 
 
 async def main() -> None:
     """Run AutoGen AgentChat scenarios and emit HoneyHive traces."""
-    tracer = HoneyHiveTracer.init(
-        api_key=os.getenv("HH_API_KEY"),
-        project=os.getenv("HH_PROJECT"),
-        session_name="autogen_integration_example",
-        source=os.getenv("HH_SOURCE", "python_sdk_example"),
-    )
-    instrumentor = AutogenAgentChatInstrumentor()
-    instrumentor.instrument(tracer_provider=tracer.provider)
-
     model_client = OpenAIChatCompletionClient(
         model=MODEL,
         api_key=os.getenv("OPENAI_API_KEY"),
@@ -226,6 +264,7 @@ async def main() -> None:
         await run_single_agent_scenario(model_client)
         await run_swarm_scenario(model_client)
         await run_selector_group_chat_scenario(model_client)
+        await run_escalation_workflow(model_client)
     finally:
         await model_client.close()
         tracer.force_flush()
