@@ -170,6 +170,12 @@ class OTLPJSONExporter(SpanExporter):
     ) -> Dict[str, Any]:
         """Convert spans to OTLP JSON payload format.
 
+        Groups spans by their instrumentation scope so the ingestion pipeline
+        can correctly identify the instrumentor for each span. Previously all
+        spans were placed under a single scope (the first span's), which caused
+        misclassification when spans from different instrumentors (e.g.
+        pydantic-ai and httpx) were batched together.
+
         Args:
             spans: Sequence of ReadableSpan objects
 
@@ -179,7 +185,7 @@ class OTLPJSONExporter(SpanExporter):
         if not spans:
             return {"resourceSpans": []}
 
-        # Simplified: use first span's resource, put all spans in one scope
+        # Use first span's resource (all spans share the same TracerProvider resource)
         first_span = spans[0]
         resource_attrs = []
         if first_span.resource and first_span.resource.attributes:
@@ -188,22 +194,37 @@ class OTLPJSONExporter(SpanExporter):
                 for k, v in first_span.resource.attributes.items()
             ]
 
-        # Get scope info from first span (simplified - all spans in one scope)
-        scope_info = {}
-        if (
-            hasattr(first_span, "instrumentation_scope")
-            and first_span.instrumentation_scope
-        ):
-            scope_info["name"] = first_span.instrumentation_scope.name or "unknown"
-            if first_span.instrumentation_scope.version:
-                scope_info["version"] = first_span.instrumentation_scope.version
+        # Group spans by instrumentation scope so each scope's spans are
+        # correctly tagged in the OTLP payload. The ingestion pipeline uses
+        # the scope name to detect the instrumentor (e.g. "pydantic-ai" →
+        # StandardGenAI). Mixing scopes causes misclassification.
+        scope_groups: Dict[str, Dict[str, Any]] = {}
+        for span in spans:
+            scope_name = "unknown"
+            scope_version = ""
+            if (
+                hasattr(span, "instrumentation_scope")
+                and span.instrumentation_scope
+            ):
+                scope_name = span.instrumentation_scope.name or "unknown"
+                scope_version = span.instrumentation_scope.version or ""
 
-        # Convert all spans
-        span_jsons = [self._span_to_otlp_json(span) for span in spans]
+            scope_key = f"{scope_name}:{scope_version}"
+            if scope_key not in scope_groups:
+                scope_info: Dict[str, str] = {"name": scope_name}
+                if scope_version:
+                    scope_info["version"] = scope_version
+                scope_groups[scope_key] = {
+                    "scope": scope_info,
+                    "spans": [],
+                }
+            scope_groups[scope_key]["spans"].append(
+                self._span_to_otlp_json(span)
+            )
 
         resource_span = {
             "resource": {"attributes": resource_attrs} if resource_attrs else {},
-            "scopeSpans": [{"scope": scope_info, "spans": span_jsons}],
+            "scopeSpans": list(scope_groups.values()),
         }
 
         return {"resourceSpans": [resource_span]}
