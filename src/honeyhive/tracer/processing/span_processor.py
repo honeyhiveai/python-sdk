@@ -903,28 +903,42 @@ class HoneyHiveSpanProcessor(SpanProcessor):
             session_id = str(session_id_raw)
 
             # Log concise span summary for debugging
-            instrumentation_scope = getattr(span, "instrumentation_scope", None)
-            scope_name = (
-                instrumentation_scope.name if instrumentation_scope else "unknown"
-            )
-            scope_version = (
-                instrumentation_scope.version if instrumentation_scope else "unknown"
-            )
-            span_context = span.context if hasattr(span, "context") else None
-            trace_id = f"{span_context.trace_id:032x}" if span_context else "unknown"
-            span_id = f"{span_context.span_id:016x}" if span_context else "unknown"
-            attr_count = len(span.attributes) if span.attributes else 0
-            self._safe_log(
-                "debug",
-                "SPAN on_end: %s (trace=%s span=%s scope=%s/%s session=%s attrs=%d)",
-                span.name,
-                trace_id[-8:],
-                span_id[-8:],
-                scope_name,
-                scope_version,
-                session_id,
-                attr_count,
-            )
+            try:
+                instrumentation_scope = getattr(span, "instrumentation_scope", None)
+                scope_name = (
+                    instrumentation_scope.name if instrumentation_scope else "unknown"
+                )
+                scope_version = (
+                    instrumentation_scope.version
+                    if instrumentation_scope
+                    else "unknown"
+                )
+                span_context = span.context if hasattr(span, "context") else None
+                trace_id = (
+                    f"{span_context.trace_id:032x}"
+                    if span_context and isinstance(span_context.trace_id, int)
+                    else "unknown"
+                )
+                span_id = (
+                    f"{span_context.span_id:016x}"
+                    if span_context and isinstance(span_context.span_id, int)
+                    else "unknown"
+                )
+                attr_count = len(span.attributes) if span.attributes else 0
+                self._safe_log(
+                    "debug",
+                    "SPAN on_end: %s (trace=%s span=%s scope=%s/%s session=%s attrs=%d)",
+                    span.name,
+                    trace_id[-8:],
+                    span_id[-8:],
+                    scope_name,
+                    scope_version,
+                    session_id,
+                    attr_count,
+                )
+            except Exception:
+                # Don't let debug logging failures prevent span export
+                pass
 
             if self.otlp_exporter:
                 self._send_via_otlp(span, attributes, session_id)
