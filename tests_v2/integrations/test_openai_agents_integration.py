@@ -2,7 +2,7 @@
 OpenAI Agents SDK Integration Tests
 
 Tests OpenAI Agents SDK integration with HoneyHive.
-Based on examples/integrations/openai_agents_integration.py.
+Based on examples/integrations/openai_agents_example.py.
 
 Requirements:
     pip install honeyhive openai-agents openinference-instrumentation-openai-agents
