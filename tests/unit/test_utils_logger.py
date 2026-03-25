@@ -208,8 +208,8 @@ class TestHoneyHiveFormatter:
         assert "Clean message" in result
         assert "|" not in result  # No honeyhive_data separator
 
-    def test_format_truncates_long_values(self) -> None:
-        """Test that long values in honeyhive_data are truncated."""
+    def test_format_truncates_long_values_inline(self) -> None:
+        """Test that long non-JSON values are moved to overflow section."""
         # Arrange
         formatter = HoneyHiveFormatter(include_timestamp=False, include_level=False)
         record = logging.LogRecord(
@@ -221,17 +221,18 @@ class TestHoneyHiveFormatter:
             args=(),
             exc_info=None,
         )
-        record.honeyhive_data = {"long_val": "x" * 200}
+        long_val = "x" * 200
+        record.honeyhive_data = {"long_val": long_val}
 
         # Act
         result = formatter.format(record)
 
-        # Assert - value should be truncated with ellipsis
-        assert "..." in result
-        assert len(result) < 400  # Should not contain full 200-char value
+        # Assert - large value rendered on its own overflow line, not inline
+        assert "long_val" in result
+        assert long_val in result  # Full value preserved, not truncated
 
-    def test_format_skips_large_payload_keys(self) -> None:
-        """Test that large payload keys like json_payload are omitted."""
+    def test_format_pretty_prints_large_json_payload(self) -> None:
+        """Test that large JSON payloads are pretty-printed in overflow section."""
         # Arrange
         formatter = HoneyHiveFormatter(include_timestamp=False, include_level=False)
         record = logging.LogRecord(
@@ -243,18 +244,31 @@ class TestHoneyHiveFormatter:
             args=(),
             exc_info=None,
         )
+        payload = {
+            "resourceSpans": [
+                {
+                    "resource": {
+                        "attributes": [
+                            {"key": "telemetry.sdk.language", "value": "python"},
+                            {"key": "telemetry.sdk.name", "value": "opentelemetry"},
+                        ]
+                    }
+                }
+            ]
+        }
         record.honeyhive_data = {
             "span_count": 4,
-            "json_payload": '{"huge": "data"' + "x" * 10000 + "}",
+            "json_payload": json.dumps(payload),
         }
 
         # Act
         result = formatter.format(record)
 
-        # Assert - json_payload should be omitted, span_count shown
+        # Assert - span_count inline, json_payload pretty-printed in overflow
         assert "span_count=4" in result
-        assert "json_payload" not in result
-        assert len(result) < 200
+        assert "json_payload:" in result  # overflow header
+        assert "resourceSpans" in result  # content preserved
+        assert "\\n" not in result  # no escaped newlines
 
 
 class TestHoneyHiveLogger:

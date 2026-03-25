@@ -1,10 +1,11 @@
 """HoneyHive Logging Module - Structured logging utilities."""
 
+import json
 import logging
 import sys
 import threading
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 # No lifecycle imports - logger should be independent
 # Shutdown detection implemented directly in logger module
@@ -77,19 +78,12 @@ class HoneyHiveFormatter(logging.Formatter):
 
     Provides human-readable logging output with optional structured data.
     Produces clean, readable output suitable for console/verbose mode.
+    Large values (JSON payloads, multiline strings) are rendered on
+    separate indented lines so they remain readable without escaping.
     """
 
-    # Keys that contain large payloads and should be omitted from output
-    _LARGE_PAYLOAD_KEYS = frozenset(
-        {
-            "json_payload",
-            "raw_span_data",
-            "response_body",
-        }
-    )
-
-    # Maximum length for individual string values in honeyhive_data
-    _MAX_VALUE_LENGTH = 120
+    # Maximum length for inline string values in honeyhive_data
+    _MAX_INLINE_LENGTH = 120
 
     def __init__(
         self, include_timestamp: bool = True, include_level: bool = True
@@ -104,8 +98,29 @@ class HoneyHiveFormatter(logging.Formatter):
         self.include_timestamp = include_timestamp
         self.include_level = include_level
 
+    @staticmethod
+    def _try_pretty_json(value: str) -> Optional[str]:
+        """Try to parse and pretty-print a JSON string.
+
+        Args:
+            value: String that might be JSON
+
+        Returns:
+            Pretty-printed JSON string, or None if not valid JSON
+        """
+        try:
+            parsed = json.loads(value)
+            if isinstance(parsed, (dict, list)):
+                return json.dumps(parsed, indent=2)
+        except (json.JSONDecodeError, TypeError, ValueError):
+            pass
+        return None
+
     def _format_value(self, value: Any) -> str:
         """Format a single value for human-readable output.
+
+        Short values are returned inline. Long values are truncated.
+        This is used for compact key=value rendering on the main line.
 
         Args:
             value: Value to format
@@ -114,42 +129,79 @@ class HoneyHiveFormatter(logging.Formatter):
             Formatted string representation, truncated if too long
         """
         str_val = str(value)
-        if len(str_val) > self._MAX_VALUE_LENGTH:
-            return str_val[: self._MAX_VALUE_LENGTH] + "..."
+        if len(str_val) > self._MAX_INLINE_LENGTH:
+            return str_val[: self._MAX_INLINE_LENGTH] + "..."
         return str_val
 
-    def _format_honeyhive_data(self, data: Dict[str, Any]) -> str:
-        """Format honeyhive_data as compact key=value pairs.
+    def _format_large_value(self, key: str, value: Any) -> str:
+        """Format a large value for multi-line display.
 
-        Skips large payload keys and truncates long values for readability.
+        Tries to pretty-print JSON strings. Falls back to the raw
+        string representation with each line indented.
+
+        Args:
+            key: The data key name
+            value: The value to format
+
+        Returns:
+            Formatted multi-line string with header and indented content
+        """
+        str_val = str(value)
+        # Try to pretty-print JSON
+        pretty = self._try_pretty_json(str_val)
+        if pretty is not None:
+            indented = "\n".join(f"    {line}" for line in pretty.splitlines())
+            return f"  {key}:\n{indented}"
+        # Multiline non-JSON: indent each line
+        if "\n" in str_val:
+            indented = "\n".join(f"    {line}" for line in str_val.splitlines())
+            return f"  {key}:\n{indented}"
+        # Long single-line string: just show it untruncated on its own line
+        return f"  {key}={str_val}"
+
+    def _format_honeyhive_data(self, data: Dict[str, Any]) -> Tuple[str, str]:
+        """Format honeyhive_data into inline and overflow sections.
+
+        Short values go inline as key=value pairs after the log message.
+        Large values (long strings, JSON, multiline) go into a separate
+        overflow block rendered on subsequent lines.
 
         Args:
             data: Dictionary of honeyhive-specific context data
 
         Returns:
-            Formatted string of key=value pairs
+            Tuple of (inline_part, overflow_part) strings
         """
-        parts = []
+        inline_parts = []
+        overflow_parts = []
         for key, value in data.items():
-            if key in self._LARGE_PAYLOAD_KEYS:
-                continue
-            if isinstance(value, dict):
-                # Show dicts compactly: {k1: v1, k2: v2}
+            str_val = str(value)
+            is_large = len(str_val) > self._MAX_INLINE_LENGTH or "\n" in str_val
+            if is_large:
+                overflow_parts.append(self._format_large_value(key, value))
+            elif isinstance(value, dict):
                 inner = ", ".join(
-                    f"{k}: {self._format_value(v)}"
-                    for k, v in value.items()
-                    if k not in self._LARGE_PAYLOAD_KEYS
+                    f"{k}: {self._format_value(v)}" for k, v in value.items()
                 )
-                parts.append(f"{key}={{{inner}}}")
+                inline_parts.append(f"{key}={{{inner}}}")
             else:
-                parts.append(f"{key}={self._format_value(value)}")
-        return "  ".join(parts)
+                inline_parts.append(f"{key}={self._format_value(value)}")
+        return "  ".join(inline_parts), "\n".join(overflow_parts)
 
     def format(self, record: logging.LogRecord) -> str:
         """Format log record as human-readable text.
 
         Produces output like:
-            [14:24:57] DEBUG honeyhive.tracer - Exporting 4 spans  span_count=4
+            [14:24:57] DEBUG honeyhive.tracer - Exporting 4 spans  | span_count=4
+            [14:24:57] DEBUG honeyhive.tracer - Exporting spans  | span_count=4
+              json_payload:
+                {
+                  "resourceSpans": [ ... ]
+                }
+
+        Short values appear inline after ``|``.  Large values (JSON payloads,
+        multiline strings) are rendered on indented lines below the main line
+        so they remain human-readable without escaping.
 
         Args:
             record: Log record to format
@@ -177,13 +229,15 @@ class HoneyHiveFormatter(logging.Formatter):
 
         line = " ".join(parts)
 
-        # Append honeyhive_data as compact key=value pairs
+        # Append honeyhive_data as compact key=value pairs + overflow
         if hasattr(record, "honeyhive_data"):
             hh_data = getattr(record, "honeyhive_data", {})
             if hh_data:
-                formatted = self._format_honeyhive_data(hh_data)
-                if formatted:
-                    line += f"  | {formatted}"
+                inline, overflow = self._format_honeyhive_data(hh_data)
+                if inline:
+                    line += f"  | {inline}"
+                if overflow:
+                    line += f"\n{overflow}"
 
         # Add exception info if present
         if record.exc_info:
