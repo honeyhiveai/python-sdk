@@ -1228,9 +1228,13 @@ class HoneyHiveSpanProcessor(SpanProcessor):
             agent_name_val = attributes.get("gen_ai.agent.name")
             has_agent_name = isinstance(agent_name_val, str) and agent_name_val != ""
             legacy_name_val = attributes.get("agent_name")
-            has_agent_name_legacy = isinstance(legacy_name_val, str) and legacy_name_val != ""
+            has_agent_name_legacy = (
+                isinstance(legacy_name_val, str) and legacy_name_val != ""
+            )
             request_model_val = attributes.get("gen_ai.request.model")
-            has_request_model = isinstance(request_model_val, str) and request_model_val != ""
+            has_request_model = (
+                isinstance(request_model_val, str) and request_model_val != ""
+            )
 
             if (has_agent_name or has_agent_name_legacy) and not has_request_model:
                 self._safe_log(
