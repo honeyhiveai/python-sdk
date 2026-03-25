@@ -233,7 +233,7 @@ class OTLPJSONExporter(SpanExporter):
             payload = self._spans_to_otlp_json_payload(spans)
             json_data = json.dumps(payload)
 
-            # Log the JSON payload for debugging
+            # Log export summary (without full payload to keep output readable)
             safe_log(
                 self.tracer_instance,
                 "debug",
@@ -242,9 +242,6 @@ class OTLPJSONExporter(SpanExporter):
                     "span_count": len(spans),
                     "endpoint": self.endpoint,
                     "payload_size_bytes": len(json_data),
-                    "json_payload": json.dumps(
-                        payload, indent=2
-                    ),  # Pretty-printed for debugging
                 },
             )
 

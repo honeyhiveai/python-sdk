@@ -1,6 +1,5 @@
 """HoneyHive Logging Module - Structured logging utilities."""
 
-import json
 import logging
 import sys
 import threading
@@ -76,9 +75,21 @@ def reset_logging_state() -> None:
 class HoneyHiveFormatter(logging.Formatter):
     """Custom formatter for HoneyHive logs.
 
-    Provides structured JSON logging with configurable fields
-    including timestamps, log levels, and HoneyHive-specific data.
+    Provides human-readable logging output with optional structured data.
+    Produces clean, readable output suitable for console/verbose mode.
     """
+
+    # Keys that contain large payloads and should be omitted from output
+    _LARGE_PAYLOAD_KEYS = frozenset(
+        {
+            "json_payload",
+            "raw_span_data",
+            "response_body",
+        }
+    )
+
+    # Maximum length for individual string values in honeyhive_data
+    _MAX_VALUE_LENGTH = 120
 
     def __init__(
         self, include_timestamp: bool = True, include_level: bool = True
@@ -93,38 +104,92 @@ class HoneyHiveFormatter(logging.Formatter):
         self.include_timestamp = include_timestamp
         self.include_level = include_level
 
+    def _format_value(self, value: Any) -> str:
+        """Format a single value for human-readable output.
+
+        Args:
+            value: Value to format
+
+        Returns:
+            Formatted string representation, truncated if too long
+        """
+        str_val = str(value)
+        if len(str_val) > self._MAX_VALUE_LENGTH:
+            return str_val[: self._MAX_VALUE_LENGTH] + "..."
+        return str_val
+
+    def _format_honeyhive_data(self, data: Dict[str, Any]) -> str:
+        """Format honeyhive_data as compact key=value pairs.
+
+        Skips large payload keys and truncates long values for readability.
+
+        Args:
+            data: Dictionary of honeyhive-specific context data
+
+        Returns:
+            Formatted string of key=value pairs
+        """
+        parts = []
+        for key, value in data.items():
+            if key in self._LARGE_PAYLOAD_KEYS:
+                continue
+            if isinstance(value, dict):
+                # Show dicts compactly: {k1: v1, k2: v2}
+                inner = ", ".join(
+                    f"{k}: {self._format_value(v)}"
+                    for k, v in value.items()
+                    if k not in self._LARGE_PAYLOAD_KEYS
+                )
+                parts.append(f"{key}={{{inner}}}")
+            else:
+                parts.append(f"{key}={self._format_value(value)}")
+        return "  ".join(parts)
+
     def format(self, record: logging.LogRecord) -> str:
-        """Format log record with HoneyHive structure.
+        """Format log record as human-readable text.
+
+        Produces output like:
+            [14:24:57] DEBUG honeyhive.tracer - Exporting 4 spans  span_count=4
 
         Args:
             record: Log record to format
 
         Returns:
-            JSON-formatted log string
+            Human-readable log string
         """
-        log_data = {
-            "timestamp": (
-                datetime.now(timezone.utc).isoformat()
-                if self.include_timestamp
-                else None
-            ),
-            "level": record.levelname if self.include_level else None,
-            "logger": record.name,
-            "message": record.getMessage(),
-        }
+        parts = []
 
-        # Add extra fields if present
+        # Timestamp - compact time only (HH:MM:SS)
+        if self.include_timestamp:
+            ts = datetime.now(timezone.utc).strftime("%H:%M:%S")
+            parts.append(f"[{ts}]")
+
+        # Level
+        if self.include_level:
+            parts.append(f"{record.levelname:<7}")
+
+        # Logger name
+        parts.append(record.name)
+
+        # Separator and message
+        parts.append("-")
+        parts.append(record.getMessage())
+
+        line = " ".join(parts)
+
+        # Append honeyhive_data as compact key=value pairs
         if hasattr(record, "honeyhive_data"):
-            log_data.update(getattr(record, "honeyhive_data", {}))
+            hh_data = getattr(record, "honeyhive_data", {})
+            if hh_data:
+                formatted = self._format_honeyhive_data(hh_data)
+                if formatted:
+                    line += f"  | {formatted}"
 
         # Add exception info if present
         if record.exc_info:
-            log_data["exception"] = self.formatException(record.exc_info)
+            line += f"\n{self.formatException(record.exc_info)}"
 
-        # Remove None values
-        log_data = {k: v for k, v in log_data.items() if v is not None}
-
-        return json.dumps(log_data, default=str)
+        return line
 
 
 class HoneyHiveLogger:

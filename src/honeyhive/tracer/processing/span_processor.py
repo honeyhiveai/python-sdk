@@ -902,29 +902,28 @@ class HoneyHiveSpanProcessor(SpanProcessor):
             # Convert session_id to string
             session_id = str(session_id_raw)
 
-            # Dump raw span data for debugging
-            raw_span_data = self._dump_raw_span_data(span)
+            # Log concise span summary for debugging
             instrumentation_scope = getattr(span, "instrumentation_scope", None)
-            instrumentation_scope_name = (
-                instrumentation_scope.name if instrumentation_scope else None
+            scope_name = (
+                instrumentation_scope.name if instrumentation_scope else "unknown"
             )
-            instrumentation_scope_version = (
-                instrumentation_scope.version if instrumentation_scope else None
+            scope_version = (
+                instrumentation_scope.version if instrumentation_scope else "unknown"
             )
+            span_context = span.context if hasattr(span, "context") else None
+            trace_id = f"{span_context.trace_id:032x}" if span_context else "unknown"
+            span_id = f"{span_context.span_id:016x}" if span_context else "unknown"
+            attr_count = len(span.attributes) if span.attributes else 0
             self._safe_log(
                 "debug",
-                "🔎 ON_END instrumentation scope - span: %s, scope_name: %s, scope_version: %s",
+                "SPAN on_end: %s (trace=%s span=%s scope=%s/%s session=%s attrs=%d)",
                 span.name,
-                instrumentation_scope_name or "unknown",
-                instrumentation_scope_version or "unknown",
-            )
-
-            self._safe_log(
-                "debug",
-                "🚀 SPAN PROCESSOR on_end - mode: %s, span: %s\n📊 RAW DATA:\n%s",
-                self.mode,
-                span.name,
-                raw_span_data,
+                trace_id[-8:],
+                span_id[-8:],
+                scope_name,
+                scope_version,
+                session_id,
+                attr_count,
             )
 
             if self.otlp_exporter:
