@@ -2,11 +2,12 @@
 """
 DSPy + HoneyHive integration example.
 
-Demonstrates three DSPy patterns with HoneyHive tracing:
+Demonstrates four DSPy patterns with HoneyHive tracing:
 
 1) ReAct agent with tool calls and session continuity across turns
 2) Multi-module pipeline (custom Module composing sub-modules)
 3) Structured output with typed Signatures
+4) @trace decorator for custom business logic around DSPy calls
 
 DSPy is traced via the OpenInference DSPy instrumentor, which captures
 module calls, LM interactions, and tool executions as OpenTelemetry spans.
@@ -32,7 +33,7 @@ import dspy
 from openinference.instrumentation.dspy import DSPyInstrumentor
 from openinference.instrumentation.openai import OpenAIInstrumentor
 
-from honeyhive import HoneyHiveTracer
+from honeyhive import HoneyHiveTracer, enrich_span, trace
 
 MODEL = os.getenv("DSPY_MODEL", "openai/gpt-4o-mini")
 
@@ -206,6 +207,63 @@ def run_structured_output_scenario() -> None:
         )
 
 
+# -- Scenario 4: @trace decorator for custom business logic --
+
+
+@trace(event_type="chain")
+def handle_support_ticket(order_id: str, customer_message: str) -> dict:
+    """End-to-end support ticket handler combining triage and resolution.
+
+    The @trace decorator creates a parent span that wraps the entire
+    business workflow. DSPy module calls inside are captured as child
+    spans, giving a complete view of the processing pipeline.
+    """
+    # Step 1: Triage the request
+    triage = dspy.ChainOfThought(TriageSignature)
+    triage_result = triage(request=customer_message)
+
+    enrich_span(
+        metadata={
+            "order_id": order_id,
+            "priority": triage_result.priority,
+            "category": triage_result.category,
+        },
+    )
+
+    # Step 2: Resolve based on priority
+    pipeline = SupportResolutionPipeline()
+    resolution = pipeline(
+        order_id=order_id,
+        customer_question=customer_message,
+    )
+
+    enrich_span(
+        metrics={"steps_completed": 2},
+    )
+
+    return {
+        "priority": triage_result.priority,
+        "category": triage_result.category,
+        "resolution": resolution.resolution,
+    }
+
+
+def run_trace_decorator_scenario() -> None:
+    """@trace decorator wrapping business logic around DSPy module calls."""
+    ticket = handle_support_ticket(
+        order_id="ORD-1003",
+        customer_message=(
+            "My order has been delayed for over a week. "
+            "I need to know my options for cancellation or refund."
+        ),
+    )
+    print(
+        f"Ticket resolved: priority={ticket['priority']}, "
+        f"category={ticket['category']}"
+    )
+    print(f"Resolution: {ticket['resolution']}")
+
+
 # -- Main --
 
 
@@ -229,6 +287,7 @@ def main() -> None:
         run_react_agent_scenario()
         run_pipeline_scenario()
         run_structured_output_scenario()
+        run_trace_decorator_scenario()
     finally:
         tracer.force_flush()
         dspy_instrumentor.uninstrument()
