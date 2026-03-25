@@ -8,7 +8,7 @@ Demonstrates three OpenAI Agents SDK patterns with HoneyHive tracing:
 3) Agents-as-tools (coordinator delegates to specialist tools)
 
 Install:
-    uv pip install honeyhive openai-agents openinference-instrumentation-openai-agents openinference-instrumentation-openai
+    uv pip install honeyhive openai-agents openinference-instrumentation-openai-agents
 
 Run:
     uv run python examples/integrations/openai_agents_integration.py
@@ -24,7 +24,6 @@ import asyncio
 import os
 
 from agents import Agent, Runner, function_tool
-from openinference.instrumentation.openai import OpenAIInstrumentor
 from openinference.instrumentation.openai_agents import OpenAIAgentsInstrumentor
 
 from honeyhive import HoneyHiveTracer
@@ -78,7 +77,6 @@ tracer = HoneyHiveTracer.init(
 )
 
 OpenAIAgentsInstrumentor().instrument(tracer_provider=tracer.provider)
-OpenAIInstrumentor().instrument(tracer_provider=tracer.provider)
 
 
 async def run_single_agent_support_scenario() -> None:
