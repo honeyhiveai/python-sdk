@@ -1121,12 +1121,18 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         """Dynamically detect event type using priority-based patterns.
 
         Priority Order:
-        1. honeyhive_event_type_raw - Set by @trace decorator (highest priority)
-        2. honeyhive_event_type - Alternative explicit format
-        3. openinference.span.kind - Standard instrumentor convention
+        1. honeyhive_event_type already set (skip re-detection)
+        2. honeyhive_event_type_raw - Set by @trace decorator (highest priority)
+        3. honeyhive_event_type - Alternative explicit format
+        4. gen_ai.operation.name - GenAI semantic conventions
+           (chat/text_completion/generate_content → model,
+            invoke_agent/create_agent → chain, execute_tool → tool)
+        4.5. Agent name attributes (gen_ai.agent.name / agent_name without
+             gen_ai.request.model → chain). Mirrors ingestion Priority 2.6.
+        5. openinference.span.kind - Standard instrumentor convention
            (LLM/CHAIN/TOOL/AGENT)
-        4. Span name inference - Pattern matching fallback
-        5. Default to "tool" - Final fallback
+        6. Span name / attribute pattern matching fallback
+        7. Default to "tool" - Final fallback
 
         OpenInference span.kind mappings:
         - LLM → model (actual LLM invocations)
@@ -1210,6 +1216,34 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                     "Unknown gen_ai.operation.name value: %s, falling through",
                     op_name,
                 )
+
+            # Priority 4.5: Agent name attributes override model heuristics
+            # PydanticAI agent spans carry gen_ai.agent.name / agent_name and
+            # often also model_name (because the agent *uses* a model).  The
+            # pattern-matching fallback (Priority 6) would see model_name and
+            # incorrectly return "model".  Detecting agent names here — before
+            # both openinference.span.kind and pattern matching — mirrors the
+            # ingestion service's Priority 2.6 and ensures the SDK sends the
+            # correct honeyhive_event_type on the wire.
+            has_agent_name = isinstance(
+                attributes.get("gen_ai.agent.name"), str
+            ) and bool(attributes.get("gen_ai.agent.name"))
+            has_agent_name_legacy = isinstance(
+                attributes.get("agent_name"), str
+            ) and bool(attributes.get("agent_name"))
+            has_request_model = isinstance(
+                attributes.get("gen_ai.request.model"), str
+            ) and bool(attributes.get("gen_ai.request.model"))
+
+            if (has_agent_name or has_agent_name_legacy) and not has_request_model:
+                self._safe_log(
+                    "debug",
+                    "✅ Event type from agent name attribute: chain "
+                    "(gen_ai.agent.name=%s, agent_name=%s)",
+                    attributes.get("gen_ai.agent.name"),
+                    attributes.get("agent_name"),
+                )
+                return "chain"
 
             # Priority 5: OpenInference span.kind attribute (standard
             # instrumentor convention)
