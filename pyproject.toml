@@ -3,7 +3,7 @@ name = "honeyhive"
 dynamic = ["version"]
 description = "HoneyHive Python SDK - LLM Observability and Evaluation Platform"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.14"
 license = {text = "MIT"}
 authors = [
     {name = "HoneyHive Team", email = "team@honeyhive.ai"}
@@ -46,7 +46,7 @@ dev = [
     "pytest-mock>=3.10.0",
     "pytest-xdist>=3.0.0",
     "tox>=4.0.0",
-    "black==25.1.0",
+    "black>=26.3.1",
     "isort==5.13.2",
     "flake8>=6.0.0",
     "mypy>=1.0.0",
