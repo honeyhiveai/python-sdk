@@ -1003,7 +1003,7 @@ class evaluator(metaclass=EvaluatorMeta):  # pylint: disable=invalid-name
             results = tuple(results)
             scores = tuple(scores)
         else:
-            _, scores = single_evaluation()
+            results, scores = single_evaluation()
 
         # apply aggregation
         aggregate_result, aggregate_score = self.sync_apply_aggregation(
