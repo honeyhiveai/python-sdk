@@ -1,5 +1,11 @@
 ## [Unreleased]
 
+### Fixed
+
+- **Tracing: OTLP exporter now groups spans by instrumentation scope in batch exports** ([HHAI-4245])
+  - `BatchSpanProcessor` batches spans from different instrumentors (e.g. pydantic-ai + httpx) into a single export call. The OTLP JSON exporter previously placed all spans under the first span's scope, causing the ingestion pipeline to misclassify spans when the wrong scope was used for detection.
+  - Spans are now grouped by their actual `instrumentation_scope`, producing one `scopeSpans` entry per unique scope as required by the OTLP spec.
+
 ## [1.0.0rc20] - 2026-03-17
 
 ### Added

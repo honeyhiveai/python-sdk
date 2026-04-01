@@ -202,10 +202,7 @@ class OTLPJSONExporter(SpanExporter):
         for span in spans:
             scope_name = "unknown"
             scope_version = ""
-            if (
-                hasattr(span, "instrumentation_scope")
-                and span.instrumentation_scope
-            ):
+            if hasattr(span, "instrumentation_scope") and span.instrumentation_scope:
                 scope_name = span.instrumentation_scope.name or "unknown"
                 scope_version = span.instrumentation_scope.version or ""
 
@@ -218,9 +215,7 @@ class OTLPJSONExporter(SpanExporter):
                     "scope": scope_info,
                     "spans": [],
                 }
-            scope_groups[scope_key]["spans"].append(
-                self._span_to_otlp_json(span)
-            )
+            scope_groups[scope_key]["spans"].append(self._span_to_otlp_json(span))
 
         resource_span = {
             "resource": {"attributes": resource_attrs} if resource_attrs else {},

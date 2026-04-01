@@ -90,9 +90,7 @@ class TestOTLPScopeGroupingRegression:
         retain its own instrumentation scope so the ingestion pipeline can
         correctly route them.
         """
-        exporter = OTLPJSONExporter(
-            endpoint="http://localhost:9999/v1/traces"
-        )
+        exporter = OTLPJSONExporter(endpoint="http://localhost:9999/v1/traces")
 
         chat_span = _make_span(
             name="chat gpt-4o-mini",
@@ -123,12 +121,10 @@ class TestOTLPScopeGroupingRegression:
         # Extract the scope names from the payload
         scope_names = {ss["scope"]["name"] for ss in scope_spans}
         assert "pydantic-ai" in scope_names, (
-            f"pydantic-ai scope missing from scopeSpans. "
-            f"Found: {scope_names}"
+            f"pydantic-ai scope missing from scopeSpans. " f"Found: {scope_names}"
         )
         assert "opentelemetry.instrumentation.httpx" in scope_names, (
-            f"httpx scope missing from scopeSpans. "
-            f"Found: {scope_names}"
+            f"httpx scope missing from scopeSpans. " f"Found: {scope_names}"
         )
 
     def test_chat_span_not_tagged_with_httpx_scope(self) -> None:
@@ -138,9 +134,7 @@ class TestOTLPScopeGroupingRegression:
         batch, ALL spans got tagged with httpx's scope name, causing the
         ingestion pipeline to misclassify the chat span.
         """
-        exporter = OTLPJSONExporter(
-            endpoint="http://localhost:9999/v1/traces"
-        )
+        exporter = OTLPJSONExporter(endpoint="http://localhost:9999/v1/traces")
 
         chat_span = _make_span(
             name="chat gpt-4o-mini",
@@ -172,9 +166,7 @@ class TestOTLPScopeGroupingRegression:
 
     def test_single_scope_batch_still_works(self) -> None:
         """A batch where all spans share the same scope produces one scopeSpan."""
-        exporter = OTLPJSONExporter(
-            endpoint="http://localhost:9999/v1/traces"
-        )
+        exporter = OTLPJSONExporter(endpoint="http://localhost:9999/v1/traces")
 
         span_a = _make_span(
             name="span_a",
@@ -196,22 +188,28 @@ class TestOTLPScopeGroupingRegression:
 
     def test_three_different_scopes(self) -> None:
         """A batch with 3 instrumentors produces 3 scopeSpans."""
-        exporter = OTLPJSONExporter(
-            endpoint="http://localhost:9999/v1/traces"
-        )
+        exporter = OTLPJSONExporter(endpoint="http://localhost:9999/v1/traces")
 
         spans = [
-            _make_span(name="POST", scope_name="opentelemetry.instrumentation.httpx", span_id=0x1111111111111111),
-            _make_span(name="chat", scope_name="pydantic-ai", span_id=0x2222222222222222),
-            _make_span(name="invoke_agent", scope_name="customer.framework", span_id=0x3333333333333333),
+            _make_span(
+                name="POST",
+                scope_name="opentelemetry.instrumentation.httpx",
+                span_id=0x1111111111111111,
+            ),
+            _make_span(
+                name="chat", scope_name="pydantic-ai", span_id=0x2222222222222222
+            ),
+            _make_span(
+                name="invoke_agent",
+                scope_name="customer.framework",
+                span_id=0x3333333333333333,
+            ),
         ]
 
         payload = exporter._spans_to_otlp_json_payload(spans)
 
         scope_spans = payload["resourceSpans"][0]["scopeSpans"]
-        assert len(scope_spans) == 3, (
-            f"Expected 3 scopeSpans, got {len(scope_spans)}"
-        )
+        assert len(scope_spans) == 3, f"Expected 3 scopeSpans, got {len(scope_spans)}"
         scope_names = {ss["scope"]["name"] for ss in scope_spans}
         assert scope_names == {
             "opentelemetry.instrumentation.httpx",
