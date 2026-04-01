@@ -3,7 +3,7 @@ name: update-integration-example
 description: Build or update SDK integration examples for AI frameworks. Use when asked to update, create, or review a framework example in python-sdk/examples/integrations/. Covers framework API research, example writing, smoke testing, span capture, tracing sanity checks, and creating/updating the corresponding integration doc in honeyhive-ai-docs.
 metadata:
   author: sanjeed5
-  version: "2.5"
+  version: "2.6"
 ---
 
 # Update Integration Example
@@ -114,16 +114,15 @@ If the example is already current, skip to Step 3 and note "already current." Do
 
 ### `@trace` Decorator Pattern
 
-Every agent framework example should include a scenario demonstrating the `@trace` decorator wrapping custom business logic around framework calls. This shows users how to:
+Every agent framework example should include a scenario demonstrating the `@trace` decorator wrapping custom business logic around framework calls. This creates a parent span that groups the agent invocation and any surrounding business logic (validation, post-processing) into a single trace node in HoneyHive.
 
-1. Create a parent span for an end-to-end workflow using `@trace(event_type="chain")`
-2. Have framework calls (e.g., DSPy modules, PydanticAI agents) captured as child spans
-3. Use `enrich_span()` to attach custom metadata and metrics to the traced span
-
-Example pattern:
+**Import:**
 ```python
 from honeyhive import HoneyHiveTracer, enrich_span, trace
+```
 
+**Usage:**
+```python
 @trace(event_type="chain")
 def handle_workflow(input_data: str) -> dict:
     # Framework calls inside become child spans
@@ -138,7 +137,15 @@ def handle_workflow(input_data: str) -> dict:
     return {"output": result}
 ```
 
-The `event_type` parameter controls how the span appears in HoneyHive UI (`"chain"` for orchestration, `"tool"` for tool-like operations). The function should combine multiple framework calls into a meaningful business workflow.
+**Requirements:**
+- Use `event_type="chain"` for orchestration/workflow spans, `"tool"` for tool-like operations
+- Use a descriptive `event_name` matching the function's purpose (optional — defaults to the function name)
+- Works with both sync and async functions
+- Add a dedicated scenario (e.g., "escalation workflow") that wraps agent calls with pre/post-processing to demonstrate the pattern clearly
+
+**When to use `@trace` vs instrumentor-only:**
+- Instrumentor alone is sufficient for tracing agent/LLM/tool spans automatically
+- Use `@trace` when you want a **parent span** grouping multiple operations (e.g., agent call + validation + response formatting) into one logical unit
 
 See `dspy_integration.py` Scenario 4 for a complete implementation.
 
@@ -288,6 +295,7 @@ After the SDK example is complete and verified, create or update the correspondi
 2. Read that repo's `AGENTS.md` for writing guidelines, versioning rules, and navigation config.
 3. Use existing beta integration docs in `beta/integrations/` as templates (e.g., `pydantic-ai.mdx`, `google-adk.mdx`, `strands.mdx`).
 4. Create or update `beta/integrations/{{framework}}.mdx`. Simplify code from the SDK example - focus on the integration pattern, not every feature. Include screenshots from Step 6 if available.
+   - **"What Gets Traced" should only list what the instrumentor captures** — do not include SDK-level features (e.g., session continuity) that aren't instrumentor-related.
 5. If this is a new page, add it to the navigation config as documented in `AGENTS.md`.
 6. Open a PR following that repo's PR conventions.
 

@@ -28,7 +28,7 @@ Enhanced instrumentors with production optimizations and extended metrics:
 ### **Agent Framework Integrations**
 Comprehensive examples for popular AI agent frameworks:
 
-- **[`openai_agents_integration.py`](openai_agents_integration.py)** - OpenAI Agents SDK with OpenInference instrumentor (✅ multi-agent, handoffs, guardrails, tools)
+- **[`openai_agents_example.py`](openai_agents_example.py)** - OpenAI Agents SDK with OpenInference instrumentor (✅ single agent with session continuity, handoffs, agents-as-tools)
 - **[`dspy_integration.py`](dspy_integration.py)** - DSPy framework with OpenAI instrumentor (✅ signatures, modules, ChainOfThought, ReAct, RAG, classification)
 - **[`semantic_kernel_integration.py`](semantic_kernel_integration.py)** - Microsoft Semantic Kernel with OpenAI instrumentor (✅ agents, plugins, function calling, streaming)
 - **[`strands_integration.py`](strands_integration.py)** - AWS Strands with TracerProvider pattern (✅ Bedrock models, streaming, tools)
@@ -74,21 +74,19 @@ python integrations/dspy_integration.py
 
 #### OpenAI Agents SDK
 ```bash
-pip install openai-agents openinference-instrumentation-openai-agents openinference-instrumentation-openai
+pip install honeyhive openai-agents openinference-instrumentation-openai-agents
 export OPENAI_API_KEY=sk-...
 export HH_API_KEY=your-honeyhive-key
-python integrations/openai_agents_integration.py
+export HH_PROJECT=your-project
+python integrations/openai_agents_example.py
 ```
 
 **Features demonstrated:**
-- ✅ Basic agent invocation and tracing
-- ✅ Multi-agent orchestration with handoffs
+- ✅ Single agent with tool calls and session continuity (SQLiteSession)
+- ✅ Multi-agent handoffs (triage → specialists)
+- ✅ Agents-as-tools orchestration (agent.as_tool())
 - ✅ Tool/function calling with automatic capture
-- ✅ Input/output guardrails
-- ✅ Structured outputs with Pydantic
-- ✅ Streaming responses
-- ✅ Custom context and metadata
-- ✅ Complex multi-agent workflows
+- ✅ Proper cleanup with force_flush() and uninstrument()
 
 #### Microsoft Semantic Kernel
 ```bash
