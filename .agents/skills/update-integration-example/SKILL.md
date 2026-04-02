@@ -272,7 +272,7 @@ cd python-sdk && make generate && make format
 
 ## Step 9: Open PR (only if changes were made)
 
-If you updated the example, open a PR in `honeyhiveai/hive-kube` (the python-sdk code lives in the monorepo under `python/sdks/python-sdk`). Do NOT create PRs in the public `honeyhiveai/python-sdk` repo. Include the report below in the PR description. If no changes were made, skip.
+If you updated the example, open a PR in `honeyhiveai/hive-kube` (the python-sdk code lives at `python/sdks/python-sdk` in the monorepo). Include the report below in the PR description. If no changes were made, skip.
 
 ---
 
