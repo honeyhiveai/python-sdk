@@ -75,6 +75,7 @@ jobs:
           fetch-depth: 1
 
       - name: Run Claude Code Review
+        id: claude-review
         if: steps.check-workflow.outputs.skip != 'true'
         uses: anthropics/claude-code-action@v1
         with:
@@ -122,6 +123,14 @@ jobs:
             Only post GitHub comments - don't submit review text as messages.
           claude_args: |
             --model claude-opus-4-6 --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),WebFetch,WebSearch"
+
+      - name: Post HoneyHive trace link
+        if: always() && steps.check-workflow.outputs.skip != 'true' && steps.claude-review.outputs.session_id != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr comment "${{ steps.pr-info.outputs.pr_number }}" \
+            --body "HoneyHive trace link: https://fe.testing-cp-1.honeyhive.ai/traces/sessions/${{ steps.claude-review.outputs.session_id }}/mqaf1LhDwSVoup_KG35Cs7LK/3d"
 
       - name: Upload review execution output
         if: always() && steps.check-workflow.outputs.skip != 'true'
