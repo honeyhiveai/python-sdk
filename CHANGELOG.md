@@ -1,5 +1,31 @@
 ## [Unreleased]
 
+## [1.0.0rc21] - 2026-04-08
+
+### Added
+
+- **Integrations: Claude Agent SDK support via OpenInference**
+  - New optional dependency group `openinference-claude-agent-sdk` (`pip install honeyhive[openinference-claude-agent-sdk]`)
+  - Traces Claude Agent SDK `query` calls, tool invocations, and multi-turn flows using the existing BYOI + `HoneyHiveTracer` pattern
+  - Also included in the `all-openinference` convenience group
+
+- **Integrations: LiteLLM support via OpenInference**
+  - New optional dependency group `openinference-litellm` (`pip install honeyhive[openinference-litellm]`)
+  - Instruments `litellm.completion`, `acompletion`, and `embedding` calls across providers
+  - Also included in the `all-openinference` and `openinference-llm-providers` convenience groups
+
+- **Tracing: `skip_backend_session_creation` flag on `SessionConfig`**
+  - When initializing a tracer with an existing backend session ID, set `skip_backend_session_creation=True` to skip the redundant synchronous session creation call
+  - Useful for attaching spans to a session created elsewhere (e.g. by another service or a prior tracer run)
+  - Default behavior is unchanged when the flag is omitted
+
+### Fixed
+
+- **Tracing: `session_name` auto-detection and session creation reliability**
+  - `session_name` auto-detection now correctly identifies the caller script name instead of returning internal SDK filenames
+  - `session_name` is persisted before the backend API call, so it survives session creation failures
+  - `PostSessionStartResponse` fields (`org_id`, `workspace_id`, `project_id`) are now optional, preventing silent Pydantic validation failures when the API omits them
+
 ## [1.0.0rc20] - 2026-03-17
 
 ### Added
@@ -8,6 +34,7 @@
 - **Tracing: Batched async span export via OTel BatchSpanProcessor**
   - Spans are now queued and exported asynchronously in a background thread when `disable_batch=False` (the default)
   - `disable_batch=True` preserves the previous synchronous inline export for Lambda/serverless
+
 ## [1.0.0rc19] - 2026-03-06
 
 ### Added

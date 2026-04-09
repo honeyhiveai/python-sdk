@@ -257,7 +257,9 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                         )
 
                 except Exception as e:
-                    print(f"   ⚠️  Error adding experiment attributes (no session): {e}")
+                    print(
+                        f"   ⚠️  Error adding experiment attributes (no session): {e}"
+                    )
 
             print(f"   📝 Final attributes to set: {attributes_to_set}")
 

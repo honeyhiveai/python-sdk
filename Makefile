@@ -1,7 +1,10 @@
 .PHONY: help install install-dev test test-all test-unit test-integration check-integration lint format check check-format check-lint typecheck check-docs check-docs-compliance check-feature-sync check-tracer-patterns check-no-mocks docs docs-serve docs-clean generate generate-sdk compare-sdk clean clean-all build publish
 
-# Use the venv python so make recipes get venv site-packages
-PYTHON := .venv/bin/python
+# Use uv run to automatically resolve the workspace venv and dependencies.
+# --extra dev ensures SDK dev optional-dependencies (black, isort, tox, etc.) are installed.
+# Override with: UV_RUN="python3" make build
+UV_RUN ?= uv run --extra dev
+PYTHON ?= $(UV_RUN) python
 
 # Default target
 help:
@@ -55,10 +58,10 @@ help:
 
 # Installation
 install:
-	pip install -e .
+	$(UV_RUN) pip install -e .
 
 install-dev:
-	pip install -e ".[dev,docs]"
+	$(UV_RUN) pip install -e ".[dev,docs]"
 
 setup:
 	./scripts/setup-dev.sh
@@ -68,16 +71,16 @@ setup:
 # (no .env file, no Docker, no real API credentials needed)
 # Uses parallel execution (-n auto) for speed
 test:
-	pytest tests/unit/ tests/tracer/ tests/compatibility/ -n auto
+	$(UV_RUN) pytest tests/unit/ tests/tracer/ tests/compatibility/ -n auto
 
 test-all:
-	pytest -n auto
+	$(UV_RUN) pytest -n auto
 
 test-integration:
-	pytest tests/integration/
+	$(UV_RUN) pytest tests/integration/
 
 test-unit:
-	pytest tests/unit/ -n auto
+	$(UV_RUN) pytest tests/unit/ -n auto
 
 check-integration:
 	@echo "Running comprehensive integration test checks..."
@@ -85,20 +88,20 @@ check-integration:
 
 # Code Quality
 format:
-	black src tests examples scripts
-	isort src tests examples scripts
+	$(UV_RUN) black src tests examples scripts
+	$(UV_RUN) isort src tests examples scripts
 
 lint:
-	tox -e lint
+	$(UV_RUN) tox -e lint
 
 typecheck:
-	mypy src
+	$(UV_RUN) mypy src
 
 check-format:
-	tox -e format
+	$(UV_RUN) tox -e format
 
 check-lint:
-	tox -e lint
+	$(UV_RUN) tox -e lint
 
 # Comprehensive check - runs all quality checks
 check: check-format check-lint test-unit check-no-mocks check-integration check-docs check-docs-compliance check-feature-sync check-tracer-patterns
@@ -126,7 +129,7 @@ docs:
 	cd docs && $(MAKE) html
 
 docs-serve:
-	cd docs && ../$(PYTHON) serve.py
+	cd docs && $(UV_RUN) python serve.py
 
 docs-clean:
 	cd docs && $(MAKE) clean

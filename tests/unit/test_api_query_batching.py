@@ -178,9 +178,7 @@ class TestDatapointsListAsyncBatching:
         )
 
         api = _make_api(DatapointsAPI)
-        result = asyncio.get_event_loop().run_until_complete(
-            api.list_async(datapoint_ids=all_ids)
-        )
+        result = asyncio.run(api.list_async(datapoint_ids=all_ids))
 
         assert mock_svc.getDatapoints.call_count == 2
         assert len(result.datapoints) == total
@@ -275,9 +273,7 @@ class TestExperimentsListRunsAsyncBatching:
         )
 
         api = _make_api(ExperimentsAPI)
-        result = asyncio.get_event_loop().run_until_complete(
-            api.list_runs_async(run_ids=all_ids)
-        )
+        result = asyncio.run(api.list_runs_async(run_ids=all_ids))
 
         assert mock_svc.getRuns.call_count == 2
         assert len(result.evaluations) == total

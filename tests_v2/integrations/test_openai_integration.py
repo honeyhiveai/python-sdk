@@ -13,6 +13,9 @@ Environment Variables:
     HH_API_KEY: HoneyHive API key
     HH_PROJECT: HoneyHive project name
     OPENAI_API_KEY: OpenAI API key
+
+LKGV (last known good versions) for this path are documented in
+``docs/how-to/integrations/openai.rst`` (Provider SDK + instrumentor pins).
 """
 
 import os
@@ -59,7 +62,7 @@ class TestOpenInferenceOpenAI:
             # Make OpenAI call
             client = openai.OpenAI()
             response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4o-mini",
                 messages=[{"role": "user", "content": "Say 'test' and nothing else."}],
                 max_tokens=10,
             )
@@ -99,7 +102,7 @@ class TestOpenInferenceOpenAI:
 
                 client = openai.OpenAI()
                 response = client.chat.completions.create(
-                    model="gpt-3.5-turbo",
+                    model="gpt-4o-mini",
                     messages=[{"role": "user", "content": prompt}],
                     max_tokens=20,
                 )
@@ -138,7 +141,7 @@ class TestOpenInferenceOpenAI:
         try:
             client = openai.OpenAI()
             stream = client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4o-mini",
                 messages=[{"role": "user", "content": "Count from 1 to 5."}],
                 max_tokens=50,
                 stream=True,
@@ -186,7 +189,7 @@ class TestTraceloopOpenAI:
         try:
             client = openai.OpenAI()
             response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4o-mini",
                 messages=[{"role": "user", "content": "Say 'traceloop test' and nothing else."}],
                 max_tokens=10,
             )
@@ -226,7 +229,7 @@ class TestTraceloopOpenAI:
                 """Inner traced function that calls OpenAI."""
                 client = openai.OpenAI()
                 response = client.chat.completions.create(
-                    model="gpt-3.5-turbo",
+                    model="gpt-4o-mini",
                     messages=[{"role": "user", "content": f"Summarize: {text}"}],
                     max_tokens=30,
                 )

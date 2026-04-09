@@ -158,8 +158,7 @@ if __name__ == "__main__":
     print("\n" + "=" * 80)
     print("Key Takeaways")
     print("=" * 80)
-    print(
-        """
+    print("""
     ✓ Use get_events() for multiple filters
     ✓ Returns both events list AND total count
     ✓ Supports date range filtering
@@ -168,5 +167,4 @@ if __name__ == "__main__":
     ✗ Avoid list_events() for complex filtering
     ✗ list_events() only supports single filter
     ✗ No metadata (like total count) returned
-    """
-    )
+    """)

@@ -58,6 +58,9 @@ class TestBackwardCompatibility:
     def setup_method(self) -> None:
         """Set up clean state for each test."""
         clear_registry()
+        # Save original env vars so teardown can restore them
+        self._orig_api_key = os.environ.get("HH_API_KEY")
+        self._orig_project = os.environ.get("HH_PROJECT")
         # Set test mode environment
         os.environ["HH_API_KEY"] = "test-key"
         os.environ["HH_PROJECT"] = "test-project"
@@ -65,6 +68,15 @@ class TestBackwardCompatibility:
     def teardown_method(self) -> None:
         """Clean up after each test."""
         clear_registry()
+        # Restore original env vars (don't delete if they existed before)
+        if self._orig_api_key is not None:
+            os.environ["HH_API_KEY"] = self._orig_api_key
+        else:
+            os.environ.pop("HH_API_KEY", None)
+        if self._orig_project is not None:
+            os.environ["HH_PROJECT"] = self._orig_project
+        else:
+            os.environ.pop("HH_PROJECT", None)
 
     def test_explicit_tracer_parameter_still_works(self) -> None:
         """Test that explicit tracer parameter continues to work."""

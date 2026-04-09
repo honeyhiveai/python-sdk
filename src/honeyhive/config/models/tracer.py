@@ -400,6 +400,14 @@ class SessionConfig(BaseHoneyHiveConfig):
         examples=["550e8400-e29b-41d4-a716-446655440000"],
     )
 
+    skip_backend_session_creation: bool = Field(  # type: ignore[call-overload]
+        default=False,
+        description=(
+            "If True and session_id is provided, trust that the session already "
+            "exists on the backend and skip the init-time session creation call."
+        ),
+    )
+
     inputs: Optional[Dict[str, Any]] = Field(  # type: ignore[call-overload]
         None,
         description="Session input data",

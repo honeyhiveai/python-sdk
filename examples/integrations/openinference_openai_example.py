@@ -17,7 +17,10 @@ Environment:
     OPENAI_API_KEY
 """
 
+from __future__ import annotations
+
 import os
+import sys
 
 import openai
 from openinference.instrumentation.openai import OpenAIInstrumentor
@@ -27,6 +30,16 @@ from honeyhive import HoneyHiveTracer
 
 def main() -> None:
     """Run simple OpenAI chat completions with HoneyHive tracing."""
+    if not os.getenv("HH_API_KEY"):
+        print("Set HH_API_KEY to your HoneyHive API key.", file=sys.stderr)
+        raise SystemExit(1)
+    if not os.getenv("OPENAI_API_KEY"):
+        print("Set OPENAI_API_KEY to your OpenAI API key.", file=sys.stderr)
+        raise SystemExit(1)
+    if not os.getenv("HH_PROJECT"):
+        print("Set HH_PROJECT to your HoneyHive project name.", file=sys.stderr)
+        raise SystemExit(1)
+
     # 1. Initialize HoneyHive tracer
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY"),

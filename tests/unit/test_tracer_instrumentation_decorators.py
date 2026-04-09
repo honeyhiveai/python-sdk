@@ -1422,10 +1422,16 @@ class TestMissingCoverageEdgeCases:
 
         params = TracingParams(event_type="model", event_name="test_event")
 
-        # Call with no tracer (None) - empty decorator_kwargs means no tracer will be found
-        result = await _execute_with_tracing(
-            test_func, params, (), {}, {}, is_async=False
-        )
+        # Explicitly mock tracer discovery to return None to avoid test-ordering
+        # pollution from parallel execution (a stale default tracer in the
+        # global registry can leak across xdist workers on Python 3.13).
+        with patch(
+            "honeyhive.tracer.instrumentation.decorators._discover_tracer_safely",
+            return_value=None,
+        ):
+            result = await _execute_with_tracing(
+                test_func, params, (), {}, {}, is_async=False
+            )
 
         assert result == "no_tracer_result"
 

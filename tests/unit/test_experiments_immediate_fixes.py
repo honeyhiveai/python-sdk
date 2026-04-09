@@ -8,22 +8,15 @@ Tests cover:
 4. Auto-inputs on nested spans
 5. Session linking
 
-NOTE: Tests temporarily skipped - test expectations don't match current implementation.
-TODO: Update tests to match current experiments implementation.
 """
-
-import pytest
-
-# Skip entire module - tests need to be updated to match current implementation
-pytestmark = pytest.mark.skip(
-    reason="Tests need update to match current experiments implementation"
-)
 
 # pylint: disable=R0801
 # Justification: Shared test patterns with experiment integration tests
 import inspect
 from typing import Any, Dict
 from unittest.mock import Mock, patch
+
+import pytest
 
 from honeyhive.experiments.core import (
     ExperimentContext,
@@ -210,6 +203,9 @@ class TestTracerParameter:
 class TestGroundTruthsInFeedback:
     """Test TASK 3: Ground truths in feedback."""
 
+    @pytest.mark.skip(
+        reason="HHAI-3939: test mocks update_event but implementation calls events.update(data=...)"
+    )
     @patch("honeyhive.experiments.core.logger")
     def test_ground_truth_added_to_feedback(self, _mock_logger: Mock) -> None:
         """Test that ground_truth are added to feedback field."""
@@ -239,6 +235,9 @@ class TestGroundTruthsInFeedback:
         assert "ground_truth" in update_request.feedback
         assert update_request.feedback["ground_truth"] == ground_truth_data
 
+    @pytest.mark.skip(
+        reason="HHAI-3939: test mocks update_event but implementation calls events.update(data=...)"
+    )
     @patch("honeyhive.experiments.core.logger")
     def test_no_ground_truth_no_feedback(self, _mock_logger: Mock) -> None:
         """Test that feedback is not added when ground_truth is None."""

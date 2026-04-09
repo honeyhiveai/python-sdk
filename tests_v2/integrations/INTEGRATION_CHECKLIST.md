@@ -2,7 +2,7 @@
 
 ## Overview
 
-This directory contains integration tests for the HoneyHive Python SDK across 13 providers and core tracing features. All tests are designed to:
+This directory contains integration tests for the HoneyHive Python SDK across 13 provider/framework integrations and core tracing features. All tests are designed to:
 - Skip gracefully when API keys are not present
 - Use real API calls for end-to-end verification
 - Demonstrate correct SDK usage patterns from documentation
@@ -89,6 +89,17 @@ assert len(llm_event["outputs"]) > 0
 | `test_streaming_message` | Streaming with stream events iteration | Assert delta.text chunks form response |
 
 **Total: 4 tests** | **Env vars:** `ANTHROPIC_API_KEY`
+
+---
+
+### 3.5 Claude Agents SDK (`test_claude_agent_sdk_integration.py`)
+
+| Test | What is Tested | Verification Method |
+|------|----------------|---------------------|
+| `test_basic_query_exports_session_events` | `query()` with no tools, minimal turns | Assert at least one session event exported |
+| `test_tool_spans_are_exported` | `claude-agent-sdk` with Glob tool | Assert at least one tool-related event is exported |
+
+**Total: 2 tests** | **Env vars:** `ANTHROPIC_API_KEY`
 
 ---
 
@@ -225,10 +236,10 @@ assert len(llm_event["outputs"]) > 0
 
 | Category | Tests |
 |----------|-------|
-| Core Tracing | 19 |
-| **E2E Verification** | **6** |
+| Core Tracing | 23 |
 | OpenAI | 5 |
 | Anthropic | 4 |
+| Claude Agents SDK | 2 |
 | LangChain/LangGraph | 5 |
 | Azure OpenAI | 2 |
 | AWS Bedrock | 3 |
@@ -240,7 +251,7 @@ assert len(llm_event["outputs"]) > 0
 | AutoGen | 2 |
 | DSPy | 3 |
 | evaluate() | 5 |
-| **Total** | **66** |
+| **Total** | **64** |
 
 ## Running Tests
 
@@ -268,7 +279,7 @@ HH_PROJECT=your-project-name
 # OpenAI-based providers (OpenAI, LangChain, Semantic Kernel, AutoGen, DSPy, OpenAI Agents)
 OPENAI_API_KEY=sk-...
 
-# Anthropic (Anthropic, Pydantic AI)
+# Anthropic-based integrations (Anthropic, Claude Agents SDK, Pydantic AI)
 ANTHROPIC_API_KEY=sk-ant-...
 
 # Azure OpenAI

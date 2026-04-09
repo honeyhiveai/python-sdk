@@ -11,6 +11,7 @@ It implements the multi-instance architecture with proper provider integration.
 import inspect
 import os
 import uuid
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from opentelemetry.baggage.propagation import W3CBaggagePropagator
@@ -1066,23 +1067,28 @@ def _initialize_session_management(tracer_instance: Any) -> None:
 
         tracer_instance.client = HoneyHive(**client_params)
 
-        # Handle session ID initialization
-        # Always create/initialize session in backend, even if session_id is provided
-        # This ensures the session exists and prevents backend from auto-populating
-        # inputs/outputs from the first event
+        # Handle session ID initialization.
+        # By default, init creates/initializes the session in the backend to
+        # ensure it exists and prevent backend auto-population from the first
+        # event. Callers can opt out only when they provide an existing
+        # session_id and explicitly request skipping init-time creation.
         provided_session_id = None
+        has_valid_provided_session_id = False
+        skip_backend_session_creation = getattr(
+            tracer_instance.config, "skip_backend_session_creation", False
+        )
         if tracer_instance.session_id:
-            # Store provided session_id for later use
-            provided_session_id = tracer_instance.session_id
             # Validate UUID format first
             try:
                 uuid.UUID(tracer_instance.session_id)
                 tracer_instance.session_id = tracer_instance.session_id.lower()
                 tracer_instance._session_id = tracer_instance.session_id
+                provided_session_id = tracer_instance.session_id
+                has_valid_provided_session_id = True
                 safe_log(
                     tracer_instance,
                     "debug",
-                    "Validated provided session_id, will initialize session in backend",
+                    "Validated provided session_id during tracer initialization",
                     honeyhive_data={"session_id": tracer_instance.session_id},
                 )
             except Exception as e:
@@ -1108,16 +1114,24 @@ def _initialize_session_management(tracer_instance: Any) -> None:
                     },
                 )
 
-        # Always create/initialize session in backend (even if session_id was provided)
-        # This ensures session exists and prevents backend auto-population bug
-        if provided_session_id:
+        if has_valid_provided_session_id and skip_backend_session_creation:
             safe_log(
                 tracer_instance,
                 "debug",
-                "Initializing session in backend with provided session_id",
+                "Skipping backend session initialization for provided session_id",
                 honeyhive_data={"session_id": provided_session_id},
             )
-        _create_new_session(tracer_instance)
+        else:
+            # Always create/initialize session in backend unless the caller
+            # explicitly opts out with a valid provided session_id.
+            if has_valid_provided_session_id:
+                safe_log(
+                    tracer_instance,
+                    "debug",
+                    "Initializing session in backend with provided session_id",
+                    honeyhive_data={"session_id": provided_session_id},
+                )
+            _create_new_session(tracer_instance)
 
         safe_log(
             tracer_instance,
@@ -1279,20 +1293,34 @@ def _create_new_session(tracer_instance: Any) -> None:
         # Determine session name
         session_name = tracer_instance.session_name
         if not session_name:
-            # Auto-generate session name from filename
+            # Auto-generate session name from the caller's filename by walking
+            # up the call stack past all internal honeyhive SDK frames.
+            # Determine the SDK package root to identify internal frames.
+            # __file__ is .../honeyhive/tracer/instrumentation/initialization.py
+            # parents[2] resolves to the honeyhive/ package root.
+            _sdk_package_dir = str(Path(__file__).resolve().parents[2])
 
             frame = inspect.currentframe()
-            while frame:
-                filename = frame.f_code.co_filename
-                if not filename.endswith(
-                    ("tracer_initialization.py", "tracer_core.py", "otel_tracer.py")
-                ):
-                    session_name = os.path.basename(filename).replace(".py", "")
-                    break
-                frame = frame.f_back
+            try:
+                while frame:
+                    filename = frame.f_code.co_filename
+                    abs_filename = os.path.realpath(filename)
+                    # Skip frames inside the honeyhive SDK package
+                    if not abs_filename.startswith(_sdk_package_dir + os.sep):
+                        session_name = os.path.basename(filename).replace(".py", "")
+                        break
+                    frame = frame.f_back
+            finally:
+                del frame
 
         if not session_name:
             session_name = "unknown"  # Match original SDK fallback
+
+        # Persist the resolved session_name on the tracer instance immediately,
+        # before the API call. This ensures it survives even if session creation
+        # fails and we fall into the exception handler.
+        tracer_instance.session_name = session_name
+        tracer_instance._session_name = session_name
 
         # Collect evaluation/experiment metadata if available
         # This ensures run_id, dataset_id, datapoint_id are included in session metadata

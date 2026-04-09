@@ -353,6 +353,7 @@ class TestSessionConfig:
             assert config.test_mode is False
             assert config.verbose is False
             assert config.session_id is None
+            assert config.skip_backend_session_creation is False
             assert config.inputs is None
             assert config.link_carrier is None
 
@@ -362,6 +363,7 @@ class TestSessionConfig:
             api_key="hh_session_key",
             project="session-project",
             session_id="550e8400-e29b-41d4-a716-446655440000",
+            skip_backend_session_creation=True,
             inputs={"user_id": "session-user"},
             link_carrier={"traceparent": "00-123"},
             verbose=True,
@@ -370,6 +372,7 @@ class TestSessionConfig:
         assert config.api_key == "hh_session_key"
         assert config.project == "session-project"
         assert config.session_id == "550e8400-e29b-41d4-a716-446655440000"
+        assert config.skip_backend_session_creation is True
         assert config.inputs == {"user_id": "session-user"}
         assert config.link_carrier == {"traceparent": "00-123"}
         assert config.verbose is True
@@ -603,6 +606,7 @@ class TestConfigModelIntegration:
         assert session_config.session_id is None or isinstance(
             session_config.session_id, str
         )
+        assert isinstance(session_config.skip_backend_session_creation, bool)
         assert session_config.inputs is None or isinstance(session_config.inputs, dict)
 
         # Test EvaluationConfig field types
