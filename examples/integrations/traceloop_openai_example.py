@@ -11,8 +11,10 @@ Requirements:
 - Set environment variables: HH_API_KEY, OPENAI_API_KEY
 """
 
+from __future__ import annotations
+
 import os
-from typing import Any, Dict
+from typing import Any
 
 # Import OpenAI SDK
 import openai
@@ -25,7 +27,7 @@ from honeyhive import HoneyHiveTracer, enrich_span, trace
 from honeyhive.models import EventType
 
 
-def setup_tracing() -> HoneyHiveTracer:
+def setup_tracing() -> tuple[HoneyHiveTracer, OpenAIInstrumentor]:
     """Initialize HoneyHive tracer with OpenLLMetry OpenAI instrumentor."""
 
     # Check required environment variables
@@ -34,20 +36,19 @@ def setup_tracing() -> HoneyHiveTracer:
     if not os.getenv("OPENAI_API_KEY"):
         raise ValueError("OPENAI_API_KEY environment variable is required")
 
-    # Initialize OpenLLMetry OpenAI instrumentor
-    openai_instrumentor = OpenAIInstrumentor()
-
-    # Initialize HoneyHive tracer FIRST (without instrumentors)
+    # Step 1: HoneyHive tracer first (BYOI), then attach the OpenAI instrumentor
     tracer = HoneyHiveTracer.init(
-        source=__file__.split("/")[-1],  # Use script name for visibility
+        api_key=os.getenv("HH_API_KEY"),
         project=os.getenv("HH_PROJECT", "openai-traceloop-demo"),
+        session_name="traceloop_openai_example",
+        source=os.path.basename(__file__),
     )
 
-    # Then initialize instrumentor with tracer_provider
+    openai_instrumentor = OpenAIInstrumentor()
     openai_instrumentor.instrument(tracer_provider=tracer.provider)
 
     print("✅ Tracing initialized with OpenLLMetry OpenAI instrumentor")
-    return tracer
+    return tracer, openai_instrumentor
 
 
 def basic_openai_example():
@@ -62,7 +63,7 @@ def basic_openai_example():
     # Simple chat completion - automatically traced by OpenLLMetry
     try:
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "user", "content": "Explain OpenLLMetry in one sentence."}
             ],
@@ -86,7 +87,7 @@ def basic_openai_example():
 
 
 @trace(event_type=EventType.chain)
-def advanced_openai_workflow(topic: str) -> Dict[str, Any]:
+def advanced_openai_workflow(topic: str) -> dict[str, Any]:
     """Advanced workflow using OpenAI with business context tracing."""
 
     print(f"\n🚀 Advanced Workflow: {topic}")
@@ -96,7 +97,7 @@ def advanced_openai_workflow(topic: str) -> Dict[str, Any]:
 
     # Add business context to the trace
     enrich_span(
-        {
+        metadata={
             "business.workflow": "content_generation",
             "business.topic": topic,
             "openai.strategy": "multi_step_refinement",
@@ -109,7 +110,7 @@ def advanced_openai_workflow(topic: str) -> Dict[str, Any]:
         # Step 1: Generate initial content
         print("📝 Step 1: Generating initial content...")
         initial_response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "user", "content": f"Write a brief explanation of {topic}."}
             ],
@@ -122,7 +123,7 @@ def advanced_openai_workflow(topic: str) -> Dict[str, Any]:
         # Step 2: Enhance with more detail
         print("🔍 Step 2: Enhancing with details...")
         enhanced_response = client.chat.completions.create(
-            model="gpt-4",  # Use different model for enhancement
+            model="gpt-4o",  # Different model from the initial gpt-4o-mini call
             messages=[
                 {
                     "role": "user",
@@ -137,10 +138,10 @@ def advanced_openai_workflow(topic: str) -> Dict[str, Any]:
 
         # Add results to span
         enrich_span(
-            {
+            metadata={
                 "business.steps_completed": 2,
                 "business.content_length": len(enhanced_content),
-                "openai.models_used": ["gpt-3.5-turbo", "gpt-4"],
+                "openai.models_used": ["gpt-4o-mini", "gpt-4o"],
                 "openai.total_tokens": initial_response.usage.total_tokens
                 + enhanced_response.usage.total_tokens,
                 "business.workflow_status": "completed",
@@ -153,12 +154,12 @@ def advanced_openai_workflow(topic: str) -> Dict[str, Any]:
             "enhanced_content": enhanced_content,
             "total_tokens": initial_response.usage.total_tokens
             + enhanced_response.usage.total_tokens,
-            "models_used": ["gpt-3.5-turbo", "gpt-4"],
+            "models_used": ["gpt-4o-mini", "gpt-4o"],
         }
 
     except Exception as e:
         enrich_span(
-            {
+            metadata={
                 "error.type": "workflow_error",
                 "error.message": str(e),
                 "business.workflow_status": "failed",
@@ -177,7 +178,7 @@ def demonstrate_cost_tracking():
     client = openai.OpenAI()
 
     # OpenLLMetry automatically tracks costs for different models
-    models_to_test = ["gpt-3.5-turbo", "gpt-4"]
+    models_to_test = ["gpt-4o-mini", "gpt-4o"]
 
     for model in models_to_test:
         print(f"Testing cost tracking for {model}...")
@@ -202,9 +203,11 @@ def main():
     print("🧪 OpenAI + OpenLLMetry (Traceloop) Integration Example")
     print("=" * 60)
 
+    tracer: HoneyHiveTracer | None = None
+    instrumentor: OpenAIInstrumentor | None = None
+
     try:
-        # Setup tracing
-        tracer = setup_tracing()
+        tracer, instrumentor = setup_tracing()
 
         # Basic example
         basic_openai_example()
@@ -237,6 +240,9 @@ def main():
 
         traceback.print_exc()
         return 1
+    finally:
+        if instrumentor is not None:
+            instrumentor.uninstrument()
 
     return 0
 

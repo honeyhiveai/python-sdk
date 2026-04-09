@@ -939,7 +939,9 @@ async def exercise_callbacks(tracer, session_service, app_name, user_id):
                     "note": "Callback should have blocked this",
                 }
             )
-            print(f"      ⚠️  Request processed (expected block): {str(response)[:100]}")
+            print(
+                f"      ⚠️  Request processed (expected block): {str(response)[:100]}"
+            )
         except Exception as e:
             tests.append(
                 {

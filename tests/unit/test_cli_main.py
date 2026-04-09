@@ -34,8 +34,7 @@ from honeyhive.cli.main import (
     watch,
 )
 
-# Previously skipped - now testing to identify actual failures
-# pytestmark = pytest.mark.skip(reason="Tests need update to match current CLI implementation")
+# Fixed: Updated httpx mocking to match actual CLI implementation
 
 # pylint: disable=too-many-lines
 # Justification: Comprehensive unit test coverage requires extensive test cases

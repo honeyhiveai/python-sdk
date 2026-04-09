@@ -39,12 +39,13 @@ class MockHoneyHiveTracer:
     def __init__(self) -> None:
         # Core configuration attributes
         self.config = Mock()
-        self.config.get = lambda key, default=None: getattr(self.config, key, default)
         self.config.api_key = "test-api-key"
         self.config.server_url = "https://test.api.honeyhive.ai"
         self.config.otlp_enabled = True
         self.config.test_mode = False
         self.config.verbose = False
+        self.config.disable_batch = False
+        self.config.skip_backend_session_creation = False
         self.config.session = Mock()
         self.config.session.inputs = {}
         # Span limit configuration
@@ -52,7 +53,13 @@ class MockHoneyHiveTracer:
         self.config.max_events = 1024
         self.config.max_links = 128
         self.config.max_span_size = 10 * 1024 * 1024  # 10MB
-        self.config.disable_batch = False
+        # Configure config.get() to return proper values (not Mock objects)
+        self.config.get.side_effect = lambda key, default=None: {
+            "disable_batch": self.config.disable_batch,
+            "skip_backend_session_creation": (
+                self.config.skip_backend_session_creation
+            ),
+        }.get(key, default)
 
         # Tracer instance attributes
         self.project_name: Any = "test-project"  # Allow both str and None
@@ -574,8 +581,11 @@ class TestTracerInitialization:
         self, mock_log: Any, mock_processor: Any
     ) -> None:
         """Test main provider components setup edge cases."""
-        # Test with disable_batch=True
-        self.mock_tracer.config.disable_batch = True
+        # Test with disable_batch=True — source code reads config.get("disable_batch")
+        self.mock_tracer.disable_batch = True
+        self.mock_tracer.config.get.side_effect = lambda key, default=None: {
+            "disable_batch": True
+        }.get(key, default)
         self.mock_tracer.provider = Mock()
         mock_span_processor = Mock()
         mock_processor.return_value = mock_span_processor
@@ -1287,6 +1297,79 @@ class TestTracerInitialization:
         ]
         assert len(warning_calls) >= 2  # Initial failure + degradation warning
 
+    @patch("honeyhive.tracer.instrumentation.initialization._create_new_session")
+    @patch("honeyhive.tracer.instrumentation.initialization.uuid")
+    @patch("honeyhive.tracer.instrumentation.initialization.HoneyHive")
+    @patch("honeyhive.tracer.instrumentation.initialization.safe_log")
+    def test__initialize_session_management_skips_backend_creation_on_init(
+        self, mock_log: Any, mock_client: Any, mock_uuid: Any, mock_create: Any
+    ) -> None:
+        """Test init-time skipping of backend session creation for existing sessions."""
+        mock_client_instance = Mock()
+        mock_client.return_value = mock_client_instance
+        valid_session_id = "550e8400-e29b-41d4-a716-446655440000"
+        self.mock_tracer.session_id = valid_session_id
+        self.mock_tracer.config.skip_backend_session_creation = True
+        mock_uuid.UUID.return_value = Mock()
+
+        initialization._initialize_session_management(self.mock_tracer)
+
+        assert self.mock_tracer.client == mock_client_instance
+        assert self.mock_tracer.session_id == valid_session_id
+        assert self.mock_tracer._session_id == valid_session_id
+        mock_uuid.UUID.assert_called_once_with(valid_session_id)
+        mock_create.assert_not_called()
+        mock_log.assert_called()
+
+    @patch("honeyhive.tracer.instrumentation.initialization._create_new_session")
+    @patch("honeyhive.tracer.instrumentation.initialization.uuid")
+    @patch("honeyhive.tracer.instrumentation.initialization.HoneyHive")
+    @patch("honeyhive.tracer.instrumentation.initialization.safe_log")
+    def test__initialize_session_management_creates_backend_session_by_default(
+        self, mock_log: Any, mock_client: Any, mock_uuid: Any, mock_create: Any
+    ) -> None:
+        """Test init keeps current backend session creation behavior by default."""
+        mock_client_instance = Mock()
+        mock_client.return_value = mock_client_instance
+        valid_session_id = "550e8400-e29b-41d4-a716-446655440000"
+        self.mock_tracer.session_id = valid_session_id
+        mock_uuid.UUID.return_value = Mock()
+
+        initialization._initialize_session_management(self.mock_tracer)
+
+        assert self.mock_tracer.client == mock_client_instance
+        assert self.mock_tracer.session_id == valid_session_id
+        assert self.mock_tracer._session_id == valid_session_id
+        mock_uuid.UUID.assert_called_once_with(valid_session_id)
+        mock_create.assert_called_once_with(self.mock_tracer)
+        mock_log.assert_called()
+
+    @patch("honeyhive.tracer.instrumentation.initialization._create_new_session")
+    @patch("honeyhive.tracer.instrumentation.initialization.uuid")
+    @patch("honeyhive.tracer.instrumentation.initialization.HoneyHive")
+    @patch("honeyhive.tracer.instrumentation.initialization.safe_log")
+    def test__initialize_session_management_invalid_session_id_still_creates(
+        self, mock_log: Any, mock_client: Any, mock_uuid: Any, mock_create: Any
+    ) -> None:
+        """Test invalid provided session IDs still fall back to backend creation."""
+        mock_client_instance = Mock()
+        mock_client.return_value = mock_client_instance
+        fallback_session_id = "12345678-1234-5678-1234-567812345678"
+        self.mock_tracer.session_id = "invalid-session-id"
+        self.mock_tracer.config.skip_backend_session_creation = True
+        mock_uuid.UUID.side_effect = ValueError("badly formed hexadecimal UUID")
+        mock_uuid.uuid4.return_value = uuid.UUID(fallback_session_id)
+
+        initialization._initialize_session_management(self.mock_tracer)
+
+        assert self.mock_tracer.client == mock_client_instance
+        assert self.mock_tracer.session_id == fallback_session_id
+        assert self.mock_tracer._session_id == fallback_session_id
+        assert self.mock_tracer._degraded_mode is True
+        assert "invalid_session_id" in self.mock_tracer._degradation_reasons
+        mock_create.assert_called_once_with(self.mock_tracer)
+        mock_log.assert_called()
+
     # ========================================================================
     # Tests for _validate_configuration_gracefully
     # ========================================================================
@@ -1565,6 +1648,103 @@ class TestTracerInitialization:
 
         # Should fall back to UUID when API returns None
         assert self.mock_tracer.session_id == new_uuid
+
+    # ========================================================================
+    # Tests for _create_new_session session_name auto-detection
+    # ========================================================================
+
+    @patch("honeyhive.tracer.instrumentation.initialization.safe_log")
+    def test__create_new_session_auto_detects_caller_filename(
+        self, mock_log: Any
+    ) -> None:
+        """Test that session_name auto-detection skips internal SDK frames.
+
+        When session_name is not provided, _create_new_session should walk the
+        call stack past all internal honeyhive SDK frames and use the caller's
+        filename as session_name. This verifies the fix for stale filename
+        filters that matched legacy file names (tracer_initialization.py,
+        tracer_core.py, otel_tracer.py) instead of the current modular
+        structure (initialization.py, base.py, tracer.py, etc).
+        """
+        # Arrange
+        self.mock_tracer.test_mode = False
+        self.mock_tracer.session_name = None  # Trigger auto-detection
+        self.mock_tracer.session_id = None
+        self.mock_tracer.run_id = None
+        self.mock_tracer.dataset_id = None
+        self.mock_tracer.datapoint_id = None
+
+        # Mock client.sessions.start() to capture the session params
+        test_session_id = str(uuid.uuid4())
+        mock_response = MagicMock()
+        mock_response.session_id = test_session_id
+        self.mock_tracer.client = MagicMock()
+        self.mock_tracer.client.sessions.start.return_value = mock_response
+
+        # Act
+        initialization._create_new_session(self.mock_tracer)
+
+        # Assert - client.sessions.start should have been called
+        self.mock_tracer.client.sessions.start.assert_called_once()
+
+        # The session_name in the data dict should NOT be an internal
+        # SDK filename like "initialization", "base", "tracer", etc.
+        call_kwargs = self.mock_tracer.client.sessions.start.call_args
+        session_params = call_kwargs.kwargs.get("data", {})
+        actual_session_name = session_params.get("session_name")
+
+        internal_names = {
+            "initialization",
+            "base",
+            "tracer",
+            "operations",
+            "context",
+            "decorators",
+            "enrichment",
+            "span_utils",
+            "registry",
+            "detection",
+            "compatibility",
+        }
+        assert actual_session_name not in internal_names, (
+            f"session_name '{actual_session_name}' is an internal SDK filename — "
+            "the auto-detection must skip internal SDK frames"
+        )
+        assert actual_session_name is not None
+        # Positive assertion: should resolve to this test file's name
+        assert (
+            actual_session_name == "test_tracer_instrumentation_initialization"
+        ), f"Expected session_name to be this test file's name, got '{actual_session_name}'"
+
+    @patch("honeyhive.tracer.instrumentation.initialization.safe_log")
+    def test__create_new_session_preserves_custom_session_name(
+        self, mock_log: Any
+    ) -> None:
+        """Test that an explicit session_name is used as-is without auto-detection."""
+        # Arrange
+        self.mock_tracer.test_mode = False
+        self.mock_tracer.session_name = "my-custom-session"
+        self.mock_tracer.session_id = None
+        self.mock_tracer.run_id = None
+        self.mock_tracer.dataset_id = None
+        self.mock_tracer.datapoint_id = None
+
+        test_session_id = str(uuid.uuid4())
+        mock_response = MagicMock()
+        mock_response.session_id = test_session_id
+        self.mock_tracer.client = MagicMock()
+        self.mock_tracer.client.sessions.start.return_value = mock_response
+
+        # Act
+        initialization._create_new_session(self.mock_tracer)
+
+        # Assert - custom session_name should be passed through unchanged
+        self.mock_tracer.client.sessions.start.assert_called_once()
+        call_kwargs = self.mock_tracer.client.sessions.start.call_args
+        session_params = call_kwargs.kwargs.get("data", {})
+        assert session_params.get("session_name") == "my-custom-session"
+        # Also verify it was persisted back on the tracer instance
+        assert self.mock_tracer.session_name == "my-custom-session"
 
     # ========================================================================
     # Tests for _setup_baggage_context

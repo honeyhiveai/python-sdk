@@ -55,7 +55,9 @@ def setup_tracing() -> HoneyHiveTracer:
         project=os.getenv("HH_PROJECT", "google-ai-traceloop-demo"),
     )
 
-    print("⚠️ Tracing initialized without OpenLLMetry instrumentor (due to known issue)")
+    print(
+        "⚠️ Tracing initialized without OpenLLMetry instrumentor (due to known issue)"
+    )
     return tracer
 
 

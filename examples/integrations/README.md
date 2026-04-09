@@ -12,6 +12,7 @@ Lightweight, community-driven instrumentors following OpenTelemetry standards:
 - **[`openinference_google_ai_example.py`](openinference_google_ai_example.py)** - Google AI integration
 - **[`openinference_google_adk_example.py`](openinference_google_adk_example.py)** - Google Agent Development Kit
 - **[`openinference_bedrock_example.py`](openinference_bedrock_example.py)** - AWS Bedrock integration
+- **[`openinference_litellm_example.py`](openinference_litellm_example.py)** - LiteLLM integration (multi-provider routing)
 - **[`openinference_mcp_example.py`](openinference_mcp_example.py)** - MCP (Model Context Protocol) integration
 
 ### **Traceloop Instrumentors**
@@ -29,6 +30,7 @@ Enhanced instrumentors with production optimizations and extended metrics:
 Comprehensive examples for popular AI agent frameworks:
 
 - **[`openai_agents_example.py`](openai_agents_example.py)** - OpenAI Agents SDK with OpenInference instrumentor (✅ single agent with session continuity, handoffs, agents-as-tools)
+- **[`openinference_claude_agent_sdk_example.py`](openinference_claude_agent_sdk_example.py)** - Claude Agents SDK with OpenInference instrumentor (✅ agent + tool spans)
 - **[`dspy_integration.py`](dspy_integration.py)** - DSPy framework with OpenAI instrumentor (✅ signatures, modules, ChainOfThought, ReAct, RAG, classification)
 - **[`semantic_kernel_integration.py`](semantic_kernel_integration.py)** - Microsoft Semantic Kernel with OpenAI instrumentor (✅ agents, plugins, function calling, streaming)
 - **[`strands_integration.py`](strands_integration.py)** - AWS Strands with TracerProvider pattern (✅ Bedrock models, streaming, tools)
@@ -261,6 +263,7 @@ For detailed integration guides, see:
 - [Google AI Integration](../../docs/how-to/integrations/google-ai.rst)
 - [Google ADK Integration](../../docs/how-to/integrations/google-adk.rst)
 - [AWS Bedrock Integration](../../docs/how-to/integrations/bedrock.rst)
+- [LiteLLM Integration](../../docs/how-to/integrations/litellm.rst)
 - [Azure OpenAI Integration](../../docs/how-to/integrations/azure-openai.rst)
 - [MCP Integration](../../docs/how-to/integrations/mcp.rst)
 - [Multi-Provider Guide](../../docs/how-to/integrations/multi-provider.rst)

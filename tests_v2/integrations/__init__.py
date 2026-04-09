@@ -7,6 +7,7 @@ and make actual API calls. They require environment variables to be set.
 Test suites:
 - test_openai_integration.py: OpenAI with OpenInference/Traceloop instrumentors
 - test_anthropic_integration.py: Anthropic Claude with OpenInference instrumentor
+- test_claude_agent_sdk_integration.py: Anthropic Claude Agents SDK with OpenInference instrumentor
 - test_langchain_integration.py: LangChain/LangGraph with OpenInference instrumentor
 - test_evaluate_integration.py: evaluate() function with real API
 - test_tracing_integration.py: Core tracing functionality with real API

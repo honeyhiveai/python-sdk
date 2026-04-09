@@ -21,9 +21,9 @@ import pytest
 
 from honeyhive._generated.api_config import APIConfig
 from honeyhive.api.client import (
+    _DEFAULT_EXPORT_READ_TIMEOUT,
     EXPORT_TIMEOUT,
     EventsAPI,
-    _DEFAULT_EXPORT_READ_TIMEOUT,
     _build_export_timeout,
 )
 

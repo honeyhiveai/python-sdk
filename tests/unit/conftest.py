@@ -6,21 +6,16 @@ They should be fast, deterministic, and not require external dependencies.
 
 # pylint: disable=redefined-outer-name,protected-access,import-outside-toplevel,duplicate-code
 
-import gc
-import os
-import sys
 import threading
 from typing import Any, Dict, Optional
 from unittest.mock import Mock, patch
 
 import pytest
-from opentelemetry import context
 from opentelemetry.trace import NoOpTracerProvider
 
 from honeyhive.api.client import HoneyHive
 from honeyhive.tracer import HoneyHiveTracer
 from honeyhive.tracer.integration import set_global_provider
-from tests.utils import ensure_clean_otel_state  # pylint: disable=no-name-in-module
 
 
 @pytest.fixture
@@ -88,24 +83,6 @@ def mock_async_response() -> Mock:
 @pytest.fixture
 def honeyhive_tracer(api_key: str, project: str, source: str) -> HoneyHiveTracer:
     """Standard HoneyHive tracer fixture for unit tests."""
-    return HoneyHiveTracer(
-        api_key=api_key,
-        project=project,
-        source=source,
-        test_mode=True,
-        disable_http_tracing=True,
-    )
-
-
-@pytest.fixture
-def fresh_honeyhive_tracer(api_key: str, project: str, source: str) -> HoneyHiveTracer:
-    """Create a fresh HoneyHive tracer for each test to ensure isolation."""
-    # Reset any global state that might persist
-    try:
-        context.attach(context.Context())
-    except ImportError:
-        pass
-
     return HoneyHiveTracer(
         api_key=api_key,
         project=project,
@@ -243,83 +220,9 @@ def mock_tracer_base() -> Mock:
 
 
 @pytest.fixture(autouse=True)
-def reset_otel_state_for_test(request: Any) -> Any:
-    """Reset OpenTelemetry state between unit tests to prevent isolation issues.
-
-    This fixture ensures unit tests have clean OTEL state by resetting to NoOp
-    providers. This is appropriate for unit tests that should be isolated and
-    not depend on real OTEL functionality.
-
-    Skip this for subprocess-based tests that need real environment behavior.
-    """
-    # Skip for backwards compatibility tests that run subprocesses
-    if "backwards_compatibility" in request.node.nodeid:
-        yield
-        return
-
-    # AGGRESSIVE STATE RESET - Same as integration tests
+def isolate_otel_provider() -> None:
+    """Ensure OpenTelemetry uses NoOp provider for unit tests."""
     try:
-        # Step 1: Use the same aggressive cleanup as integration tests
-        ensure_clean_otel_state()
-
-        # Step 2: Clear any cached modules that might retain state
-        # (from integration tests)
-        modules_to_clear = [mod for mod in sys.modules if "opentelemetry" in mod]
-        for mod in modules_to_clear:
-            if hasattr(sys.modules[mod], "_instances"):
-                delattr(sys.modules[mod], "_instances")
-
-        # Step 3: Set to NoOp for unit test isolation
         set_global_provider(NoOpTracerProvider())
-    except ImportError:
+    except Exception:
         pass
-
-    yield
-
-    # AGGRESSIVE CLEANUP AFTER TEST - Same as integration tests
-    try:
-        # Step 1: Use the same aggressive cleanup as integration tests
-        ensure_clean_otel_state()
-
-        # Step 2: Clear any cached modules that might retain state
-        # (from integration tests)
-        modules_to_clear = [mod for mod in sys.modules if "opentelemetry" in mod]
-        for mod in modules_to_clear:
-            if hasattr(sys.modules[mod], "_instances"):
-                delattr(sys.modules[mod], "_instances")
-
-        # Step 3: Set to NoOp for unit test isolation
-        set_global_provider(NoOpTracerProvider())
-
-        # Step 4: Force garbage collection (from integration tests)
-        gc.collect()
-    except ImportError:
-        pass
-
-
-@pytest.fixture(autouse=True)
-def disable_tracing_for_unit_tests(request: Any) -> Any:
-    """Disable tracing for unit tests to improve performance and isolation.
-
-    Unit tests should not depend on real tracing functionality and should
-    use mocked components instead.
-
-    Skip this for subprocess-based tests that need real environment behavior.
-    """
-
-    # Skip for backwards compatibility tests that run subprocesses
-    if "backwards_compatibility" in request.node.nodeid:
-        yield
-        return
-
-    # Disable tracing for regular unit tests
-    original_value = os.environ.get("HH_DISABLE_TRACING")
-    os.environ["HH_DISABLE_TRACING"] = "true"
-
-    yield
-
-    # Clean up - restore original value
-    if original_value is None:
-        os.environ.pop("HH_DISABLE_TRACING", None)
-    else:
-        os.environ["HH_DISABLE_TRACING"] = original_value

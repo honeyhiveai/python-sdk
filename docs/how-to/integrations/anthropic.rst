@@ -616,6 +616,76 @@ Migration Between Instrumentors
    instrumentor = AnthropicInstrumentor()
    instrumentor.instrument(tracer_provider=tracer.provider)
 
+
+Claude Agents SDK (OpenInference)
+----------------------------------
+
+The Anthropic `claude-agent-sdk` can also be traced at the *agent* level using the
+OpenInference Claude Agents instrumentor.
+
+Install:
+
+.. code-block:: bash
+
+   # Recommended
+   pip install honeyhive[openinference-claude-agent-sdk]
+
+   # Equivalent manual install:
+   # pip install honeyhive openinference-instrumentation-claude-agent-sdk claude-agent-sdk
+
+Basic setup (HoneyHive + BYOI):
+
+.. code-block:: python
+
+   import asyncio
+   import os
+
+   import claude_agent_sdk
+   from claude_agent_sdk import ClaudeAgentOptions
+   from honeyhive import HoneyHiveTracer
+   from openinference.instrumentation.claude_agent_sdk import ClaudeAgentSDKInstrumentor
+
+   async def main() -> None:
+       tracer = HoneyHiveTracer.init(
+           api_key=os.getenv("HH_API_KEY"),
+           project=os.getenv("HH_PROJECT"),
+           session_name="claude_agent_sdk_example",
+           source=os.getenv("HH_SOURCE", "python_sdk_example"),
+       )
+
+       instrumentor = ClaudeAgentSDKInstrumentor()
+       instrumentor.instrument(tracer_provider=tracer.provider)
+
+       try:
+           options = ClaudeAgentOptions(allowed_tools=["Glob"])
+           async for message in claude_agent_sdk.query(
+               prompt="Use the Glob tool to list the first 20 .py files in the current directory.",
+               options=options,
+           ):
+               result = getattr(message, "result", None)
+               if result is not None:
+                   print(result)
+       finally:
+           tracer.force_flush()
+           instrumentor.uninstrument()
+
+   asyncio.run(main())
+
+The OpenInference Claude Agent SDK instrumentor may emit **two** TOOL spans for one logical tool call. If that happens, HoneyHive will show two tool events because this duplication comes from the **upstream** ``openinference-instrumentation-claude-agent-sdk`` package and is not deduplicated in the UI. Treat this as expected upstream behavior rather than a HoneyHive-specific issue.
+
+After ``instrument()``, the instrumentor re-syncs ``claude_agent_sdk.query`` to the wrapped function. Use ``claude_agent_sdk.query(...)`` as above, or ``from claude_agent_sdk import query`` only **after** ``instrument()`` (an import of ``query`` before ``instrument()`` still refers to the unwrapped function).
+
+Current validation status for this integration is intentionally **v1** in scope:
+
+- Single-turn ``query()`` runs are validated.
+- Tool-enabled runs are validated.
+- Multi-turn / ``ClaudeSDKClient`` runs are validated.
+- Nested agents are **not** covered by the example above; treat them as **N/A** unless you add a dedicated scenario.
+
+Model-level hierarchy needs extra care. Attaching both the Anthropic Messages API instrumentor (``openinference-instrumentation-anthropic``) and the Claude Agent SDK instrumentor to the same ``TracerProvider`` is the right experiment if you want to look for agent -> model nesting, but in the Claude Code subprocess path those model spans may still be absent. In local raw-span capture, we observed only AGENT and TOOL spans from ``openinference.instrumentation.claude_agent_sdk`` and did **not** observe separate Anthropic/model spans. Treat model-level nesting as something to verify in your own setup, not as guaranteed behavior of the basic example.
+
+See also: `examples/integrations/openinference_claude_agent_sdk_example.py`.
+
 See Also
 --------
 

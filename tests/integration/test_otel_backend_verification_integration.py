@@ -509,6 +509,72 @@ class TestOTELBackendVerificationIntegration:
         assert verified_event.session_id == custom_session_id
         test_tracer.shutdown()
 
+    def test_existing_backend_session_with_skip_backend_session_creation(
+        self,
+        integration_client: Any,
+        real_project: Any,
+        real_source: Any,
+    ) -> None:
+        """Test init can reuse an existing backend session without recreating it."""
+        from honeyhive.config.models.tracer import SessionConfig
+        from honeyhive.tracer import HoneyHiveTracer
+
+        _, unique_id = generate_test_id(
+            "existing_backend_session_skip",
+            "existing_backend_session_skip",
+        )
+        verification_span_name = "existing_backend_session_skip_verification"
+
+        created_session = integration_client.sessions.start(
+            {
+                "project": real_project,
+                "session_name": f"existing-backend-session-{unique_id}",
+                "source": real_source,
+            }
+        )
+        existing_session_id = created_session.session_id
+
+        session_config = SessionConfig(
+            session_id=existing_session_id,
+            skip_backend_session_creation=True,
+        )
+
+        test_tracer = HoneyHiveTracer.init(
+            api_key=integration_client.api_key,
+            project=real_project,
+            source=real_source,
+            session_config=session_config,
+            test_mode=False,
+            disable_batch=True,
+        )
+
+        try:
+            assert test_tracer.session_id == existing_session_id
+
+            verified_event = verify_tracer_span(
+                tracer=test_tracer,
+                client=integration_client,
+                project=real_project,
+                session_id=existing_session_id,
+                span_name=verification_span_name,
+                unique_identifier=unique_id,
+                span_attributes={
+                    "test.mode": "existing_backend_session_skip",
+                    "test.verification_type": "skip_backend_session_creation",
+                    "honeyhive.project": real_project,
+                    "honeyhive.source": real_source,
+                },
+            )
+
+            verified_session_id = (
+                verified_event["session_id"]
+                if isinstance(verified_event, dict)
+                else verified_event.session_id
+            )
+            assert verified_session_id == existing_session_id
+        finally:
+            test_tracer.shutdown()
+
     def test_session_id_session_config_vs_tracer_config(
         self,
         integration_client: Any,

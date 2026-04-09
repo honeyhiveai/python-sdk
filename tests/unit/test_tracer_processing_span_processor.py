@@ -40,7 +40,7 @@ class TestHoneyHiveSpanProcessorInitialization:
         assert processor.tracer_instance is None
         assert processor.mode == "otlp"
 
-    def test_init_with_client_emits_deprecation_warning(self) -> None:
+    def test_init_with_client_mode(self) -> None:
         """Test initialization with client emits DeprecationWarning and forces OTLP mode."""
         mock_client = Mock()
         with warnings.catch_warnings(record=True) as w:
@@ -69,8 +69,8 @@ class TestHoneyHiveSpanProcessorInitialization:
         assert processor.tracer_instance is mock_tracer
 
     @patch("honeyhive.utils.logger.safe_log")
-    def test_init_logging_client_mode_now_otlp(self, mock_safe_log: Mock) -> None:
-        """Test initialization with client now logs OTLP mode after deprecation."""
+    def test_init_logging_client_mode(self, mock_safe_log: Mock) -> None:
+        """Test initialization logging when client is provided: OTLP forced + deprecation."""
         mock_client = Mock()
         mock_tracer = Mock(spec=HoneyHiveTracer)
 
@@ -99,7 +99,6 @@ class TestHoneyHiveSpanProcessorInitialization:
 
         HoneyHiveSpanProcessor(disable_batch=True, tracer_instance=mock_tracer)
 
-        # Production code makes TWO logging calls with format strings
         expected_calls = [
             call(
                 mock_tracer,
@@ -121,7 +120,6 @@ class TestHoneyHiveSpanProcessorInitialization:
 
         HoneyHiveSpanProcessor(disable_batch=False, tracer_instance=mock_tracer)
 
-        # Production code makes TWO logging calls with format strings
         expected_calls = [
             call(
                 mock_tracer,
@@ -783,24 +781,27 @@ class TestHoneyHiveSpanProcessorOnEnd:
     """Test on_end method functionality with all conditional branches."""
 
     @patch("honeyhive.utils.logger.safe_log")
-    def test_on_end_client_param_uses_otlp_fallback(self, mock_safe_log: Mock) -> None:
-        """Test on_end with client param now uses OTLP path (no exporter = warning)."""
+    def test_on_end_client_param_uses_otlp(self, mock_safe_log: Mock) -> None:
+        """Test on_end with client param still uses OTLP mode (client mode deprecated)."""
         mock_client = Mock()
-        mock_tracer = Mock(spec=HoneyHiveTracer)
+        mock_exporter = Mock()
+        mock_exporter.export.return_value = Mock(name="SUCCESS")
 
         with warnings.catch_warnings(record=True):
             warnings.simplefilter("always")
             processor = HoneyHiveSpanProcessor(
-                client=mock_client, tracer_instance=mock_tracer
+                client=mock_client, otlp_exporter=mock_exporter, disable_batch=True
             )
+
+        assert processor.mode == "otlp"
 
         mock_span = Mock(spec=ReadableSpan)
         mock_span.name = "test_operation"
         mock_span.attributes = {"honeyhive.session_id": "session-123"}
-        mock_span.get_span_context.return_value = Mock(span_id=12345)
 
         processor.on_end(mock_span)
 
+        mock_exporter.export.assert_called_once_with([mock_span])
         mock_client.events.create.assert_not_called()
 
     @patch("honeyhive.utils.logger.safe_log")
@@ -865,7 +866,10 @@ class TestHoneyHiveSpanProcessorOnEnd:
     @patch("honeyhive.utils.logger.safe_log")
     def test_on_end_exception_handling(self, mock_safe_log: Mock) -> None:
         """Test on_end exception handling."""
-        processor = HoneyHiveSpanProcessor()
+        mock_exporter = Mock()
+        mock_exporter.export.side_effect = Exception("OTLP Error")
+
+        processor = HoneyHiveSpanProcessor(otlp_exporter=mock_exporter)
 
         mock_span = Mock(spec=ReadableSpan)
         mock_span.name = "test_operation"
@@ -896,20 +900,23 @@ class TestHoneyHiveSpanProcessorSending:
 
     @patch("honeyhive.utils.logger.safe_log")
     def test_send_via_otlp_batched_mode(self, mock_safe_log: Mock) -> None:
-        """Test OTLP sending in batched mode enqueues to BatchSpanProcessor."""
+        """Test OTLP sending in batched mode delegates to BatchSpanProcessor."""
         mock_exporter = Mock()
-        mock_exporter.export.return_value = Mock(name="SUCCESS")
 
         processor = HoneyHiveSpanProcessor(
             otlp_exporter=mock_exporter, disable_batch=False
         )
 
+        # Replace the real BatchSpanProcessor with a mock to avoid background threads
+        mock_batch = Mock()
+        processor._batch_processor = mock_batch
+
         mock_span = Mock(spec=ReadableSpan)
         processor._send_via_otlp(mock_span, {}, "session-123")
 
-        # In batch mode, export is NOT called inline — span is enqueued
+        # Batched mode delegates to _batch_processor.on_end, not exporter.export
+        mock_batch.on_end.assert_called_once_with(mock_span)
         mock_exporter.export.assert_not_called()
-        processor.shutdown()
 
     @patch("honeyhive.utils.logger.safe_log")
     def test_send_via_otlp_immediate_mode(self, mock_safe_log: Mock) -> None:
@@ -1076,7 +1083,7 @@ class TestHoneyHiveSpanProcessorLifecycle:
         mock_safe_log.assert_called()
 
     def test_force_flush_success(self) -> None:
-        """Test force flush with successful exporter."""
+        """Test force flush with successful exporter in immediate mode."""
         mock_exporter = Mock()
         mock_exporter.force_flush.return_value = True
 
@@ -1110,7 +1117,7 @@ class TestHoneyHiveSpanProcessorLifecycle:
 
     @patch("honeyhive.utils.logger.safe_log")
     def test_force_flush_exception_handling(self, mock_safe_log: Mock) -> None:
-        """Test force flush with exception handling."""
+        """Test force flush with exception handling in immediate mode."""
         mock_exporter = Mock()
         mock_exporter.force_flush.side_effect = Exception("Flush error")
 

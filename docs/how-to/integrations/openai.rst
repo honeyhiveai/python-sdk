@@ -33,8 +33,8 @@ Provider SDK Requirements
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - **Minimum**: openai >= 1.0.0
-- **Recommended**: openai >= 1.10.0
-- **Tested Versions**: 1.10.0, 1.11.0, 1.12.0, 1.13.0
+- **Recommended**: openai >= 1.40.0 (2.x supported)
+- **Last known good (LKGV), PyPI 2026-04**: ``openai`` 2.30.0; ``openinference-instrumentation-openai`` 0.1.44; ``opentelemetry-instrumentation-openai`` 0.57.0 (use with Python 3.11+ and extras from ``pyproject.toml``)
 
 Instrumentor Compatibility
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -174,72 +174,55 @@ Choose Your Instrumentor
    def multi_model_comparison(prompt: str) -> dict:
        """Advanced example with business context and multiple OpenAI calls."""
        client = openai.OpenAI()
-       
-       # Add business context to the trace
-       enrich_span({
+
+       enrich_span(metadata={
            "business.input_type": type(prompt).__name__,
            "business.use_case": "model_comparison",
            "openai.strategy": "multi_model_analysis",
-           "instrumentor.type": "openinference"
+           "instrumentor.type": "openinference",
        })
-       
+
+       models = ["gpt-4o-mini", "gpt-4o"]
+       results: list[dict] = []
+
        try:
-           # Test multiple OpenAI models
-       models = ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo-preview"]
-       
-       results = []
-       for model in models:
-           try:
-               # Generate response with current model
-               response = client.chat.completions.create(
-                   model=model,
-                   messages=[{"role": "user", "content": prompt}],
-                   max_tokens=150
-               )
-               
-               results.append({
-                   "model": model,
-                   "response": response.choices[0].message.content,
-                   "usage": response.usage.dict() if response.usage else None
-               })
-               
-           except Exception as model_error:
-               results.append({
-                   "model": model,
-                   "error": str(model_error)
-               })
-       
-       # Add result metadata
-       enrich_span({
-           "business.successful": True,
-           "openai.models_used": models,
-           "business.result_confidence": "high"
-       })
-       
-       return {
-           "prompt": prompt,
-           "model_results": results,
-           "comparison_completed": True
-       }
-           
-           # Add result metadata
-           enrich_span({
+           for model in models:
+               try:
+                   response = client.chat.completions.create(
+                       model=model,
+                       messages=[{"role": "user", "content": prompt}],
+                       max_tokens=150,
+                   )
+                   usage = (
+                       response.usage.model_dump()
+                       if response.usage is not None
+                       else None
+                   )
+                   results.append({
+                       "model": model,
+                       "response": response.choices[0].message.content,
+                       "usage": usage,
+                   })
+               except Exception as model_error:
+                   results.append({"model": model, "error": str(model_error)})
+
+           enrich_span(metadata={
                "business.successful": True,
-               "openai.models_used": ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo-preview"],
-               "business.result_confidence": "high"
+               "openai.models_used": models,
+               "business.result_confidence": "high",
            })
-           
+
            return {
-           "prompt": prompt,
-           "model_results": results,
-           "comparison_completed": True
-       }
-           
+               "prompt": prompt,
+               "model_results": results,
+               "comparison_completed": True,
+           }
+
        except openai.OpenAIError as e:
-           enrich_span({
-               "error.type": "api_error", 
+           enrich_span(metadata={
+               "error.type": "api_error",
                "error.message": str(e),
-               "instrumentor.source": "openinference"
+               "instrumentor.source": "openinference",
            })
            raise
 
@@ -272,22 +255,22 @@ Choose Your Instrumentor
       # No additional configuration needed
 
 3. **Multiple Instrumentors**
-   
+
    .. code-block:: python
-   
+
       # You can combine OpenInference with other instrumentors
       from openinference.instrumentation.openai import OpenAIInstrumentor
-       from openinference.instrumentation.anthropic import AnthropicInstrumentor
-       
-       # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-       tracer = HoneyHiveTracer.init(
-           project="your-project"  # Or set HH_PROJECT environment variable
-       )
-       
-       # Step 2: Initialize instrumentors separately with tracer_provider
-       openai_instrumentor = OpenAIInstrumentor()
-       anthropic_instrumentor = AnthropicInstrumentor()
-       
+      from openinference.instrumentation.anthropic import AnthropicInstrumentor
+
+      # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+      tracer = HoneyHiveTracer.init(
+          project="your-project"  # Or set HH_PROJECT environment variable
+      )
+
+      # Step 2: Initialize instrumentors separately with tracer_provider
+      openai_instrumentor = OpenAIInstrumentor()
+      anthropic_instrumentor = AnthropicInstrumentor()
+
       openai_instrumentor.instrument(tracer_provider=tracer.provider)
       anthropic_instrumentor.instrument(tracer_provider=tracer.provider)
 
@@ -403,75 +386,58 @@ Choose Your Instrumentor
    def multi_model_comparison(prompt: str) -> dict:
        """Advanced example with business context and enhanced LLM metrics."""
        client = openai.OpenAI()
-       
-       # Add business context to the trace
-       enrich_span({
+
+       enrich_span(metadata={
            "business.input_type": type(prompt).__name__,
            "business.use_case": "model_comparison",
            "openai.strategy": "cost_optimized_multi_model_analysis",
            "instrumentor.type": "openllmetry",
-           "observability.enhanced": True
+           "observability.enhanced": True,
        })
-       
+
+       models = ["gpt-4o-mini", "gpt-4o"]
+       results: list[dict] = []
+
        try:
-           # Test multiple OpenAI models
-       models = ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo-preview"]
-       
-       results = []
-       for model in models:
-           try:
-               # Generate response with current model
-               response = client.chat.completions.create(
-                   model=model,
-                   messages=[{"role": "user", "content": prompt}],
-                   max_tokens=150
-               )
-               
-               results.append({
-                   "model": model,
-                   "response": response.choices[0].message.content,
-                   "usage": response.usage.dict() if response.usage else None
-               })
-               
-           except Exception as model_error:
-               results.append({
-                   "model": model,
-                   "error": str(model_error)
-               })
-       
-       # Add result metadata
-       enrich_span({
-           "business.successful": True,
-           "openai.models_used": models,
-           "business.result_confidence": "high"
-       })
-       
-       return {
-           "prompt": prompt,
-           "model_results": results,
-           "comparison_completed": True
-       }
-           
-           # Add result metadata
-           enrich_span({
+           for model in models:
+               try:
+                   response = client.chat.completions.create(
+                       model=model,
+                       messages=[{"role": "user", "content": prompt}],
+                       max_tokens=150,
+                   )
+                   usage = (
+                       response.usage.model_dump()
+                       if response.usage is not None
+                       else None
+                   )
+                   results.append({
+                       "model": model,
+                       "response": response.choices[0].message.content,
+                       "usage": usage,
+                   })
+               except Exception as model_error:
+                   results.append({"model": model, "error": str(model_error)})
+
+           enrich_span(metadata={
                "business.successful": True,
-               "openai.models_used": ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo-preview"],
+               "openai.models_used": models,
                "business.result_confidence": "high",
                "openllmetry.cost_tracking": "enabled",
-               "openllmetry.token_metrics": "captured"
+               "openllmetry.token_metrics": "captured",
            })
-           
+
            return {
-           "prompt": prompt,
-           "model_results": results,
-           "comparison_completed": True
-       }
-           
+               "prompt": prompt,
+               "model_results": results,
+               "comparison_completed": True,
+           }
+
        except openai.OpenAIError as e:
-           enrich_span({
-               "error.type": "api_error", 
+           enrich_span(metadata={
+               "error.type": "api_error",
                "error.message": str(e),
-               "instrumentor.error_handling": "openllmetry"
+               "instrumentor.error_handling": "openllmetry",
            })
            raise
 
@@ -517,24 +483,24 @@ Choose Your Instrumentor
       instrumentor.instrument(tracer_provider=tracer.provider)
 
 3. **Multiple Traceloop Instrumentors**
-   
+
    .. code-block:: python
-   
+
       # You can combine multiple Traceloop instrumentors
       from opentelemetry.instrumentation.openai import OpenAIInstrumentor
-       from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
-       
-       # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-       tracer = HoneyHiveTracer.init(
-           project="your-project"  # Or set HH_PROJECT environment variable
-       )
-       
-       # Step 2: Initialize instrumentors separately with tracer_provider
-       openai_instrumentor = OpenAIInstrumentor()      # Traceloop OpenAI
-       anthropic_instrumentor = AnthropicInstrumentor() # Traceloop Anthropic
-       
-       openai_instrumentor.instrument(tracer_provider=tracer.provider)
-       anthropic_instrumentor.instrument(tracer_provider=tracer.provider)
+      from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
+
+      # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+      tracer = HoneyHiveTracer.init(
+          project="your-project"  # Or set HH_PROJECT environment variable
+      )
+
+      # Step 2: Initialize instrumentors separately with tracer_provider
+      openai_instrumentor = OpenAIInstrumentor()       # Traceloop OpenAI
+      anthropic_instrumentor = AnthropicInstrumentor()  # Traceloop Anthropic
+
+      openai_instrumentor.instrument(tracer_provider=tracer.provider)
+      anthropic_instrumentor.instrument(tracer_provider=tracer.provider)
 
 4. **Performance Optimization**
    

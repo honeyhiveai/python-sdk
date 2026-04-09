@@ -64,6 +64,7 @@ def tracer(project_name: str) -> HoneyHiveTracer:
 class TestEventOrderingIntegration:
     """Integration tests for event ordering in get_by_session_id."""
 
+    @pytest.mark.skip(reason="Known CI failure: not all child events ingested in time (HHAI-4320)")
     def test_get_by_session_id_returns_chronological_order(
         self, api_client: HoneyHive, tracer: HoneyHiveTracer, fetch_events, project_name: str
     ) -> None:
