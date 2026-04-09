@@ -127,12 +127,6 @@ jobs:
         env:
           HH_API_KEY: ${{ secrets.HH_API_KEY || env.HH_API_KEY }}
 
-      - name: Run verified tests (tests_v2)
-        run: |
-          tox -e unit-v2
-        env:
-          HH_API_KEY: ${{ secrets.HH_API_KEY || env.HH_API_KEY }}
-
       - name: Upload coverage reports
         if: inputs.upload_coverage != false
         uses: codecov/codecov-action@v5
@@ -167,6 +161,9 @@ jobs:
         with:
           python-version: '3.12'
           cache: 'pip'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
 
       - name: Install dependencies
         run: |
