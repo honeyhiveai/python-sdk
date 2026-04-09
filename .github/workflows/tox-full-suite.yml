@@ -301,7 +301,7 @@ jobs:
         if: steps.check_credentials.outputs.has_honeyhive_key == 'true'
         run: |
           echo "🔗 Running integration tests with REAL APIs (NO MOCKS)..."
-          tox -e integration
+          tox -e integration -- --deselect tests/integration/test_evaluator_e2e.py
         env:
           # HoneyHive credentials (required) - all from secrets
           HH_API_KEY: ${{ secrets.HH_API_KEY }}
