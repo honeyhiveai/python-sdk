@@ -22,9 +22,7 @@
 #  be added to the global gitignore or merged into this project gitignore.  For a PyCharm
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 #  project, it is recommended to include the following files:
-# (.praxis-os/ serves as dogfooding example of proper installation)
 # .python-version
-# Agent OS MCP/RAG Cache (gitignored per spec)
 # But ignore build artifacts within dist/
 # Byte-compiled / optimized / DLL files
 # C extensions
@@ -32,8 +30,6 @@
 # Cython debug symbols
 # Distribution / packaging
 # Django stuff:
-# Documentation
-# Documentation quality reports (AI-consumable)
 # Environments
 # Flask stuff:
 # HoneyHive specific
@@ -54,7 +50,6 @@
 # Rope project settings
 # SageMath parsed files
 # Scrapy stuff:
-# Sphinx documentation
 # Spyder project settings
 # Test artifacts
 # Testing
@@ -64,18 +59,13 @@
 # VS Code
 # Virtual environments
 # Windows
-# dist/ - REMOVED: dist/ contains distributable source files (ouroboros, universal, scripts)
+# dist/ - REMOVED: dist/ contains distributable source files
 # macOS
 # mkdocs documentation
 # mypy
 # pdm
 # pipenv
 # poetry
-# prAxIs OS - Ephemeral Files
-# prAxIs OS - Ephemeral content (regenerated, not tracked)
-# prAxIs OS - Everything else is TRACKED as reference example for consumers
-# prAxIs OS - Runtime state (sessions, temporary data - not tracked)
-# prAxIs OS - Working documents (analysis, session notes, temporary files)
 # pyenv
 # pytype static type analyzer
 #Pipfile.lock
@@ -100,15 +90,11 @@
 *~
 .DS_Store
 .Python
-.agent-os/.cache/
 .benchmarks/
 .cache
 .coverage
 .coverage.*
 .dmypy.json
-.docs-quality-*.csv
-.docs-quality-*.json
-.docs-quality-*.md
 .eggs/
 .env
 .env.local
@@ -122,15 +108,6 @@
 .mypy_cache/
 .nox/
 .pdm.toml
-.praxis-os.backup.*
-.praxis-os/.cache/
-.praxis-os/.mcp_server_state.json
-.praxis-os/.upgrade_lock
-.praxis-os/mcp_server/__pycache__/
-.praxis-os/scripts/__pycache__/
-.praxis-os/state/
-.praxis-os/venv/
-.praxis-os/workspace/
 .pybuilder/
 .pyre/
 .pytest_cache/
@@ -170,8 +147,6 @@ dist/**/*.pyc
 dist/**/*.pyo
 dist/**/__pycache__/
 dmypy.json
-docs/_build/
-docs/build/
 downloads/
 eggs/
 ehthumbs.db
@@ -199,4 +174,3 @@ var/
 venv.bak/
 venv/
 wheels/
-uv.lock

@@ -1,5 +1,56 @@
 ## [Unreleased]
 
+## [1.0.0rc22] - 2026-05-01
+
+### Added
+
+- **Integrations: OpenAI Agents support via OpenInference**
+  - New optional dependency group `openinference-openai-agents` (`pip install honeyhive[openinference-openai-agents]`); also included in `all-openinference`.
+
+- **Integrations: LangChain + LangGraph support**
+  - New optional dependency groups `openinference-langchain` and `traceloop-langchain` — one install covers both LangChain chains/agents and LangGraph `StateGraph` workflows. Also included in `all-openinference` and `all-traceloop`.
+
+- **Integrations: AWS Strands Agents support**
+  - New optional dependency group `aws-strands` (`pip install honeyhive[aws-strands]`). Strands emits OpenTelemetry spans natively via `strands.telemetry`, so no separate instrumentor is needed — the `HoneyHiveTracer` global TracerProvider is picked up automatically.
+
+### Changed
+
+- **API Client: Stricter client-side validation on event creation**
+  - `PostEventRequestEvent.event_type` is now a required Pydantic field. Calls that previously failed server-side as 400 now fail earlier as `ValidationError` instead of `HTTPException` — same root cause, just a different exception type.
+
+- **Tracing dependencies: OpenTelemetry minimum bumped from 1.20.0 to 1.41.0**
+  - Floors raised on `opentelemetry-api` / `-sdk` / `-exporter-otlp-proto-http`. Traceloop instrumentor floors raised to >= 0.58.0 (was >= 0.46.0).
+
+  #### Action Required
+  - Environments pinning older OTel versions will need to upgrade.
+
+- **API Client: Response and request fields are now typed Pydantic models instead of dicts**
+  - Affects `client.events.export()` / `.get_by_session_id()`, `client.datapoints.create()` / `.update()`, `client.datasets.create()` / `.update()` / `.delete()`, and `client.metrics.list()` / `get_metric()`.
+  - On the request side no migration is needed — Pydantic coerces raw dicts at construction time and unknown fields still flow to the wire.
+
+  #### Action Required
+  - Read nested response fields with attribute access instead of dict subscript:
+    ```python
+    # before
+    new_id = response.result["insertedIds"][0]
+    # after
+    new_id = response.result.insertedIds[0]
+    # escape hatch if you need the dict form
+    raw = response.result.model_dump()
+    ```
+  - Per-endpoint migration table, validation steps, and edge cases: see [`.agents/skills/migrate-to-1-0-0rc22/SKILL.md`](.agents/skills/migrate-to-1-0-0rc22/SKILL.md). AI coding assistants can invoke the `migrate-to-1-0-0rc22` skill directly.
+
+### Fixed
+
+- **Tracing: OTLP exporter preserves attribute types [HHAI-4935]**
+  - The exporter previously wrapped every attribute as `{"stringValue": str(value)}`, so numeric and boolean attributes round-tripped through the backend as strings. Now mapped to the correct OTLP `AnyValue` variant.
+
+- **Tracing: OTLP batch export groups spans by instrumentation scope [HHAI-4245]**
+  - All spans in a batch were previously placed under the first span's scope, causing `BatchSpanProcessor` mixes (e.g. pydantic-ai `chat` + httpx `POST`) to misclassify model events as chains. Spans are now grouped by their actual `instrumentation_scope`.
+
+- **Integrations: Anthropic / LangChain + LangGraph / AWS Bedrock audits**
+  - Refreshed integration examples and docs (`examples/integrations/`, `docs/how-to/integrations/`) to current model IDs and modern usage patterns.
+
 ## [1.0.0rc21] - 2026-04-08
 
 ### Added
@@ -366,7 +417,7 @@ No customer-facing changes. Internal CI/release automation improvements only.
   - Handles `asyncio.run()` edge cases with automatic context cleanup on exceptions
   - Exported from `honeyhive.tracer.processing.context` module
   - Files: `src/honeyhive/tracer/processing/context.py`, `src/honeyhive/tracer/processing/__init__.py`
-  
+
 - **🐛 Distributed Tracing: Fixed @trace decorator baggage preservation**
   - The `@trace` decorator now preserves existing OpenTelemetry baggage from distributed traces
   - Previously, decorator unconditionally overwrote `session_id`, `project`, `source` with local tracer defaults
@@ -402,8 +453,8 @@ No customer-facing changes. Internal CI/release automation improvements only.
   - Added API reference documentation for all distributed tracing functions
   - Updated Google ADK distributed tracing examples (client + server)
   - Created design document summarizing all improvements
-  - Files: `docs/tutorials/06-distributed-tracing.rst`, `docs/reference/api/utilities.rst`, 
-    `examples/integrations/README_DISTRIBUTED_TRACING.md`, 
+  - Files: `docs/tutorials/06-distributed-tracing.rst`, `docs/reference/api/utilities.rst`,
+    `examples/integrations/README_DISTRIBUTED_TRACING.md`,
     `.praxis-os/workspace/design/2025-11-14-distributed-tracing-improvements.md`
 
 - **🧪 Testing: Added unit tests for distributed tracing improvements**
@@ -411,7 +462,7 @@ No customer-facing changes. Internal CI/release automation improvements only.
   - 5 tests for `@trace` decorator baggage preservation with distributed traces
   - 1 test for span processor baggage priority logic
   - All tests passing with existing test suite (191/224 integration tests passing)
-  - Files: `tests/unit/test_tracer_processing_context_distributed.py`, 
+  - Files: `tests/unit/test_tracer_processing_context_distributed.py`,
     `tests/unit/test_tracer_instrumentation_decorators_baggage.py`,
     `tests/unit/test_tracer_processing_span_processor.py`
 
@@ -619,6 +670,7 @@ No customer-facing changes. Internal CI/release automation improvements only.
   - Verified against official AWS Bedrock documentation (models-supported.html, model-lifecycle.html, model-access.html)
 
 ### Added
+
 - **✨ Experiments: Automatic Span Capture for Evaluation Functions**
   - User functions in `evaluate()` are now automatically decorated with `@trace` for span capture
   - Captures function execution as spans with event_type="chain" and automatic input/output tracking
@@ -652,6 +704,7 @@ No customer-facing changes. Internal CI/release automation improvements only.
   - All examples use v1.0+ instance method patterns (`tracer.enrich_session()`)
 
 ### Fixed
+
 - **📚 Documentation: Comprehensive Validation and Quality Fixes**
   - Fixed 22 critical issues across all documentation files
     - 5 unterminated docstrings that would cause syntax errors
@@ -699,6 +752,7 @@ No customer-facing changes. Internal CI/release automation improvements only.
   - **Impact**: Fixes broken metrics, enables UI ground truth display, enables LLM evaluator ground truth access
 
 ### Added
+
 - **✨ Tracing: Instance Method Pattern as Primary API (v1.0)**
   - `HoneyHiveTracer.enrich_span()` instance method is now the PRIMARY pattern for span enrichment
   - `HoneyHiveTracer.enrich_session()` instance method is now the PRIMARY pattern for session enrichment
@@ -743,6 +797,7 @@ No customer-facing changes. Internal CI/release automation improvements only.
   - Demonstrates basic tracer initialization and OpenAI integration
 
 ### Fixed
+
 - **🐛 CRITICAL: Multi-Instance Context Isolation (v1.0 Fix)**
   - **Problem**: `project` and `source` leaked between tracer instances via global baggage propagation
   - **Root Cause**: `project` and `source` were included in `SAFE_PROPAGATION_KEYS`, causing global context pollution
@@ -845,6 +900,7 @@ No customer-facing changes. Internal CI/release automation improvements only.
   - Updated documentation: tutorials, how-to guides, and API reference with new interfaces and examples
 
 ### Deprecated
+
 - **⚠️ Free Functions: enrich_span() and enrich_session() Deprecated (v1.0)**
   - Free functions `enrich_span()` and `enrich_session()` are now DEPRECATED
   - **Reason**: Multi-instance architecture requires explicit tracer reference
@@ -854,6 +910,7 @@ No customer-facing changes. Internal CI/release automation improvements only.
   - See migration guide: `docs/development/migrating-to-v1.0.rst`
 
 ### Changed
+
 - **🔧 Tracing: Removed Redundant Experiment Baggage Code**
   - Removed unused `_add_experiment_context()` function that was setting experiment data in baggage but never read
   - Experiment attributes are already added to spans directly via `_get_experiment_attributes()` in span processor
@@ -867,7 +924,7 @@ No customer-facing changes. Internal CI/release automation improvements only.
 - **🔧 API: Enhanced evaluate() Function Environment Variable Support**
   - Made api_key parameter optional (reads from HONEYHIVE_API_KEY or HH_API_KEY env vars)
   - Added server_url parameter with environment variable support (HONEYHIVE_SERVER_URL, HH_SERVER_URL, or HH_API_URL)
-  - Improved UX by supporting both HONEYHIVE_* and HH_* prefix variations
+  - Improved UX by supporting both HONEYHIVE_ *and HH_* prefix variations
   - Updated run_experiment() to accept optional api_key
 - **🔄 Examples: Updated Google ADK Integration with Async Support**
   - Migrated from GOOGLE_ADK_API_KEY to GOOGLE_API_KEY environment variable
@@ -886,6 +943,7 @@ No customer-facing changes. Internal CI/release automation improvements only.
   - Added required criteria field to Metric model test data
 
 ### Added
+
 - **🧪 Testing: Span Capture and Test Case Generation Utilities**
   - New span capture utility for recording OpenTelemetry spans during integration runs
   - Test case generator to convert captured spans into unit tests
@@ -951,6 +1009,7 @@ No customer-facing changes. Internal CI/release automation improvements only.
   - Comprehensive Agent OS documentation standards and patterns
 
 ### Infrastructure
+
 - **🔧 MCP Server: Prototype → Product (mcp_servers → mcp_server)**
   - Upgraded from prototype to modular Agent OS Enhanced architecture (+5,823 lines)
   - New modular structure: config/, core/, server/, models/, monitoring/
@@ -968,29 +1027,34 @@ No customer-facing changes. Internal CI/release automation improvements only.
   - Fixed MyPy circular import errors with late imports
 
 ### Added
+
 - **📚 Agent OS Enhanced Content (+4,235 lines)**
   - Usage guides: operating-model.md, mcp-usage-guide.md, mcp-server-update-guide.md, agent-os-update-guide.md, creating-specs.md
   - Workflows: spec_execution_v1 framework with dynamic task execution
   - Total: 5 usage guide files (2,306 lines) + 9 workflow files (1,929 lines)
 
 ### Changed
+
 - **⚙️ Configuration Updates**
   - Updated .cursor/mcp.json for modular server with isolated venv
   - Fixed .agent-os/scripts/build_rag_index.py paths for python-sdk structure
   - Added fastmcp>=2.0.0 dependency
 
 ### Removed
+
 - **🧹 Prototype Test Cleanup (-2,326 lines)**
   - Removed tests/unit/mcp_servers/ (6 files)
   - Tests now maintained in upstream agent-os-enhanced repository
 
 ### Quality
+
 - ✅ Format: 270 files clean
 - ✅ Lint: 10.00/10 (up from 9.99)
 - ✅ Unit Tests: 2,802 passing, 88.07% coverage
 - ✅ Integration: 153/154 passing (1 flaky timing test)
 
 ### Documentation
+
 - **MAJOR**: Restructured evaluation documentation with modular how-to guides following Divio Documentation System
   - Created 9 focused how-to guides: running-experiments, creating-evaluators, comparing-experiments, dataset-management, server-side-evaluators, multi-step-experiments, result-analysis, best-practices, troubleshooting
   - Simplified tutorial (04-evaluation-basics.rst) to be introductory, moved advanced content to how-to guides
@@ -1000,6 +1064,7 @@ No customer-facing changes. Internal CI/release automation improvements only.
 - Fixed pre-commit hooks to use python3 and activate venv for documentation validation
 
 ### Fixed
+
 - 🔧 **Agent OS MCP Concurrency**: Added thread-safe locking to prevent index corruption during hot reload
   - Implemented read-write lock (RLock) in RAGEngine preventing concurrent query/rebuild race conditions
   - Added `_rebuilding` event signal for graceful query waiting during index reload
@@ -1010,6 +1075,7 @@ No customer-facing changes. Internal CI/release automation improvements only.
 - 🔧 **Pre-commit Documentation Check**: Exclude `.agent-os/specs/` from CHANGELOG requirement - spec proposals require CHANGELOG on implementation, not during design phase
 
 ### Added
+
 - 🤖 **Production Code Universal Standards**: AI coding quality guardrails enforcing CS fundamentals for all code
   - Universal production checklist (Tier 1-3) mandatory for ALL AI-written code regardless of perceived complexity
   - Concurrency analysis protocol with systematic thread-safety evaluation (prevents race conditions)
@@ -1090,6 +1156,7 @@ No customer-facing changes. Internal CI/release automation improvements only.
 - Zero failing tests policy enforcement at commit time
 
 ### Fixed
+
 - Unit test environment isolation: Removed real environment variable passthrough in tox configuration
 - API key validation: Enhanced to properly reject empty strings and None values
 - Test focus alignment: Refactored tests to validate intended behavior (thread safety, independence, span isolation)
@@ -1100,6 +1167,7 @@ No customer-facing changes. Internal CI/release automation improvements only.
 - Documentation examples using string literals instead of `EventType` enum values for type safety
 
 ### Changed
+
 - 🔄 **BACKWARDS COMPATIBILITY MAINTAINED**: All existing code continues to work unchanged with .init() method
 - .init() method prioritized as recommended approach for existing applications
 - No breaking changes in public API - seamless upgrade path for existing applications
@@ -1110,6 +1178,7 @@ No customer-facing changes. Internal CI/release automation improvements only.
 - **BREAKING**: Replaced all print statements with structured logging infrastructure for better observability and production readiness
 
 ### Fixed
+
 - Environment variables not being picked up when set at runtime (customer issue with HH_API_URL)
 - Boolean environment variable precedence logic in HTTPClientConfig (HH_VERIFY_SSL, HH_FOLLOW_REDIRECTS)
 - API client and tracer now use fresh config instances to detect runtime environment changes
@@ -1117,210 +1186,221 @@ No customer-facing changes. Internal CI/release automation improvements only.
 - Missing HH_PROJECT environment variable in tox test environments causing local test failures
 
 ### Removed
+
 - Temporary development files and validation artifacts
 
 ## [0.1.0rc1] - 2025-09-11
 
 ### Added
+
 - **🎯 REVOLUTIONARY: Automated Documentation Quality Control System**
-  * ✅ **IMPLEMENTED**: Professional RST validation with `restructuredtext-lint`, `rstcheck`, and `doc8` integration
-  * ✅ **SPHINX-AWARE**: Global Sphinx directive/role registration ensuring all RST tools inherit Sphinx awareness
-  * ✅ **AUTO-FIX**: Black-style deterministic fixing approach with 869 documentation issues automatically resolved
-  * ✅ **AI-CONSUMABLE**: JSON, CSV, and Markdown export formats for automated analysis and follow-up actions
-  * ✅ **MULTI-THREADED**: Parallel processing with `ThreadPoolExecutor` for high-performance validation
-  * ✅ **COMPREHENSIVE**: 31 Sphinx directives and 19 roles registered globally for complete compatibility
-  * ✅ **ZERO-WARNINGS**: Achieved perfect Sphinx build with zero warnings after automated fixes
-  * ✅ **PRODUCTION-READY**: Created `scripts/docs-quality.py` with check, fix, and summary commands
-  * ✅ **PRE-COMMIT**: Integrated auto-fix and validation into pre-commit hooks for prevention-first approach
+  - ✅ **IMPLEMENTED**: Professional RST validation with `restructuredtext-lint`, `rstcheck`, and `doc8` integration
+  - ✅ **SPHINX-AWARE**: Global Sphinx directive/role registration ensuring all RST tools inherit Sphinx awareness
+  - ✅ **AUTO-FIX**: Black-style deterministic fixing approach with 869 documentation issues automatically resolved
+  - ✅ **AI-CONSUMABLE**: JSON, CSV, and Markdown export formats for automated analysis and follow-up actions
+  - ✅ **MULTI-THREADED**: Parallel processing with `ThreadPoolExecutor` for high-performance validation
+  - ✅ **COMPREHENSIVE**: 31 Sphinx directives and 19 roles registered globally for complete compatibility
+  - ✅ **ZERO-WARNINGS**: Achieved perfect Sphinx build with zero warnings after automated fixes
+  - ✅ **PRODUCTION-READY**: Created `scripts/docs-quality.py` with check, fix, and summary commands
+  - ✅ **PRE-COMMIT**: Integrated auto-fix and validation into pre-commit hooks for prevention-first approach
 
 - **🚀 MAJOR: Zero Failing Tests Policy Implementation**
-  * ✅ **ENFORCED**: Agent OS Zero Failing Tests Policy - 100% passing tests, no skipping allowed
-  * ✅ **REAL-API**: All integration tests now use real APIs with dynamic project resolution
-  * ✅ **UNIT-INTEGRATION**: Proper test categorization with 989 unit tests and focused integration tests
-  * ✅ **PERFORMANCE**: Dedicated performance testing in integration environment with realistic thresholds
-  * ✅ **FIXTURES**: Enhanced `conftest.py` with `integration_project_name` for dynamic API project resolution
-  * ✅ **NO-MOCKS**: Eliminated all `pytest.skip` logic and mock usage from integration tests
+  - ✅ **ENFORCED**: Agent OS Zero Failing Tests Policy - 100% passing tests, no skipping allowed
+  - ✅ **REAL-API**: All integration tests now use real APIs with dynamic project resolution
+  - ✅ **UNIT-INTEGRATION**: Proper test categorization with 989 unit tests and focused integration tests
+  - ✅ **PERFORMANCE**: Dedicated performance testing in integration environment with realistic thresholds
+  - ✅ **FIXTURES**: Enhanced `conftest.py` with `integration_project_name` for dynamic API project resolution
+  - ✅ **NO-MOCKS**: Eliminated all `pytest.skip` logic and mock usage from integration tests
 
 - **🏗️ ENHANCED: Test Infrastructure Reorganization**
-  * ✅ **MOVED**: Converted `test_api_workflows.py` from integration to proper unit tests with `unittest.mock`
-  * ✅ **CREATED**: New integration tests: `test_end_to_end_validation.py`, `test_tracer_performance.py`
-  * ✅ **UNIT-TESTS**: Added 7 new unit test files from integration test refactoring
-  * ✅ **VALIDATION**: Created 4 new validation scripts for documentation and testing standards
-  * ✅ **WORKFLOWS**: Integrated documentation quality checks into existing validation workflows
+  - ✅ **MOVED**: Converted `test_api_workflows.py` from integration to proper unit tests with `unittest.mock`
+  - ✅ **CREATED**: New integration tests: `test_end_to_end_validation.py`, `test_tracer_performance.py`
+  - ✅ **UNIT-TESTS**: Added 7 new unit test files from integration test refactoring
+  - ✅ **VALIDATION**: Created 4 new validation scripts for documentation and testing standards
+  - ✅ **WORKFLOWS**: Integrated documentation quality checks into existing validation workflows
 
 ### Fixed
+
 - **🐛 CRITICAL: API Serialization and Response Parsing**
-  * Fixed `TypeError: Object of type EventType1 is not JSON serializable` across all API clients
-  * Updated all API methods to use `model_dump(mode='json', exclude_none=True)` for proper enum serialization
-  * Created `CreateConfigurationResponse` dataclass for MongoDB-style API responses
-  * Fixed configuration API to send data directly without wrapper objects
-  * Resolved ProxyTracerProvider issues in `otel_tracer.py` for proper span integration
+  - Fixed `TypeError: Object of type EventType1 is not JSON serializable` across all API clients
+  - Updated all API methods to use `model_dump(mode='json', exclude_none=True)` for proper enum serialization
+  - Created `CreateConfigurationResponse` dataclass for MongoDB-style API responses
+  - Fixed configuration API to send data directly without wrapper objects
+  - Resolved ProxyTracerProvider issues in `otel_tracer.py` for proper span integration
 
 - **🔧 MAJOR: Code Quality and Type Safety**
-  * Achieved **perfect Pylint score: 10.00/10** (improved from 9.99/10)
-  * Achieved **perfect MyPy compliance: 0 errors** across 38 source files
-  * Fixed cell variable capture warnings in performance benchmarks
-  * Resolved all import organization issues following PEP 8 standards
-  * Added comprehensive type annotations throughout codebase
+  - Achieved **perfect Pylint score: 10.00/10** (improved from 9.99/10)
+  - Achieved **perfect MyPy compliance: 0 errors** across 38 source files
+  - Fixed cell variable capture warnings in performance benchmarks
+  - Resolved all import organization issues following PEP 8 standards
+  - Added comprehensive type annotations throughout codebase
 
 - **📚 COMPREHENSIVE: Documentation Standards Compliance**
-  * Fixed 869 RST validation issues automatically using `docs-quality.py fix`
-  * Consolidated `real-api-testing.rst` into `integration-testing.rst` with no-mock warnings
-  * Updated all code examples to use `EventType` enums instead of string literals
-  * Fixed malformed RST syntax, illegal annotations, and broken cross-references
-  * Achieved zero Sphinx build warnings with professional RST tool integration
+  - Fixed 869 RST validation issues automatically using `docs-quality.py fix`
+  - Consolidated `real-api-testing.rst` into `integration-testing.rst` with no-mock warnings
+  - Updated all code examples to use `EventType` enums instead of string literals
+  - Fixed malformed RST syntax, illegal annotations, and broken cross-references
+  - Achieved zero Sphinx build warnings with professional RST tool integration
 
 ### Changed
+
 - **🔄 BREAKING: Test Environment Configuration**
-  * Integration tests now **require** `HH_API_KEY` environment variable (no more skipping)
-  * Removed all `pytest.skip` logic from integration tests per Agent OS standards
-  * Updated `conftest.py` to use `pytest.fail` instead of `pytest.skip` for missing credentials
-  * Modified integration fixtures to use `test_mode=False` for real API interactions
+  - Integration tests now **require** `HH_API_KEY` environment variable (no more skipping)
+  - Removed all `pytest.skip` logic from integration tests per Agent OS standards
+  - Updated `conftest.py` to use `pytest.fail` instead of `pytest.skip` for missing credentials
+  - Modified integration fixtures to use `test_mode=False` for real API interactions
 
 - **🏗️ ARCHITECTURAL: Documentation Quality Architecture**
-  * Implemented global Sphinx docutils integration before professional RST tool imports
-  * Replaced multi-pass validation with Black-style single-pass deterministic approach
-  * Enhanced error reporting with AI-consumable structured output formats
-  * Integrated professional RST tools (`restructuredtext-lint`, `rstcheck`, `doc8`) with Sphinx awareness
+  - Implemented global Sphinx docutils integration before professional RST tool imports
+  - Replaced multi-pass validation with Black-style single-pass deterministic approach
+  - Enhanced error reporting with AI-consumable structured output formats
+  - Integrated professional RST tools (`restructuredtext-lint`, `rstcheck`, `doc8`) with Sphinx awareness
 
 ### Removed
+
 - **🧹 CLEANUP: Test File Consolidation**
-  * Deleted 6 redundant integration test files (3,123 lines removed):
+  - Deleted 6 redundant integration test files (3,123 lines removed):
     - `test_compatibility_matrix.py`, `test_fault_injection.py`, `test_multi_framework_integration.py`
     - `test_non_instrumentor_integration.py`, `test_recovery.py`, `test_tracer_backward_compatibility.py`
     - `test_tracer_provider_integration.py`
-  * Removed `real-api-testing.rst` (616 lines) - content merged into `integration-testing.rst`
-  * Cleaned up orphaned code and dead methods in documentation quality script
+  - Removed `real-api-testing.rst` (616 lines) - content merged into `integration-testing.rst`
+  - Cleaned up orphaned code and dead methods in documentation quality script
 
 ### Technical Details
+
 - **📊 STATISTICS**: Net change: 103 files modified, 2,883 insertions, 6,007 deletions
 - **🎯 QUALITY**: Perfect scores across all metrics (Pylint 10.00/10, MyPy 0 errors, 989 unit tests passing)
 - **🚀 PERFORMANCE**: Multi-threaded documentation processing with professional RST tool integration
 - **🔧 TOOLING**: Enhanced pre-commit hooks, validation scripts, and GitHub Actions workflows
 
 ### Added
+
 - **🚨 CRITICAL: Integration Testing Consolidation - FULLY IMPLEMENTED**
-  * ✅ **COMPLETED**: Eliminated mock creep in integration tests - moved 41 violations from `test_api_workflows.py` to unit tests
-  * ✅ **ENFORCED**: No-mock rule for integration tests with comprehensive pre-commit hook validation
-  * ✅ **CONSOLIDATED**: Merged `real-api-testing.rst` into `integration-testing.rst` with explicit no-mock warnings
-  * ✅ **DOCUMENTED**: Created `integration-test-validation-patterns.rst` for create-validate-retrieve patterns
-  * ✅ **OPTIMIZED**: Implemented dual-coverage strategy (unit tests with coverage, integration without)
-  * ✅ **VALIDATED**: All integration tests now use real APIs with `test_mode=False` and `HH_API_KEY`
-  * ✅ **AUTOMATED**: Enhanced validation scripts with comprehensive mock detection patterns
-  * ✅ **UPDATED**: Fixed 12 deprecated `real-api` references to use unified `tox -e integration`
-  * ✅ **COMPLIANT**: Added Agent OS navigation validation to pre-commit hooks per standards
-  * ✅ **IMPROVED**: Extracted multiline YAML scripts to dedicated script files (`scripts/validate-*.sh`)
-  * ✅ **RELEASE READY**: All quality gates operational, zero mock violations confirmed
+  - ✅ **COMPLETED**: Eliminated mock creep in integration tests - moved 41 violations from `test_api_workflows.py` to unit tests
+  - ✅ **ENFORCED**: No-mock rule for integration tests with comprehensive pre-commit hook validation
+  - ✅ **CONSOLIDATED**: Merged `real-api-testing.rst` into `integration-testing.rst` with explicit no-mock warnings
+  - ✅ **DOCUMENTED**: Created `integration-test-validation-patterns.rst` for create-validate-retrieve patterns
+  - ✅ **OPTIMIZED**: Implemented dual-coverage strategy (unit tests with coverage, integration without)
+  - ✅ **VALIDATED**: All integration tests now use real APIs with `test_mode=False` and `HH_API_KEY`
+  - ✅ **AUTOMATED**: Enhanced validation scripts with comprehensive mock detection patterns
+  - ✅ **UPDATED**: Fixed 12 deprecated `real-api` references to use unified `tox -e integration`
+  - ✅ **COMPLIANT**: Added Agent OS navigation validation to pre-commit hooks per standards
+  - ✅ **IMPROVED**: Extracted multiline YAML scripts to dedicated script files (`scripts/validate-*.sh`)
+  - ✅ **RELEASE READY**: All quality gates operational, zero mock violations confirmed
 - **🚀 MAJOR: Non-Instrumentor Integration Framework**
-  * Implemented comprehensive framework for integrating with non-instrumentor AI frameworks (AWS Strands, custom frameworks)
-  * Added ProxyTracerProvider replacement strategy for better compatibility with frameworks that don't use OpenTelemetry instrumentors
-  * Created provider detection and processor integration modules for automatic framework compatibility
-  * Enhanced error handling system with retry strategies, fallback modes, and graceful degradation
-  * Added 50+ integration and unit tests across 6 test files with mock framework system
-  * Implemented performance benchmarking suite with pytest-benchmark integration
-  * Added real API integration testing with AWS Strands validation and OTLP export verification
-  * Created compatibility matrix testing across Python 3.11-3.13 and multiple framework combinations
-  * Added comprehensive documentation guide for non-instrumentor frameworks with troubleshooting examples
-  * Project parameter restored to required status for OTLP tracing (was briefly optional in pre-release)
+  - Implemented comprehensive framework for integrating with non-instrumentor AI frameworks (AWS Strands, custom frameworks)
+  - Added ProxyTracerProvider replacement strategy for better compatibility with frameworks that don't use OpenTelemetry instrumentors
+  - Created provider detection and processor integration modules for automatic framework compatibility
+  - Enhanced error handling system with retry strategies, fallback modes, and graceful degradation
+  - Added 50+ integration and unit tests across 6 test files with mock framework system
+  - Implemented performance benchmarking suite with pytest-benchmark integration
+  - Added real API integration testing with AWS Strands validation and OTLP export verification
+  - Created compatibility matrix testing across Python 3.11-3.13 and multiple framework combinations
+  - Added comprehensive documentation guide for non-instrumentor frameworks with troubleshooting examples
+  - Project parameter restored to required status for OTLP tracing (was briefly optional in pre-release)
 
 ### Fixed
+
 - **🐛 CRITICAL: ProxyTracerProvider Bug Resolution**
-  * Fixed ProxyTracerProvider detection in otel_tracer.py to properly handle OpenTelemetry's default provider
-  * Removed flawed instrumentors parameter from HoneyHiveTracer.__init__ and .init() methods
-  * Added trace.set_tracer_provider() call to ensure HoneyHive provider becomes global
-  * Resolved issue where detailed LLM traces weren't appearing in HoneyHive (only session data)
-  * Fixed 85+ instances of incorrect instrumentors=[...] pattern across all documentation
-  * Updated all integration examples to use correct two-step initialization pattern
-  * Fixed Anthropic model from claude-3-sonnet-20240229 to claude-3-haiku-20240307
+  - Fixed ProxyTracerProvider detection in otel_tracer.py to properly handle OpenTelemetry's default provider
+  - Removed flawed instrumentors parameter from `HoneyHiveTracer.__init__` and `.init()` methods
+  - Added trace.set_tracer_provider() call to ensure HoneyHive provider becomes global
+  - Resolved issue where detailed LLM traces weren't appearing in HoneyHive (only session data)
+  - Fixed 85+ instances of incorrect instrumentors=[...] pattern across all documentation
+  - Updated all integration examples to use correct two-step initialization pattern
+  - Fixed Anthropic model from claude-3-sonnet-20240229 to claude-3-haiku-20240307
 
 - **🧪 MAJOR: Real API Testing Infrastructure**
-  * Implemented comprehensive real API testing framework with conditional mocking
-  * Unified conftest.py with real_api_credentials and fresh_tracer_environment fixtures
-  * Added new tox environment 'real-api' for integration testing with actual provider APIs
-  * Created test_real_instrumentor_integration_comprehensive.py for end-to-end validation
-  * Removed deprecated HH_PROJECT from CI/CD and added LLM provider API key secrets
-  * Added GitHub Actions job for real API testing with conditional execution
-  * Created env.integration.example template for local testing setup
+  - Implemented comprehensive real API testing framework with conditional mocking
+  - Unified conftest.py with real_api_credentials and fresh_tracer_environment fixtures
+  - Added new tox environment 'real-api' for integration testing with actual provider APIs
+  - Created test_real_instrumentor_integration_comprehensive.py for end-to-end validation
+  - Removed deprecated HH_PROJECT from CI/CD and added LLM provider API key secrets
+  - Added GitHub Actions job for real API testing with conditional execution
+  - Created env.integration.example template for local testing setup
 
 - **📚 COMPREHENSIVE: Documentation Quality Overhaul**
-  * Regenerated all integration guides using corrected templates
-  * Added comprehensive post-mortem documenting ProxyTracerProvider bug and mock creep analysis
-  * Created integration-testing-strategy.rst and real-api-testing.rst documentation
-  * Updated CI/CD documentation to reflect new real API testing capabilities
-  * Enhanced all integration examples with script name visibility for better HoneyHive tracking
+  - Regenerated all integration guides using corrected templates
+  - Added comprehensive post-mortem documenting ProxyTracerProvider bug and mock creep analysis
+  - Created integration-testing-strategy.rst and real-api-testing.rst documentation
+  - Updated CI/CD documentation to reflect new real API testing capabilities
+  - Enhanced all integration examples with script name visibility for better HoneyHive tracking
 
 - **🏗️ ENHANCED: Agent OS Integration**
-  * Added mandatory rule: No new documentation without testing code first
-  * Documented comprehensive testing strategy and lessons learned from mock creep
-  * Created specs for testing strategy, date usage standards, and commit message standards
-  * Updated best practices with multi-layer testing requirements (Unit, Integration, Real API, Lambda)
+  - Added mandatory rule: No new documentation without testing code first
+  - Documented comprehensive testing strategy and lessons learned from mock creep
+  - Created specs for testing strategy, date usage standards, and commit message standards
+  - Updated best practices with multi-layer testing requirements (Unit, Integration, Real API, Lambda)
 
 ### Added
+
 - **🎯 COMPLETE: Compatibility Matrix Framework**
-  * Comprehensive compatibility testing framework with 13 provider tests
-  * Python version support matrix (3.11, 3.12, 3.13) with full validation
-  * Dynamic generation system reducing maintenance burden by 75%
-  * Sphinx documentation integration with optimal user experience
-  * Systematic workaround handling for upstream instrumentor bugs
-  * Agent OS specification with 9 completed tasks and implementation learnings
-  * All 13 compatibility tests passing (100% success rate)
-  * Consumer-focused official documentation with user-friendly metrics
-  * File count optimization (25% reduction: 8→6 non-test files)
-  * Automatic .env file loading and Python version reporting
+  - Comprehensive compatibility testing framework with 13 provider tests
+  - Python version support matrix (3.11, 3.12, 3.13) with full validation
+  - Dynamic generation system reducing maintenance burden by 75%
+  - Sphinx documentation integration with optimal user experience
+  - Systematic workaround handling for upstream instrumentor bugs
+  - Agent OS specification with 9 completed tasks and implementation learnings
+  - All 13 compatibility tests passing (100% success rate)
+  - Consumer-focused official documentation with user-friendly metrics
+  - File count optimization (25% reduction: 8→6 non-test files)
+  - Automatic .env file loading and Python version reporting
 
 - **📚 MAJOR: Documentation Consistency Overhaul**
-  * Complete OpenLLMetry → Traceloop naming consistency (277 references fixed)
-  * Redesigned reference instrumentor table to eliminate maintenance burden
-  * Template system overhaul with proper variable names and cross-references
-  * All integration guides regenerated with consistent naming and fixed references
-  * Zero-maintenance reference design with dynamic cross-references
-  * Future-proof template-driven approach preventing inconsistencies
+  - Complete OpenLLMetry → Traceloop naming consistency (277 references fixed)
+  - Redesigned reference instrumentor table to eliminate maintenance burden
+  - Template system overhaul with proper variable names and cross-references
+  - All integration guides regenerated with consistent naming and fixed references
+  - Zero-maintenance reference design with dynamic cross-references
+  - Future-proof template-driven approach preventing inconsistencies
 
 - **🗂️ MAJOR: Examples Directory Restructure**
-  * Organized provider examples into dedicated integrations/ subdirectory
-  * Removed 6 oversized/redundant example files (39% size reduction: 6,075→3,729 lines)
-  * Eliminated external dependencies (Strands) and development-only files
-  * Fixed deprecated HH_PROJECT references and OpenLLMetry terminology in examples
-  * Consolidated MCP examples to provider-specific implementations (OpenInference/Traceloop)
-  * Improved navigation with clear separation of core vs integration examples
+  - Organized provider examples into dedicated integrations/ subdirectory
+  - Removed 6 oversized/redundant example files (39% size reduction: 6,075→3,729 lines)
+  - Eliminated external dependencies (Strands) and development-only files
+  - Fixed deprecated HH_PROJECT references and OpenLLMetry terminology in examples
+  - Consolidated MCP examples to provider-specific implementations (OpenInference/Traceloop)
+  - Improved navigation with clear separation of core vs integration examples
 
 ### Changed
+
 - **🔧 BREAKING: HH_PROJECT Environment Variable Deprecated**
-  * Removed 55 obsolete HH_PROJECT usage examples from documentation
-  * Project information now automatically derived from API key scope
-  * Maintained backward compatibility with deprecation notices in reference docs
-  * Updated CLI, configuration, and API reference with deprecation status
-  * Eliminated user confusion while preserving complete API documentation
-  * Template system updated to prevent future obsolete examples
+  - Removed 55 obsolete HH_PROJECT usage examples from documentation
+  - Project information now automatically derived from API key scope
+  - Maintained backward compatibility with deprecation notices in reference docs
+  - Updated CLI, configuration, and API reference with deprecation status
+  - Eliminated user confusion while preserving complete API documentation
+  - Template system updated to prevent future obsolete examples
 
 ### Added
+
 - **🚀 REVOLUTIONARY: Ecosystem-Specific Integration Keys**
-  * Implemented unlimited instrumentor ecosystem scalability
-  * New installation pattern: `pip install honeyhive[openinference-openai]`
-  * Future-ready for multiple ecosystems: OpenLLMetry, enterprise, custom
-  * Pattern supports: `openllmetry-openai`, `enterprise-langchain`, etc.
-  * Updated all documentation and examples to new pattern
-  * Enhanced BYOI documentation with ecosystem-specific convenience groups
-  * First SDK with comprehensive instrumentor ecosystem flexibility
+  - Implemented unlimited instrumentor ecosystem scalability
+  - New installation pattern: `pip install honeyhive[openinference-openai]`
+  - Future-ready for multiple ecosystems: OpenLLMetry, enterprise, custom
+  - Pattern supports: `openllmetry-openai`, `enterprise-langchain`, etc.
+  - Updated all documentation and examples to new pattern
+  - Enhanced BYOI documentation with ecosystem-specific convenience groups
+  - First SDK with comprehensive instrumentor ecosystem flexibility
 
 - **🔥 NEW: OpenLLMetry (Traceloop) Instrumentor Support**
-  * Complete OpenLLMetry integration for enhanced LLM observability
-  * Support for all major providers: OpenAI, Anthropic, Google AI, AWS Bedrock, Azure OpenAI, MCP
-  * Enhanced cost tracking and performance monitoring capabilities
-  * Production-optimized instrumentors with detailed token analysis
-  * New installation patterns: `pip install honeyhive[traceloop-openai]`, `pip install honeyhive[traceloop-anthropic]`
-  * Comprehensive examples for each provider with OpenLLMetry
-  * Strategic mixed instrumentor setups (OpenInference + OpenLLMetry)
-  * Complete migration guide from OpenInference to OpenLLMetry
+  - Complete OpenLLMetry integration for enhanced LLM observability
+  - Support for all major providers: OpenAI, Anthropic, Google AI, AWS Bedrock, Azure OpenAI, MCP
+  - Enhanced cost tracking and performance monitoring capabilities
+  - Production-optimized instrumentors with detailed token analysis
+  - New installation patterns: `pip install honeyhive[traceloop-openai]`, `pip install honeyhive[traceloop-anthropic]`
+  - Comprehensive examples for each provider with OpenLLMetry
+  - Strategic mixed instrumentor setups (OpenInference + OpenLLMetry)
+  - Complete migration guide from OpenInference to OpenLLMetry
 
 - **📚 Enhanced Documentation System**
-  * Interactive tabbed documentation for all provider integrations
-  * Comprehensive migration guide with code examples
-  * Updated tutorials with both OpenInference and OpenLLMetry options
-  * Multi-provider integration patterns and best practices
-  * Enhanced installation documentation with instrumentor choice guidance
-  * Formal documentation template system for consistent provider docs
-  * **NEW: Complete documentation quality and structure improvements**
+  - Interactive tabbed documentation for all provider integrations
+  - Comprehensive migration guide with code examples
+  - Updated tutorials with both OpenInference and OpenLLMetry options
+  - Multi-provider integration patterns and best practices
+  - Enhanced installation documentation with instrumentor choice guidance
+  - Formal documentation template system for consistent provider docs
+  - **NEW: Complete documentation quality and structure improvements**
     - Fixed Mermaid diagram dual-theme compatibility for light/dark modes
     - Resolved Firefox-specific rendering issues with black borders and node spacing
     - Flattened TOC hierarchy removing unnecessary nesting levels
@@ -1330,7 +1410,7 @@ No customer-facing changes. Internal CI/release automation improvements only.
     - Applied HoneyHive Mermaid standards across all architecture diagrams
     - Reorganized how-to guide structure with proper content placement
     - Achieved zero Sphinx build warnings with comprehensive validation
-  * **NEW: Enhanced Pre-commit Quality Gates**
+  - **NEW: Enhanced Pre-commit Quality Gates**
     - Fixed changelog and documentation update checks to trigger on all significant changes
     - Expanded file pattern matching to include documentation, configuration, and tooling files
     - Improved logic to require changelog updates for major documentation restructuring
@@ -1338,70 +1418,74 @@ No customer-facing changes. Internal CI/release automation improvements only.
     - Updated Agent OS rules (.cursorrules, best-practices.md, tech-stack.md) to document enhanced quality gates
 
 ### Changed
+
 - **🔄 BREAKING: Integration Key Migration**
-  * OLD: `pip install honeyhive[openai]` → NEW: `pip install honeyhive[openinference-openai]`
-  * OLD: `pip install honeyhive[langchain]` → NEW: `pip install honeyhive[openinference-langchain]`
-  * OLD: `pip install honeyhive[all-integrations]` → NEW: `pip install honeyhive[all-openinference]`
-  * Pattern enables future multi-ecosystem support
-  * All installation commands now use ecosystem-specific keys
-  * Documentation and examples updated throughout
+  - OLD: `pip install honeyhive[openai]` → NEW: `pip install honeyhive[openinference-openai]`
+  - OLD: `pip install honeyhive[langchain]` → NEW: `pip install honeyhive[openinference-langchain]`
+  - OLD: `pip install honeyhive[all-integrations]` → NEW: `pip install honeyhive[all-openinference]`
+  - Pattern enables future multi-ecosystem support
+  - All installation commands now use ecosystem-specific keys
+  - Documentation and examples updated throughout
 
 - **Compatibility testing infrastructure**
-  * Backward compatibility test suite for API changes
-  * Migration analysis tests for main branch patterns
-  * Automated compatibility validation in CI/CD
+  - Backward compatibility test suite for API changes
+  - Migration analysis tests for main branch patterns
+  - Automated compatibility validation in CI/CD
 - **Enhanced coverage standards and enforcement**
-  * Project-wide coverage requirement increased to 80% (from 70%)
-  * Individual file coverage goal established at 70% minimum
-  * Comprehensive coverage configuration in pyproject.toml
-  * Updated CI/CD enforcement across all test environments
-  * Documentation and Agent OS standards updated
+  - Project-wide coverage requirement increased to 80% (from 70%)
+  - Individual file coverage goal established at 70% minimum
+  - Comprehensive coverage configuration in pyproject.toml
+  - Updated CI/CD enforcement across all test environments
+  - Documentation and Agent OS standards updated
 - **Comprehensive CLI test suite with 58 tests (37% → 89% coverage)**
-  * Command structure testing for all CLI groups and help text (11 tests)
-  * Configuration management commands with all output formats (8 tests)
-  * Tracing operations with proper mocking and error handling (12 tests)
-  * API client interactions with request/response mocking (8 tests)
-  * System monitoring and performance benchmarking (8 tests)
-  * Resource cleanup and error condition testing (10 tests)
-  * Environment variable integration and validation (4 tests)
-  * Following Click testing best practices with CliRunner
+  - Command structure testing for all CLI groups and help text (11 tests)
+  - Configuration management commands with all output formats (8 tests)
+  - Tracing operations with proper mocking and error handling (12 tests)
+  - API client interactions with request/response mocking (8 tests)
+  - System monitoring and performance benchmarking (8 tests)
+  - Resource cleanup and error condition testing (10 tests)
+  - Environment variable integration and validation (4 tests)
+  - Following Click testing best practices with CliRunner
 - Simplified HoneyHiveTracer initialization API - project parameter now optional
 - Automatic project derivation from API key scope
 - Full backward compatibility for existing project parameter usage
 - Enhanced documentation with simplified API examples across all tutorials
 - Comprehensive connection pool test suite with 68 tests (35% → 88% coverage)
-  * HTTP client mocking for all methods (GET, POST, PUT, DELETE, PATCH)
-  * Concurrent access and thread-safety validation
-  * Async functionality with proper context managers
-  * Error conditions and network failure simulation
-  * Connection health validation and timeout scenarios
-  * Pool statistics and monitoring verification
-  * Global pool management testing
+  - HTTP client mocking for all methods (GET, POST, PUT, DELETE, PATCH)
+  - Concurrent access and thread-safety validation
+  - Async functionality with proper context managers
+  - Error conditions and network failure simulation
+  - Connection health validation and timeout scenarios
+  - Pool statistics and monitoring verification
+  - Global pool management testing
 - Agent OS rule for mandatory correct test count reporting format
 
 ### Changed
+
 - **Repository structure cleanup and organization**
-  * Removed obsolete documentation files (AWS_SSO, BEDROCK_ACCESS, etc.)
-  * Cleaned up build artifacts and stale coverage files
-  * Reorganized test structure with dedicated compatibility directories
+  - Removed obsolete documentation files (AWS_SSO, BEDROCK_ACCESS, etc.)
+  - Cleaned up build artifacts and stale coverage files
+  - Reorganized test structure with dedicated compatibility directories
 - HoneyHiveTracer.init() and constructor now accept optional project parameter
 - Project resolution moved to backend based on API key scope
 - Updated all documentation examples to show simplified API first
 - Span processor gracefully handles missing project in baggage context
 
 ### Fixed
+
 - **CLI test implementation following Click testing best practices**
-  * Used click.testing.CliRunner for proper CLI command testing
-  * Applied correct module-level mocking patterns (@patch('honeyhive.cli.main.HoneyHive'))
-  * Implemented proper context manager mocking for tracer spans
-  * Fixed assertion patterns to match actual CLI output formats
-  * Resolved JSON validation error handling in edge cases
+  - Used click.testing.CliRunner for proper CLI command testing
+  - Applied correct module-level mocking patterns (@patch('honeyhive.cli.main.HoneyHive'))
+  - Implemented proper context manager mocking for tracer spans
+  - Fixed assertion patterns to match actual CLI output formats
+  - Resolved JSON validation error handling in edge cases
 - Lint issues in test_mcp_integration.py (achieved perfect 10.00/10 score)
-  * Removed duplicate Mock import (W0404)
-  * Improved dictionary iteration style (C0201)  
-  * Added proper __init__ method for attribute initialization (W0201)
+  - Removed duplicate Mock import (W0404)
+  - Improved dictionary iteration style (C0201)
+  - Added proper `__init__` method for attribute initialization (W0201)
 
 ### Technical Details
+
 - Zero breaking changes - all existing code continues to work
 - **All 972 tests passing (853 unit + 119 integration)**
 - Perfect lint score: 10.00/10 (pylint + mypy)
@@ -1414,10 +1498,10 @@ No customer-facing changes. Internal CI/release automation improvements only.
 - Added **kwargs support for future extensibility
 
 ### Migration Guide
+
 - NEW API: `HoneyHiveTracer.init(api_key='...')` - project derived automatically
 - EXISTING API: `HoneyHiveTracer.init(api_key='...', project='...')` - still supported
 - No immediate action required for existing users
-
 
 # Changelog
 
@@ -1431,6 +1515,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+
 - **CI/CD Optimization**: ✅ COMPLETE - Added path-based detection logic to GitHub Actions workflows to prevent unnecessary runs on Agent OS specification changes (2025-09-05)
   - Updated `tox-full-suite.yml`, `docs-deploy.yml`, `docs-preview.yml`, `docs-validation.yml`, and `lambda-tests.yml` with `paths-ignore` filters
   - Excluded `.agent-os/**` directory from triggering workflows (Agent OS specifications no longer cause unnecessary CI runs)
@@ -1446,6 +1531,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 #### Enhanced Documentation System (2025-09-04)
+
 - **CSS-Based Dual-Theme System for Mermaid Sequence Diagrams**: Implemented automatic light/dark theme detection using `@media (prefers-color-scheme: dark)` with targeted CSS selectors for participant text (white on blue backgrounds) and message text (black in light mode, white in dark mode)
 - **Strict CHANGELOG Enforcement**: Removed 24-hour grace period from changelog update checks to ensure every significant change is documented immediately in high-frequency development environments
 - **MCP (Model Context Protocol) Integration (2025-09-03)**: Complete support for OpenInference MCP instrumentor
@@ -1479,7 +1565,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **GitHub Pages Configuration Fix (2025-09-03)**: Resolved 404 errors across entire documentation site
   - Fixed GitHub Pages deployment configuration (legacy branch → workflow deployment)
   - Validated all 32 major navigation links working correctly
-  - Restored full accessibility to https://honeyhiveai.github.io/python-sdk/
+  - Restored full accessibility to <https://honeyhiveai.github.io/python-sdk/>
 - **Mandatory Post-Deploy Navigation Validation (2025-09-03)**: Automatic validation after every documentation deployment
   - Self-updating validation system that discovers all documentation pages automatically
   - GitHub Actions workflow validates navigation on every deployment and push to main
@@ -1506,12 +1592,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Established validation checklist for tutorial integration coverage
 
 ### Breaking Changes
+
 - **Modernized Architecture**: `HoneyHiveTracer` now supports multiple independent instances
   - **`HoneyHiveTracer.init()` method maintained for backwards compatibility** - this is the preferred pattern
   - Direct constructor usage also available: `HoneyHiveTracer(api_key="key", project="project")`
   - Each initialization creates a new independent tracer instance
 
 ### Added
+
 - **Zero Failing Tests Policy**: Comprehensive test quality enforcement framework
   - **Anti-Skipping Rules**: AI assistants must fix failing tests, never skip them
   - **Policy Documentation**: Updated `.cursorrules`, best practices, and Agent OS specifications
@@ -1568,7 +1656,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `docs-versioned.yml`: Manage versioned documentation using mike
 - **Comprehensive Code Quality Enforcement**: Pre-commit hooks with Black, isort, pylint, mypy, and yamllint
 - **Mandatory Documentation Updates**: Pre-commit checks ensuring CHANGELOG.md and feature docs are updated
-- **Development Setup Automation**: `./scripts/setup-dev.sh` for one-time development environment configuration  
+- **Development Setup Automation**: `./scripts/setup-dev.sh` for one-time development environment configuration
 - **Documentation Synchronization Checks**: Automated validation of feature documentation consistency
 - **AI Assistant Compliance**: Specific requirements for AI assistants to update documentation before commits
 - **Release Candidate Workflow Fix**: Removed quotes from 'on' trigger to ensure GitHub Actions recognizes workflow_dispatch
@@ -1665,6 +1753,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Real-time evaluation monitoring and debugging tools
 
 ### Changed
+
 - **Architecture**: Modern multi-instance architecture supporting multiple independent tracers
 - **Initialization**: `HoneyHiveTracer.init()` remains the preferred method, direct constructor also available
 - **Session Management**: Automatic file-based session naming
@@ -1685,6 +1774,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Manual release candidate testing for comprehensive pre-deployment validation
 
 ### Fixed
+
 - **Lambda Performance Thresholds**: Adjusted performance assertions for CI environment compatibility
   - Updated cold start performance thresholds from 300ms to 800ms for tracer initialization
   - Updated SDK overhead thresholds from 500ms to 1000ms for CI environments
@@ -1711,17 +1801,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enhanced statistical significance with bulk operation testing
 
 ### Deprecated
+
 - **Global Tracer Usage**: `@trace` decorator without explicit tracer instance
   - Still functional but not recommended for new code
   - Use `@trace(tracer=instance)` for better multi-instance support
 
 ### Removed
+
 - **Deprecation Warnings**: Replaced with direct error messages or guidance
 - **Obsolete Performance Tests**: Removed superseded SDK overhead tests
   - Eliminated `test_comprehensive_sdk_overhead` replaced by optimal methodology
   - Cleaned up unused helper methods and redundant test code
 
 ### Technical Details
+
 - **Coverage Threshold**: Increased to 70% with enforcement
 - **Test Framework**: Enhanced pytest configuration with new markers and Lambda testing
 - **Quality Tools**: Black, isort, pylint, and mypy integration with Agent OS standards
@@ -1737,6 +1830,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2024-01-XX
 
 ### Added
+
 - Initial release
 - Core SDK functionality
 - OpenTelemetry integration
@@ -1748,6 +1842,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Test suite
 
 ### Features
+
 - Complete API client implementation
 - OpenTelemetry tracer with custom span processor
 - Session and event API operations
@@ -1760,6 +1855,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Type safety with Pydantic models
 
 ### Documentation
+
 - Comprehensive README with examples
 - API reference documentation
 - Usage examples and tutorials
@@ -1767,6 +1863,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Contributing guidelines
 
 ### Testing
+
 - Unit tests for all components
 - Integration test framework
 - Multi-Python version testing

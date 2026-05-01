@@ -1,0 +1,47 @@
+/* Custom palette overrides for HoneyHive Python SDK reference docs.
+ *
+ * Material exposes its theme colors as CSS custom properties scoped by
+ * `[data-md-color-primary=...]` / `[data-md-color-accent=...]` selectors.
+ * Setting `accent: custom` (or `primary: custom`) in properdocs.yml tells
+ * Material to look for a `custom` selector here.
+ *
+ * Brand accent: burnt orange (#b45f06). Used for links, hover states,
+ * focused inputs, "copy" button highlights, etc.
+ */
+
+:root,
+[data-md-color-accent="custom"] {
+  --md-accent-fg-color: #b45f06;
+  --md-accent-fg-color--transparent: rgba(180, 95, 6, 0.1);
+  --md-accent-bg-color: #ffffff;
+  --md-accent-bg-color--light: rgba(255, 255, 255, 0.7);
+}
+
+/* Override the global typeset link color in light mode only. Material
+ * uses `--md-typeset-a-color` for all <a> tags in body content AND for
+ * the active sidebar nav item (`.md-nav__link--active`). It defaults
+ * to the primary color, which is `white` here — Material falls back
+ * to blue when the primary is too light to be a readable link color.
+ * Pinning this to the brand accent gives us burnt-orange links in
+ * light mode. Dark mode (`slate`) is intentionally left alone:
+ * burnt-orange on Material's slate background sits at the WCAG-AA
+ * contrast threshold, so we let Material's default (contrast-safe)
+ * link color apply there. */
+[data-md-color-scheme="default"] {
+  --md-typeset-a-color: #b45f06;
+}
+
+/* Navbar site title defaults to font-weight: 700. The HoneyHive logo
+ * already carries the brand weight; the adjacent site_name text reads
+ * better at the default weight. The first `.md-header__topic` is the
+ * site title (subsequent ones are page-title breadcrumbs). */
+.md-header__topic:first-child {
+  font-weight: normal;
+}
+
+/* Hide the GitHub stars/forks/version badges that Material fetches and
+ * renders next to the repo link. The link itself stays — only the
+ * dynamic "facts" are suppressed. */
+.md-source__facts {
+  display: none;
+}

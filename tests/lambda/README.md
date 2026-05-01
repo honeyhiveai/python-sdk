@@ -111,6 +111,3 @@ Tests run automatically on:
 
 See `.github/workflows/lambda-tests.yml` for full pipeline.
 
-## Documentation
-
-Full documentation: [Lambda Testing Strategy](../../docs/LAMBDA_TESTING.rst)

@@ -410,7 +410,7 @@ class TracerOperationsMixin(TracerOperationsInterface):
         try:
             return str(value)
         except Exception as e:
-            # Graceful degradation following Agent OS standards - never crash host
+            # Graceful degradation - never crash host
             safe_log(
                 self,
                 "debug",
@@ -428,7 +428,7 @@ class TracerOperationsMixin(TracerOperationsInterface):
             # Independent providers not affected by global span creation disabling
             return False
         except Exception as e:
-            # Graceful degradation following Agent OS standards - never crash host
+            # Graceful degradation - never crash host
             safe_log(
                 self,
                 "warning",
@@ -822,7 +822,7 @@ class TracerOperationsMixin(TracerOperationsInterface):
             if baggage_session:
                 return str(baggage_session)
         except Exception as e:
-            # Graceful degradation following Agent OS standards - never crash host
+            # Graceful degradation - never crash host
             safe_log(
                 self,
                 "debug",

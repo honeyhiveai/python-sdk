@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, Optional, cast
 from opentelemetry import baggage, context, trace
 from opentelemetry.context import Context
 
+from ...models import UpdateEventRequest
 from ...utils.logger import safe_log
 from ..lifecycle import force_flush_tracer, shutdown_tracer
 from ..processing.context import get_current_baggage
@@ -231,8 +232,18 @@ class TracerContextMixin(TracerContextInterface):
                 # Update session via EventsAPI (sessions are events in the backend)
                 if self.client is not None and hasattr(self.client, "events"):
                     # Build update data dict with event_id and update params
-                    update_data = {"event_id": target_session_id, **update_params}
-                    self.client.events.update(data=update_data)
+                    self.client.events.update(
+                        data=UpdateEventRequest(
+                            event_id=target_session_id,
+                            metadata=update_params.get("metadata"),
+                            feedback=update_params.get("feedback"),
+                            metrics=update_params.get("metrics"),
+                            outputs=update_params.get("outputs"),
+                            config=update_params.get("config"),
+                            user_properties=update_params.get("user_properties"),
+                            duration=update_params.get("duration"),
+                        )
+                    )
                 else:
                     safe_log(self, "warning", "Events API not available for update")
 
@@ -667,7 +678,7 @@ class TracerContextMixin(TracerContextInterface):
             if baggage_session:
                 return baggage_session
         except Exception as e:
-            # Graceful degradation following Agent OS standards - never crash host
+            # Graceful degradation - never crash host
             safe_log(
                 self,
                 "debug",
@@ -985,7 +996,17 @@ class TracerContextMixin(TracerContextInterface):
 
             # Call the Events API to update the event
             if hasattr(self.client, "events") and hasattr(self.client.events, "update"):
-                self.client.events.update(data=update_data)
+                self.client.events.update(
+                    data=UpdateEventRequest(
+                        event_id=event_id,
+                        metadata=update_data.get("metadata"),
+                        feedback=update_data.get("feedback"),
+                        metrics=update_data.get("metrics"),
+                        outputs=update_data.get("outputs"),
+                        config=update_data.get("config"),
+                        user_properties=update_data.get("user_properties"),
+                    )
+                )
                 safe_log(
                     self,
                     "debug",
@@ -1019,7 +1040,7 @@ class TracerContextMixin(TracerContextInterface):
         try:
             return trace.get_current_span()
         except Exception as e:
-            # Graceful degradation following Agent OS standards - never crash host
+            # Graceful degradation - never crash host
             safe_log(
                 self,
                 "debug",

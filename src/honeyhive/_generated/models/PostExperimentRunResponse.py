@@ -1,15 +1,25 @@
-from typing import *
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
+
+from .ExperimentRunObject import ExperimentRunObject
+
+__all__ = ["PostExperimentRunResponse"]
 
 
 class PostExperimentRunResponse(BaseModel):
     """
     PostExperimentRunResponse model
+        Response for POST /runs
     """
 
-    model_config = {"populate_by_name": True, "validate_assignment": True}
+    model_config = {
+        "populate_by_name": True,
+        "validate_assignment": True,
+        "extra": "allow",
+        "protected_namespaces": (),
+    }
 
-    evaluation: Optional[Any] = Field(validation_alias="evaluation", default=None)
+    evaluation: ExperimentRunObject = Field(validation_alias="evaluation")
 
     run_id: str = Field(validation_alias="run_id")

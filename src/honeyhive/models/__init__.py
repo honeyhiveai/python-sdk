@@ -9,6 +9,13 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
+# LegacyEvent is the typed Pydantic model for events returned by the v1 events
+# export endpoint. It has `extra="allow"` so any backend fields not yet in the
+# OpenAPI spec still flow through unchanged, and exposes every field tests and
+# customers access (event_id, event_name, metadata, session_id, project_id,
+# inputs, outputs, source, event_type, start_time, end_time, duration, etc.).
+from honeyhive.models.models import LegacyEvent
+
 
 class EventType(str, Enum):
     """Event types for tracing decorators.
@@ -158,11 +165,23 @@ class EventExportRequest(BaseModel):
 
 
 class EventExportResponse(BaseModel):
-    """Response model for exported events."""
+    """Response model for exported events.
+
+    The ``events`` list returns typed :class:`LegacyEvent` models. Pydantic
+    coerces raw dicts returned by the backend into ``LegacyEvent`` at
+    construction time; ``extra="allow"`` on ``LegacyEvent`` preserves any
+    backend fields not yet declared in the OpenAPI spec.
+
+    Migration from dict-based access::
+
+        response.events[0]["event_id"]       # old
+        response.events[0].event_id          # new
+        response.events[0].model_dump()      # escape hatch returning dict
+    """
 
     model_config = {"populate_by_name": True}
 
-    events: List[Dict[str, Any]] = Field(
+    events: List[LegacyEvent] = Field(
         default_factory=list, description="List of exported events"
     )
     total_events: int = Field(
@@ -173,11 +192,12 @@ class EventExportResponse(BaseModel):
 
 
 # Re-export all generated Pydantic models
-from honeyhive._generated.models import (
+from honeyhive.models.models import (
     AddDatapointsResponse,
     AddDatapointsToDatasetRequest,
     BatchCreateDatapointsRequest,
     BatchCreateDatapointsResponse,
+    ConfigurationItem,
     CreateConfigurationRequest,
     CreateConfigurationResponse,
     CreateDatapointRequest,
@@ -192,13 +212,10 @@ from honeyhive._generated.models import (
     DeleteDatapointResponse,
     DeleteDatasetQuery,
     DeleteDatasetResponse,
-    DeleteEventParams,
-    DeleteEventResponse,
     DeleteExperimentRunParams,
     DeleteExperimentRunResponse,
     DeleteMetricQuery,
     DeleteMetricResponse,
-    DeleteSessionResponse,
     Event,
     GetConfigurationsQuery,
     GetConfigurationsResponse,
@@ -207,12 +224,10 @@ from honeyhive._generated.models import (
     GetDatapointsQuery,
     GetDatapointsResponse,
     GetDatasetsResponse,
-    GetEventsBySessionIdParams,
-    GetEventsBySessionIdResponse,
-    GetEventsChartQuery,
-    GetEventsChartResponse,
     GetEventsQuery,
     GetEventsResponse,
+    GetEventsSchemaQuery,
+    GetEventsSchemaResponse,
     GetExperimentRunCompareEventsQuery,
     GetExperimentRunCompareParams,
     GetExperimentRunCompareQuery,
@@ -226,7 +241,10 @@ from honeyhive._generated.models import (
     GetExperimentRunsSchemaResponse,
     GetMetricsQuery,
     GetMetricsResponse,
-    GetSessionResponse,
+    MetricItem,
+    Pagination,
+    PostEventBatchRequest,
+    PostEventBatchResponse,
     PostEventRequest,
     PostEventResponse,
     PostExperimentRunRequest,
@@ -239,6 +257,7 @@ from honeyhive._generated.models import (
     RemoveDatapointResponse,
     RunMetricRequest,
     RunMetricResponse,
+    StartSessionRequest,
     TODOSchema,
     UpdateConfigurationRequest,
     UpdateConfigurationResponse,
@@ -247,12 +266,14 @@ from honeyhive._generated.models import (
     UpdateDatapointResponse,
     UpdateDatasetRequest,
     UpdateDatasetResponse,
+    UpdateEventRequest,
     UpdateMetricRequest,
     UpdateMetricResponse,
 )
 
 __all__ = [
     # Configuration models
+    "ConfigurationItem",
     "CreateConfigurationRequest",
     "CreateConfigurationResponse",
     "DeleteConfigurationResponse",
@@ -288,17 +309,15 @@ __all__ = [
     "UpdateDatasetRequest",
     "UpdateDatasetResponse",
     # Event models
-    "DeleteEventParams",
-    "DeleteEventResponse",
     "Event",
-    "GetEventsBySessionIdParams",
-    "GetEventsBySessionIdResponse",
-    "GetEventsChartQuery",
-    "GetEventsChartResponse",
     "GetEventsQuery",
     "GetEventsResponse",
+    "LegacyEvent",
+    "PostEventBatchRequest",
+    "PostEventBatchResponse",
     "PostEventRequest",
     "PostEventResponse",
+    "UpdateEventRequest",
     # Experiment models
     "DeleteExperimentRunParams",
     "DeleteExperimentRunResponse",
@@ -313,6 +332,8 @@ __all__ = [
     "GetExperimentRunsResponse",
     "GetExperimentRunsSchemaQuery",
     "GetExperimentRunsSchemaResponse",
+    "GetEventsSchemaQuery",
+    "GetEventsSchemaResponse",
     "PostExperimentRunRequest",
     "PostExperimentRunResponse",
     "PutExperimentRunRequest",
@@ -324,16 +345,17 @@ __all__ = [
     "DeleteMetricResponse",
     "GetMetricsQuery",
     "GetMetricsResponse",
+    "MetricItem",
     "RunMetricRequest",
     "RunMetricResponse",
     "UpdateMetricRequest",
     "UpdateMetricResponse",
     # Session models
-    "DeleteSessionResponse",
-    "GetSessionResponse",
     "PostSessionRequest",
     "PostSessionStartResponse",
+    "StartSessionRequest",
     # Other
+    "Pagination",
     "TODOSchema",
     # Enums
     "EventType",

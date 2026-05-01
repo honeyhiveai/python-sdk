@@ -9,7 +9,7 @@ TRUE integration tests (no SDK mocks) that validate:
 - Real config serialization
 
 Reference: INTEGRATION_TEST_INVENTORY_AND_GAP_ANALYSIS.md Phase 1 Critical Tests
-Standards: .agent-os/standards/testing/integration-testing.md
+
 
 HARD RULE: NO MOCKS for SDK code - only mock external environment variables.
 """

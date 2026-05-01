@@ -3,7 +3,7 @@
 This module tests the HoneyHive OTLP exporter functionality including
 initialization, span export, error handling, and lifecycle management.
 
-This module follows Agent OS testing standards with proper type annotations,
+This module follows testing standards with proper type annotations,
 pylint compliance, and comprehensive coverage targeting 95%+.
 
 NOTE: Tests temporarily skipped - test expectations don't match current implementation.
@@ -35,7 +35,7 @@ from honeyhive.tracer.processing.otlp_session import OTLPSessionConfig
 TEST_OTLP_ENDPOINT = "https://test.example.com/opentelemetry/v1/traces"
 
 
-# Standard fixtures following Agent OS testing standards
+# Standard fixtures
 @pytest.fixture
 def mock_tracer() -> Mock:
     """Create a fresh mock tracer for each test.
@@ -1000,6 +1000,173 @@ class TestOTLPJSONExporter:
         # Assert
         assert result == SpanExportResult.SUCCESS
         mock_session.post.assert_not_called()
+
+
+class TestOTLPJSONExporterAnyValueMapping:
+    """Verify native-type preservation in OTLP AnyValue encoding (HHAI-4935)."""
+
+    def test_string_attribute_preserved_as_string(self) -> None:
+        assert OTLPJSONExporter._to_otlp_any_value("hello") == {"stringValue": "hello"}
+
+    def test_int_attribute_preserved_as_int(self) -> None:
+        # Integers must serialize as intValue (not stringified) so the backend
+        # stores them as numbers — this is the primary bug from HHAI-4935.
+        assert OTLPJSONExporter._to_otlp_any_value(42) == {"intValue": 42}
+
+    def test_large_int_preserved_as_int(self) -> None:
+        assert OTLPJSONExporter._to_otlp_any_value(9223372036854775807) == {
+            "intValue": 9223372036854775807
+        }
+
+    def test_float_attribute_preserved_as_double(self) -> None:
+        assert OTLPJSONExporter._to_otlp_any_value(3.14) == {"doubleValue": 3.14}
+
+    def test_non_finite_floats_fall_back_to_string(self) -> None:
+        # NaN/Inf serialize to non-standard JSON tokens that the Go backend
+        # rejects outright, failing the whole batch. Stringify them instead
+        # so they land (matching the pre-fix behavior for this one case).
+        assert OTLPJSONExporter._to_otlp_any_value(float("nan")) == {
+            "stringValue": "nan"
+        }
+        assert OTLPJSONExporter._to_otlp_any_value(float("inf")) == {
+            "stringValue": "inf"
+        }
+        assert OTLPJSONExporter._to_otlp_any_value(float("-inf")) == {
+            "stringValue": "-inf"
+        }
+
+    def test_non_finite_float_payload_is_valid_json(self) -> None:
+        # Guard against regressing into NaN/Infinity tokens in the wire JSON.
+        import json as _json
+
+        payload = OTLPJSONExporter._to_otlp_any_value(float("nan"))
+        serialized = _json.dumps(payload, allow_nan=False)
+        assert "NaN" not in serialized and "Infinity" not in serialized
+
+    def test_bool_attribute_preserved_as_bool(self) -> None:
+        # bool is a subclass of int in Python; the bool check must come first
+        # or True would erroneously serialize as intValue 1.
+        assert OTLPJSONExporter._to_otlp_any_value(True) == {"boolValue": True}
+        assert OTLPJSONExporter._to_otlp_any_value(False) == {"boolValue": False}
+
+    def test_bytes_attribute_falls_back_to_string(self) -> None:
+        # OTel Python attribute spec doesn't include bytes; if one sneaks
+        # through, we stringify rather than crash.
+        assert OTLPJSONExporter._to_otlp_any_value(b"abc") == {"stringValue": "b'abc'"}
+
+    def test_list_attribute_recurses(self) -> None:
+        assert OTLPJSONExporter._to_otlp_any_value([1, 2, 3]) == {
+            "arrayValue": {
+                "values": [
+                    {"intValue": 1},
+                    {"intValue": 2},
+                    {"intValue": 3},
+                ]
+            }
+        }
+
+    def test_tuple_attribute_treated_as_array(self) -> None:
+        assert OTLPJSONExporter._to_otlp_any_value(("a", "b")) == {
+            "arrayValue": {
+                "values": [
+                    {"stringValue": "a"},
+                    {"stringValue": "b"},
+                ]
+            }
+        }
+
+    def test_unknown_type_falls_back_to_string(self) -> None:
+        class Custom:
+            def __str__(self) -> str:
+                return "custom"
+
+        assert OTLPJSONExporter._to_otlp_any_value(Custom()) == {
+            "stringValue": "custom"
+        }
+
+    def test_key_values_builder_returns_empty_for_none(self) -> None:
+        assert OTLPJSONExporter._to_otlp_key_values(None) == []
+        assert OTLPJSONExporter._to_otlp_key_values({}) == []
+
+    def test_key_values_builder_preserves_types(self) -> None:
+        result = OTLPJSONExporter._to_otlp_key_values(
+            {"count": 42, "name": "foo", "ok": True, "ratio": 0.5}
+        )
+        by_key = {kv["key"]: kv["value"] for kv in result}
+        assert by_key == {
+            "count": {"intValue": 42},
+            "name": {"stringValue": "foo"},
+            "ok": {"boolValue": True},
+            "ratio": {"doubleValue": 0.5},
+        }
+
+    @patch("honeyhive.tracer.processing.otlp_exporter.requests.Session")
+    def test_span_attributes_emit_typed_any_values(
+        self, mock_session_class: Mock, mock_tracer: Mock
+    ) -> None:
+        """End-to-end: a span with mixed-type attributes must serialize with
+        the correct AnyValue variants in the outgoing payload."""
+        mock_session = Mock()
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.text = ""
+        mock_session.post.return_value = mock_response
+        mock_session_class.return_value = mock_session
+
+        span = Mock(spec=ReadableSpan)
+        span.name = "typed_attrs_span"
+        span.context = Mock()
+        span.context.trace_id = 0x1234567890ABCDEF1234567890ABCDEF
+        span.context.span_id = 0x1234567890ABCDEF
+        span.parent = None
+        span.kind = Mock()
+        span.kind.name = "INTERNAL"
+        span.start_time = 1_000_000_000
+        span.end_time = 2_000_000_000
+        span.status = Mock()
+        span.status.status_code = Mock()
+        span.status.status_code.name = "OK"
+        span.status.description = None
+        span.attributes = {
+            "attr.int": 42,
+            "attr.float": 3.14,
+            "attr.bool": True,
+            "attr.string": "hello",
+        }
+        span.events = []
+        span.resource = Mock()
+        span.resource.attributes = {"service.name": "svc", "replicas": 3}
+        span.instrumentation_scope = None
+
+        exporter = OTLPJSONExporter(TEST_OTLP_ENDPOINT, tracer_instance=mock_tracer)
+
+        result = exporter.export([span])
+
+        assert result == SpanExportResult.SUCCESS
+        posted_body = mock_session.post.call_args[1]["data"]
+        import json as _json
+
+        payload = _json.loads(posted_body)
+        resource_span = payload["resourceSpans"][0]
+
+        # Resource attributes preserve native types.
+        resource_attrs = {
+            kv["key"]: kv["value"] for kv in resource_span["resource"]["attributes"]
+        }
+        assert resource_attrs == {
+            "service.name": {"stringValue": "svc"},
+            "replicas": {"intValue": 3},
+        }
+
+        # Span attributes preserve native types (the HHAI-4935 regression).
+        span_payload = resource_span["scopeSpans"][0]["spans"][0]
+        span_attrs = {kv["key"]: kv["value"] for kv in span_payload["attributes"]}
+        assert span_attrs == {
+            "attr.int": {"intValue": 42},
+            "attr.float": {"doubleValue": 3.14},
+            "attr.bool": {"boolValue": True},
+            "attr.string": {"stringValue": "hello"},
+        }
 
 
 class TestHoneyHiveOTLPExporterProtocol:

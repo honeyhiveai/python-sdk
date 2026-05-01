@@ -501,7 +501,7 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
         try:
             self._instance_lock.release()
         except Exception as e:
-            # Graceful degradation following Agent OS standards - never crash host app
+            # Graceful degradation - never crash host app
             safe_log(
                 self,
                 "debug",
@@ -712,7 +712,7 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
         try:
             return str(value)
         except Exception as e:
-            # Graceful degradation following Agent OS standards - never crash host app
+            # Graceful degradation - never crash host app
             safe_log(
                 self,
                 "debug",

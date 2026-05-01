@@ -1,16 +1,24 @@
-from typing import *
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
 from .AbsoluteDateRange import AbsoluteDateRange
 
+__all__ = ["GetExperimentRunsQuery"]
+
 
 class GetExperimentRunsQuery(BaseModel):
     """
     GetExperimentRunsQuery model
+        Query parameters for GET /runs
     """
 
-    model_config = {"populate_by_name": True, "validate_assignment": True}
+    model_config = {
+        "populate_by_name": True,
+        "validate_assignment": True,
+        "extra": "allow",
+        "protected_namespaces": (),
+    }
 
     dataset_id: Optional[str] = Field(validation_alias="dataset_id", default=None)
 

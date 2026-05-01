@@ -352,9 +352,9 @@ def request(
 
         request_headers = {
             "Authorization": f"Bearer {api_key}",
-            "hh-sdk-version": sdk_version,
-            "hh-sdk-language": "python",
-            "hh-sdk-package": "honeyhive",
+            "hh-client-version": sdk_version,
+            "hh-client-language": "python",
+            "hh-client-package": "honeyhive-cli",
         }
         if headers:
             try:

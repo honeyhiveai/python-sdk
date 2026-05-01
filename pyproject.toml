@@ -25,16 +25,17 @@ classifiers = [
 
 dependencies = [
     "httpx>=0.24.0",
-    "opentelemetry-api>=1.20.0",
-    "opentelemetry-sdk>=1.20.0",
-    "opentelemetry-exporter-otlp-proto-http>=1.20.0",
+    "opentelemetry-api>=1.41.0",
+    "opentelemetry-sdk>=1.41.0",
+    "opentelemetry-exporter-otlp-proto-http>=1.41.0",
     "wrapt>=1.14.0",
     "pydantic>=2.0.0",
     "pydantic-settings>=2.0.0",
     "python-dotenv>=1.0.0",
+    "typing-extensions>=4.5.0",
     "click>=8.0.0",
     "pyyaml>=6.0",
-    "rich>=13.0.0",
+    "rich>=13.9.4",
 ]
 
 [project.optional-dependencies]
@@ -53,19 +54,43 @@ dev = [
     "typeguard>=4.0.0",
     "psutil>=5.9.0",
     "yamllint>=1.37.0",
-    "requests>=2.31.0",  # For docs navigation validation
-    "beautifulsoup4>=4.12.0",  # For docs navigation validation
     "openapi-python-generator>=2.1.0",  # For SDK generation (pydantic models + client)
     "docker>=7.0.0",  # For Lambda container tests
-    "build>=1.0.0",  # For building packages
+    "build>=1.4.2",  # For building packages
     "hatchling>=1.18.0",  # Build backend
 ]
 
-# Documentation
+# Documentation dependencies (properdocs + mkdocstrings, AST-based extraction via griffe).
+# Pinned with `>=` to keep the docs build reproducible-ish; bump on demand.
+#
+# We use ProperDocs (https://properdocs.org) instead of MkDocs upstream. ProperDocs is a
+# community fork of MkDocs 1.6 created in March 2026, after upstream pivoted to a
+# "MkDocs 2" rewrite that breaks the existing plugin/theme ecosystem we rely on.
+# ProperDocs ships a compat shim so the standard `mkdocs-*` plugins below
+# (mkdocstrings, gen-files, literate-nav, section-index, material) work unchanged.
+# Site config lives in properdocs.yml (ProperDocs's preferred name; mkdocs.yml is
+# still accepted as a fallback).
+#
+# Note: griffe (vendored by mkdocstrings[python]) parses source as text, so the
+# SDK's many optional integration deps (openai, anthropic, langchain, ...) do
+# NOT need to be installed to render the reference docs.
 docs = [
-    "sphinx>=7.0.0",
-    "sphinx-rtd-theme>=1.3.0",
-    "myst-parser>=2.0.0",
+    "properdocs>=1.6",
+    # mkdocs-material is required (not just a nice-to-have): both built-in
+    # mkdocs themes (`mkdocs`, `readthedocs`) bundle highlight.js, which
+    # re-tokenizes signature code blocks client-side and strips the <a>
+    # tags that mkdocstrings injects for type cross-references. Material
+    # uses Pygments only, so the server-rendered autoref links survive.
+    "mkdocs-material>=9.5",
+    "mkdocstrings[python]>=0.27",   # griffe-backed Python handler
+    "mkdocs-gen-files>=0.5",         # generate ref pages at build time
+    "mkdocs-literate-nav>=0.6",      # nav from a SUMMARY.md
+    "mkdocs-section-index>=0.3",     # clickable section landing pages
+    # mkdocstrings auto-detects black at runtime and uses it to pretty-print
+    # function signatures (line-wrapping, trailing commas, etc). Without it,
+    # signatures render on a single line. Pinned to match the version in the
+    # `dev` extra so signatures format identically to the source.
+    "black~=26.3",
 ]
 
 # LLM Provider Integrations (OpenInference Instrumentors)
@@ -86,7 +111,13 @@ openinference-anthropic = [
 # Claude Agents SDK (openinference-claude-agent-sdk)
 openinference-claude-agent-sdk = [
     "openinference-instrumentation-claude-agent-sdk>=0.1.0",
-    "claude-agent-sdk>=0.1.0",
+    "claude-agent-sdk>=0.1.56",
+]
+
+# OpenAI Agents SDK (openinference-openai-agents)
+openinference-openai-agents = [
+    "openinference-instrumentation-openai-agents>=1.4.0",
+    "openai-agents>=0.10.0",
 ]
 
 # Google GenAI SDK (openinference-google-ai)
@@ -98,7 +129,7 @@ openinference-google-ai = [
 # Google Agent Development Kit (openinference-google-adk)
 openinference-google-adk = [
     "openinference-instrumentation-google-adk>=0.1.0",
-    "google-adk>=0.1.0",
+    "google-adk>=1.28.1",
 ]
 
 # AWS Bedrock (openinference-bedrock)
@@ -121,8 +152,26 @@ openinference-mcp = [
 
 # LiteLLM (openinference-litellm)
 openinference-litellm = [
-    "openinference-instrumentation-litellm>=0.1.0",
+    "openinference-instrumentation-litellm>=0.1.30",
     "litellm>=1.0.0",
+]
+
+# LangChain + LangGraph (openinference-langchain)
+# Covers both LangChain chains/agents and LangGraph StateGraph workflows.
+openinference-langchain = [
+    "openinference-instrumentation-langchain>=0.1.0",
+    "langchain>=1.0.0",
+]
+
+# AWS Strands Agents (native OTel; Traceloop-shaped semantic conventions)
+# Strands emits OpenTelemetry spans natively via strands.telemetry — no
+# instrumentor is required. The HoneyHiveTracer's global TracerProvider is
+# picked up automatically when initialized before agent construction.
+# boto3 is the LKGV path (BedrockModel); for Anthropic-backed agents add
+# `anthropic` separately.
+aws-strands = [
+    "strands-agents>=1.19.0",
+    "boto3>=1.26.0",
 ]
 
 # OpenLLMetry (Traceloop) Alternative Integrations
@@ -131,42 +180,48 @@ openinference-litellm = [
 
 # OpenAI (traceloop-openai)
 traceloop-openai = [
-    "opentelemetry-instrumentation-openai>=0.46.0,<1.0.0",
+    "opentelemetry-instrumentation-openai>=0.58.0,<1.0.0",
     "openai>=1.0.0",
 ]
 
 # Anthropic (traceloop-anthropic)
 traceloop-anthropic = [
-    "opentelemetry-instrumentation-anthropic>=0.46.0,<1.0.0",
+    "opentelemetry-instrumentation-anthropic>=0.58.0,<1.0.0",
     "anthropic>=0.17.0",
 ]
 
 # Google Generative AI (traceloop-google-ai)
 traceloop-google-ai = [
-    "opentelemetry-instrumentation-google-generativeai>=0.46.0,<1.0.0",
+    "opentelemetry-instrumentation-google-generativeai>=0.58.0,<1.0.0",
     "google-generativeai>=0.3.0",
 ]
 
 # AWS Bedrock (traceloop-bedrock)
 traceloop-aws-bedrock = [
-    "opentelemetry-instrumentation-bedrock>=0.46.0,<1.0.0",
+    "opentelemetry-instrumentation-bedrock>=0.58.0,<1.0.0",
     "boto3>=1.26.0",
 ]
 
 # Azure OpenAI (traceloop-azure-openai)
 traceloop-azure-openai = [
-    "opentelemetry-instrumentation-openai>=0.46.0,<1.0.0",
+    "opentelemetry-instrumentation-openai>=0.58.0,<1.0.0",
     "openai>=1.0.0",
     "azure-identity>=1.12.0",
 ]
 
 # MCP (traceloop-mcp)
 traceloop-mcp = [
-    "opentelemetry-instrumentation-mcp>=0.46.0,<1.0.0",
+    "opentelemetry-instrumentation-mcp>=0.58.0,<1.0.0",
+]
+
+# LangChain + LangGraph (traceloop-langchain)
+# Covers both LangChain and LangGraph through the same Traceloop instrumentor.
+traceloop-langchain = [
+    "opentelemetry-instrumentation-langchain>=0.58.0,<1.0.0",
+    "langchain>=1.0.0",
 ]
 
 # Note: Only documented integrations are included
-# See docs/how-to/integrations/ for supported providers
 
 # Convenience Groups (OpenInference Instrumentors)
 # All Available OpenInference Integrations (documented only)
@@ -174,17 +229,21 @@ all-openinference = [
     "openinference-instrumentation-openai>=0.1.0",
     "openinference-instrumentation-anthropic>=0.1.0",
     "openinference-instrumentation-claude-agent-sdk>=0.1.0",
+    "openinference-instrumentation-openai-agents>=1.4.0",
     "openinference-instrumentation-google-genai>=0.1.0",
     "openinference-instrumentation-google-adk>=0.1.0",
     "openinference-instrumentation-bedrock>=0.1.0",
-    "openinference-instrumentation-litellm>=0.1.0",
+    "openinference-instrumentation-litellm>=0.1.30",
+    "openinference-instrumentation-langchain>=0.1.0",
     "openinference-instrumentation-mcp>=1.3.0",
     "openai>=1.0.0",
     "anthropic>=0.18.0",
-    "claude-agent-sdk>=0.1.0",
+    "claude-agent-sdk>=0.1.56",
+    "openai-agents>=0.10.0",
     "google-genai>=0.3.0",
-    "google-adk>=0.1.0",
+    "google-adk>=1.28.1",
     "litellm>=1.0.0",
+    "langchain>=1.0.0",
     "boto3>=1.26.0",
     "azure-identity>=1.12.0",
 ]
@@ -195,7 +254,7 @@ openinference-llm-providers = [
     "openinference-instrumentation-anthropic>=0.1.0",
     "openinference-instrumentation-google-genai>=0.1.0",
     "openinference-instrumentation-bedrock>=0.1.0",
-    "openinference-instrumentation-litellm>=0.1.0",
+    "openinference-instrumentation-litellm>=0.1.30",
     "openai>=1.0.0",
     "anthropic>=0.18.0",
     "google-genai>=0.3.0",
@@ -206,24 +265,26 @@ openinference-llm-providers = [
 # OpenLLMetry (Traceloop) Convenience Groups
 # All Available Traceloop Integrations (documented only)
 all-traceloop = [
-    "opentelemetry-instrumentation-openai>=0.46.0,<1.0.0",
-    "opentelemetry-instrumentation-anthropic>=0.46.0,<1.0.0",
-    "opentelemetry-instrumentation-google-generativeai>=0.46.0,<1.0.0",
-    "opentelemetry-instrumentation-bedrock>=0.46.0,<1.0.0",
-    "opentelemetry-instrumentation-mcp>=0.46.0,<1.0.0",
+    "opentelemetry-instrumentation-openai>=0.58.0,<1.0.0",
+    "opentelemetry-instrumentation-anthropic>=0.58.0,<1.0.0",
+    "opentelemetry-instrumentation-google-generativeai>=0.58.0,<1.0.0",
+    "opentelemetry-instrumentation-bedrock>=0.58.0,<1.0.0",
+    "opentelemetry-instrumentation-langchain>=0.58.0,<1.0.0",
+    "opentelemetry-instrumentation-mcp>=0.58.0,<1.0.0",
     "openai>=1.0.0",
     "anthropic>=0.17.0",
     "google-generativeai>=0.3.0",
+    "langchain>=1.0.0",
     "boto3>=1.26.0",
     "azure-identity>=1.12.0",
 ]
 
 # Common LLM Providers (Traceloop Ecosystem)
 traceloop-llm-providers = [
-    "opentelemetry-instrumentation-openai>=0.46.0,<1.0.0",
-    "opentelemetry-instrumentation-anthropic>=0.46.0,<1.0.0",
-    "opentelemetry-instrumentation-google-generativeai>=0.46.0,<1.0.0",
-    "opentelemetry-instrumentation-bedrock>=0.46.0,<1.0.0",
+    "opentelemetry-instrumentation-openai>=0.58.0,<1.0.0",
+    "opentelemetry-instrumentation-anthropic>=0.58.0,<1.0.0",
+    "opentelemetry-instrumentation-google-generativeai>=0.58.0,<1.0.0",
+    "opentelemetry-instrumentation-bedrock>=0.58.0,<1.0.0",
     "openai>=1.0.0",
     "anthropic>=0.17.0",
     "google-generativeai>=0.3.0",
@@ -248,6 +309,9 @@ path = "src/honeyhive/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/honeyhive"]
+
+[tool.hatch.build.targets.sdist]
+exclude = ["openapi"]
 
 [tool.black]
 line-length = 88
@@ -304,7 +368,6 @@ logging-modules = ["logging", "honeyhive.utils.logger"]
 
 [tool.pylint.master]
 fail-under = 9.99
-init-hook = 'import sys; from pathlib import Path; sys.path.insert(0, str(Path.cwd() / ".agent-os"))'
 
 [tool.pylint.files]
 ignore-patterns = [
@@ -349,14 +412,9 @@ addopts = "-ra -q --strict-markers --strict-config"
 testpaths = ["tests"]
 asyncio_mode = "auto"
 norecursedirs = ["_v0_archive"]
-markers = [
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "integration: marks tests as integration tests",
-    "unit: marks tests as unit tests",
-    "openai: OpenAI provider integration tests (tests_v2/integrations)",
-    "anthropic: Anthropic provider integration tests (tests_v2/integrations)",
-    "langchain: LangChain integration tests (tests_v2/integrations)",
-]
+# Markers are defined in pytest.ini (authoritative). When pytest.ini is present,
+# [tool.pytest.ini_options] markers are silently ignored by pytest — keep them
+# in pytest.ini only to avoid drift.
 
 [tool.coverage.run]
 source = ["src/honeyhive"]
@@ -399,11 +457,3 @@ exclude_lines = [
 [tool.coverage.html]
 directory = "htmlcov"
 
-# Documentation quality configuration
-[tool.doc8]
-max-line-length = 79
-ignore = ["D002", "D004"]  # Allow trailing whitespace in some contexts
-
-[tool.docs-quality]
-max-issues-per-file = 1000
-enable-auto-fix = true

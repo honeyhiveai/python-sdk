@@ -2,7 +2,7 @@
 
 This module implements the unified enrichment architecture that supports
 multiple invocation patterns while maintaining a single core logic implementation.
-Follows Agent OS dynamic logic standards for configuration-driven, extensible systems.
+Follows dynamic logic standards for configuration-driven, extensible systems.
 
 **Backwards Compatibility:**
 This module maintains full backwards compatibility with the main branch interface
@@ -20,6 +20,7 @@ from typing import Any, Dict, Iterator, Optional, Union
 # Third-party imports
 from opentelemetry import context, trace
 
+from ...models import UpdateEventRequest
 from ...utils.logger import safe_log
 from ..registry import discover_tracer
 
@@ -156,7 +157,17 @@ def _enrich_existing_event_via_api(
 
         # Call the Events API to update the event
         if hasattr(client, "events") and hasattr(client.events, "update"):
-            client.events.update(data=update_data)
+            client.events.update(
+                data=UpdateEventRequest(
+                    event_id=event_id,
+                    metadata=update_data.get("metadata"),
+                    feedback=update_data.get("feedback"),
+                    metrics=update_data.get("metrics"),
+                    outputs=update_data.get("outputs"),
+                    config=update_data.get("config"),
+                    user_properties=update_data.get("user_properties"),
+                )
+            )
             safe_log(
                 tracer_instance,
                 "debug",
@@ -725,7 +736,7 @@ def enrich_span_unified(
 
     This function implements the unified enrichment architecture with a simple
     caller parameter approach. Each caller explicitly identifies itself, making
-    the behavior predictable and following Agent OS dynamic logic standards.
+    the behavior predictable and following dynamic logic standards.
 
     **Backwards Compatibility:**
     Supports all main branch reserved parameters (metadata, metrics, etc.)

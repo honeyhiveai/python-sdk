@@ -1,10 +1,12 @@
-from typing import *
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
 from .EventComparisonDetail import EventComparisonDetail
 from .ExperimentRunObject import ExperimentRunObject
 from .MetricComparison import MetricComparison
+
+__all__ = ["GetExperimentRunCompareResponse"]
 
 
 class GetExperimentRunCompareResponse(BaseModel):
@@ -13,7 +15,12 @@ class GetExperimentRunCompareResponse(BaseModel):
         Comparison between two experiment runs including metrics, common datapoints, and event details
     """
 
-    model_config = {"populate_by_name": True, "validate_assignment": True}
+    model_config = {
+        "populate_by_name": True,
+        "validate_assignment": True,
+        "extra": "allow",
+        "protected_namespaces": (),
+    }
 
     metrics: List[MetricComparison] = Field(validation_alias="metrics")
 

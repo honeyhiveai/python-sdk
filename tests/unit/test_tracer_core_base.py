@@ -3,7 +3,7 @@
 Tests the foundational tracer base class including dynamic configuration,
 initialization, per-instance locking, and backwards compatibility.
 
-This module follows Agent OS testing standards with proper type annotations,
+This module follows testing standards with proper type annotations,
 pylint compliance, and comprehensive coverage targeting 95%+ coverage.
 
 NOTE: Tests temporarily skipped - test expectations don't match current implementation.

@@ -86,9 +86,9 @@ class APIConfig(BaseModel):
             "Content-Type": "application/json",
             "Accept": "application/json",
             "Authorization": f"Bearer {self.get_access_token() or ''}",
-            "hh-sdk-version": _get_sdk_version(),
-            "hh-sdk-language": "python",
-            "hh-sdk-package": "honeyhive",
+            "hh-client-version": _get_sdk_version(),
+            "hh-client-language": "python",
+            "hh-client-package": "honeyhive",
         }
 
 

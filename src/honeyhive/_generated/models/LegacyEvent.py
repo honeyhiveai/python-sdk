@@ -1,6 +1,8 @@
-from typing import *
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
+
+__all__ = ["LegacyEvent"]
 
 
 class LegacyEvent(BaseModel):
@@ -9,9 +11,14 @@ class LegacyEvent(BaseModel):
         Full event object for legacy event creation endpoints
     """
 
-    model_config = {"populate_by_name": True, "validate_assignment": True}
+    model_config = {
+        "populate_by_name": True,
+        "validate_assignment": True,
+        "extra": "allow",
+        "protected_namespaces": (),
+    }
 
-    project: str = Field(validation_alias="project")
+    project: Optional[str] = Field(validation_alias="project", default=None)
 
     project_id: Optional[str] = Field(validation_alias="project_id", default=None)
 

@@ -13,7 +13,8 @@ spans reach this exporter, as ReadableSpan objects are immutable.
 """
 
 import json
-from typing import Any, Dict, Optional, Sequence, Union
+import math
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Union
 
 import requests
 
@@ -83,6 +84,49 @@ class OTLPJSONExporter(SpanExporter):
             },
         )
 
+    @classmethod
+    def _to_otlp_any_value(cls, value: Any) -> Dict[str, Any]:
+        """Convert a Python attribute value to an OTLP AnyValue JSON dict.
+
+        Maps Python types to the corresponding OTLP AnyValue variant so the
+        backend deserializes into the proper scalar type (int, float, bool,
+        array) instead of coercing everything to a string.
+
+        Note: ``bool`` must be checked before ``int`` because ``bool`` is a
+        subclass of ``int`` in Python.
+        """
+        if isinstance(value, bool):
+            return {"boolValue": value}
+        if isinstance(value, int):
+            return {"intValue": value}
+        if isinstance(value, float):
+            # NaN/Inf are not valid JSON — Python's json.dumps emits them as
+            # `NaN`/`Infinity` tokens, which Go's encoding/json rejects and
+            # would fail the entire export batch. Fall back to stringValue
+            # so the batch still lands.
+            if not math.isfinite(value):
+                return {"stringValue": str(value)}
+            return {"doubleValue": value}
+        if isinstance(value, str):
+            return {"stringValue": value}
+        if isinstance(value, (list, tuple)):
+            return {
+                "arrayValue": {"values": [cls._to_otlp_any_value(v) for v in value]}
+            }
+        return {"stringValue": str(value)}
+
+    @classmethod
+    def _to_otlp_key_values(
+        cls, attributes: Optional[Mapping[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """Convert a mapping of attributes to an OTLP KeyValue list."""
+        if not attributes:
+            return []
+        return [
+            {"key": key, "value": cls._to_otlp_any_value(value)}
+            for key, value in attributes.items()
+        ]
+
     def _span_to_otlp_json(self, span: ReadableSpan) -> Dict[str, Any]:
         """Convert a ReadableSpan to OTLP JSON format.
 
@@ -99,29 +143,15 @@ class OTLPJSONExporter(SpanExporter):
         if span.parent and hasattr(span.parent, "span_id") and span.parent.span_id:
             parent_span_id = format(span.parent.span_id, "016x")
 
-        # Convert attributes - use string values, let backend handle type conversion
-        attributes = []
-        if span.attributes:
-            for key, value in span.attributes.items():
-                attr = {
-                    "key": key,
-                    "value": {"stringValue": str(value)},
-                }
-                attributes.append(attr)
+        # Preserve native Python types so the backend gets int/float/bool/etc.
+        # rather than stringified scalars.
+        attributes = self._to_otlp_key_values(span.attributes)
 
         # Convert events
         events = []
         if span.events:
             for event in span.events:
-                event_attrs = []
-                if event.attributes:
-                    for key, value in event.attributes.items():
-                        event_attrs.append(
-                            {
-                                "key": key,
-                                "value": {"stringValue": str(value)},
-                            }
-                        )
+                event_attrs = self._to_otlp_key_values(event.attributes)
                 events.append(
                     {
                         # uint64 - nanoseconds since Unix epoch
@@ -170,6 +200,12 @@ class OTLPJSONExporter(SpanExporter):
     ) -> Dict[str, Any]:
         """Convert spans to OTLP JSON payload format.
 
+        Groups spans by their instrumentation scope so the ingestion pipeline
+        can correctly identify the instrumentor for each span. Previously all
+        spans were placed under a single scope (the first span's), which caused
+        misclassification when spans from different instrumentors (e.g.
+        pydantic-ai and httpx) were batched together.
+
         Args:
             spans: Sequence of ReadableSpan objects
 
@@ -179,31 +215,38 @@ class OTLPJSONExporter(SpanExporter):
         if not spans:
             return {"resourceSpans": []}
 
-        # Simplified: use first span's resource, put all spans in one scope
+        # Use first span's resource (all spans share the same TracerProvider resource)
         first_span = spans[0]
-        resource_attrs = []
+        resource_attrs: List[Dict[str, Any]] = []
         if first_span.resource and first_span.resource.attributes:
-            resource_attrs = [
-                {"key": k, "value": {"stringValue": str(v)}}
-                for k, v in first_span.resource.attributes.items()
-            ]
+            resource_attrs = self._to_otlp_key_values(first_span.resource.attributes)
 
-        # Get scope info from first span (simplified - all spans in one scope)
-        scope_info = {}
-        if (
-            hasattr(first_span, "instrumentation_scope")
-            and first_span.instrumentation_scope
-        ):
-            scope_info["name"] = first_span.instrumentation_scope.name or "unknown"
-            if first_span.instrumentation_scope.version:
-                scope_info["version"] = first_span.instrumentation_scope.version
+        # Group spans by instrumentation scope so each scope's spans are
+        # correctly tagged in the OTLP payload. The ingestion pipeline uses
+        # the scope name to detect the instrumentor (e.g. "pydantic-ai" →
+        # StandardGenAI). Mixing scopes causes misclassification.
+        scope_groups: Dict[str, Dict[str, Any]] = {}
+        for span in spans:
+            scope_name = "unknown"
+            scope_version = ""
+            if hasattr(span, "instrumentation_scope") and span.instrumentation_scope:
+                scope_name = span.instrumentation_scope.name or "unknown"
+                scope_version = span.instrumentation_scope.version or ""
 
-        # Convert all spans
-        span_jsons = [self._span_to_otlp_json(span) for span in spans]
+            scope_key = f"{scope_name}:{scope_version}"
+            if scope_key not in scope_groups:
+                scope_info: Dict[str, str] = {"name": scope_name}
+                if scope_version:
+                    scope_info["version"] = scope_version
+                scope_groups[scope_key] = {
+                    "scope": scope_info,
+                    "spans": [],
+                }
+            scope_groups[scope_key]["spans"].append(self._span_to_otlp_json(span))
 
         resource_span = {
             "resource": {"attributes": resource_attrs} if resource_attrs else {},
-            "scopeSpans": [{"scope": scope_info, "spans": span_jsons}],
+            "scopeSpans": list(scope_groups.values()),
         }
 
         return {"resourceSpans": [resource_span]}

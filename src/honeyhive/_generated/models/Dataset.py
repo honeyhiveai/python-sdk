@@ -1,6 +1,8 @@
-from typing import *
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
+
+__all__ = ["Dataset"]
 
 
 class Dataset(BaseModel):
@@ -8,7 +10,12 @@ class Dataset(BaseModel):
     Dataset model
     """
 
-    model_config = {"populate_by_name": True, "validate_assignment": True}
+    model_config = {
+        "populate_by_name": True,
+        "validate_assignment": True,
+        "extra": "allow",
+        "protected_namespaces": (),
+    }
 
     id: str = Field(validation_alias="id")
 
@@ -16,7 +23,7 @@ class Dataset(BaseModel):
 
     description: Optional[str] = Field(validation_alias="description", default=None)
 
-    datapoints: Optional[List[str]] = Field(validation_alias="datapoints", default=None)
+    datapoints: List[str] = Field(validation_alias="datapoints")
 
     created_at: Optional[str] = Field(validation_alias="created_at", default=None)
 

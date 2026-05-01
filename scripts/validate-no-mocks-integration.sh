@@ -1,6 +1,6 @@
 #!/bin/bash
 # No Mocks in Integration Tests Validation Script
-# Part of Integration Testing Consolidation - Agent OS Spec 2025-09-06
+# Part of Integration Testing Consolidation
 #
 # This script ensures that integration tests use real systems and real APIs,
 # preventing mock creep that can hide critical bugs like the ProxyTracerProvider issue.

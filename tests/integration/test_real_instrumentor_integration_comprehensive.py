@@ -198,7 +198,7 @@ print("✅ Subprocess integration test passed")
             instrumentor.uninstrument()
 
         except ImportError:
-            # Agent OS Zero Failing Tests Policy: NO SKIPPING
+            # NO SKIPPING
             pytest.fail(
                 "OpenAI or OpenInference instrumentor not available - "
                 "install required dependencies"
@@ -227,7 +227,7 @@ print("✅ Subprocess integration test passed")
 
             # Make a real Anthropic API call (this should be traced)
             response = client.messages.create(
-                model="claude-3-haiku-20240307",
+                model="claude-haiku-4-5-20251001",
                 max_tokens=20,
                 messages=[
                     {
@@ -248,7 +248,7 @@ print("✅ Subprocess integration test passed")
             instrumentor.uninstrument()
 
         except ImportError:
-            # Agent OS Zero Failing Tests Policy: NO SKIPPING
+            # NO SKIPPING
             pytest.fail(
                 "Anthropic or OpenInference instrumentor not available - "
                 "install required dependencies"
@@ -303,7 +303,7 @@ print("✅ Subprocess integration test passed")
 
             # Verify at least one instrumentor was initialized
             if not available_instrumentors:
-                # Agent OS Zero Failing Tests Policy: NO SKIPPING
+                # NO SKIPPING
                 pytest.fail(
                     "No instrumentors available for testing - "
                     "install required dependencies"

@@ -1,4 +1,4 @@
-.PHONY: help install install-dev test test-all test-unit test-integration check-integration lint format check check-format check-lint typecheck check-docs check-docs-compliance check-feature-sync check-tracer-patterns check-no-mocks docs docs-serve docs-clean generate generate-sdk compare-sdk clean clean-all build publish
+.PHONY: help install install-dev test test-all test-unit test-integration check-integration lint format check check-format check-lint typecheck check-tracer-patterns check-no-mocks generate generate-sdk compare-sdk docs-serve docs-build clean clean-all build publish
 
 # Use uv run to automatically resolve the workspace venv and dependencies.
 # --extra dev ensures SDK dev optional-dependencies (black, isort, tox, etc.) are installed.
@@ -32,22 +32,18 @@ help:
 	@echo "  make check-format    - Check code formatting only"
 	@echo "  make check-lint      - Check linting only"
 	@echo "  make check-integration - Integration test validation"
-	@echo "  make check-docs      - Build and validate documentation"
-	@echo "  make check-docs-compliance - Check documentation compliance"
-	@echo "  make check-feature-sync - Check feature documentation sync"
 	@echo "  make check-tracer-patterns - Check for invalid tracer patterns"
 	@echo "  make check-no-mocks  - Verify no mocks in integration tests"
-	@echo ""
-	@echo "Documentation:"
-	@echo "  make docs            - Build documentation"
-	@echo "  make docs-serve      - Build and serve documentation"
-	@echo "  make docs-clean      - Clean documentation build"
 	@echo ""
 	@echo "SDK Generation:"
 	@echo "  make generate        - Generate v1 client from full OpenAPI spec"
 	@echo "  make generate-minimal - Generate v1 client from minimal spec (testing)"
 	@echo "  make generate-sdk    - Generate full SDK to comparison_output/ (for analysis)"
 	@echo "  make compare-sdk     - Compare generated SDK with current implementation"
+	@echo ""
+	@echo "Documentation:"
+	@echo "  make docs-serve      - Serve API reference docs locally (http://127.0.0.1:8000)"
+	@echo "  make docs-build      - Build API reference docs to site/"
 	@echo ""
 	@echo "Build:"
 	@echo "  make build           - Build honeyhive package"
@@ -61,7 +57,7 @@ install:
 	$(UV_RUN) pip install -e .
 
 install-dev:
-	$(UV_RUN) pip install -e ".[dev,docs]"
+	$(UV_RUN) pip install -e ".[dev]"
 
 setup:
 	./scripts/setup-dev.sh
@@ -104,35 +100,15 @@ check-lint:
 	$(UV_RUN) tox -e lint
 
 # Comprehensive check - runs all quality checks
-check: check-format check-lint test-unit check-no-mocks check-integration check-docs check-docs-compliance check-feature-sync check-tracer-patterns
+check: check-format check-lint test-unit check-no-mocks check-integration check-tracer-patterns
 	@echo ""
 	@echo "✅ All checks passed!"
-
-check-docs-compliance:
-	$(PYTHON) scripts/check-documentation-compliance.py
-
-check-feature-sync:
-	$(PYTHON) scripts/check-feature-sync.py
 
 check-tracer-patterns:
 	scripts/validate-tracer-patterns.sh
 
 check-no-mocks:
 	scripts/validate-no-mocks-integration.sh
-
-check-docs: docs
-	@echo "Building and validating documentation..."
-	scripts/validate-docs-navigation.sh
-
-# Documentation
-docs:
-	cd docs && $(MAKE) html
-
-docs-serve:
-	cd docs && $(UV_RUN) python serve.py
-
-docs-clean:
-	cd docs && $(MAKE) clean
 
 # SDK Generation
 # Generate v1 client from full OpenAPI spec
@@ -155,6 +131,24 @@ compare-sdk:
 		exit 1; \
 	fi
 	$(PYTHON) comparison_output/full_sdk/compare_with_current.py
+
+# Documentation (properdocs + mkdocstrings, AST-based — no SDK runtime deps required)
+# Uses the `docs` optional-dependency group from pyproject.toml.
+#
+# We build with ProperDocs (a drop-in MkDocs 1.6 fork; see the comment above the
+# `docs` group in pyproject.toml for rationale). The `properdocs` CLI accepts the
+# same flags as `mkdocs` and reads properdocs.yml as its default config file.
+#
+# Note: --strict is intentionally omitted for now. There are pre-existing
+# docstring/signature mismatches and a few malformed cross-refs in the source
+# that surface as griffe warnings; cleaning them up is an explicit follow-up.
+# Re-add --strict to docs-build once those are resolved so doc rot can't
+# accumulate silently.
+docs-serve:
+	uv run --extra docs properdocs serve
+
+docs-build:
+	uv run --extra docs properdocs build
 
 # Build
 build:

@@ -6,7 +6,7 @@ It implements the multi-instance architecture with proper provider integration.
 """
 
 # pylint: disable=duplicate-code
-# Agent OS graceful degradation error handling patterns are intentionally consistent
+# Graceful degradation error handling patterns are intentionally consistent
 
 import inspect
 import os
@@ -421,7 +421,7 @@ def _setup_main_provider_components(
             },
         )
     except Exception as e:
-        # Graceful degradation following Agent OS standards - never crash host
+        # Graceful degradation - never crash host
         safe_log(
             tracer_instance,
             "error",
@@ -485,7 +485,7 @@ def _setup_main_provider(
             tracer_instance, "info", "Added HoneyHive span processor to new provider"
         )
     except Exception as e:
-        # Graceful degradation following Agent OS standards - never crash host
+        # Graceful degradation - never crash host
         safe_log(
             tracer_instance,
             "debug",
@@ -589,7 +589,7 @@ def _setup_independent_provider(
             },
         )
     except Exception as e:
-        # Graceful degradation following Agent OS standards - never crash host
+        # Graceful degradation - never crash host
         safe_log(
             tracer_instance,
             "debug",
@@ -828,9 +828,9 @@ def _create_otlp_exporter(tracer_instance: Any) -> Optional[Any]:
                 "Authorization": f"Bearer {tracer_instance.config.api_key}",
                 "X-Project": tracer_instance.project_name,
                 "X-Source": tracer_instance.source_environment,
-                "hh-sdk-version": _get_sdk_version(),
-                "hh-sdk-language": "python",
-                "hh-sdk-package": "honeyhive",
+                "hh-client-version": _get_sdk_version(),
+                "hh-client-language": "python",
+                "hh-client-package": "honeyhive",
             },
             timeout=30.0,  # 30 second timeout for exports
         )
@@ -839,7 +839,7 @@ def _create_otlp_exporter(tracer_instance: Any) -> Optional[Any]:
         return otlp_exporter
 
     except Exception as e:
-        # Graceful degradation following Agent OS standards - never crash host
+        # Graceful degradation - never crash host
         safe_log(
             None,
             "error",
@@ -867,7 +867,7 @@ def _setup_propagators(tracer_instance: Any) -> None:
         )
         safe_log(tracer_instance, "debug", "Propagators configured successfully")
     except Exception as e:
-        # Graceful degradation following Agent OS standards - never crash host
+        # Graceful degradation - never crash host
         safe_log(
             tracer_instance,
             "warning",
@@ -1144,7 +1144,7 @@ def _initialize_session_management(tracer_instance: Any) -> None:
         )
 
     except Exception as e:
-        # Graceful degradation following Agent OS standards - never crash host
+        # Graceful degradation - never crash host
         safe_log(
             tracer_instance,
             "warning",
@@ -1174,7 +1174,7 @@ def _initialize_session_management(tracer_instance: Any) -> None:
 def _validate_configuration_gracefully(tracer_instance: Any) -> None:
     """Validate configuration with graceful degradation.
 
-    Following Agent OS graceful degradation standards:
+    Graceful degradation standards:
     - Never crash the host application
     - Provide meaningful warnings for missing configuration
     - Continue operation in degraded mode when possible
@@ -1249,7 +1249,7 @@ def _validate_session_id(tracer_instance: Any) -> None:
             honeyhive_data={"session_id": tracer_instance.session_id},
         )
     except Exception as e:
-        # Graceful degradation following Agent OS standards - never crash host
+        # Graceful degradation - never crash host
         fallback_id = str(uuid.uuid4())
         tracer_instance.session_id = fallback_id
         tracer_instance._session_id = fallback_id  # Update private attribute
@@ -1420,7 +1420,7 @@ def _create_new_session(tracer_instance: Any) -> None:
             )
 
     except Exception as e:
-        # Graceful degradation following Agent OS standards - never crash host
+        # Graceful degradation - never crash host
         # Fallback to UUID if session creation fails
         fallback_id = str(uuid.uuid4())
         tracer_instance.session_id = fallback_id
@@ -1482,7 +1482,7 @@ def _register_tracer_instance(tracer_instance: Any) -> None:
             honeyhive_data={"tracer_id": tracer_instance._tracer_id},
         )
     except Exception as e:
-        # Graceful degradation following Agent OS standards - never crash host
+        # Graceful degradation - never crash host
         safe_log(
             tracer_instance,
             "warning",

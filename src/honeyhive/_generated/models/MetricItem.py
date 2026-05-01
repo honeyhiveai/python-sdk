@@ -1,7 +1,11 @@
 from datetime import datetime
-from typing import *
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
+
+from .MetricItemFilters import MetricItemFilters
+
+__all__ = ["MetricItem"]
 
 
 class MetricItem(BaseModel):
@@ -9,7 +13,12 @@ class MetricItem(BaseModel):
     MetricItem model
     """
 
-    model_config = {"populate_by_name": True, "validate_assignment": True}
+    model_config = {
+        "populate_by_name": True,
+        "validate_assignment": True,
+        "extra": "allow",
+        "protected_namespaces": (),
+    }
 
     name: str = Field(validation_alias="name")
 
@@ -17,21 +26,15 @@ class MetricItem(BaseModel):
 
     criteria: str = Field(validation_alias="criteria")
 
-    description: Optional[str] = Field(validation_alias="description", default=None)
+    description: Optional[str] = Field(validation_alias="description")
 
-    return_type: Optional[str] = Field(validation_alias="return_type", default=None)
+    return_type: str = Field(validation_alias="return_type")
 
-    enabled_in_prod: Optional[bool] = Field(
-        validation_alias="enabled_in_prod", default=None
-    )
+    enabled_in_prod: bool = Field(validation_alias="enabled_in_prod")
 
-    needs_ground_truth: Optional[bool] = Field(
-        validation_alias="needs_ground_truth", default=None
-    )
+    needs_ground_truth: bool = Field(validation_alias="needs_ground_truth")
 
-    sampling_percentage: Optional[float] = Field(
-        validation_alias="sampling_percentage", default=None
-    )
+    sampling_percentage: float = Field(validation_alias="sampling_percentage")
 
     model_provider: Optional[str] = Field(
         validation_alias="model_provider", default=None
@@ -51,10 +54,10 @@ class MetricItem(BaseModel):
         validation_alias="child_metrics", default=None
     )
 
-    filters: Optional[Dict[str, Any]] = Field(validation_alias="filters", default=None)
+    filters: MetricItemFilters = Field(validation_alias="filters")
 
     id: str = Field(validation_alias="id")
 
     created_at: str = Field(validation_alias="created_at")
 
-    updated_at: datetime = Field(validation_alias="updated_at")
+    updated_at: Optional[datetime] = Field(validation_alias="updated_at")

@@ -1,8 +1,8 @@
-from typing import *
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
-from .FilterFieldType import FilterFieldType
+__all__ = ["SingleFilter"]
 
 
 class SingleFilter(BaseModel):
@@ -10,12 +10,17 @@ class SingleFilter(BaseModel):
     SingleFilter model
     """
 
-    model_config = {"populate_by_name": True, "validate_assignment": True}
+    model_config = {
+        "populate_by_name": True,
+        "validate_assignment": True,
+        "extra": "allow",
+        "protected_namespaces": (),
+    }
 
     field: str = Field(validation_alias="field")
 
-    operator: Union[str, str, str, str] = Field(validation_alias="operator")
+    operator: str = Field(validation_alias="operator")
 
     value: Union[str, float, bool, None] = Field(validation_alias="value")
 
-    type: FilterFieldType = Field(validation_alias="type")
+    type: str = Field(validation_alias="type")

@@ -2,7 +2,7 @@
 
 This module tests the dynamic error handling and resilience framework including
 error classes, recovery strategies, error handlers, and decorators using standard
-fixtures and comprehensive edge case coverage following Agent OS testing standards.
+fixtures and comprehensive edge case coverage following testing standards.
 """
 
 # pylint: disable=protected-access  # Testing internal error handling functionality

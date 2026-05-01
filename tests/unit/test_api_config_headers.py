@@ -1,7 +1,7 @@
 """Unit tests for APIConfig.get_default_headers() and _get_sdk_version().
 
 Verifies that:
-- The hh-sdk-version, hh-sdk-language, and hh-sdk-package headers are present
+- The hh-client-version, hh-client-language, and hh-client-package headers are present
 - The header values are correct
 - get_default_headers() includes all expected keys
 - _get_sdk_version() returns a valid version string
@@ -15,16 +15,16 @@ class TestGetDefaultHeaders:
     """Tests for APIConfig.get_default_headers()."""
 
     def test_includes_sdk_version_header(self) -> None:
-        """get_default_headers() must include hh-sdk-version."""
+        """get_default_headers() must include hh-client-version."""
         config = APIConfig(access_token="test-token")
         headers = config.get_default_headers()
-        assert "hh-sdk-version" in headers
+        assert "hh-client-version" in headers
 
     def test_sdk_version_matches_package_version(self) -> None:
-        """hh-sdk-version value must equal honeyhive.__version__."""
+        """hh-client-version value must equal honeyhive.__version__."""
         config = APIConfig(access_token="test-token")
         headers = config.get_default_headers()
-        assert headers["hh-sdk-version"] == __version__
+        assert headers["hh-client-version"] == __version__
 
     def test_includes_authorization_header(self) -> None:
         """get_default_headers() must include Authorization bearer token."""
@@ -46,16 +46,16 @@ class TestGetDefaultHeaders:
         assert "None" not in headers["Authorization"]
 
     def test_includes_sdk_language_header(self) -> None:
-        """get_default_headers() must include hh-sdk-language set to 'python'."""
+        """get_default_headers() must include hh-client-language set to 'python'."""
         config = APIConfig(access_token="test-token")
         headers = config.get_default_headers()
-        assert headers["hh-sdk-language"] == "python"
+        assert headers["hh-client-language"] == "python"
 
     def test_includes_sdk_package_header(self) -> None:
-        """get_default_headers() must include hh-sdk-package set to 'honeyhive'."""
+        """get_default_headers() must include hh-client-package set to 'honeyhive'."""
         config = APIConfig(access_token="test-token")
         headers = config.get_default_headers()
-        assert headers["hh-sdk-package"] == "honeyhive"
+        assert headers["hh-client-package"] == "honeyhive"
 
 
 class TestGetSdkVersion:

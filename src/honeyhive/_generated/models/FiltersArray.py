@@ -1,11 +1,7 @@
-from typing import *
+from typing import List, TypeAlias
 
-from pydantic import BaseModel, Field
+from .SingleFilter import SingleFilter
 
+__all__ = ["FiltersArray"]
 
-class FiltersArray(BaseModel):
-    """
-    FiltersArray model
-    """
-
-    model_config = {"populate_by_name": True, "validate_assignment": True}
+FiltersArray: TypeAlias = List[SingleFilter]

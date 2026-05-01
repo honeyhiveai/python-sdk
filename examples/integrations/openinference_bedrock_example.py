@@ -17,6 +17,7 @@ Environment:
     AWS_ACCESS_KEY_ID
     AWS_SECRET_ACCESS_KEY
     AWS_DEFAULT_REGION  (optional, defaults to "us-east-1")
+    BEDROCK_MODEL_ID    (optional, defaults to cross-region Claude Haiku 4.5)
 """
 
 import os
@@ -26,7 +27,9 @@ from openinference.instrumentation.bedrock import BedrockInstrumentor
 
 from honeyhive import HoneyHiveTracer
 
-MODEL_ID = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+# Cross-region inference profile — works in us-west-2 on the terraform-testing account.
+# Override via BEDROCK_MODEL_ID env var.
+MODEL_ID = os.getenv("BEDROCK_MODEL_ID", "us.anthropic.claude-haiku-4-5-20251001-v1:0")
 
 
 def main() -> None:

@@ -2,7 +2,7 @@
 
 These tests validate edge case scenarios including network failures, malformed data,
 backend unavailability, and error resilience with backend verification as required
-by Agent OS standards.
+following project standards.
 
 NO MOCKING - All tests use real OpenTelemetry components and real API calls.
 """

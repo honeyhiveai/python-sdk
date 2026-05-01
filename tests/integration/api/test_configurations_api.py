@@ -7,19 +7,15 @@ from typing import Any
 import pytest
 
 from honeyhive.models import (
+    ConfigurationItem,
     CreateConfigurationRequest,
     CreateConfigurationResponse,
-    GetConfigurationsResponse,
     UpdateConfigurationResponse,
 )
 
 
 class TestConfigurationsAPI:
-    """Test ConfigurationsAPI CRUD operations.
-
-    NOTE: test_get_configuration is skipped because v1 API has no get_configuration
-    method - must use list() to retrieve configurations. Other CRUD operations work.
-    """
+    """Test ConfigurationsAPI CRUD operations."""
 
     def test_create_configuration(
         self, integration_client: Any, integration_project_name: str
@@ -50,9 +46,6 @@ class TestConfigurationsAPI:
         # Cleanup
         integration_client.configurations.delete(created_id)
 
-    @pytest.mark.skip(
-        reason="v1 API: no get_configuration method, must use list() to retrieve"
-    )
     def test_get_configuration(
         self, integration_client: Any, integration_project_name: str
     ) -> None:
@@ -112,9 +105,9 @@ class TestConfigurationsAPI:
 
         configs = integration_client.configurations.list()
 
-        # configurations.list() returns List[GetConfigurationsResponse]
+        # The ergonomic SDK unwraps the transport envelope into item models.
         assert isinstance(configs, list)
-        assert all(isinstance(cfg, GetConfigurationsResponse) for cfg in configs)
+        assert all(isinstance(cfg, ConfigurationItem) for cfg in configs)
 
         # Cleanup
         for config_id in created_ids:

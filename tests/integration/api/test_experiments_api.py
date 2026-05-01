@@ -1,10 +1,4 @@
-"""ExperimentsAPI (Runs) Integration Tests - NO MOCKS, REAL API CALLS.
-
-NOTE: Tests are skipped due to spec drift:
-- CreateRunRequest now requires 'event_ids' as a mandatory field
-- This requires pre-existing events, making simple integration tests impractical
-- Backend contract changed but OpenAPI spec not updated
-"""
+"""ExperimentsAPI (Runs) Integration Tests - NO MOCKS, REAL API CALLS."""
 
 import time
 import uuid
@@ -18,9 +12,6 @@ from honeyhive.models import PostExperimentRunRequest
 class TestExperimentsAPI:
     """Test ExperimentsAPI (Runs) CRUD operations."""
 
-    @pytest.mark.skip(
-        reason="Spec Drift: CreateRunRequest requires event_ids (mandatory field)"
-    )
     def test_create_run(
         self, integration_client: Any, integration_project_name: str
     ) -> None:
@@ -40,9 +31,6 @@ class TestExperimentsAPI:
         run_id = getattr(response, "run_id", getattr(response, "id", None))
         assert run_id is not None
 
-    @pytest.mark.skip(
-        reason="Spec Drift: CreateRunRequest requires event_ids (mandatory field)"
-    )
     def test_get_run(
         self, integration_client: Any, integration_project_name: str
     ) -> None:
@@ -75,7 +63,7 @@ class TestExperimentsAPI:
             assert run_name_attr == run_name
 
     @pytest.mark.skip(
-        reason="Spec Drift: CreateRunRequest requires event_ids (mandatory field)"
+        reason="Backend: list_runs() without filters returns empty; needs investigation into project-scoping and pagination defaults"
     )
     def test_list_runs(
         self, integration_client: Any, integration_project_name: str
@@ -92,9 +80,7 @@ class TestExperimentsAPI:
 
         time.sleep(2)
 
-        runs_response = integration_client.experiments.list_runs(
-            project=integration_project_name
-        )
+        runs_response = integration_client.experiments.list_runs()
 
         assert runs_response is not None
         runs = runs_response.runs if hasattr(runs_response, "runs") else []

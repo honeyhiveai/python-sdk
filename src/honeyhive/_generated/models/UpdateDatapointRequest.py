@@ -1,14 +1,22 @@
-from typing import *
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
+
+__all__ = ["UpdateDatapointRequest"]
 
 
 class UpdateDatapointRequest(BaseModel):
     """
     UpdateDatapointRequest model
+        Request body for PUT /datapoints/{datapoint_id}
     """
 
-    model_config = {"populate_by_name": True, "validate_assignment": True}
+    model_config = {
+        "populate_by_name": True,
+        "validate_assignment": True,
+        "extra": "allow",
+        "protected_namespaces": (),
+    }
 
     inputs: Optional[Dict[str, Any]] = Field(validation_alias="inputs", default=None)
 

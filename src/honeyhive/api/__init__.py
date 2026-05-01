@@ -15,7 +15,6 @@ from .client import (
     ExperimentsAPI,
     HoneyHive,
     MetricsAPI,
-    ProjectsAPI,
     SessionsAPI,
 )
 
@@ -32,7 +31,6 @@ __all__ = [
     "EventsAPI",
     "ExperimentsAPI",
     "MetricsAPI",
-    "ProjectsAPI",
     "SessionsAPI",
     # Backwards compatible aliases
     "EvaluationsAPI",

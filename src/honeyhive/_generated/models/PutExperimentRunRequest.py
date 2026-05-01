@@ -1,14 +1,22 @@
-from typing import *
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
+
+__all__ = ["PutExperimentRunRequest"]
 
 
 class PutExperimentRunRequest(BaseModel):
     """
     PutExperimentRunRequest model
+        Request body for PUT /runs/{run_id}
     """
 
-    model_config = {"populate_by_name": True, "validate_assignment": True}
+    model_config = {
+        "populate_by_name": True,
+        "validate_assignment": True,
+        "extra": "allow",
+        "protected_namespaces": (),
+    }
 
     name: Optional[str] = Field(validation_alias="name", default=None)
 

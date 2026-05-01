@@ -132,12 +132,12 @@ async def batchCreateDatapoints(
 
 
 async def getDatapoint(
-    api_config_override: Optional[APIConfig] = None, *, id: str
-) -> Dict[str, Any]:
+    api_config_override: Optional[APIConfig] = None, *, datapoint_id: str
+) -> GetDatapointResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/v1/datapoints/{id}"
+    path = f"/v1/datapoints/{datapoint_id}"
     headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 
@@ -163,19 +163,19 @@ async def getDatapoint(
     else:
         body = None if 200 == 204 else response.json()
 
-    return body
+    return GetDatapointResponse(**body) if body is not None else GetDatapointResponse()
 
 
 async def updateDatapoint(
     api_config_override: Optional[APIConfig] = None,
     *,
-    id: str,
+    datapoint_id: str,
     data: UpdateDatapointRequest,
 ) -> UpdateDatapointResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/v1/datapoints/{id}"
+    path = f"/v1/datapoints/{datapoint_id}"
     headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 
@@ -210,12 +210,12 @@ async def updateDatapoint(
 
 
 async def deleteDatapoint(
-    api_config_override: Optional[APIConfig] = None, *, id: str
+    api_config_override: Optional[APIConfig] = None, *, datapoint_id: str
 ) -> DeleteDatapointResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/v1/datapoints/{id}"
+    path = f"/v1/datapoints/{datapoint_id}"
     headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 

@@ -1,6 +1,11 @@
-from typing import *
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
+
+from .LegacyEvent import LegacyEvent
+from .SessionProperties import SessionProperties
+
+__all__ = ["PostEventBatchRequest"]
 
 
 class PostEventBatchRequest(BaseModel):
@@ -9,14 +14,27 @@ class PostEventBatchRequest(BaseModel):
         Request body for POST /events/batch
     """
 
-    model_config = {"populate_by_name": True, "validate_assignment": True}
+    model_config = {
+        "populate_by_name": True,
+        "validate_assignment": True,
+        "extra": "allow",
+        "protected_namespaces": (),
+    }
 
-    events: List[Dict[str, Any]] = Field(validation_alias="events")
+    events: List[LegacyEvent] = Field(validation_alias="events")
+
+    single_session: Optional[bool] = Field(
+        validation_alias="single_session", default=None
+    )
 
     is_single_session: Optional[bool] = Field(
         validation_alias="is_single_session", default=None
     )
 
-    session_properties: Optional[Dict[str, Any]] = Field(
+    session: Optional[SessionProperties] = Field(
+        validation_alias="session", default=None
+    )
+
+    session_properties: Optional[SessionProperties] = Field(
         validation_alias="session_properties", default=None
     )

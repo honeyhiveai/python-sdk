@@ -55,7 +55,7 @@
             # Install package in editable mode with dev dependencies
             if [ ! -f .venv/.installed ]; then
               echo "📦 Installing dependencies (first run)..."
-              pip install -e ".[dev,docs]" 2>&1
+              pip install -e ".[dev]" 2>&1
               touch .venv/.installed
               echo "✨ Environment ready!"
               echo ""

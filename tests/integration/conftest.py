@@ -14,12 +14,13 @@ import os
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, Optional, Set
+from typing import Any, Callable, Dict, List, Optional, Set
 
 import pytest
 from opentelemetry import context, trace
 
 from honeyhive.api.client import HoneyHive
+from honeyhive.models import LegacyEvent
 from honeyhive.tracer import HoneyHiveTracer
 
 # Import OTEL reset utilities
@@ -65,6 +66,18 @@ def pytest_configure(config: Any) -> None:
     config.addinivalue_line("markers", "integration: marks tests as integration tests")
     config.addinivalue_line("markers", "real_api: marks tests that make real API calls")
     config.addinivalue_line("markers", "slow: marks tests as slow running")
+    config.addinivalue_line("markers", "openai: marks tests requiring OpenAI API key")
+    config.addinivalue_line(
+        "markers", "anthropic: marks tests requiring Anthropic API key"
+    )
+    config.addinivalue_line(
+        "markers", "langchain: marks tests requiring LangChain + OpenAI"
+    )
+    config.addinivalue_line(
+        "markers", "langgraph: marks tests requiring LangGraph + OpenAI"
+    )
+    config.addinivalue_line("markers", "litellm: marks tests requiring LiteLLM")
+    config.addinivalue_line("markers", "bedrock: marks tests requiring AWS Bedrock")
 
 
 def pytest_collection_modifyitems(config: Any, items: Any) -> None:
@@ -205,14 +218,14 @@ def integration_test_config() -> Dict[str, Any]:
 # Real API credentials and related fixtures
 @pytest.fixture(scope="session")
 def real_api_credentials() -> Dict[str, Any]:
-    """Get real API credentials for integration tests using Agent OS enforcement."""
+    """Get real API credentials for integration tests."""
     from tests.utils import (  # pylint: disable=no-name-in-module
         enforce_integration_credentials,
         get_llm_credentials,
     )
 
     try:
-        # Use Agent OS environment enforcement
+        # Validate environment credentials
         core_credentials = enforce_integration_credentials()
         llm_credentials = get_llm_credentials()
 
@@ -239,7 +252,7 @@ def real_api_credentials() -> Dict[str, Any]:
     except Exception as e:
         pytest.fail(
             f"Real API credentials enforcement failed: {e}\n"
-            "According to Agent OS Zero Failing Tests Policy, tests must not skip."
+            "Tests must not skip - use real credentials."
         )
 
 
@@ -315,6 +328,18 @@ def provider_api_keys() -> Dict[str, Optional[str]]:
         "aws_secret_key": os.environ.get("AWS_SECRET_ACCESS_KEY"),
         "aws_region": os.environ.get("AWS_DEFAULT_REGION", "us-east-1"),
     }
+
+
+@pytest.fixture
+def openai_api_key() -> Optional[str]:
+    """Get OpenAI API key from environment."""
+    return os.getenv("OPENAI_API_KEY")
+
+
+@pytest.fixture
+def anthropic_api_key() -> Optional[str]:
+    """Get Anthropic API key from environment."""
+    return os.getenv("ANTHROPIC_API_KEY")
 
 
 @pytest.fixture
@@ -501,3 +526,313 @@ def tracer_factory(
         except Exception:
             # Silent failure - test isolation is more important than cleanup errors
             pass
+
+
+# ============================================================================
+# End-to-End Verification Helpers
+# (Migrated from tests_v2/integrations/conftest.py)
+# ============================================================================
+
+
+def fetch_session_events(
+    session_id: str,
+    project: Optional[str] = None,
+    max_retries: int = 10,
+    retry_delay: float = 5.0,
+) -> List[LegacyEvent]:
+    """Fetch events for a session from HoneyHive API (Data Plane only).
+
+    This provides end-to-end verification that traces were actually
+    exported and ingested by the HoneyHive backend.
+
+    Uses HH_API_URL (Data Plane) for both sending and querying traces.
+
+    Args:
+        session_id: The session ID to fetch events for.
+        project: Project name (defaults to HH_PROJECT env var).
+        max_retries: Number of times to retry if no events found.
+        retry_delay: Seconds to wait between retries.
+
+    Returns:
+        List of ``LegacyEvent`` Pydantic models from
+        ``EventExportResponse.events``. ``LegacyEvent`` uses
+        ``extra="allow"``, so any backend fields not declared in the
+        OpenAPI spec are still reachable via ``getattr(event, <name>)``
+        or ``event.model_dump()[<name>]``.
+
+        Callers should use attribute access (``event.event_id``,
+        ``event.metadata``, …) — not dict subscript.
+
+    Raises:
+        ValueError: If HH_API_KEY or project not available.
+    """
+    hh_api_key = os.getenv("HH_API_KEY")
+    if not hh_api_key:
+        raise ValueError("HH_API_KEY not set")
+
+    # Use HH_API_URL for both base_url and cp_base_url (DP only)
+    dp_url = os.getenv("HH_API_URL", "https://api.honeyhive.ai")
+    project = project or os.getenv("HH_PROJECT", "sdk-integration-tests")
+
+    # Use DP URL for both data plane and control plane operations
+    client = HoneyHive(api_key=hh_api_key, base_url=dp_url, cp_base_url=dp_url)
+
+    for attempt in range(max_retries):
+        try:
+            response = client.events.get_by_session_id(
+                session_id=session_id,
+                project=project,
+                limit=100,
+            )
+
+            if response.events and len(response.events) > 0:
+                return response.events
+
+        except Exception:
+            if attempt == max_retries - 1:
+                raise
+
+        # Wait before retry (events may not be ingested yet)
+        time.sleep(retry_delay)
+
+    return []
+
+
+def verify_session_logged(
+    session_id: str,
+    project: Optional[str] = None,
+    expected_event_count: Optional[int] = None,
+    expected_metadata: Optional[Dict[str, Any]] = None,
+    expected_metrics: Optional[Dict[str, Any]] = None,
+    expected_inputs: Optional[Dict[str, Any]] = None,
+    expected_outputs: Optional[Dict[str, Any]] = None,
+    max_retries: int = 10,
+    retry_delay: float = 5.0,
+) -> Dict[str, Any]:
+    """Verify a session was logged correctly to HoneyHive.
+
+    This is the primary verification function for end-to-end tests.
+    It fetches events from the API and validates them against expectations.
+
+    Args:
+        session_id: The session ID to verify.
+        project: Project name (defaults to HH_PROJECT env var).
+        expected_event_count: If set, assert this many events exist.
+        expected_metadata: If set, assert metadata contains these keys/values.
+        expected_metrics: If set, assert metrics contains these keys/values.
+        expected_inputs: If set, assert inputs contain these keys/values.
+        expected_outputs: If set, assert outputs contain these keys/values.
+        max_retries: Retry count for fetching events.
+        retry_delay: Delay between retries.
+
+    Returns:
+        Dict with verification results:
+        - events: List of fetched events
+        - event_count: Number of events
+        - session_id: The session ID
+        - verified: True if all assertions passed
+        - all_inputs: Aggregated inputs from all events
+        - all_outputs: Aggregated outputs from all events
+
+    Raises:
+        AssertionError: If any verification fails.
+    """
+    events = fetch_session_events(
+        session_id=session_id,
+        project=project,
+        max_retries=max_retries,
+        retry_delay=retry_delay,
+    )
+
+    result: Dict[str, Any] = {
+        "events": events,
+        "event_count": len(events),
+        "session_id": session_id,
+        "verified": False,
+        "all_inputs": {},
+        "all_outputs": {},
+        "all_metadata": {},
+        "all_metrics": {},
+    }
+
+    # Aggregate all inputs, outputs, metadata, metrics across events.
+    # `events` is List[LegacyEvent]; each field is Optional[Dict[str, Any]].
+    for event in events:
+        if event.inputs:
+            result["all_inputs"].update(event.inputs)
+        if event.outputs:
+            result["all_outputs"].update(event.outputs)
+        if event.metadata:
+            result["all_metadata"].update(event.metadata)
+        if event.metrics:
+            result["all_metrics"].update(event.metrics)
+
+    # Verify event count if specified
+    if expected_event_count is not None:
+        assert (
+            len(events) >= expected_event_count
+        ), f"Expected at least {expected_event_count} events, got {len(events)}"
+    else:
+        # At minimum, we expect some events
+        assert len(events) > 0, f"No events found for session {session_id}"
+
+    # Verify metadata if specified
+    if expected_metadata:
+        for key, value in expected_metadata.items():
+            assert (
+                key in result["all_metadata"]
+            ), f"Expected metadata key '{key}' not found"
+            if value is not None:
+                assert (
+                    result["all_metadata"][key] == value
+                ), f"Metadata '{key}' expected {value}, got {result['all_metadata'][key]}"
+
+    # Verify metrics if specified
+    if expected_metrics:
+        for key, value in expected_metrics.items():
+            assert (
+                key in result["all_metrics"]
+            ), f"Expected metric key '{key}' not found"
+            if value is not None:
+                assert (
+                    result["all_metrics"][key] == value
+                ), f"Metric '{key}' expected {value}, got {result['all_metrics'][key]}"
+
+    # Verify inputs if specified
+    if expected_inputs:
+        for key, value in expected_inputs.items():
+            assert key in result["all_inputs"], (
+                f"Expected input key '{key}' not found. "
+                f"Available: {list(result['all_inputs'].keys())}"
+            )
+            if value is not None:
+                assert (
+                    result["all_inputs"][key] == value
+                ), f"Input '{key}' expected {value}, got {result['all_inputs'][key]}"
+
+    # Verify outputs if specified
+    if expected_outputs:
+        for key, value in expected_outputs.items():
+            assert key in result["all_outputs"], (
+                f"Expected output key '{key}' not found. "
+                f"Available: {list(result['all_outputs'].keys())}"
+            )
+            if value is not None:
+                assert (
+                    result["all_outputs"][key] == value
+                ), f"Output '{key}' expected {value}, got {result['all_outputs'][key]}"
+
+    result["verified"] = True
+    return result
+
+
+def verify_inputs_outputs_captured(
+    session_id: str,
+    expected_inputs: Dict[str, Any],
+    expected_output: Any,
+    project: Optional[str] = None,
+    max_retries: int = 10,
+    retry_delay: float = 5.0,
+) -> Dict[str, Any]:
+    """Verify that specific inputs and outputs were captured in traces.
+
+    This is the primary verification for ensuring the SDK correctly captures
+    function inputs and outputs (both from @trace decorator and instrumentors).
+
+    Args:
+        session_id: The session ID to verify.
+        expected_inputs: Dict of input names to expected values.
+                        Values are checked as substrings in the captured data.
+        expected_output: The expected output value (checked as substring).
+        project: Project name (defaults to HH_PROJECT env var).
+        max_retries: Retry count for fetching events.
+        retry_delay: Delay between retries.
+
+    Returns:
+        Dict with verification results including which checks passed/failed.
+
+    Raises:
+        AssertionError: If inputs or outputs are not found in captured traces.
+    """
+    events = fetch_session_events(
+        session_id=session_id,
+        project=project,
+        max_retries=max_retries,
+        retry_delay=retry_delay,
+    )
+
+    if not events:
+        raise AssertionError(f"No events found for session {session_id}")
+
+    result: Dict[str, Any] = {
+        "events_found": len(events),
+        "inputs_verified": False,
+        "outputs_verified": False,
+        "captured_inputs": {},
+        "captured_outputs": {},
+    }
+
+    # Aggregate all inputs and outputs from all events
+    all_inputs_str = ""
+    all_outputs_str = ""
+
+    # `events` is List[LegacyEvent] from fetch_session_events; LegacyEvent has
+    # .inputs and .outputs as Optional[Dict[str, Any]] (default None).
+    for event in events:
+        inputs = event.inputs or {}
+        outputs = event.outputs or {}
+
+        if inputs:
+            result["captured_inputs"].update(inputs)
+            all_inputs_str += str(inputs)
+
+        if outputs:
+            result["captured_outputs"].update(outputs)
+            all_outputs_str += str(outputs)
+
+    # Verify each expected input is present (as string match)
+    missing_inputs = []
+    for key, value in expected_inputs.items():
+        value_str = str(value)
+        if value_str not in all_inputs_str:
+            missing_inputs.append(f"{key}={value}")
+
+    if missing_inputs:
+        raise AssertionError(
+            f"Expected inputs not found in traces: {missing_inputs}. "
+            f"Captured inputs: {result['captured_inputs']}"
+        )
+    result["inputs_verified"] = True
+
+    # Verify expected output is present
+    output_str = str(expected_output)
+    if output_str not in all_outputs_str:
+        raise AssertionError(
+            f"Expected output '{expected_output}' not found in traces. "
+            f"Captured outputs: {result['captured_outputs']}"
+        )
+    result["outputs_verified"] = True
+
+    return result
+
+
+@pytest.fixture
+def verify_logged() -> Any:
+    """Fixture providing the verify_session_logged function."""
+    return verify_session_logged
+
+
+@pytest.fixture
+def fetch_events() -> Callable[..., List[LegacyEvent]]:
+    """Fixture providing the :func:`fetch_session_events` helper.
+
+    Returns a callable with signature
+    ``(session_id, project=None, max_retries=10, retry_delay=5.0) -> List[LegacyEvent]``.
+    """
+    return fetch_session_events
+
+
+@pytest.fixture
+def verify_io() -> Any:
+    """Fixture providing the verify_inputs_outputs_captured function."""
+    return verify_inputs_outputs_captured

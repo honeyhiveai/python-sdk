@@ -1,6 +1,8 @@
-from typing import *
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
+
+__all__ = ["TODOSchema"]
 
 
 class TODOSchema(BaseModel):
@@ -9,6 +11,11 @@ class TODOSchema(BaseModel):
         TODO: This is a placeholder schema. Proper Zod schemas need to be created in @hive-kube/iso-core-ts for: Sessions, Events, Projects, and Experiment comparison/result endpoints.
     """
 
-    model_config = {"populate_by_name": True, "validate_assignment": True}
+    model_config = {
+        "populate_by_name": True,
+        "validate_assignment": True,
+        "extra": "allow",
+        "protected_namespaces": (),
+    }
 
     message: str = Field(validation_alias="message")

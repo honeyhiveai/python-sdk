@@ -3,7 +3,7 @@
 Setup Local Environment for HoneyHive Python SDK Development
 
 This script helps developers set up their local .env file for development
-and testing, following Agent OS standards.
+and testing.
 """
 
 import os

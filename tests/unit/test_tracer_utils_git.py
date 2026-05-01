@@ -2,7 +2,7 @@
 
 This module tests the git information collection utilities including telemetry
 settings, repository detection, and git command execution using standard fixtures
-and comprehensive edge case coverage following Agent OS testing standards.
+and comprehensive edge case coverage following testing standards.
 """
 
 # pylint: disable=too-many-lines,protected-access,redefined-outer-name,too-many-public-methods,line-too-long

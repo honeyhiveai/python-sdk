@@ -178,7 +178,7 @@ class TestForceFlushTracer:
         # Execute
         result = force_flush_tracer(mock_tracer, timeout_millis=5000)
 
-        # Verify - consistent behavior regardless of test_mode (Agent OS standards)
+        # Verify - consistent behavior regardless of test_mode
         assert result is False
         # Error logging should occur consistently regardless of test_mode
         mock_safe_log.assert_any_call(

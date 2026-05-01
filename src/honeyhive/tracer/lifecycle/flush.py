@@ -105,7 +105,7 @@ def force_flush_tracer(tracer_instance: Any, timeout_millis: float = 30000) -> b
         return overall_success
 
     except Exception as e:
-        # Graceful degradation following Agent OS standards - never crash host
+        # Graceful degradation - never crash host
         safe_log(
             tracer_instance,
             "error",
@@ -148,7 +148,7 @@ def _flush_tracer_provider(
             )
         except Exception as e:
             flush_results.append(("provider", False))
-            # Graceful degradation following Agent OS standards - never crash host
+            # Graceful degradation - never crash host
             safe_log(
                 tracer_instance,
                 "error",
@@ -200,7 +200,7 @@ def _flush_span_processor(
             )
         except Exception as e:
             flush_results.append(("span_processor", False))
-            # Graceful degradation following Agent OS standards - never crash host
+            # Graceful degradation - never crash host
             safe_log(
                 tracer_instance,
                 "error",
@@ -250,7 +250,7 @@ def _flush_single_processor(
         )
         return bool(result)
     except Exception as e:
-        # Graceful degradation following Agent OS standards - never crash host
+        # Graceful degradation - never crash host
         safe_log(
             tracer_instance,
             "error",
@@ -295,7 +295,7 @@ def _flush_batch_processors(
 
     except Exception as e:
         flush_results.append(("batch_processors", False))
-        # Graceful degradation following Agent OS standards - never crash host
+        # Graceful degradation - never crash host
         safe_log(
             tracer_instance,
             "error",

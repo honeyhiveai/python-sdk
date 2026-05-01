@@ -1,9 +1,11 @@
-from typing import *
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
 from .MetricDatapoints import MetricDatapoints
 from .PassingRange import PassingRange
+
+__all__ = ["MetricDetail"]
 
 
 class MetricDetail(BaseModel):
@@ -11,7 +13,12 @@ class MetricDetail(BaseModel):
     MetricDetail model
     """
 
-    model_config = {"populate_by_name": True, "validate_assignment": True}
+    model_config = {
+        "populate_by_name": True,
+        "validate_assignment": True,
+        "extra": "allow",
+        "protected_namespaces": (),
+    }
 
     metric_name: str = Field(validation_alias="metric_name")
 
@@ -25,10 +32,10 @@ class MetricDetail(BaseModel):
 
     values: Optional[List[float]] = Field(validation_alias="values", default=None)
 
-    passing_range: Optional[Tuple[PassingRange, Any]] = Field(
+    passing_range: Optional[PassingRange] = Field(
         validation_alias="passing_range", default=None
     )
 
-    datapoints: Optional[Tuple[MetricDatapoints, Any]] = Field(
+    datapoints: Optional[MetricDatapoints] = Field(
         validation_alias="datapoints", default=None
     )

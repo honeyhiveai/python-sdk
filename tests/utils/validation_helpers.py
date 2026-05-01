@@ -87,7 +87,7 @@ def verify_datapoint_creation(
         ):
             raise ValidationError("Datapoint creation failed - missing result field")
 
-        inserted_ids = datapoint_response.result.get("insertedIds")
+        inserted_ids = getattr(datapoint_response.result, "insertedIds", None)
         if not inserted_ids or len(inserted_ids) == 0:
             raise ValidationError(
                 "Datapoint creation failed - missing insertedIds in result"
@@ -125,24 +125,18 @@ def verify_datapoint_creation(
                 else []
             )
 
-            # Find matching datapoint - datapoints are dicts, not objects
+            # Find matching datapoint. `datapoints` is List[Datapoint] (typed
+            # Pydantic model, `extra="allow"`); the legacy shape was a raw
+            # List[Dict]. Use getattr() so both shapes work during migration.
             for dp in datapoints:
-                # Check if dict has id or field_id key matching created_id
-                # Note: API returns 'id' in datapoint dicts, not 'field_id'
-                if isinstance(dp, dict) and (
-                    dp.get("id") == created_id or dp.get("field_id") == created_id
-                ):
+                dp_id = getattr(dp, "id", None) or getattr(dp, "field_id", None)
+                if dp_id == created_id:
                     logger.debug(f"✅ Datapoint found via list: {created_id}")
                     return dp
 
                 # Fallback: Match by test_id if provided
-                if (
-                    test_id
-                    and isinstance(dp, dict)
-                    and "metadata" in dp
-                    and dp.get("metadata")
-                    and dp["metadata"].get("test_id") == test_id
-                ):
+                dp_metadata = getattr(dp, "metadata", None) or {}
+                if test_id and dp_metadata.get("test_id") == test_id:
                     logger.debug(f"✅ Datapoint found via test_id: {test_id}")
                     return dp
 
@@ -192,23 +186,18 @@ def verify_session_creation(
         # Step 2: Wait for data propagation
         time.sleep(2)
 
-        # Step 3: Retrieve and validate persistence using get
-        retrieved_session = client.sessions.get(created_id)
-
-        # Validate the retrieved session
-        if retrieved_session and hasattr(retrieved_session, "event"):
-            session_event = retrieved_session.event
+        # Step 3: Retrieve and validate persistence through the surviving DP event
+        # query surface. The SDK no longer exposes direct session reads.
+        # `retrieved_events.events` is List[LegacyEvent] (extra="allow").
+        retrieved_events = client.events.get_by_session_id(created_id, limit=100)
+        for session_event in retrieved_events.events:
             if (
-                hasattr(session_event, "session_id")
-                and session_event.session_id == created_id
+                session_event.session_id == created_id
+                and session_event.event_type == "session"
             ):
                 logger.debug(f"✅ Session found: {created_id}")
                 return session_event
-            if (
-                hasattr(session_event, "event_id")
-                and session_event.event_id == created_id
-            ):
-                # Some APIs return event_id instead of session_id for sessions
+            if session_event.event_id == created_id:
                 logger.debug(f"✅ Session found via event_id: {created_id}")
                 return session_event
 

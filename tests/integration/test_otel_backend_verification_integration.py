@@ -258,7 +258,7 @@ class TestOTELBackendVerificationIntegration:
         # NOTE: llm.* attributes are raw OTEL attributes that may not be
         # routed to metadata by backend ingestion unless they're part of a
         # recognized instrumentor. Backend verification: Custom attributes
-        # may be filtered by ingestion service. Per Agent OS standards: Test
+        # may be filtered by ingestion service. Test
         # what backend ACTUALLY stores. Token metrics (llm.response.tokens.*)
         # go to metadata per PR #585 IF sent via recognized LLM instrumentor,
         # but custom span attributes may not be preserved.
@@ -566,12 +566,8 @@ class TestOTELBackendVerificationIntegration:
                 },
             )
 
-            verified_session_id = (
-                verified_event["session_id"]
-                if isinstance(verified_event, dict)
-                else verified_event.session_id
-            )
-            assert verified_session_id == existing_session_id
+            # verify_tracer_span always returns a LegacyEvent (Pydantic) now.
+            assert verified_event.session_id == existing_session_id
         finally:
             test_tracer.shutdown()
 

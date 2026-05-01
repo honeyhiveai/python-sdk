@@ -190,7 +190,7 @@ def register_tracer_for_atexit_cleanup(tracer_instance: Any) -> None:
                     shutdown_tracer(tracer)
 
                 except Exception as e:
-                    # Graceful degradation following Agent OS standards
+                    # Graceful degradation
                     # Silent failure during shutdown is expected, but log for debugging
                     safe_log(
                         None,
@@ -229,7 +229,7 @@ def mark_stream_closure_detected() -> None:
         try:
             tracer.shutdown()
         except Exception as e:
-            # Graceful degradation following Agent OS standards - never crash host
+            # Graceful degradation - never crash host
             safe_log(None, "debug", "Shutdown exception during stream closure",
                     honeyhive_data={"error_type": type(e).__name__})
     """

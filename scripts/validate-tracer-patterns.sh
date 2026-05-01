@@ -10,7 +10,7 @@ set -e
 echo "🔍 Checking for invalid tracer patterns..."
 
 # Check for invalid @*.trace( patterns in documentation, examples, and source
-if grep -r "@.*\.trace(" docs/ examples/ src/ 2>/dev/null; then
+if grep -r "@.*\.trace(" examples/ src/ 2>/dev/null; then
     echo "❌ Invalid tracer patterns found!"
     echo ""
     echo "🚨 DEPRECATED PATTERN DETECTED"
