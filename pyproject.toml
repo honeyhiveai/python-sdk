@@ -180,7 +180,7 @@ aws-strands = [
 
 # OpenAI (traceloop-openai)
 traceloop-openai = [
-    "opentelemetry-instrumentation-openai>=0.58.0,<1.0.0",
+    "opentelemetry-instrumentation-openai>=0.60.0,<1.0.0",
     "openai>=1.0.0",
 ]
 
@@ -204,7 +204,7 @@ traceloop-aws-bedrock = [
 
 # Azure OpenAI (traceloop-azure-openai)
 traceloop-azure-openai = [
-    "opentelemetry-instrumentation-openai>=0.58.0,<1.0.0",
+    "opentelemetry-instrumentation-openai>=0.60.0,<1.0.0",
     "openai>=1.0.0",
     "azure-identity>=1.12.0",
 ]
@@ -265,7 +265,7 @@ openinference-llm-providers = [
 # OpenLLMetry (Traceloop) Convenience Groups
 # All Available Traceloop Integrations (documented only)
 all-traceloop = [
-    "opentelemetry-instrumentation-openai>=0.58.0,<1.0.0",
+    "opentelemetry-instrumentation-openai>=0.60.0,<1.0.0",
     "opentelemetry-instrumentation-anthropic>=0.58.0,<1.0.0",
     "opentelemetry-instrumentation-google-generativeai>=0.58.0,<1.0.0",
     "opentelemetry-instrumentation-bedrock>=0.58.0,<1.0.0",
@@ -281,7 +281,7 @@ all-traceloop = [
 
 # Common LLM Providers (Traceloop Ecosystem)
 traceloop-llm-providers = [
-    "opentelemetry-instrumentation-openai>=0.58.0,<1.0.0",
+    "opentelemetry-instrumentation-openai>=0.60.0,<1.0.0",
     "opentelemetry-instrumentation-anthropic>=0.58.0,<1.0.0",
     "opentelemetry-instrumentation-google-generativeai>=0.58.0,<1.0.0",
     "opentelemetry-instrumentation-bedrock>=0.58.0,<1.0.0",
