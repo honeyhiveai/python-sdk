@@ -116,14 +116,15 @@ jobs:
             Use inline comments for specific code feedback (bugs, suggestions, nits, etc):
               - Use `mcp__github_inline_comment__create_inline_comment` to leave feedback on specific lines of code.
 
-            Use a single top-level comment for high-level observations about the PR as a whole:
-              - Use `gh pr comment` for this.
-              - This comment should cover things like overall design, architecture, what looks good, and any general concerns.
-              - Do NOT repeat or summarize individual code-level feedback here. That feedback already exists as inline comments and duplicating it adds noise.
+            Use the report comment (updated via `mcp__github_comment__update_claude_comment`) for everything else:
+              - Your progress checklist
+              - High-level observations about the PR (overall design, architecture, what looks good, general concerns)
+              - A brief list of the inline comments you posted (file path + one-liner) so the author has a summary
 
+            Do NOT use `gh pr comment` to post additional top-level comments. All output goes in the single report comment.
             Only post GitHub comments - don't submit review text as messages.
           claude_args: |
-            --model claude-opus-4-6 --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),WebFetch,WebSearch"
+            --model claude-opus-4-6 --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr diff:*),Bash(gh pr view:*),WebFetch,WebSearch"
 
       - name: Upload review execution output
         if: always() && steps.check-workflow.outputs.skip != 'true'
