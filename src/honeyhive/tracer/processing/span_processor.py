@@ -504,7 +504,7 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                     attributes[attr_key] = str(value)
 
         except Exception as e:
-            # Graceful degradation following Agent OS standards - never crash host
+            # Graceful degradation - never crash host
             self._safe_log(
                 "debug",
                 "Error adding experiment attributes",
@@ -536,7 +536,7 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                             attr_key = f"traceloop.association.properties.{key}"
                             attributes[attr_key] = str(value)
         except Exception as e:
-            # Graceful degradation following Agent OS standards - never crash host
+            # Graceful degradation - never crash host
             self._safe_log(
                 "debug",
                 "Error checking association_properties",
@@ -843,7 +843,7 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                 )
 
         except Exception as e:
-            # Graceful degradation following Agent OS standards - never crash host
+            # Graceful degradation - never crash host
             self._safe_log(
                 "debug",
                 "Error in span enrichment",
@@ -1378,7 +1378,7 @@ class HoneyHiveSpanProcessor(SpanProcessor):
             return True
 
         except Exception as e:
-            # Graceful degradation following Agent OS standards - never crash host
+            # Graceful degradation - never crash host
             self._safe_log(
                 "debug",
                 "HoneyHive span processor flush error",

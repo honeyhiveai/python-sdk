@@ -25,7 +25,7 @@ class TestSimpleIntegration:
         self, integration_client, integration_project_name
     ):
         """Test complete datapoint workflow: create → validate storage → retrieve."""
-        # Agent OS Zero Failing Tests Policy: NO SKIPPING - must use real credentials
+        # NO SKIPPING - must use real credentials
         if (
             not integration_client.api_key
             or integration_client.api_key == "test-api-key-12345"
@@ -52,9 +52,9 @@ class TestSimpleIntegration:
             assert hasattr(datapoint_response, "inserted")
             assert datapoint_response.inserted is True
             assert hasattr(datapoint_response, "result")
-            assert "insertedIds" in datapoint_response.result
-            assert len(datapoint_response.result["insertedIds"]) > 0
-            created_id = datapoint_response.result["insertedIds"][0]
+            assert datapoint_response.result.insertedIds is not None
+            assert len(datapoint_response.result.insertedIds) > 0
+            created_id = datapoint_response.result.insertedIds[0]
 
             # Step 2: Wait for data propagation (real systems need time)
             time.sleep(2)
@@ -97,7 +97,7 @@ class TestSimpleIntegration:
                 print(f"✅ Creation successful with ID: {created_id}")
 
         except Exception as e:
-            # Agent OS Zero Failing Tests Policy: NO SKIPPING - real system exercise
+            # NO SKIPPING - real system exercise
             # required
             pytest.fail(f"API call failed - real system must work: {e}")
 
@@ -106,7 +106,7 @@ class TestSimpleIntegration:
     ):
         """Test complete configuration workflow: create → validate storage →
         retrieve."""
-        # Agent OS Zero Failing Tests Policy: NO SKIPPING - must use real credentials
+        # NO SKIPPING - must use real credentials
         if (
             not integration_client.api_key
             or integration_client.api_key == "test-api-key-12345"
@@ -181,7 +181,7 @@ class TestSimpleIntegration:
                 print(f"✅ Creation successful: {config_name}")
 
         except Exception as e:
-            # Agent OS Zero Failing Tests Policy: NO SKIPPING - real system exercise
+            # NO SKIPPING - real system exercise
             # required
             pytest.fail(f"API call failed - real system must work: {e}")
 
@@ -189,7 +189,7 @@ class TestSimpleIntegration:
         self, integration_client, integration_project_name
     ):
         """Test complete session + event workflow with data validation."""
-        # Agent OS Zero Failing Tests Policy: NO SKIPPING - must use real credentials
+        # NO SKIPPING - must use real credentials
         if (
             not integration_client.api_key
             or integration_client.api_key == "test-api-key-12345"
@@ -241,12 +241,17 @@ class TestSimpleIntegration:
 
             # Step 4: Validate session and event are stored and linked
             try:
-                # Retrieve session - v1 API uses .get() method
-                session = integration_client.sessions.get(session_id)
-                assert session is not None
-                # v1 API returns GetSessionResponse with "request" field (EventNode)
-                assert hasattr(session, "request")
-                assert session.request.session_id == session_id
+                # The SDK no longer exposes direct session reads, so validate that
+                # session-linked events are queryable through the DP event surface.
+                session_events = integration_client.events.get_by_session_id(
+                    session_id,
+                    limit=10,
+                )
+                assert session_events.events is not None
+                # session_events.events is List[LegacyEvent] (extra="allow").
+                assert any(
+                    event.session_id == session_id for event in session_events.events
+                )
 
                 # Retrieve events for this session - v1 API uses .list() method
                 session_filter = {
@@ -300,7 +305,7 @@ class TestSimpleIntegration:
                 )
 
         except Exception as e:
-            # Agent OS Zero Failing Tests Policy: NO SKIPPING - real system exercise
+            # NO SKIPPING - real system exercise
             # required
             pytest.fail(f"API call failed - real system must work: {e}")
 
@@ -334,7 +339,7 @@ class TestSimpleIntegration:
 
     def test_error_handling(self, integration_client):
         """Test error handling with real API calls."""
-        # Agent OS Zero Failing Tests Policy: NO SKIPPING - must use real credentials
+        # NO SKIPPING - must use real credentials
         if (
             not integration_client.api_key
             or integration_client.api_key == "test-api-key-12345"

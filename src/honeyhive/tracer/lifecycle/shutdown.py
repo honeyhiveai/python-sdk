@@ -8,7 +8,7 @@ with comprehensive error handling, timeout protection, and graceful degradation.
 # Justification: This module completes the necessary architectural cycle.
 # shutdown.py depends on both core.py (for shared infrastructure) and flush.py
 # (for required flush-before-shutdown operations), while core.py coordinates
-# Agent OS graceful degradation error handling patterns are intentionally consistent
+# Graceful degradation error handling patterns are intentionally consistent
 # shutdown operations. This cycle is essential for correct shutdown sequencing:
 # flush → shutdown → cleanup. The alternative would be a monolithic module
 # or complex dependency injection, both of which would be worse architecturally.
@@ -197,7 +197,7 @@ def shutdown_tracer(tracer_instance: Any) -> None:
             _cleanup_tracer_state(tracer_instance)
 
         except Exception as e:
-            # Graceful degradation following Agent OS standards - never crash host
+            # Graceful degradation - never crash host
             safe_log(
                 tracer_instance,
                 "error",
@@ -318,7 +318,7 @@ def _shutdown_without_lock(tracer_instance: Any) -> None:
         _cleanup_tracer_state(tracer_instance)
 
     except Exception as e:
-        # Graceful degradation following Agent OS standards - never crash host
+        # Graceful degradation - never crash host
         safe_log(
             tracer_instance,
             "error",
@@ -396,7 +396,7 @@ def _shutdown_main_provider(tracer_instance: Any) -> None:
                         },
                     )
                 except Exception as reset_error:
-                    # Graceful degradation following Agent OS standards
+                    # Graceful degradation
                     safe_log(
                         tracer_instance,
                         "warning",
@@ -425,7 +425,7 @@ def _shutdown_main_provider(tracer_instance: Any) -> None:
                 future.cancel()
 
     except Exception as e:
-        # Graceful degradation following Agent OS standards - never crash host
+        # Graceful degradation - never crash host
         safe_log(
             tracer_instance,
             "error",
@@ -476,7 +476,7 @@ def _cleanup_tracer_state(tracer_instance: Any) -> None:
                     honeyhive_data={"tracer_id": tracer_instance._tracer_id},
                 )
             except Exception as e:
-                # Graceful degradation following Agent OS standards - never crash host
+                # Graceful degradation - never crash host
                 safe_log(
                     tracer_instance,
                     "warning",
@@ -501,7 +501,7 @@ def _cleanup_tracer_state(tracer_instance: Any) -> None:
         safe_log(tracer_instance, "debug", "Tracer instance state cleaned up")
 
     except Exception as e:
-        # Graceful degradation following Agent OS standards - never crash host
+        # Graceful degradation - never crash host
         safe_log(
             tracer_instance,
             "warning",
@@ -571,7 +571,7 @@ def graceful_shutdown_all() -> None:
                 shutdown_results.append(
                     (getattr(tracer_instance, "_tracer_id", "unknown"), False)
                 )
-                # Graceful degradation following Agent OS standards - never crash host
+                # Graceful degradation - never crash host
                 safe_log(
                     tracer_instance,
                     "error",
@@ -598,7 +598,7 @@ def graceful_shutdown_all() -> None:
         )
 
     except Exception as e:
-        # Graceful degradation following Agent OS standards - never crash host
+        # Graceful degradation - never crash host
         safe_log(
             None,
             "error",
@@ -689,7 +689,7 @@ def wait_for_pending_spans(
             time.sleep(0.1)
 
         except Exception as e:
-            # Graceful degradation following Agent OS standards - never crash host
+            # Graceful degradation - never crash host
             safe_log(
                 tracer_instance,
                 "warning",

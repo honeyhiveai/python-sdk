@@ -790,45 +790,45 @@ class TestThreadSafety:
             try:
                 mock_provider = Mock(spec=TracerProvider)
                 mock_provider.add_span_processor = Mock()
-
-                with patch.object(
-                    integrator,
-                    "_validate_provider_compatibility_dynamically",
-                    return_value=True,
-                ):
-                    with patch.object(
-                        integrator, "_setup_integration_context_dynamically"
-                    ):
-                        with patch.object(
-                            integrator,
-                            "_create_processor_dynamically",
-                            return_value=Mock(spec=SpanProcessor),
-                        ):
-                            with patch.object(
-                                integrator,
-                                "_integrate_processor_dynamically",
-                                return_value=True,
-                            ):
-                                with patch.object(
-                                    integrator, "_log_integration_success_dynamically"
-                                ):
-                                    result = integrator.integrate_with_provider(
-                                        mock_provider, source=f"test-{worker_id}"
-                                    )
-                                    results.append(result)
+                result = integrator.integrate_with_provider(
+                    mock_provider, source=f"test-{worker_id}"
+                )
+                results.append(result)
             except Exception as e:
                 errors.append(e)
 
-        # Create and start multiple threads
-        threads = []
-        for i in range(5):
-            thread = threading.Thread(target=integration_worker, args=(i,))
-            threads.append(thread)
-            thread.start()
+        # Apply patches on the main thread to avoid race conditions;
+        # unittest.mock.patch is not thread-safe when multiple threads
+        # patch the same attribute on a shared object concurrently.
+        with (
+            patch.object(
+                integrator,
+                "_validate_provider_compatibility_dynamically",
+                return_value=True,
+            ),
+            patch.object(integrator, "_setup_integration_context_dynamically"),
+            patch.object(
+                integrator,
+                "_create_processor_dynamically",
+                side_effect=lambda *a, **kw: Mock(spec=SpanProcessor),
+            ),
+            patch.object(
+                integrator,
+                "_integrate_processor_dynamically",
+                return_value=True,
+            ),
+            patch.object(integrator, "_log_integration_success_dynamically"),
+        ):
+            # Create and start multiple threads
+            threads = []
+            for i in range(5):
+                thread = threading.Thread(target=integration_worker, args=(i,))
+                threads.append(thread)
+                thread.start()
 
-        # Wait for all threads to complete
-        for thread in threads:
-            thread.join()
+            # Wait for all threads to complete
+            for thread in threads:
+                thread.join()
 
         # Verify all operations completed successfully
         assert len(results) == 5
@@ -841,37 +841,37 @@ class TestThreadSafety:
         results: List[Dict[str, Any]] = []
         errors: List[Exception] = []
 
+        mock_provider_info = {
+            "integration_strategy": IntegrationStrategy.MAIN_PROVIDER,
+            "provider_instance": Mock(spec=TracerProvider),
+        }
+
         def manager_worker(worker_id: int) -> None:
             """Worker function for manager thread safety testing."""
             try:
-                # Import IntegrationStrategy for mocking
-                # IntegrationStrategy already imported at module level
-
-                mock_provider_info = {
-                    "integration_strategy": IntegrationStrategy.MAIN_PROVIDER,
-                    "provider_instance": Mock(spec=TracerProvider),
-                }
-
-                with patch.object(
-                    manager.detector,
-                    "get_provider_info",
-                    return_value=mock_provider_info,
-                ):
-                    result = manager.perform_integration(source=f"test-{worker_id}")
-                    results.append(result)
+                result = manager.perform_integration(source=f"test-{worker_id}")
+                results.append(result)
             except Exception as e:
                 errors.append(e)
 
-        # Create and start multiple threads
-        threads = []
-        for i in range(3):
-            thread = threading.Thread(target=manager_worker, args=(i,))
-            threads.append(thread)
-            thread.start()
+        # Apply patches on the main thread to avoid race conditions;
+        # unittest.mock.patch is not thread-safe when multiple threads
+        # patch the same attribute on a shared object concurrently.
+        with patch.object(
+            manager.detector,
+            "get_provider_info",
+            return_value=mock_provider_info,
+        ):
+            # Create and start multiple threads
+            threads = []
+            for i in range(3):
+                thread = threading.Thread(target=manager_worker, args=(i,))
+                threads.append(thread)
+                thread.start()
 
-        # Wait for all threads to complete
-        for thread in threads:
-            thread.join()
+            # Wait for all threads to complete
+            for thread in threads:
+                thread.join()
 
         # Verify all operations completed successfully
         assert len(results) == 3

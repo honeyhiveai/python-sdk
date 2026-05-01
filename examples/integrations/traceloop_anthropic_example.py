@@ -11,8 +11,10 @@ Requirements:
 - Set environment variables: HH_API_KEY, ANTHROPIC_API_KEY
 """
 
+from __future__ import annotations
+
 import os
-from typing import Any, Dict
+from typing import Any
 
 # Import Anthropic SDK
 import anthropic
@@ -25,7 +27,7 @@ from honeyhive import HoneyHiveTracer, enrich_span, trace
 from honeyhive.models import EventType
 
 
-def setup_tracing() -> HoneyHiveTracer:
+def setup_tracing() -> tuple[HoneyHiveTracer, AnthropicInstrumentor]:
     """Initialize HoneyHive tracer with OpenLLMetry Anthropic instrumentor."""
 
     # Check required environment variables
@@ -34,21 +36,19 @@ def setup_tracing() -> HoneyHiveTracer:
     if not os.getenv("ANTHROPIC_API_KEY"):
         raise ValueError("ANTHROPIC_API_KEY environment variable is required")
 
-    # Initialize OpenLLMetry Anthropic instrumentor
-    anthropic_instrumentor = AnthropicInstrumentor()
-
-    # Initialize HoneyHive tracer FIRST
+    # Step 1: HoneyHive tracer first (BYOI), then attach the Anthropic instrumentor
     tracer = HoneyHiveTracer.init(
-        source=__file__.split("/")[-1],  # Use script name for visibility
+        api_key=os.getenv("HH_API_KEY"),
         project=os.getenv("HH_PROJECT", "anthropic-traceloop-demo"),
+        session_name="traceloop_anthropic_example",
+        source=os.path.basename(__file__),
     )
-    print("✓ HoneyHive tracer initialized")
 
-    # Initialize instrumentor separately with tracer_provider
+    anthropic_instrumentor = AnthropicInstrumentor()
     anthropic_instrumentor.instrument(tracer_provider=tracer.provider)
 
     print("✅ Tracing initialized with OpenLLMetry Anthropic instrumentor")
-    return tracer
+    return tracer, anthropic_instrumentor
 
 
 def basic_anthropic_example():
@@ -63,7 +63,7 @@ def basic_anthropic_example():
     # Simple message creation - automatically traced by OpenLLMetry
     try:
         response = client.messages.create(
-            model="claude-3-haiku-20240307",
+            model="claude-haiku-4-5-20251001",
             max_tokens=100,
             messages=[
                 {"role": "user", "content": "Explain OpenLLMetry in one sentence."}
@@ -87,17 +87,17 @@ def basic_anthropic_example():
 
 
 @trace(event_type=EventType.chain)
-def advanced_anthropic_workflow(document: str) -> Dict[str, Any]:
+def advanced_anthropic_workflow(document: str) -> dict[str, Any]:
     """Advanced workflow using Anthropic with business context tracing."""
 
-    print(f"\n🚀 Advanced Workflow: Document Analysis")
+    print("\n🚀 Advanced Workflow: Document Analysis")
     print("-" * 40)
 
     client = anthropic.Anthropic()
 
     # Add business context to the trace
     enrich_span(
-        {
+        metadata={
             "business.workflow": "document_analysis",
             "business.document_length": len(document),
             "anthropic.strategy": "claude_reasoning_chain",
@@ -110,7 +110,7 @@ def advanced_anthropic_workflow(document: str) -> Dict[str, Any]:
         # Step 1: Summarize document
         print("📝 Step 1: Summarizing document...")
         summary_response = client.messages.create(
-            model="claude-3-haiku-20240307",
+            model="claude-haiku-4-5-20251001",
             max_tokens=200,
             messages=[
                 {
@@ -126,7 +126,7 @@ def advanced_anthropic_workflow(document: str) -> Dict[str, Any]:
         # Step 2: Detailed analysis with Claude Sonnet
         print("🔍 Step 2: Performing detailed analysis...")
         analysis_response = client.messages.create(
-            model="claude-3-haiku-20240307",  # Use working model for analysis
+            model="claude-sonnet-4-5-20250929",
             max_tokens=300,
             messages=[
                 {
@@ -141,13 +141,13 @@ def advanced_anthropic_workflow(document: str) -> Dict[str, Any]:
 
         # Add results to span
         enrich_span(
-            {
+            metadata={
                 "business.steps_completed": 2,
                 "business.summary_length": len(summary),
                 "business.analysis_length": len(analysis),
                 "anthropic.models_used": [
-                    "claude-3-haiku-20240307",
-                    "claude-3-sonnet-20240229",
+                    "claude-haiku-4-5-20251001",
+                    "claude-sonnet-4-5-20250929",
                 ],
                 "anthropic.total_tokens": summary_response.usage.input_tokens
                 + summary_response.usage.output_tokens
@@ -165,12 +165,12 @@ def advanced_anthropic_workflow(document: str) -> Dict[str, Any]:
             + summary_response.usage.output_tokens
             + analysis_response.usage.input_tokens
             + analysis_response.usage.output_tokens,
-            "models_used": ["claude-3-haiku-20240307", "claude-3-sonnet-20240229"],
+            "models_used": ["claude-haiku-4-5-20251001", "claude-sonnet-4-5-20250929"],
         }
 
     except Exception as e:
         enrich_span(
-            {
+            metadata={
                 "error.type": "workflow_error",
                 "error.message": str(e),
                 "business.workflow_status": "failed",
@@ -189,7 +189,7 @@ def demonstrate_cost_tracking():
     client = anthropic.Anthropic()
 
     # OpenLLMetry automatically tracks costs for different models
-    models_to_test = ["claude-3-haiku-20240307", "claude-3-sonnet-20240229"]
+    models_to_test = ["claude-haiku-4-5-20251001", "claude-sonnet-4-5-20250929"]
 
     for model in models_to_test:
         print(f"Testing cost tracking for {model}...")
@@ -216,19 +216,21 @@ def main():
     print("🧪 Anthropic + OpenLLMetry (Traceloop) Integration Example")
     print("=" * 60)
 
+    tracer: HoneyHiveTracer | None = None
+    instrumentor: AnthropicInstrumentor | None = None
+
     try:
-        # Setup tracing
-        tracer = setup_tracing()
+        tracer, instrumentor = setup_tracing()
 
         # Basic example
         basic_anthropic_example()
 
         # Advanced workflow
         sample_document = """
-        Artificial Intelligence (AI) has revolutionized many industries in recent years. 
-        From healthcare to finance, AI applications are helping organizations make better 
-        decisions, automate processes, and improve customer experiences. Machine learning 
-        algorithms can now process vast amounts of data to identify patterns and make 
+        Artificial Intelligence (AI) has revolutionized many industries in recent years.
+        From healthcare to finance, AI applications are helping organizations make better
+        decisions, automate processes, and improve customer experiences. Machine learning
+        algorithms can now process vast amounts of data to identify patterns and make
         predictions that would be impossible for humans to achieve manually.
         """
 
@@ -259,6 +261,9 @@ def main():
 
         traceback.print_exc()
         return 1
+    finally:
+        if instrumentor is not None:
+            instrumentor.uninstrument()
 
     return 0
 

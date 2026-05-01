@@ -4,7 +4,7 @@ This module provides comprehensive unit tests for the tracer initialization
 functionality, following the V3 Test Generation Framework with complete
 external dependency mocking and systematic coverage of all code paths.
 
-Generated using Agent OS V3 Framework:
+Generated test framework:
 - 20 functions tested with 3 scenarios each (60 test methods)
 - 26 external dependencies mocked (100% isolation)
 - 23 mock attributes for complete tracer_instance simulation

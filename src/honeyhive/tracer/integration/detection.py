@@ -170,7 +170,7 @@ class ProviderDetector:
     ) -> IntegrationStrategy:
         """Dynamically determine integration strategy using Provider Intelligence.
 
-        This implements the Agent OS Provider Strategy Intelligence:
+        This implements the Provider Strategy Intelligence:
         - Main Provider Strategy: Replace non-functioning providers (NoOp/Proxy/Empty)
         - Independent Provider Strategy: Coexist with functioning providers
         - Critical: Someone must process instrumentor spans - empty providers lose data
@@ -592,7 +592,7 @@ def _is_functioning_tracer_provider(
 ) -> bool:
     """Check if TracerProvider is functioning (has active processors/exporters).
 
-    This implements the Provider Strategy Intelligence from Agent OS decisions:
+    This implements the Provider Strategy Intelligence:
     - Functioning providers have span processors that can handle instrumentor spans
     - Non-functioning providers (NoOp/Proxy/Empty) will lose instrumentor spans
     - Critical: Someone must process instrumentor spans to prevent data loss

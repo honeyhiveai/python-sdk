@@ -10,13 +10,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from honeyhive._generated.models.Pagination import Pagination
 from honeyhive.api.client import (
     QUERY_BATCH_SIZE,
     DatapointsAPI,
     ExperimentsAPI,
     _chunk_list,
 )
+from honeyhive.models import Pagination
 
 # ---------------------------------------------------------------------------
 # Helpers

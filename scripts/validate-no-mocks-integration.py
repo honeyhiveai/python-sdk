@@ -213,9 +213,6 @@ def main():
     print(
         "- Integration Testing Guide: docs/development/testing/integration-testing.rst"
     )
-    print(
-        "- praxis OS Spec: .praxis-os/specs/completed/2025-09-06-integration-testing-consolidation/"
-    )
 
     return 1
 

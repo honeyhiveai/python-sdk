@@ -2,7 +2,7 @@
 
 This module tests the dynamic provider detection system including provider type
 classification, integration strategy determination, and atomic provider operations
-using standard fixtures and comprehensive edge case coverage following Agent OS
+using standard fixtures and comprehensive edge case coverage
 testing standards.
 """
 

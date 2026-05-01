@@ -1,14 +1,24 @@
-from typing import *
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
+
+from .UpdateMetricRequestFilters import UpdateMetricRequestFilters
+
+__all__ = ["UpdateMetricRequest"]
 
 
 class UpdateMetricRequest(BaseModel):
     """
     UpdateMetricRequest model
+        Request body for PUT /metrics
     """
 
-    model_config = {"populate_by_name": True, "validate_assignment": True}
+    model_config = {
+        "populate_by_name": True,
+        "validate_assignment": True,
+        "extra": "allow",
+        "protected_namespaces": (),
+    }
 
     name: Optional[str] = Field(validation_alias="name", default=None)
 
@@ -50,6 +60,8 @@ class UpdateMetricRequest(BaseModel):
         validation_alias="child_metrics", default=None
     )
 
-    filters: Optional[Dict[str, Any]] = Field(validation_alias="filters", default=None)
+    filters: Optional[UpdateMetricRequestFilters] = Field(
+        validation_alias="filters", default=None
+    )
 
     id: str = Field(validation_alias="id")

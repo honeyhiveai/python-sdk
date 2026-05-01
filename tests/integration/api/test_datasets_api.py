@@ -4,12 +4,12 @@ import time
 import uuid
 from typing import Any
 
-import pytest
-
 from honeyhive.models import (
     CreateDatasetRequest,
     DeleteDatasetResponse,
     GetDatasetsResponse,
+    UpdateDatasetRequest,
+    UpdateDatasetResponse,
 )
 
 
@@ -178,6 +178,41 @@ class TestDatasetsAPI:
         self, integration_client: Any, integration_project_name: str
     ) -> None:
         """Test dataset metadata updates, verify persistence."""
-        pytest.skip(
-            "UpdateDatasetRequest requires dataset_id field - needs investigation"
+        test_id = str(uuid.uuid4())[:8]
+        dataset_name = f"test_update_dataset_{test_id}"
+
+        dataset_request = CreateDatasetRequest(
+            name=dataset_name,
+            description=f"Original description {test_id}",
         )
+
+        create_response = integration_client.datasets.create(dataset_request)
+        dataset_id = create_response.result.insertedId
+
+        updated_name = f"test_update_dataset_renamed_{test_id}"
+        updated_description = f"Updated description {test_id}"
+        update_request = UpdateDatasetRequest(
+            dataset_id=dataset_id,
+            name=updated_name,
+            description=updated_description,
+        )
+
+        update_response = integration_client.datasets.update(update_request)
+
+        assert isinstance(update_response, UpdateDatasetResponse)
+
+        datasets_response = integration_client.datasets.list(dataset_id=dataset_id)
+        assert isinstance(datasets_response, GetDatasetsResponse)
+        datasets = datasets_response.datasets
+        assert len(datasets) >= 1
+        dataset = datasets[0]
+        ds_name = dataset.name if hasattr(dataset, "name") else dataset.get("name")
+        ds_desc = (
+            dataset.description
+            if hasattr(dataset, "description")
+            else dataset.get("description")
+        )
+        assert ds_name == updated_name
+        assert ds_desc == updated_description
+
+        integration_client.datasets.delete(dataset_id)

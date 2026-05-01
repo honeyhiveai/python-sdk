@@ -1,7 +1,7 @@
 #!/bin/bash
 # Basic Integration Tests
 # Runs a minimal subset of integration tests with credential validation
-# Part of the HoneyHive Python SDK Agent OS Zero Failing Tests Policy
+# HoneyHive Python SDK integration tests
 
 set -euo pipefail
 
@@ -63,7 +63,7 @@ timeout 120s tox -e integration -- "${BASIC_TESTS[@]}" --tb=short -q || {
     echo "3. Fix any failing tests before committing"
     echo ""
     echo "Or skip integration tests with: git commit --no-verify"
-    echo "(Not recommended - violates Agent OS Zero Failing Tests Policy)"
+    echo "(Not recommended)"
     exit 1
 }
 

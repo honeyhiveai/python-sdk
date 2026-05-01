@@ -43,7 +43,7 @@ class TestEndToEndValidation:
         self, integration_client: Any, real_project: Any
     ) -> None:
         """Test complete datapoint lifecycle: create → store → retrieve → validate."""
-        # Agent OS Zero Failing Tests Policy: NO SKIPPING - must use real credentials
+        # NO SKIPPING - must use real credentials
         if (
             not integration_client.api_key
             or integration_client.api_key == "test-api-key-12345"
@@ -84,32 +84,40 @@ class TestEndToEndValidation:
                 test_id=test_id,
             )
 
-            # found_datapoint is a dict from the API response
-            # Note: API returns 'id' not 'field_id' in the datapoint dict
-            datapoint_id = found_datapoint.get("id") or found_datapoint.get("field_id")
+            # found_datapoint is a typed Datapoint Pydantic model
+            # (with extra="allow"). Note: API returns 'id' not 'field_id'.
+            datapoint_id = getattr(found_datapoint, "id", None) or getattr(
+                found_datapoint, "field_id", None
+            )
             print(f"✅ Datapoint created and validated with ID: {datapoint_id}")
-            assert "created_at" in found_datapoint, "Datapoint missing created_at field"
+            assert getattr(
+                found_datapoint, "created_at", None
+            ), "Datapoint missing created_at field"
 
             # Note: v1 API may not return project_id for standalone datapoints
             # Validate project association if available
-            # assert found_datapoint.get("project_id") is not None, "Project ID is None"
+            # assert getattr(found_datapoint, "project_id", None) is not None
 
             # Note: Current API behavior - inputs, ground_truth, and metadata are empty
             # for standalone datapoints. This may require dataset context for full
             # data storage.
             print("📝 Datapoint structure validated:")
             print(f"   - ID: {datapoint_id}")
-            print(f"   - Project ID: {found_datapoint.get('project_id')}")
-            print(f"   - Created: {found_datapoint.get('created_at')}")
-            print(f"   - Inputs structure: {type(found_datapoint.get('inputs'))}")
+            print(f"   - Project ID: {getattr(found_datapoint, 'project_id', None)}")
+            print(f"   - Created: {getattr(found_datapoint, 'created_at', None)}")
             print(
-                f"   - Ground truth structure: {type(found_datapoint.get('ground_truth'))}"
+                f"   - Inputs structure: {type(getattr(found_datapoint, 'inputs', None))}"
             )
-            print(f"   - Metadata structure: {type(found_datapoint.get('metadata'))}")
+            print(
+                f"   - Ground truth structure: {type(getattr(found_datapoint, 'ground_truth', None))}"
+            )
+            print(
+                f"   - Metadata structure: {type(getattr(found_datapoint, 'metadata', None))}"
+            )
 
             # Validate metadata (if populated)
-            if "metadata" in found_datapoint and found_datapoint.get("metadata"):
-                metadata = found_datapoint.get("metadata")
+            metadata = getattr(found_datapoint, "metadata", None)
+            if metadata:
                 assert metadata.get("integration_test") is True, "Metadata corrupted"
                 assert metadata.get("test_id") == test_id, "Metadata test_id corrupted"
 
@@ -122,13 +130,10 @@ class TestEndToEndValidation:
             print("   - Data persistence verified: ✓")
 
         except Exception as e:
-            # Agent OS Zero Failing Tests Policy: NO SKIPPING - real system exercise
+            # NO SKIPPING - real system exercise
             # required
             pytest.fail(f"Integration test failed - real system must work: {e}")
 
-    @pytest.mark.skip(
-        reason="GET /v1/sessions/{session_id} endpoint not deployed on testing backend (returns 404 Route not found)"
-    )
     def test_session_event_relationship_validation(
         self, integration_client: Any, real_project: Any
     ) -> None:
@@ -163,11 +168,8 @@ class TestEndToEndValidation:
                 session_request=session_request,
                 expected_session_name=session_name,
             )
-            session_id = (
-                verified_session.session_id
-                if hasattr(verified_session, "session_id")
-                else verified_session.event.session_id
-            )
+            # verified_session is a LegacyEvent (Pydantic, extra="allow").
+            session_id = verified_session.session_id or verified_session.event_id
             print(f"✅ Session created and validated: {session_id}")
 
             # Step 2: Create multiple events linked to session using centralized
@@ -216,11 +218,12 @@ class TestEndToEndValidation:
 
             # Step 4: Validate session persistence and metadata
             print("🔍 Validating session storage...")
-            retrieved_session = integration_client.sessions.get(session_id)
-            assert retrieved_session is not None, "Session not found in system"
-            assert hasattr(retrieved_session, "event"), "Session missing event data"
-            assert (
-                retrieved_session.event.session_id == session_id
+            retrieved_events = integration_client.events.get_by_session_id(
+                session_id, limit=20
+            )
+            assert retrieved_events.events is not None, "Session not found in system"
+            assert any(
+                event.session_id == session_id for event in retrieved_events.events
             ), "Session ID mismatch"
             print(f"✅ Session validation successful: {session_id}")
 
@@ -293,15 +296,12 @@ class TestEndToEndValidation:
             print("   - Relationship persistence: ✓")
 
         except Exception as e:
-            # Agent OS Zero Failing Tests Policy: NO SKIPPING - real system exercise
+            # NO SKIPPING - real system exercise
             # required
             pytest.fail(
                 f"Session-event integration test failed - real system must work: {e}"
             )
 
-    @pytest.mark.skip(
-        reason="Configuration list endpoint not returning newly created configurations - backend data propagation issue"
-    )
     def test_configuration_workflow_validation(
         self, integration_client: Any, integration_project_name: Any
     ) -> None:
@@ -393,14 +393,11 @@ class TestEndToEndValidation:
             print("   - Data persistence: ✓")
 
         except Exception as e:
-            # Agent OS Zero Failing Tests Policy: NO SKIPPING - real system exercise required
+            # NO SKIPPING - real system exercise required
             pytest.fail(
                 f"Configuration integration test failed - real system must work: {e}"
             )
 
-    @pytest.mark.skip(
-        reason="GET /v1/sessions/{session_id} endpoint not deployed on testing backend (returns 404 Route not found)"
-    )
     def test_cross_entity_data_consistency(
         self, integration_client: Any, real_project: Any
     ) -> None:
@@ -462,9 +459,9 @@ class TestEndToEndValidation:
                 metadata={"test_id": test_id, "timestamp": test_timestamp},
             )
             datapoint_response = integration_client.datapoints.create(datapoint_request)
-            # CreateDatapointResponse has 'result' dict containing 'insertedIds' array
+            # CreateDatapointResponse.result is CreateDatapointResponseResult with insertedIds field
             entities_created["datapoint"] = {
-                "id": datapoint_response.result["insertedIds"][0]
+                "id": datapoint_response.result.insertedIds[0]
             }
 
             print(f"✅ All entities created with test_id: {test_id}")
@@ -493,17 +490,21 @@ class TestEndToEndValidation:
                     }
                 )
 
-            # Validate session exists
+            # Validate that session-linked events remain queryable.
             try:
-                session = integration_client.sessions.get(
-                    entities_created["session"]["id"]
+                session_events = integration_client.events.get_by_session_id(
+                    entities_created["session"]["id"],
+                    limit=20,
                 )
                 consistency_checks.append(
                     {
                         "entity": "session",
-                        "exists": session is not None,
-                        "id_match": session.event.session_id
-                        == entities_created["session"]["id"],
+                        "exists": bool(session_events.events),
+                        # session_events.events is List[LegacyEvent].
+                        "id_match": any(
+                            event.session_id == entities_created["session"]["id"]
+                            for event in session_events.events
+                        ),
                     }
                 )
             except Exception:
@@ -549,7 +550,7 @@ class TestEndToEndValidation:
             print("   - All entities created and validated: ✓")
 
         except Exception as e:
-            # Agent OS Zero Failing Tests Policy: NO SKIPPING - real system exercise required
+            # NO SKIPPING - real system exercise required
             pytest.fail(
                 f"Cross-entity consistency test failed - real system must work: {e}"
             )

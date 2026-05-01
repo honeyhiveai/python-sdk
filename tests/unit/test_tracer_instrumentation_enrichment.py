@@ -3,7 +3,7 @@
 This module tests the core span enrichment logic including unified enrichment
 architecture, context manager patterns, direct call patterns, and dynamic
 pattern detection using standard fixtures and comprehensive edge case coverage
-following Agent OS testing standards.
+following testing standards.
 """
 
 # pylint: disable=R0801,too-many-lines

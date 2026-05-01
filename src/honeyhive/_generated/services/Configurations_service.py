@@ -12,7 +12,7 @@ def getConfigurations(
     name: Optional[str] = None,
     env: Optional[str] = None,
     tags: Optional[str] = None,
-) -> List[GetConfigurationsResponse]:
+) -> GetConfigurationsResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
@@ -40,7 +40,11 @@ def getConfigurations(
     else:
         body = None if 200 == 204 else response.json()
 
-    return [GetConfigurationsResponse(**item) for item in body]
+    return (
+        GetConfigurationsResponse(**body)
+        if body is not None
+        else GetConfigurationsResponse()
+    )
 
 
 def createConfiguration(
@@ -84,13 +88,13 @@ def createConfiguration(
 def updateConfiguration(
     api_config_override: Optional[APIConfig] = None,
     *,
-    id: str,
+    configId: str,
     data: UpdateConfigurationRequest,
 ) -> UpdateConfigurationResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/v1/configurations/{id}"
+    path = f"/v1/configurations/{configId}"
     headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 
@@ -123,12 +127,12 @@ def updateConfiguration(
 
 
 def deleteConfiguration(
-    api_config_override: Optional[APIConfig] = None, *, id: str
+    api_config_override: Optional[APIConfig] = None, *, configId: str
 ) -> DeleteConfigurationResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/v1/configurations/{id}"
+    path = f"/v1/configurations/{configId}"
     headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 

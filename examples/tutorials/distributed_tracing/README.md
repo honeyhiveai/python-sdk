@@ -74,7 +74,4 @@ All with the same trace ID, showing the complete request journey.
 - `llm_service.py` - LLM generation service (port 5002)
 - `test_distributed_trace.sh` - Automated test script
 
-## Tutorial Link
-
-For the full step-by-step tutorial, see: [End-to-End Distributed Tracing](../../../docs/tutorials/06-distributed-tracing.rst)
 

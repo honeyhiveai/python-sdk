@@ -648,7 +648,6 @@ class TestExperimentsIntegration:
         6. Proper cleanup/teardown
 
         V3 Framework: REL-001
-        Documentation: .agent-os/specs/.../test-generation/REL-001-...-v3-analysis.md
         """
         # Setup: Create unique dataset name
         timestamp = int(time.time())
@@ -725,9 +724,7 @@ class TestExperimentsIntegration:
             if not ds_id:
                 # Fallback: search by name
                 print("   Searching by name...")
-                datasets = integration_client.datasets.list_datasets(
-                    project=real_project
-                )
+                datasets = integration_client.datasets.list_datasets(name=name)
                 for ds in datasets:
                     if getattr(ds, "name", None) == name:
                         ds_id = get_id_from_object(ds)
@@ -1023,10 +1020,14 @@ class TestExperimentsIntegration:
 
         # Actual backend response structure: {events: [...], totalEvents: X}
         # NOT {commonDatapoints: [...], metrics: [...]}
+        # `comparison_response` is a typed GetExperimentCompareEventsResponse
+        # Pydantic model; `.events` is a List[ComparableEvent]. Each
+        # ComparableEvent carries `datapoint_id: str` plus `event_1`/`event_2`
+        # which remain raw ``Dict[str, Any]`` per the OpenAPI schema.
 
         # Check event pairing
-        events = comparison_response.get("events", [])
-        total_events = comparison_response.get("totalEvents", 0)
+        events = comparison_response.events
+        total_events = comparison_response.totalEvents
 
         print(f"\n✅ Total events: {total_events}")
         print(f"✅ Event pairs returned: {len(events)}")
@@ -1040,13 +1041,9 @@ class TestExperimentsIntegration:
 
         # Validate event structure
         for idx, event_pair in enumerate(events, 1):
-            assert "datapoint_id" in event_pair, "Should have datapoint_id"
-            assert "event_1" in event_pair, "Should have event_1"
-            assert "event_2" in event_pair, "Should have event_2"
-
-            datapoint_id = event_pair["datapoint_id"]
-            event_1 = event_pair["event_1"]
-            event_2 = event_pair["event_2"]
+            datapoint_id = event_pair.datapoint_id
+            event_1 = event_pair.event_1
+            event_2 = event_pair.event_2
 
             # Verify datapoint_id matches in both events' metadata
             assert event_1["metadata"]["datapoint_id"] == datapoint_id

@@ -2,7 +2,7 @@
 
 This module tests the backward compatibility functions including session enrichment,
 tracer discovery, and compatibility information using standard fixtures and
-comprehensive edge case coverage following Agent OS testing standards.
+comprehensive edge case coverage following testing standards.
 """
 
 # pylint: disable=assignment-from-none  # Testing functions that return None

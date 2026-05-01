@@ -105,7 +105,7 @@ class TestTracerIntegration:
 
     def test_tracer_event_creation_integration(self, integration_tracer: Any) -> None:
         """Test event creation through tracer with real API."""
-        # Agent OS Zero Failing Tests Policy: NO SKIPPING - must use real credentials
+        # NO SKIPPING - must use real credentials
         if not os.getenv("HH_API_KEY"):
             pytest.fail(
                 "HH_API_KEY required for real event creation test - check .env file"
@@ -129,7 +129,7 @@ class TestTracerIntegration:
             assert event_id is not None
             assert len(event_id) > 0
         except Exception as e:
-            # Agent OS Zero Failing Tests Policy: NO SKIPPING - real system exercise
+            # NO SKIPPING - real system exercise
             # required
             pytest.fail(f"Real API event creation failed - real system must work: {e}")
 

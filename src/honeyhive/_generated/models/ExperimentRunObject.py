@@ -1,6 +1,8 @@
-from typing import *
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
+
+__all__ = ["ExperimentRunObject"]
 
 
 class ExperimentRunObject(BaseModel):
@@ -8,7 +10,12 @@ class ExperimentRunObject(BaseModel):
     ExperimentRunObject model
     """
 
-    model_config = {"populate_by_name": True, "validate_assignment": True}
+    model_config = {
+        "populate_by_name": True,
+        "validate_assignment": True,
+        "extra": "allow",
+        "protected_namespaces": (),
+    }
 
     id: str = Field(validation_alias="id")
 
@@ -20,19 +27,17 @@ class ExperimentRunObject(BaseModel):
 
     status: Optional[str] = Field(validation_alias="status", default=None)
 
-    metadata: Optional[Dict[str, Any]] = Field(
-        validation_alias="metadata", default=None
-    )
+    metadata: Dict[str, Any] = Field(validation_alias="metadata")
 
-    results: Optional[Dict[str, Any]] = Field(validation_alias="results", default=None)
+    results: Dict[str, Any] = Field(validation_alias="results")
 
-    event_ids: Optional[List[str]] = Field(validation_alias="event_ids", default=None)
+    metrics: Optional[Dict[str, Any]] = Field(validation_alias="metrics", default=None)
 
-    configuration: Optional[Dict[str, Any]] = Field(
-        validation_alias="configuration", default=None
-    )
+    event_ids: List[str] = Field(validation_alias="event_ids")
 
-    is_active: Optional[bool] = Field(validation_alias="is_active", default=None)
+    configuration: Dict[str, Any] = Field(validation_alias="configuration")
+
+    is_active: bool = Field(validation_alias="is_active")
 
     created_at: Union[str, str] = Field(validation_alias="created_at")
 

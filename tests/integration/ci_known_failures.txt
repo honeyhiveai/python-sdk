@@ -1,80 +1,55 @@
 # Known failing integration tests (CI temporary skiplist).
-# Generated from local run on 2026-02-25; remove entries as fixes land.
+# Originally generated 2026-02-25; pruned 2026-04-21 (HHAI-4916) after typing
+# EventExportResponse.events as List[LegacyEvent] and fixing test-side
+# response-shape regressions. Pruned again 2026-04-22 (HHAI-4942) after
+# HHAI-4935 restored native-type preservation in the OTLP JSON exporter,
+# unblocking 7 otel_backend / lifecycle / concurrency tests that assert
+# on native-type attribute round-trip.
+# Remove entries as fixes land.
+#
+# Each remaining entry is annotated inline with the actual failure mode
+# observed against testing-dp-1 on 2026-04-22. The "bucket" names below
+# are now purely navigational — the real source of truth is per-entry.
+#
+# Remaining buckets:
+#   * OTLPJSONExporter int64 precision (HHAI-5004) — raw JSON number
+#     overflows float64 for |v| > 2^53, backend rejects the batch
+#   * enrich_span attribute loss on error-raising spans — attrs set via
+#     `enrich_span({...})` inside a function that raises never make it
+#     onto the exported span (test.unique_id lookup fails)
+#   * Session-id override routing — honeyhive.session_id attribute
+#     override routes events to a different session than the one the
+#     test queries under
+#   * Experiment comparison / semantic assertions
+#   * Parent-child session linking (test_all_five_requirements_end_to_end)
 
-tests/integration/test_batch_configuration.py::TestBatchConfiguration::test_batch_processor_real_tracing_integration
-tests/integration/test_end_to_end_validation.py::TestEndToEndValidation::test_complete_datapoint_lifecycle
+# OTLPJSONExporter int64 precision bug (HHAI-5004) — the test sends
+# attr.large_int=9223372036854775807; the exporter now emits it as a raw
+# JSON number, but the Go backend decodes through float64, rounds up to
+# 9223372036854776000, and rejects the payload with HTTP 500 (int64
+# overflow). Blocks the entire batch, so the event never ingests.
+tests/integration/test_otel_backend_verification_integration.py::TestOTELBackendVerificationIntegration::test_high_cardinality_attributes_backend_verification
+
+# enrich_span attribute loss on error-raising spans — OTLP export
+# succeeds with HTTP 200, but attributes set via `enrich_span({...})`
+# inside the function body are not on the exported span when the
+# function raises. Only the SDK's own honeyhive_error*/honeyhive_duration_ms
+# attrs persist, so lookup by test.unique_id yields no event.
+tests/integration/test_otel_backend_verification_integration.py::TestOTELBackendVerificationIntegration::test_error_spans_backend_verification
+
+# Session-id override routing — the span is exported with
+# honeyhive.session_id=<API-created session>, which the backend routes
+# to that session's events, but verify_tracer_span queries under
+# integration_tracer.session_id (the SDK-created session). The "not
+# found after 10 attempts" failure is a test/routing mismatch, not a
+# stringification issue.
+tests/integration/test_otel_otlp_export_integration.py::TestOTELOTLPExportIntegration::test_otlp_export_with_backend_verification
+
+# Experiment comparison / semantic assertions
 tests/integration/test_experiments_integration.py::TestExperimentsIntegration::test_compare_runs_with_metric_improvements_and_regressions
-tests/integration/test_experiments_integration.py::TestExperimentsIntegration::test_evaluate_with_external_dataset_full_workflow
 tests/integration/test_experiments_integration.py::TestExperimentsIntegration::test_evaluate_with_nested_enrich_span_backend_validation
 tests/integration/test_experiments_integration.py::TestExperimentsIntegration::test_event_level_comparison
 tests/integration/test_experiments_integration.py::TestExperimentsIntegration::test_managed_dataset_evaluation
-tests/integration/test_fixture_verification.py::test_fixture_verification
-tests/integration/test_multi_instance_tracer_integration.py::TestMultiInstanceTracerIntegration::test_multiple_tracers_coexistence
-tests/integration/test_otel_backend_verification_integration.py::TestOTELBackendVerificationIntegration::test_api_key_session_config_vs_tracer_config
-tests/integration/test_otel_backend_verification_integration.py::TestOTELBackendVerificationIntegration::test_batch_export_backend_verification
-tests/integration/test_otel_backend_verification_integration.py::TestOTELBackendVerificationIntegration::test_datapoint_id_from_evaluation_config_backend_verification
-tests/integration/test_otel_backend_verification_integration.py::TestOTELBackendVerificationIntegration::test_dataset_id_from_evaluation_config_backend_verification
-tests/integration/test_otel_backend_verification_integration.py::TestOTELBackendVerificationIntegration::test_decorator_spans_backend_verification
-tests/integration/test_otel_backend_verification_integration.py::TestOTELBackendVerificationIntegration::test_error_spans_backend_verification
-tests/integration/test_otel_backend_verification_integration.py::TestOTELBackendVerificationIntegration::test_high_cardinality_attributes_backend_verification
-tests/integration/test_otel_backend_verification_integration.py::TestOTELBackendVerificationIntegration::test_is_evaluation_from_evaluation_config_backend_verification
-tests/integration/test_otel_backend_verification_integration.py::TestOTELBackendVerificationIntegration::test_otlp_span_export_with_backend_verification
-tests/integration/test_otel_backend_verification_integration.py::TestOTELBackendVerificationIntegration::test_project_all_three_priority
-tests/integration/test_otel_backend_verification_integration.py::TestOTELBackendVerificationIntegration::test_project_from_session_config_alone
-tests/integration/test_otel_backend_verification_integration.py::TestOTELBackendVerificationIntegration::test_project_individual_param_vs_session_config
-tests/integration/test_otel_backend_verification_integration.py::TestOTELBackendVerificationIntegration::test_project_session_config_vs_tracer_config
-tests/integration/test_otel_backend_verification_integration.py::TestOTELBackendVerificationIntegration::test_run_id_evaluation_config_vs_tracer_config
-tests/integration/test_otel_backend_verification_integration.py::TestOTELBackendVerificationIntegration::test_session_id_all_three_priority
-tests/integration/test_otel_backend_verification_integration.py::TestOTELBackendVerificationIntegration::test_session_id_from_session_config_alone
-tests/integration/test_otel_backend_verification_integration.py::TestOTELBackendVerificationIntegration::test_session_id_individual_param_vs_session_config
-tests/integration/test_otel_backend_verification_integration.py::TestOTELBackendVerificationIntegration::test_session_id_session_config_vs_tracer_config
-tests/integration/test_otel_concurrency_integration.py::TestOTELConcurrencyIntegration::test_async_concurrent_span_management
-tests/integration/test_otel_concurrency_integration.py::TestOTELConcurrencyIntegration::test_concurrent_span_creation_thread_safety
-tests/integration/test_otel_concurrency_integration.py::TestOTELConcurrencyIntegration::test_high_frequency_span_creation_stress
-tests/integration/test_otel_concurrency_integration.py::TestOTELConcurrencyIntegration::test_multi_tracer_concurrent_operations
-tests/integration/test_otel_context_propagation_integration.py::TestOTELContextPropagationIntegration::test_w3c_trace_context_injection_extraction
-tests/integration/test_otel_edge_cases_integration.py::TestOTELEdgeCasesIntegration::test_concurrent_error_handling_resilience
-tests/integration/test_otel_edge_cases_integration.py::TestOTELEdgeCasesIntegration::test_error_propagation_and_recovery
-tests/integration/test_otel_edge_cases_integration.py::TestOTELEdgeCasesIntegration::test_extreme_attribute_and_event_limits
-tests/integration/test_otel_edge_cases_integration.py::TestOTELEdgeCasesIntegration::test_malformed_data_handling_resilience
-tests/integration/test_otel_otlp_export_integration.py::TestOTELOTLPExportIntegration::test_otlp_batch_export_behavior
-tests/integration/test_otel_otlp_export_integration.py::TestOTELOTLPExportIntegration::test_otlp_export_batch_vs_simple_processor
-tests/integration/test_otel_otlp_export_integration.py::TestOTELOTLPExportIntegration::test_otlp_export_error_handling
-tests/integration/test_otel_otlp_export_integration.py::TestOTELOTLPExportIntegration::test_otlp_export_performance_under_load
-tests/integration/test_otel_otlp_export_integration.py::TestOTELOTLPExportIntegration::test_otlp_export_with_backend_verification
-tests/integration/test_otel_otlp_export_integration.py::TestOTELOTLPExportIntegration::test_otlp_export_with_custom_headers_and_authentication
-tests/integration/test_otel_otlp_export_integration.py::TestOTELOTLPExportIntegration::test_otlp_export_with_decorator_spans
-tests/integration/test_otel_otlp_export_integration.py::TestOTELOTLPExportIntegration::test_otlp_export_with_high_cardinality_attributes
-tests/integration/test_otel_otlp_export_integration.py::TestOTELOTLPExportIntegration::test_otlp_exporter_configuration
-tests/integration/test_otel_otlp_export_integration.py::TestOTELOTLPExportIntegration::test_otlp_span_export_with_real_backend
-tests/integration/test_otel_performance_integration.py::TestOTELPerformanceIntegration::test_export_performance_and_batching
-tests/integration/test_otel_performance_integration.py::TestOTELPerformanceIntegration::test_memory_usage_and_resource_management
-tests/integration/test_otel_performance_integration.py::TestOTELPerformanceIntegration::test_tracing_functionality_with_realistic_workloads
-tests/integration/test_otel_performance_regression_integration.py::TestOTELPerformanceRegressionIntegration::test_automated_performance_monitoring_integration
-tests/integration/test_otel_performance_regression_integration.py::TestOTELPerformanceRegressionIntegration::test_baseline_performance_establishment
-tests/integration/test_otel_performance_regression_integration.py::TestOTELPerformanceRegressionIntegration::test_performance_regression_detection
-tests/integration/test_otel_performance_regression_integration.py::TestOTELPerformanceRegressionIntegration::test_performance_trend_analysis
-tests/integration/test_otel_provider_strategies_integration.py::TestOTELProviderStrategiesIntegration::test_main_provider_strategy_with_noop_provider
-tests/integration/test_otel_resource_management_integration.py::TestOTELResourceManagementIntegration::test_memory_leak_detection_and_monitoring
-tests/integration/test_otel_resource_management_integration.py::TestOTELResourceManagementIntegration::test_resource_cleanup_under_stress
-tests/integration/test_otel_resource_management_integration.py::TestOTELResourceManagementIntegration::test_span_processor_resource_management
-tests/integration/test_otel_resource_management_integration.py::TestOTELResourceManagementIntegration::test_tracer_lifecycle_and_cleanup
-tests/integration/test_otel_span_lifecycle_integration.py::TestOTELSpanLifecycleIntegration::test_span_attributes_comprehensive_lifecycle
-tests/integration/test_otel_span_lifecycle_integration.py::TestOTELSpanLifecycleIntegration::test_span_decorator_integration_lifecycle
-tests/integration/test_otel_span_lifecycle_integration.py::TestOTELSpanLifecycleIntegration::test_span_events_comprehensive_lifecycle
-tests/integration/test_otel_span_lifecycle_integration.py::TestOTELSpanLifecycleIntegration::test_span_relationships_and_hierarchy_lifecycle
-tests/integration/test_otel_span_lifecycle_integration.py::TestOTELSpanLifecycleIntegration::test_span_status_and_error_handling_lifecycle
-tests/integration/test_real_api_multi_tracer.py::TestRealAPIMultiTracer::test_real_decorator_integration_with_multiple_tracers
-tests/integration/test_real_api_multi_tracer.py::TestRealAPIMultiTracer::test_real_event_creation_with_multiple_tracers
-tests/integration/test_real_api_multi_tracer.py::TestRealAPIMultiTracer::test_real_session_creation_with_multiple_tracers
-tests/integration/test_real_instrumentor_integration_comprehensive.py::TestRealAPIWorkflows::test_end_to_end_tracing_workflow
-tests/integration/test_real_instrumentor_integration_comprehensive.py::TestRealInstrumentorIntegration::test_error_handling_real_environment
-tests/integration/test_real_instrumentor_integration_comprehensive.py::TestRealInstrumentorIntegration::test_multiple_instrumentor_coexistence
-tests/integration/test_real_instrumentor_integration_comprehensive.py::TestRealInstrumentorIntegration::test_proxy_tracer_provider_bug_detection
-tests/integration/test_tracer_integration.py::TestTracerIntegration::test_function_tracing_integration
-tests/integration/test_tracer_integration.py::TestTracerIntegration::test_method_tracing_integration
-tests/integration/test_tracer_integration.py::TestUnifiedEnrichSpanIntegration::test_enrich_span_arbitrary_kwargs_integration
-tests/integration/test_tracer_integration.py::TestUnifiedEnrichSpanIntegration::test_enrich_span_backwards_compatible
-tests/integration/test_tracer_integration.py::TestUnifiedEnrichSpanIntegration::test_enrich_span_nested_structures_integration
-tests/integration/test_tracer_integration.py::TestUnifiedEnrichSpanIntegration::test_enrich_span_with_user_properties_and_metrics_integration
+
+# Parent-child session linking
 tests/integration/test_v1_immediate_ship_requirements.py::TestV1ImmediateShipRequirements::test_all_five_requirements_end_to_end

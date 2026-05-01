@@ -24,56 +24,12 @@ from typing import Any, Dict, List, Optional, TypeVar, Union
 
 import httpx
 
-from honeyhive._generated.api_config import APIConfig
+try:
+    from warnings import deprecated
+except ImportError:
+    from typing_extensions import deprecated
 
-# Import models used in type hints
-from honeyhive._generated.models import (
-    AddDatapointsResponse,
-    AddDatapointsToDatasetRequest,
-    CreateConfigurationRequest,
-    CreateConfigurationResponse,
-    CreateDatapointRequest,
-    CreateDatapointResponse,
-    CreateDatasetRequest,
-    CreateDatasetResponse,
-    CreateMetricRequest,
-    CreateMetricResponse,
-    DeleteConfigurationResponse,
-    DeleteDatapointResponse,
-    DeleteDatasetResponse,
-    DeleteExperimentRunResponse,
-    DeleteMetricResponse,
-    DeleteSessionResponse,
-    GetConfigurationsResponse,
-    GetDatapointResponse,
-    GetDatapointsResponse,
-    GetDatasetsResponse,
-    GetEventsBySessionIdResponse,
-    GetEventsQuery,
-    GetEventsResponse,
-    GetExperimentRunResponse,
-    GetExperimentRunsResponse,
-    GetExperimentRunsSchemaResponse,
-    GetMetricsResponse,
-    GetSessionResponse,
-    Pagination,
-    PostEventRequest,
-    PostEventResponse,
-    PostExperimentRunRequest,
-    PostExperimentRunResponse,
-    PostSessionStartResponse,
-    PutExperimentRunRequest,
-    PutExperimentRunResponse,
-    RemoveDatapointResponse,
-    UpdateConfigurationRequest,
-    UpdateConfigurationResponse,
-    UpdateDatapointRequest,
-    UpdateDatapointResponse,
-    UpdateDatasetRequest,
-    UpdateDatasetResponse,
-    UpdateMetricRequest,
-    UpdateMetricResponse,
-)
+from honeyhive._generated.api_config import APIConfig
 
 # Import async services
 # Import sync services
@@ -83,8 +39,6 @@ from honeyhive._generated.services import Datasets_service as datasets_svc
 from honeyhive._generated.services import Events_service as events_svc
 from honeyhive._generated.services import Experiments_service as experiments_svc
 from honeyhive._generated.services import Metrics_service as metrics_svc
-from honeyhive._generated.services import Projects_service as projects_svc
-from honeyhive._generated.services import Session_service as session_svc
 from honeyhive._generated.services import Sessions_service as sessions_svc
 from honeyhive._generated.services import (
     async_Configurations_service as configs_svc_async,
@@ -98,10 +52,59 @@ from honeyhive._generated.services import (
     async_Experiments_service as experiments_svc_async,
 )
 from honeyhive._generated.services import async_Metrics_service as metrics_svc_async
-from honeyhive._generated.services import async_Projects_service as projects_svc_async
-from honeyhive._generated.services import async_Session_service as session_svc_async
 from honeyhive._generated.services import async_Sessions_service as sessions_svc_async
-from honeyhive.models import EventExportRequest, EventExportResponse, EventFilter
+
+# Import models used in type hints
+from honeyhive.models import (
+    AddDatapointsResponse,
+    AddDatapointsToDatasetRequest,
+    ConfigurationItem,
+    CreateConfigurationRequest,
+    CreateConfigurationResponse,
+    CreateDatapointRequest,
+    CreateDatapointResponse,
+    CreateDatasetRequest,
+    CreateDatasetResponse,
+    CreateMetricRequest,
+    CreateMetricResponse,
+    DeleteConfigurationResponse,
+    DeleteDatapointResponse,
+    DeleteDatasetResponse,
+    DeleteExperimentRunResponse,
+    DeleteMetricResponse,
+    EventExportResponse,
+    EventFilter,
+    GetDatapointResponse,
+    GetDatapointsResponse,
+    GetDatasetsResponse,
+    GetEventsQuery,
+    GetEventsResponse,
+    GetEventsSchemaResponse,
+    GetExperimentRunResponse,
+    GetExperimentRunsResponse,
+    MetricItem,
+    Pagination,
+    PostEventBatchRequest,
+    PostEventBatchResponse,
+    PostEventRequest,
+    PostEventResponse,
+    PostExperimentRunRequest,
+    PostExperimentRunResponse,
+    PostSessionStartResponse,
+    PutExperimentRunRequest,
+    PutExperimentRunResponse,
+    RemoveDatapointResponse,
+    StartSessionRequest,
+    UpdateConfigurationRequest,
+    UpdateConfigurationResponse,
+    UpdateDatapointRequest,
+    UpdateDatapointResponse,
+    UpdateDatasetRequest,
+    UpdateDatasetResponse,
+    UpdateEventRequest,
+    UpdateMetricRequest,
+    UpdateMetricResponse,
+)
 from honeyhive.utils.retry import RetryConfig
 
 from ._base import BaseAPI
@@ -165,12 +168,23 @@ class ConfigurationsAPI(BaseAPI):
     """Configurations API."""
 
     # Sync methods
-    def list(self, project: Optional[str] = None) -> List[GetConfigurationsResponse]:
+    def list(self, project: Optional[str] = None) -> List[ConfigurationItem]:
         """List configurations.
 
-        Note: project parameter is currently unused as v1 API doesn't support project filtering.
+        Note:
+            The v1 API does not currently support project filtering.
         """
-        return configs_svc.getConfigurations(self._api_config)
+        if project is not None:
+            warnings.warn(
+                "The 'project' parameter is no longer supported for "
+                "configurations.list() and will be removed in v2.0.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        del project
+        # Preserve the high-level SDK list surface by unwrapping the transport envelope.
+        response = configs_svc.getConfigurations(self._api_config)
+        return response.configurations
 
     def create(
         self, request: CreateConfigurationRequest
@@ -182,21 +196,33 @@ class ConfigurationsAPI(BaseAPI):
         self, id: str, request: UpdateConfigurationRequest
     ) -> UpdateConfigurationResponse:
         """Update a configuration."""
-        return configs_svc.updateConfiguration(self._api_config, id=id, data=request)
+        return configs_svc.updateConfiguration(
+            self._api_config, configId=id, data=request
+        )
 
     def delete(self, id: str) -> DeleteConfigurationResponse:
         """Delete a configuration."""
-        return configs_svc.deleteConfiguration(self._api_config, id=id)
+        return configs_svc.deleteConfiguration(self._api_config, configId=id)
 
     # Async methods
     async def list_async(
         self, project: Optional[str] = None
-    ) -> List[GetConfigurationsResponse]:
+    ) -> List[ConfigurationItem]:
         """List configurations asynchronously.
 
-        Note: project parameter is currently unused as v1 API doesn't support project filtering.
+        Note:
+            The v1 API does not currently support project filtering.
         """
-        return await configs_svc_async.getConfigurations(self._api_config)
+        if project is not None:
+            warnings.warn(
+                "The 'project' parameter is no longer supported for "
+                "configurations.list() and will be removed in v2.0.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        del project
+        response = await configs_svc_async.getConfigurations(self._api_config)
+        return response.configurations
 
     async def create_async(
         self, request: CreateConfigurationRequest
@@ -211,16 +237,19 @@ class ConfigurationsAPI(BaseAPI):
     ) -> UpdateConfigurationResponse:
         """Update a configuration asynchronously."""
         return await configs_svc_async.updateConfiguration(
-            self._api_config, id=id, data=request
+            self._api_config, configId=id, data=request
         )
 
     async def delete_async(self, id: str) -> DeleteConfigurationResponse:
         """Delete a configuration asynchronously."""
-        return await configs_svc_async.deleteConfiguration(self._api_config, id=id)
+        return await configs_svc_async.deleteConfiguration(
+            self._api_config, configId=id
+        )
 
     # Backwards compatible aliases
-    def get_configuration(self, id: str) -> GetConfigurationsResponse:
+    def get_configuration(self, id: str) -> List[ConfigurationItem]:
         """Get a configuration (backwards compatible alias)."""
+        del id
         return self.list()  # No single-get endpoint, returns all
 
     def create_configuration(
@@ -241,7 +270,7 @@ class ConfigurationsAPI(BaseAPI):
 
     def list_configurations(
         self, project: Optional[str] = None
-    ) -> List[GetConfigurationsResponse]:
+    ) -> List[ConfigurationItem]:
         """List configurations (backwards compatible alias)."""
         return self.list(project)
 
@@ -290,7 +319,7 @@ class DatapointsAPI(BaseAPI):
 
     def get(self, id: str) -> GetDatapointResponse:
         """Get a datapoint by ID."""
-        return datapoints_svc.getDatapoint(self._api_config, id=id)
+        return datapoints_svc.getDatapoint(self._api_config, datapoint_id=id)
 
     def create(self, request: CreateDatapointRequest) -> CreateDatapointResponse:
         """Create a datapoint."""
@@ -300,11 +329,13 @@ class DatapointsAPI(BaseAPI):
         self, id: str, request: UpdateDatapointRequest
     ) -> UpdateDatapointResponse:
         """Update a datapoint."""
-        return datapoints_svc.updateDatapoint(self._api_config, id=id, data=request)
+        return datapoints_svc.updateDatapoint(
+            self._api_config, datapoint_id=id, data=request
+        )
 
     def delete(self, id: str) -> DeleteDatapointResponse:
         """Delete a datapoint."""
-        return datapoints_svc.deleteDatapoint(self._api_config, id=id)
+        return datapoints_svc.deleteDatapoint(self._api_config, datapoint_id=id)
 
     # Async methods
     async def list_async(
@@ -346,7 +377,9 @@ class DatapointsAPI(BaseAPI):
 
     async def get_async(self, id: str) -> GetDatapointResponse:
         """Get a datapoint by ID asynchronously."""
-        return await datapoints_svc_async.getDatapoint(self._api_config, id=id)
+        return await datapoints_svc_async.getDatapoint(
+            self._api_config, datapoint_id=id
+        )
 
     async def create_async(
         self, request: CreateDatapointRequest
@@ -361,12 +394,14 @@ class DatapointsAPI(BaseAPI):
     ) -> UpdateDatapointResponse:
         """Update a datapoint asynchronously."""
         return await datapoints_svc_async.updateDatapoint(
-            self._api_config, id=id, data=request
+            self._api_config, datapoint_id=id, data=request
         )
 
     async def delete_async(self, id: str) -> DeleteDatapointResponse:
         """Delete a datapoint asynchronously."""
-        return await datapoints_svc_async.deleteDatapoint(self._api_config, id=id)
+        return await datapoints_svc_async.deleteDatapoint(
+            self._api_config, datapoint_id=id
+        )
 
     # Backwards compatible aliases
     def get_datapoint(self, id: str) -> GetDatapointResponse:
@@ -425,7 +460,7 @@ class DatasetsAPI(BaseAPI):
 
     def update(self, request: UpdateDatasetRequest) -> UpdateDatasetResponse:
         """Update a dataset."""
-        return datasets_svc.updateDataset(self._api_config, data=request)
+        return datasets_svc.updateDatasetLegacy(self._api_config, data=request)
 
     def delete(self, id: str) -> DeleteDatasetResponse:
         """Delete a dataset."""
@@ -491,7 +526,9 @@ class DatasetsAPI(BaseAPI):
         self, request: UpdateDatasetRequest
     ) -> UpdateDatasetResponse:
         """Update a dataset asynchronously."""
-        return await datasets_svc_async.updateDataset(self._api_config, data=request)
+        return await datasets_svc_async.updateDatasetLegacy(
+            self._api_config, data=request
+        )
 
     async def delete_async(self, id: str) -> DeleteDatasetResponse:
         """Delete a dataset asynchronously."""
@@ -561,8 +598,9 @@ class DatasetsAPI(BaseAPI):
 class EventsAPI(BaseAPI):
     """Events API.
 
-    Read operations (list, get_by_session_id, delete) use Control Plane.
-    Write operations (create, update, create_batch) use Data Plane.
+    Event reads and writes now go through Data Plane endpoints. Legacy helpers
+    like list() and get_by_session_id() are retained for backward compatibility
+    on top of the export endpoint.
     """
 
     # Supported parameters for getEvents() method
@@ -576,39 +614,60 @@ class EventsAPI(BaseAPI):
         "evaluation_id",
     }
 
-    def _get_cp_config(self) -> APIConfig:
-        """Get APIConfig configured for Control Plane endpoints."""
-        return APIConfig(
-            base_path=self._api_config.get_cp_base_path(),
-            access_token=self._api_config.access_token,
-            verify=self._api_config.verify,
-        )
-
     # Sync methods
-    def list(self, query: Union[GetEventsQuery, Dict[str, Any]]) -> GetEventsResponse:
-        """Get events (uses Control Plane endpoint).
+    def list(
+        self,
+        query: Optional[Union[GetEventsQuery, Dict[str, Any]]] = None,
+        *,
+        data: Optional[Union[GetEventsQuery, Dict[str, Any]]] = None,
+    ) -> GetEventsResponse:
+        """Get events via the legacy list helper.
 
         Args:
             query: Query parameters as GetEventsQuery model or dict.
                    Supported fields: dateRange, filters, projections,
                    ignore_order, limit, page, evaluation_id
+            data: Backwards compatible alias for query.
 
         Returns:
             GetEventsResponse with matching events
         """
+        # Support the legacy `data=` keyword while keeping the canonical `query=`
+        # interface aligned with the current wrapper signature.
+        payload = data if data is not None else query
+        if payload is None:
+            raise ValueError("EventsAPI.list requires query or data")
+
         # Convert to dict if Pydantic model
-        if hasattr(query, "model_dump"):
-            data = query.model_dump(exclude_none=True)
+        if hasattr(payload, "model_dump"):
+            payload_data = payload.model_dump(exclude_none=True)
         else:
-            data = query
+            payload_data = payload
 
-        # Filter data to only include supported parameters for getEvents()
+        # Filter data to only include supported parameters for the legacy list()
+        # helper. The canonical spec exposes event reads through export().
         filtered_data = {
-            k: v for k, v in data.items() if k in self._GET_EVENTS_SUPPORTED_PARAMS
+            k: v
+            for k, v in payload_data.items()
+            if k in self._GET_EVENTS_SUPPORTED_PARAMS
         }
-        # Read operations use Control Plane
-        return events_svc.getEvents(self._get_cp_config(), **filtered_data)
+        export_response = self.export(
+            filters=filtered_data.get("filters"),
+            date_range=filtered_data.get("dateRange"),
+            projections=filtered_data.get("projections"),
+            limit=filtered_data.get("limit", 1000),
+            page=filtered_data.get("page", 1),
+        )
+        return GetEventsResponse(
+            events=export_response.events,
+            totalEvents=export_response.total_events,
+        )
 
+    @deprecated(
+        "events.get_by_session_id() is deprecated; use events.export() with a "
+        "session_id filter instead.",
+        category=None,
+    )
     def get_by_session_id(
         self,
         session_id: str,
@@ -618,7 +677,8 @@ class EventsAPI(BaseAPI):
     ) -> EventExportResponse:
         """Get events by session ID using the Data Plane export endpoint.
 
-        This is a convenience wrapper around export() that filters by session_id.
+        Deprecated: this compatibility helper wraps export() with a session_id
+        filter. New code should call events.export() directly.
         Events are returned sorted by start_time in chronological order.
 
         Args:
@@ -633,8 +693,15 @@ class EventsAPI(BaseAPI):
 
         Example::
 
-            response = client.events.get_by_session_id(
-                session_id="abc-123"
+            response = client.events.export(
+                filters=[
+                    EventFilter(
+                        field="session_id",
+                        operator="is",
+                        value="abc-123",
+                        type="string",
+                    )
+                ]
             )
             for event in response.events:
                 print(event["event_name"])
@@ -643,6 +710,13 @@ class EventsAPI(BaseAPI):
             "get_by_session_id called: session_id=%s limit=%d",
             session_id,
             limit,
+        )
+        warnings.warn(
+            "events.get_by_session_id() is deprecated and kept for backward "
+            "compatibility only. Use events.export() with a session_id filter "
+            "instead.",
+            DeprecationWarning,
+            stacklevel=2,
         )
         if project is not None:
             warnings.warn(
@@ -675,18 +749,13 @@ class EventsAPI(BaseAPI):
 
     def create(self, request: PostEventRequest) -> PostEventResponse:
         """Create an event."""
-        data = (
-            request.model_dump(exclude_none=True)
-            if hasattr(request, "model_dump")
-            else request
-        )
-        return events_svc.createEvent(self._api_config, data=data)
+        return events_svc.createEvent(self._api_config, data=request)
 
-    def update(self, data: Dict[str, Any]) -> None:
+    def update(self, data: UpdateEventRequest) -> None:
         """Update an event."""
         return events_svc.updateEvent(self._api_config, data=data)
 
-    def create_batch(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def create_batch(self, data: PostEventBatchRequest) -> PostEventBatchResponse:
         """Create events in batch."""
         return events_svc.createEventBatch(self._api_config, data=data)
 
@@ -882,7 +951,7 @@ class EventsAPI(BaseAPI):
     async def list_async(
         self, query: Union[GetEventsQuery, Dict[str, Any]]
     ) -> GetEventsResponse:
-        """Get events asynchronously (uses Control Plane endpoint).
+        """Get events asynchronously via the legacy list helper.
 
         Args:
             query: Query parameters as GetEventsQuery model or dict.
@@ -896,13 +965,28 @@ class EventsAPI(BaseAPI):
         else:
             data = query
 
-        # Filter data to only include supported parameters for getEvents()
+        # Filter data to only include supported parameters for the legacy list()
+        # helper. The canonical spec exposes event reads through export().
         filtered_data = {
             k: v for k, v in data.items() if k in self._GET_EVENTS_SUPPORTED_PARAMS
         }
-        # Read operations use Control Plane
-        return await events_svc_async.getEvents(self._get_cp_config(), **filtered_data)
+        export_response = await self.export_async(
+            filters=filtered_data.get("filters"),
+            date_range=filtered_data.get("dateRange"),
+            projections=filtered_data.get("projections"),
+            limit=filtered_data.get("limit", 1000),
+            page=filtered_data.get("page", 1),
+        )
+        return GetEventsResponse(
+            events=export_response.events,
+            totalEvents=export_response.total_events,
+        )
 
+    @deprecated(
+        "events.get_by_session_id_async() is deprecated; use "
+        "events.export_async() with a session_id filter instead.",
+        category=None,
+    )
     async def get_by_session_id_async(
         self,
         session_id: str,
@@ -912,7 +996,8 @@ class EventsAPI(BaseAPI):
     ) -> EventExportResponse:
         """Get events by session ID asynchronously using the Data Plane export endpoint.
 
-        Async version of get_by_session_id(). See get_by_session_id() for full documentation.
+        Deprecated: this compatibility helper wraps export_async() with a
+        session_id filter. New code should call events.export_async() directly.
         Events are returned sorted by start_time in chronological order.
 
         Args:
@@ -929,6 +1014,13 @@ class EventsAPI(BaseAPI):
             "get_by_session_id_async called: session_id=%s limit=%d",
             session_id,
             limit,
+        )
+        warnings.warn(
+            "events.get_by_session_id_async() is deprecated and kept for backward "
+            "compatibility only. Use events.export_async() with a session_id "
+            "filter instead.",
+            DeprecationWarning,
+            stacklevel=2,
         )
         if project is not None:
             warnings.warn(
@@ -961,18 +1053,15 @@ class EventsAPI(BaseAPI):
 
     async def create_async(self, request: PostEventRequest) -> PostEventResponse:
         """Create an event asynchronously."""
-        data = (
-            request.model_dump(exclude_none=True)
-            if hasattr(request, "model_dump")
-            else request
-        )
-        return await events_svc_async.createEvent(self._api_config, data=data)
+        return await events_svc_async.createEvent(self._api_config, data=request)
 
-    async def update_async(self, data: Dict[str, Any]) -> None:
+    async def update_async(self, data: UpdateEventRequest) -> None:
         """Update an event asynchronously."""
         return await events_svc_async.updateEvent(self._api_config, data=data)
 
-    async def create_batch_async(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    async def create_batch_async(
+        self, data: PostEventBatchRequest
+    ) -> PostEventBatchResponse:
         """Create events in batch asynchronously."""
         return await events_svc_async.createEventBatch(self._api_config, data=data)
 
@@ -1228,14 +1317,14 @@ class ExperimentsAPI(BaseAPI):
         self,
         dateRange: Optional[Any] = None,
         evaluation_id: Optional[str] = None,
-    ) -> GetExperimentRunsSchemaResponse:
+    ) -> GetEventsSchemaResponse:
         """Get experiment runs schema.
 
         Args:
             dateRange: Filter by date range (string or dict with $gte/$lte).
             evaluation_id: Filter by evaluation/run ID.
         """
-        return experiments_svc.getExperimentRunsSchema(
+        return events_svc.getEventsSchema(
             self._api_config, dateRange=dateRange, evaluation_id=evaluation_id
         )
 
@@ -1366,14 +1455,14 @@ class ExperimentsAPI(BaseAPI):
         self,
         dateRange: Optional[Any] = None,
         evaluation_id: Optional[str] = None,
-    ) -> GetExperimentRunsSchemaResponse:
+    ) -> GetEventsSchemaResponse:
         """Get experiment runs schema asynchronously.
 
         Args:
             dateRange: Filter by date range (string or dict with $gte/$lte).
             evaluation_id: Filter by evaluation/run ID.
         """
-        return await experiments_svc_async.getExperimentRunsSchema(
+        return await events_svc_async.getEventsSchema(
             self._api_config, dateRange=dateRange, evaluation_id=evaluation_id
         )
 
@@ -1638,11 +1727,22 @@ class MetricsAPI(BaseAPI):
         project: Optional[str] = None,
         name: Optional[str] = None,
         type: Optional[str] = None,
-    ) -> GetMetricsResponse:
+    ) -> List[MetricItem]:
         """List metrics."""
-        return metrics_svc.getMetrics(
-            self._api_config, project=project, name=name, type=type
-        )
+        # Keep the legacy filters in the public signature for back-compat, but
+        # warn because the dataplane metrics list endpoint no longer honors them.
+        if project is not None or name is not None:
+            warnings.warn(
+                "The 'project' and 'name' parameters are no longer supported for "
+                "metrics.list() and will be removed in v2.0.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        # The regenerated client only supports filtering by metric type or ID.
+        del project, name
+        # Preserve the high-level SDK list surface by unwrapping the transport envelope.
+        response = metrics_svc.getMetrics(self._api_config, type=type)
+        return response.metrics
 
     def create(self, request: CreateMetricRequest) -> CreateMetricResponse:
         """Create a metric."""
@@ -1662,11 +1762,20 @@ class MetricsAPI(BaseAPI):
         project: Optional[str] = None,
         name: Optional[str] = None,
         type: Optional[str] = None,
-    ) -> GetMetricsResponse:
+    ) -> List[MetricItem]:
         """List metrics asynchronously."""
-        return await metrics_svc_async.getMetrics(
-            self._api_config, project=project, name=name, type=type
-        )
+        # Keep the legacy filters in the public signature for back-compat, but
+        # warn because the dataplane metrics list endpoint no longer honors them.
+        if project is not None or name is not None:
+            warnings.warn(
+                "The 'project' and 'name' parameters are no longer supported for "
+                "metrics.list() and will be removed in v2.0.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        del project, name
+        response = await metrics_svc_async.getMetrics(self._api_config, type=type)
+        return response.metrics
 
     async def create_async(self, request: CreateMetricRequest) -> CreateMetricResponse:
         """Create a metric asynchronously."""
@@ -1681,9 +1790,10 @@ class MetricsAPI(BaseAPI):
         return await metrics_svc_async.deleteMetric(self._api_config, metric_id=id)
 
     # Backwards compatible aliases
-    def get_metric(self, id: str) -> GetMetricsResponse:
+    def get_metric(self, id: str) -> List[MetricItem]:
         """Get a metric (backwards compatible alias)."""
-        return self.list()  # No single-get endpoint
+        response = metrics_svc.getMetrics(self._api_config, id=id)
+        return response.metrics
 
     def create_metric(self, request: CreateMetricRequest) -> CreateMetricResponse:
         """Create a metric (backwards compatible alias)."""
@@ -1702,119 +1812,66 @@ class MetricsAPI(BaseAPI):
         project: Optional[str] = None,
         name: Optional[str] = None,
         type: Optional[str] = None,
-    ) -> GetMetricsResponse:
+    ) -> List[MetricItem]:
         """List metrics (backwards compatible alias)."""
         return self.list(project=project, name=name, type=type)
-
-
-class ProjectsAPI(BaseAPI):
-    """Projects API."""
-
-    # Sync methods
-    def list(self, name: Optional[str] = None) -> Dict[str, Any]:
-        """List projects."""
-        return projects_svc.getProjects(self._api_config, name=name)
-
-    def create(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Create a project."""
-        return projects_svc.createProject(self._api_config, data=data)
-
-    def update(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Update a project."""
-        return projects_svc.updateProject(self._api_config, data=data)
-
-    def delete(self, name: str) -> Dict[str, Any]:
-        """Delete a project."""
-        return projects_svc.deleteProject(self._api_config, name=name)
-
-    # Async methods
-    async def list_async(self, name: Optional[str] = None) -> Dict[str, Any]:
-        """List projects asynchronously."""
-        return await projects_svc_async.getProjects(self._api_config, name=name)
-
-    async def create_async(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Create a project asynchronously."""
-        return await projects_svc_async.createProject(self._api_config, data=data)
-
-    async def update_async(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Update a project asynchronously."""
-        return await projects_svc_async.updateProject(self._api_config, data=data)
-
-    async def delete_async(self, name: str) -> Dict[str, Any]:
-        """Delete a project asynchronously."""
-        return await projects_svc_async.deleteProject(self._api_config, name=name)
-
-    # Backwards compatible aliases
-    def get_project(self, id: str) -> Dict[str, Any]:
-        """Get a project (backwards compatible alias)."""
-        return self.list(name=id)  # Use name filter since no single-get
-
-    def create_project(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Create a project (backwards compatible alias)."""
-        return self.create(data)
-
-    def update_project(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Update a project (backwards compatible alias)."""
-        return self.update(data)
-
-    def delete_project(self, name: str) -> Dict[str, Any]:
-        """Delete a project (backwards compatible alias)."""
-        return self.delete(name)
-
-    def list_projects(self, name: Optional[str] = None) -> Dict[str, Any]:
-        """List projects (backwards compatible alias)."""
-        return self.list(name=name)
 
 
 class SessionsAPI(BaseAPI):
     """Sessions API."""
 
-    # Sync methods
-    def get(self, session_id: str) -> GetSessionResponse:
-        """Get a session by ID."""
-        return sessions_svc.getSession(self._api_config, session_id=session_id)
+    # The canonical spec only exposes session creation here. Session reads should
+    # go through the event query/export helpers, keyed by session_id.
 
-    def delete(self, session_id: str) -> DeleteSessionResponse:
-        """Delete a session."""
-        return sessions_svc.deleteSession(self._api_config, session_id=session_id)
+    @staticmethod
+    def _coerce_start_session_request(
+        data: Union[StartSessionRequest, Dict[str, Any]],
+    ) -> StartSessionRequest:
+        """Normalize session start inputs to the generated request model."""
+        if isinstance(data, StartSessionRequest):
+            return data
 
-    def start(self, data: Dict[str, Any]) -> PostSessionStartResponse:
+        if "session" in data:
+            return StartSessionRequest(**data)
+
+        # Older SDK callers pass the raw session payload directly. Keep accepting
+        # that flat shape and wrap it into the nested request model for back-compat.
+        warnings.warn(
+            "Passing a flat session payload to sessions.start() is deprecated and "
+            "will be removed in v2.0. Pass StartSessionRequest(session=...) or "
+            "{'session': {...}} instead.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+        return StartSessionRequest(session=data)
+
+    def start(
+        self, data: Union[StartSessionRequest, Dict[str, Any]]
+    ) -> PostSessionStartResponse:
         """Start a new session."""
-        return session_svc.startSession(self._api_config, data=data)
+        request = self._coerce_start_session_request(data)
+        return sessions_svc.startSession(self._api_config, data=request)
 
     # Async methods
-    async def get_async(self, session_id: str) -> GetSessionResponse:
-        """Get a session by ID asynchronously."""
-        return await sessions_svc_async.getSession(
-            self._api_config, session_id=session_id
-        )
-
-    async def delete_async(self, session_id: str) -> DeleteSessionResponse:
-        """Delete a session asynchronously."""
-        return await sessions_svc_async.deleteSession(
-            self._api_config, session_id=session_id
-        )
-
-    async def start_async(self, data: Dict[str, Any]) -> PostSessionStartResponse:
+    async def start_async(
+        self, data: Union[StartSessionRequest, Dict[str, Any]]
+    ) -> PostSessionStartResponse:
         """Start a new session asynchronously."""
-        return await session_svc_async.startSession(self._api_config, data=data)
+        request = self._coerce_start_session_request(data)
+        return await sessions_svc_async.startSession(self._api_config, data=request)
 
     # Backwards compatible aliases
-    def create_session(self, request: Dict[str, Any]) -> PostSessionStartResponse:
+    def create_session(
+        self, request: Union[StartSessionRequest, Dict[str, Any]]
+    ) -> PostSessionStartResponse:
         """Create/start a session (backwards compatible alias for start())."""
         return self.start(request)
 
-    def start_session(self, request: Dict[str, Any]) -> PostSessionStartResponse:
+    def start_session(
+        self, request: Union[StartSessionRequest, Dict[str, Any]]
+    ) -> PostSessionStartResponse:
         """Start a session (backwards compatible alias for start())."""
         return self.start(request)
-
-    def get_session(self, session_id: str) -> GetSessionResponse:
-        """Get a session (backwards compatible alias for get())."""
-        return self.get(session_id)
-
-    def delete_session(self, session_id: str) -> DeleteSessionResponse:
-        """Delete a session (backwards compatible alias for delete())."""
-        return self.delete(session_id)
 
 
 class HoneyHive:
@@ -1840,7 +1897,6 @@ class HoneyHive:
         events: API for managing events.
         experiments: API for managing experiment runs.
         metrics: API for managing metrics.
-        projects: API for managing projects.
         sessions: API for managing sessions.
     """
 
@@ -1925,7 +1981,6 @@ class HoneyHive:
         self.events = EventsAPI(self._api_config)
         self.experiments = ExperimentsAPI(self._api_config)
         self.metrics = MetricsAPI(self._api_config)
-        self.projects = ProjectsAPI(self._api_config)
         self.sessions = SessionsAPI(self._api_config)
 
         # Alias for backwards compatibility

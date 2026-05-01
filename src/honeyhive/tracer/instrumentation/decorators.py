@@ -2,7 +2,7 @@
 
 This module provides decorators for adding tracing capabilities to functions and
 classes.
-Uses dynamic logic and reflection to minimize complexity and follow Agent OS standards.
+Uses dynamic logic and reflection to minimize complexity for graceful degradation.
 
 The main :func:`trace` decorator automatically detects function type
 or asynchronous and applies the appropriate wrapper. This eliminates the need for
@@ -36,7 +36,7 @@ Example:
                 return data.upper()
 
 Note:
-    This module follows Agent OS standards for graceful degradation. If no tracer
+    This module follows graceful degradation standards. If no tracer
     is available, functions execute normally without tracing rather than raising
     exceptions.
 
@@ -47,7 +47,7 @@ See Also:
 
 # pylint: disable=duplicate-code,R0801,import-outside-toplevel,too-many-branches,line-too-long
 # Duplicate code patterns here are acceptable architectural patterns:
-# 1. Agent OS graceful degradation error handling - consistent across modules
+# 1. Graceful degradation error handling - consistent across modules
 # import-outside-toplevel: Conditional imports avoid circular dependencies
 # too-many-branches: Complex decorator logic requires comprehensive branching
 # line-too-long: Complex decorator signatures and attribute mappings exceed 88 chars

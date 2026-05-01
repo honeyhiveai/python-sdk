@@ -6,51 +6,6 @@ from ..api_config import APIConfig, HTTPException, _serialize_query_params
 from ..models import *
 
 
-async def getExperimentRunsSchema(
-    api_config_override: Optional[APIConfig] = None,
-    *,
-    dateRange: Optional[Union[str, Dict[str, Any]]] = None,
-    evaluation_id: Optional[str] = None,
-) -> GetExperimentRunsSchemaResponse:
-    api_config = api_config_override if api_config_override else APIConfig()
-
-    base_path = api_config.base_path
-    path = f"/v1/runs/schema"
-    headers = api_config.get_default_headers()
-    query_params: Dict[str, Any] = {
-        "dateRange": dateRange,
-        "evaluation_id": evaluation_id,
-    }
-
-    query_params = {
-        key: value for (key, value) in query_params.items() if value is not None
-    }
-
-    async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
-    ) as client:
-        response = await client.request(
-            "get",
-            httpx.URL(path),
-            headers=headers,
-            params=_serialize_query_params(query_params),
-        )
-
-    if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"getExperimentRunsSchema failed with status code: {response.status_code}",
-        )
-    else:
-        body = None if 200 == 204 else response.json()
-
-    return (
-        GetExperimentRunsSchemaResponse(**body)
-        if body is not None
-        else GetExperimentRunsSchemaResponse()
-    )
-
-
 async def getRuns(
     api_config_override: Optional[APIConfig] = None,
     *,
@@ -60,7 +15,7 @@ async def getRuns(
     run_ids: Optional[List[str]] = None,
     name: Optional[str] = None,
     status: Optional[str] = None,
-    dateRange: Optional[Union[str, Dict[str, Any]]] = None,
+    dateRange: Optional[Union[str, GetRunsDateRangeOneOf1]] = None,
     sort_by: Optional[str] = None,
     sort_order: Optional[str] = None,
 ) -> GetExperimentRunsResponse:
@@ -277,7 +232,7 @@ async def getExperimentRunMetrics(
     run_id: str,
     dateRange: Optional[str] = None,
     filters: Optional[Union[str, List[Dict[str, Any]]]] = None,
-) -> Dict[str, Any]:
+) -> GetExperimentRunMetricsResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
@@ -307,7 +262,11 @@ async def getExperimentRunMetrics(
     else:
         body = None if 200 == 204 else response.json()
 
-    return body
+    return (
+        GetExperimentRunMetricsResponse(**body)
+        if body is not None
+        else GetExperimentRunMetricsResponse()
+    )
 
 
 async def getExperimentResult(
@@ -413,7 +372,7 @@ async def getExperimentCompareEvents(
     filter: Optional[Union[str, Dict[str, Any]]] = None,
     limit: Optional[int] = None,
     page: Optional[int] = None,
-) -> Dict[str, Any]:
+) -> GetExperimentCompareEventsResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
@@ -451,4 +410,8 @@ async def getExperimentCompareEvents(
     else:
         body = None if 200 == 204 else response.json()
 
-    return body
+    return (
+        GetExperimentCompareEventsResponse(**body)
+        if body is not None
+        else GetExperimentCompareEventsResponse()
+    )

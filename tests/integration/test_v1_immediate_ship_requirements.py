@@ -68,12 +68,26 @@ class TestV1ImmediateShipRequirements:
 
         assert len(event_ids) > 0, "Should have event IDs"
 
-        # Get first session event for validation
+        # Get first session event for validation through the event query surface.
+        # `session_events.events` is List[LegacyEvent] (extra="allow" passes
+        # through any backend fields not in the spec).
         session_id_str = event_ids[0]
-        session_event = integration_client.sessions.get_session(session_id_str)
+        session_events = integration_client.events.get_by_session_id(
+            session_id_str,
+            limit=50,
+        )
+        session_event = next(
+            (
+                event
+                for event in session_events.events
+                if event.event_type == "session" or event.event_id == session_id_str
+            ),
+            None,
+        )
+        assert session_event is not None, "Expected to find the session root event"
 
         # TASK 1: Session naming validation
-        event_name = getattr(session_event, "event_name", "")
+        event_name = session_event.event_name or ""
         assert run_name in event_name, (
             f"TASK 1 FAILED: Session name should contain experiment name "
             f"'{run_name}', got '{event_name}'"
@@ -82,7 +96,7 @@ class TestV1ImmediateShipRequirements:
         print(f"   event_name: {event_name}")
 
         # TASK 3: Ground truths in feedback
-        feedback = getattr(session_event, "feedback", {}) or {}
+        feedback = session_event.feedback or {}
         assert (
             "ground_truth" in feedback
         ), "TASK 3 FAILED: feedback should contain 'ground_truth'"
@@ -90,7 +104,7 @@ class TestV1ImmediateShipRequirements:
         print(f"   ground_truth keys: {list(feedback['ground_truth'].keys())}")
 
         # TASK 5: Session linking (run_id in metadata)
-        metadata = getattr(session_event, "metadata", {}) or {}
+        metadata = session_event.metadata or {}
         assert "run_id" in metadata, "TASK 5 FAILED: metadata should contain 'run_id'"
         assert metadata["run_id"] == result.run_id, (
             f"TASK 5 FAILED: run_id should match: "
@@ -113,10 +127,8 @@ class TestV1ImmediateShipRequirements:
             limit=100,
         )
 
-        all_events = events_response.get("events", [])
-        child_events = [
-            e for e in all_events if getattr(e, "event_id", None) != session_id_str
-        ]
+        all_events = events_response.events
+        child_events = [e for e in all_events if e.event_id != session_id_str]
 
         assert (
             len(child_events) > 0

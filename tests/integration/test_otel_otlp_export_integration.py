@@ -231,7 +231,7 @@ class TestOTELOTLPExportIntegration:
         """Test OTLP export with full backend verification using HoneyHive SDK.
 
         This test implements the mandatory backend verification requirement from
-        Agent OS standards: integration tests must verify that exported data
+        Project standards: integration tests must verify that exported data
         exists in backend systems using SDK methods.
         """
         # Generate unique identifiers for this test run

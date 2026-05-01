@@ -11,7 +11,7 @@ def getMetrics(
     *,
     type: Optional[str] = None,
     id: Optional[str] = None,
-) -> List[GetMetricsResponse]:
+) -> GetMetricsResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
@@ -39,7 +39,7 @@ def getMetrics(
     else:
         body = None if 200 == 204 else response.json()
 
-    return [GetMetricsResponse(**item) for item in body]
+    return GetMetricsResponse(**body) if body is not None else GetMetricsResponse()
 
 
 def createMetric(

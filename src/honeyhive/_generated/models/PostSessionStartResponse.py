@@ -1,6 +1,8 @@
-from typing import *
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
+
+__all__ = ["PostSessionStartResponse"]
 
 
 class PostSessionStartResponse(BaseModel):
@@ -9,11 +11,16 @@ class PostSessionStartResponse(BaseModel):
         Full session event object returned after starting a new session
     """
 
-    model_config = {"populate_by_name": True, "validate_assignment": True}
+    model_config = {
+        "populate_by_name": True,
+        "validate_assignment": True,
+        "extra": "allow",
+        "protected_namespaces": (),
+    }
 
-    event_id: Optional[str] = Field(validation_alias="event_id", default=None)
+    event_id: str = Field(validation_alias="event_id")
 
-    session_id: Optional[str] = Field(validation_alias="session_id", default=None)
+    session_id: str = Field(validation_alias="session_id")
 
     parent_id: Optional[str] = Field(validation_alias="parent_id", default=None)
 

@@ -1,4 +1,4 @@
-from typing import *
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -6,13 +6,21 @@ from .BatchDateRange import BatchDateRange
 from .CheckState import CheckState
 from .DatapointMapping import DatapointMapping
 
+__all__ = ["BatchCreateDatapointsRequest"]
+
 
 class BatchCreateDatapointsRequest(BaseModel):
     """
     BatchCreateDatapointsRequest model
+        Request body for POST /datapoints/batch
     """
 
-    model_config = {"populate_by_name": True, "validate_assignment": True}
+    model_config = {
+        "populate_by_name": True,
+        "validate_assignment": True,
+        "extra": "allow",
+        "protected_namespaces": (),
+    }
 
     events: Optional[List[str]] = Field(validation_alias="events", default=None)
 

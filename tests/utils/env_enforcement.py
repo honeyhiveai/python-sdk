@@ -2,7 +2,7 @@
 Environment Variable Enforcement for Local Development
 
 This module provides programmatic enforcement for detecting and sourcing
-.env files in local development environments, following Agent OS standards.
+.env files in local development environments.
 """
 
 import os
@@ -111,7 +111,7 @@ class EnvironmentEnforcer:
         error_msg = f"""
 🚨 LOCAL DEVELOPMENT ERROR: No .env file found!
 
-According to Agent OS standards, local development MUST use .env files for credentials.
+Local development MUST use .env files for credentials.
 
 Expected .env file locations:
 {env_file_paths}

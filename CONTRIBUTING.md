@@ -59,7 +59,7 @@ python -m venv python-sdk
 source python-sdk/bin/activate  # On Windows: python-sdk\Scripts\activate
 
 # Install in development mode with all dependencies
-pip install -e ".[dev,docs]"
+pip install -e ".[dev]"
 
 # Set up development environment (installs tools, runs verification)
 ./scripts/setup-dev.sh
@@ -74,7 +74,7 @@ make help
 ```
 
 Key commands:
-- `make check` - Run all comprehensive checks (format, lint, tests, docs, validation)
+- `make check` - Run all comprehensive checks (format, lint, tests, validation)
 - `make test` - Run all tests
 - `make format` - Format code with Black and isort
 - `make lint` - Run linting checks
@@ -93,8 +93,6 @@ This runs all quality checks:
 - ✅ Static analysis (pylint + mypy)
 - ✅ Unit tests (fast, mocked)
 - ✅ Integration test validation
-- ✅ Documentation builds
 - ✅ Tracer pattern validation
-- ✅ Feature documentation sync
 
 All these checks also run automatically in CI when you push or create a pull request.

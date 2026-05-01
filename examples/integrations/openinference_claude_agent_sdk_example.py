@@ -21,8 +21,7 @@ Environment:
 
 Tool spans (upstream instrumentor):
     The OpenInference instrumentor may emit two TOOL spans per tool call (hooks plus
-    message-stream handling). HoneyHive does not deduplicate them in the UI. See
-    docs/how-to/integrations/anthropic.rst (Claude Agents SDK section).
+    message-stream handling). HoneyHive does not deduplicate them in the UI.
 
 Calling query:
     After instrument(), use ``claude_agent_sdk.query(...)``, or import ``query``

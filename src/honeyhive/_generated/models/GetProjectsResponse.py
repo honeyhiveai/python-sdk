@@ -1,12 +1,7 @@
-from typing import *
+from typing import List, TypeAlias
 
-from pydantic import BaseModel, Field
+from .ProjectItem import ProjectItem
 
+__all__ = ["GetProjectsResponse"]
 
-class GetProjectsResponse(BaseModel):
-    """
-    GetProjectsResponse model
-        Array of projects
-    """
-
-    model_config = {"populate_by_name": True, "validate_assignment": True}
+GetProjectsResponse: TypeAlias = List[ProjectItem]

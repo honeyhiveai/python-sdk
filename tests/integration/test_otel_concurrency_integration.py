@@ -1,7 +1,7 @@
 """Integration tests for OpenTelemetry concurrency and thread safety functionality.
 
 These tests validate concurrent span management, thread safety, and multi-threaded
-operations with backend verification as required by Agent OS standards.
+operations with backend verification as required by project standards.
 
 NO MOCKING - All tests use real OpenTelemetry components and real API calls.
 """
@@ -354,6 +354,7 @@ class TestOTELConcurrencyIntegration:
                     target_event = verify_backend_event(
                         client=integration_client,
                         project=real_project,
+                        session_id=integration_tracer.session_id,
                         unique_identifier=expected_unique_id,
                         expected_event_name=f"{test_operation_name}_worker_{worker_id}",
                     )
@@ -554,6 +555,7 @@ class TestOTELConcurrencyIntegration:
         parent_event = verify_backend_event(
             client=integration_client,
             project=real_project,
+            session_id=verbose_tracer.session_id,
             unique_identifier=f"{test_unique_id}_parent",
             expected_event_name=f"{test_operation_name}_async_parent",
         )
@@ -572,6 +574,7 @@ class TestOTELConcurrencyIntegration:
             child_event = verify_backend_event(
                 client=integration_client,
                 project=real_project,
+                session_id=verbose_tracer.session_id,
                 unique_identifier=f"{test_unique_id}_child_0",
                 expected_event_name=f"{test_operation_name}_async_child",
             )
@@ -586,6 +589,7 @@ class TestOTELConcurrencyIntegration:
             child_event = verify_backend_event(
                 client=integration_client,
                 project=real_project,
+                session_id=verbose_tracer.session_id,
                 unique_identifier=f"{test_unique_id}_child_1",
                 expected_event_name=f"{test_operation_name}_async_child",
             )
@@ -667,6 +671,7 @@ class TestOTELConcurrencyIntegration:
                                     "tracer_index": tracer_index,
                                     "unique_id": worker_unique_id,
                                     "session_name": tracer.session_name,
+                                    "session_id": tracer.session_id,
                                     "success": True,
                                 }
                             )
@@ -674,6 +679,7 @@ class TestOTELConcurrencyIntegration:
                         return {
                             "tracer_index": tracer_index,
                             "unique_id": worker_unique_id,
+                            "session_id": tracer.session_id,
                             "status": "completed",
                         }
                     else:
@@ -745,12 +751,14 @@ class TestOTELConcurrencyIntegration:
             for tracer_result in successful_tracers:
                 tracer_index = tracer_result["tracer_index"]
                 expected_unique_id = f"{test_unique_id}_tracer_{tracer_index}"
+                tracer_session_id = tracer_result["session_id"]
 
                 try:
 
                     target_event = verify_backend_event(
                         client=integration_client,
                         project=real_project,
+                        session_id=tracer_session_id,
                         unique_identifier=expected_unique_id,
                         expected_event_name=f"{test_operation_name}_tracer_{tracer_index}",
                     )
@@ -958,6 +966,7 @@ class TestOTELConcurrencyIntegration:
                     verified_event = verify_backend_event(
                         client=integration_client,
                         project=real_project,
+                        session_id=integration_tracer.session_id,
                         unique_identifier=str(expected_unique_id),
                         expected_event_name=f"{test_operation_name}_span_{span_id}",
                     )

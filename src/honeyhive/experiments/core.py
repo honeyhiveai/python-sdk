@@ -22,7 +22,11 @@ from honeyhive.experiments.utils import (
     prepare_external_dataset,
     prepare_run_request_data,
 )
-from honeyhive.models import PostExperimentRunRequest, PutExperimentRunRequest
+from honeyhive.models import (
+    PostExperimentRunRequest,
+    PutExperimentRunRequest,
+    UpdateEventRequest,
+)
 from honeyhive.tracer import HoneyHiveTracer
 from honeyhive.tracer.instrumentation.decorators import trace
 from honeyhive.tracer.lifecycle.flush import force_flush_tracer
@@ -636,8 +640,14 @@ def _enrich_session_with_results(
 
         if update_data:
             # Build update data dict with event_id and update params
-            event_update_data = {"event_id": session_id, **update_data}
-            client.events.update(data=event_update_data)
+            client.events.update(
+                data=UpdateEventRequest(
+                    event_id=session_id,
+                    feedback=update_data.get("feedback"),
+                    metrics=update_data.get("metrics"),
+                    outputs=update_data.get("outputs"),
+                )
+            )
 
             if verbose:
                 enriched_fields = list(update_data.keys())

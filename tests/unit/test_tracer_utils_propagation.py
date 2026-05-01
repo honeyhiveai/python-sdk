@@ -2,7 +2,7 @@
 
 This module tests the context propagation utilities including carrier sanitization,
 header extraction, and dynamic key matching using standard fixtures and comprehensive
-edge case coverage following Agent OS testing standards.
+edge case coverage following testing standards.
 """
 
 from typing import Any, Dict

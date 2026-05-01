@@ -1,14 +1,24 @@
-from typing import *
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
+
+from .PostSessionRequestFeedback import PostSessionRequestFeedback
+
+__all__ = ["PostSessionRequest"]
 
 
 class PostSessionRequest(BaseModel):
     """
     PostSessionRequest model
+        Minimal event object used by evaluation and session endpoints; permissive (passthrough)
     """
 
-    model_config = {"populate_by_name": True, "validate_assignment": True}
+    model_config = {
+        "populate_by_name": True,
+        "validate_assignment": True,
+        "extra": "allow",
+        "protected_namespaces": (),
+    }
 
     event_id: str = Field(validation_alias="event_id")
 
@@ -26,6 +36,6 @@ class PostSessionRequest(BaseModel):
         validation_alias="metadata", default=None
     )
 
-    feedback: Optional[Dict[str, Any]] = Field(
+    feedback: Optional[PostSessionRequestFeedback] = Field(
         validation_alias="feedback", default=None
     )

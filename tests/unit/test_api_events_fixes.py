@@ -9,12 +9,12 @@ This module tests the following fixes:
 import warnings
 from datetime import datetime, timezone
 from typing import Any, Dict, List
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 
-from honeyhive.api.client import EventsAPI, HoneyHive
-from honeyhive.models import EventExportResponse, EventFilter
+from honeyhive.api.client import ConfigurationsAPI, EventsAPI, HoneyHive, MetricsAPI
+from honeyhive.models import EventExportResponse, EventFilter, UpdateEventRequest
 from honeyhive.tracer.instrumentation.enrichment import (
     _enrich_existing_event_via_api,
     enrich_span_core,
@@ -154,6 +154,20 @@ class TestEventOrderingFix:
 class TestProjectDeprecationWarning:
     """Tests for project parameter deprecation warnings."""
 
+    def test_get_by_session_id_exposes_deprecated_marker(self) -> None:
+        """Test that get_by_session_id() exposes a static deprecation marker."""
+        message = getattr(EventsAPI.get_by_session_id, "__deprecated__", None)
+
+        assert message is not None
+        assert "events.export()" in message
+
+    def test_get_by_session_id_async_exposes_deprecated_marker(self) -> None:
+        """Test that get_by_session_id_async() exposes a static deprecation marker."""
+        message = getattr(EventsAPI.get_by_session_id_async, "__deprecated__", None)
+
+        assert message is not None
+        assert "events.export_async()" in message
+
     def test_export_with_project_shows_deprecation_warning(self) -> None:
         """Test that export() with project parameter shows deprecation warning."""
         mock_config = MagicMock()
@@ -210,7 +224,7 @@ class TestProjectDeprecationWarning:
                 assert len(deprecation_warnings) == 0
 
     def test_get_by_session_id_with_project_shows_deprecation_warning(self) -> None:
-        """Test that get_by_session_id() with project shows deprecation warning."""
+        """Test that get_by_session_id() warns for compat mode and project."""
         mock_config = MagicMock()
         mock_config.base_path = "https://api.honeyhive.ai"
         mock_config.get_access_token.return_value = "test-token"
@@ -232,20 +246,142 @@ class TestProjectDeprecationWarning:
                     session_id="test-session-id", project="test-project"
                 )
 
-                assert len(w) >= 1
+                assert len(w) >= 2
                 deprecation_warnings = [
                     warning
                     for warning in w
                     if issubclass(warning.category, DeprecationWarning)
                 ]
-                assert len(deprecation_warnings) >= 1
+                assert len(deprecation_warnings) >= 2
+                assert any(
+                    "backward compatibility" in str(warning.message)
+                    or "events.export" in str(warning.message)
+                    for warning in deprecation_warnings
+                )
                 assert any(
                     "project" in str(warning.message)
                     for warning in deprecation_warnings
                 )
 
-    def test_get_by_session_id_without_project_no_deprecation_warning(self) -> None:
-        """Test that get_by_session_id() without project doesn't show warning."""
+
+class TestMetricsDeprecationWarning:
+    """Tests for deprecated metrics list filters."""
+
+    def test_list_with_legacy_filters_shows_deprecation_warning(self) -> None:
+        """Test that list() warns when legacy project/name filters are passed."""
+        mock_config = MagicMock()
+        mock_config.base_path = "https://api.honeyhive.ai"
+        mock_config.get_access_token.return_value = "test-token"
+        mock_config.verify = True
+
+        metrics_api = MetricsAPI(mock_config)
+        mock_response = MagicMock()
+        mock_response.metrics = []
+
+        with patch(
+            "honeyhive.api.client.metrics_svc.getMetrics",
+            return_value=mock_response,
+        ) as mock_get_metrics:
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always")
+                result = metrics_api.list(project="test-project", name="test-metric")
+
+                assert result == []
+                assert mock_get_metrics.called
+                assert len(w) == 1
+                assert issubclass(w[0].category, DeprecationWarning)
+                assert "project" in str(w[0].message)
+                assert "name" in str(w[0].message)
+
+
+class TestConfigurationsDeprecationWarning:
+    """Tests for deprecated configurations list filters."""
+
+    def test_list_with_project_shows_deprecation_warning(self) -> None:
+        """Test that list() warns when the legacy project filter is passed."""
+        mock_config = MagicMock()
+        mock_config.base_path = "https://api.honeyhive.ai"
+        mock_config.get_access_token.return_value = "test-token"
+        mock_config.verify = True
+
+        configurations_api = ConfigurationsAPI(mock_config)
+        mock_response = MagicMock()
+        mock_response.configurations = []
+
+        with patch(
+            "honeyhive.api.client.configs_svc.getConfigurations",
+            return_value=mock_response,
+        ) as mock_get_configurations:
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always")
+                result = configurations_api.list(project="test-project")
+
+                assert result == []
+                assert mock_get_configurations.called
+                assert len(w) == 1
+                assert issubclass(w[0].category, DeprecationWarning)
+                assert "project" in str(w[0].message)
+
+    @pytest.mark.asyncio
+    async def test_list_async_with_project_shows_deprecation_warning(self) -> None:
+        """Test that list_async() warns when the legacy project filter is passed."""
+        mock_config = MagicMock()
+        mock_config.base_path = "https://api.honeyhive.ai"
+        mock_config.get_access_token.return_value = "test-token"
+        mock_config.verify = True
+
+        configurations_api = ConfigurationsAPI(mock_config)
+        mock_response = MagicMock()
+        mock_response.configurations = []
+
+        with patch(
+            "honeyhive.api.client.configs_svc_async.getConfigurations",
+            new=AsyncMock(return_value=mock_response),
+        ) as mock_get_configurations:
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always")
+                result = await configurations_api.list_async(project="test-project")
+
+                assert result == []
+                assert mock_get_configurations.called
+                assert len(w) == 1
+                assert issubclass(w[0].category, DeprecationWarning)
+                assert "project" in str(w[0].message)
+
+    @pytest.mark.asyncio
+    async def test_list_async_with_legacy_filters_shows_deprecation_warning(
+        self,
+    ) -> None:
+        """Test that list_async() warns when legacy project/name filters are passed."""
+        mock_config = MagicMock()
+        mock_config.base_path = "https://api.honeyhive.ai"
+        mock_config.get_access_token.return_value = "test-token"
+        mock_config.verify = True
+
+        metrics_api = MetricsAPI(mock_config)
+        mock_response = MagicMock()
+        mock_response.metrics = []
+
+        with patch(
+            "honeyhive.api.client.metrics_svc_async.getMetrics",
+            new=AsyncMock(return_value=mock_response),
+        ) as mock_get_metrics:
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always")
+                result = await metrics_api.list_async(
+                    project="test-project",
+                    name="test-metric",
+                )
+
+                assert result == []
+                assert mock_get_metrics.called
+                assert len(w) == 1
+                assert issubclass(w[0].category, DeprecationWarning)
+                assert "project" in str(w[0].message)
+                assert "name" in str(w[0].message)
+
+    def test_get_by_session_id_without_project_shows_compat_warning(self) -> None:
+        """Test that get_by_session_id() warns that export() is preferred."""
         mock_config = MagicMock()
         mock_config.base_path = "https://api.honeyhive.ai"
         mock_config.get_access_token.return_value = "test-token"
@@ -265,13 +401,17 @@ class TestProjectDeprecationWarning:
                 warnings.simplefilter("always")
                 events_api.get_by_session_id(session_id="test-session-id")
 
-                # No deprecation warnings should be raised
                 deprecation_warnings = [
                     warning
                     for warning in w
                     if issubclass(warning.category, DeprecationWarning)
                 ]
-                assert len(deprecation_warnings) == 0
+                assert len(deprecation_warnings) >= 1
+                assert any(
+                    "backward compatibility" in str(warning.message)
+                    or "events.export" in str(warning.message)
+                    for warning in deprecation_warnings
+                )
 
 
 class TestExportRequestBody:
@@ -362,11 +502,12 @@ class TestGetBySessionIdSorting:
                 warnings.simplefilter("ignore")
                 response = events_api.get_by_session_id(session_id="test-session-id")
 
-                # Verify events are sorted
+                # Verify events are sorted. response.events is List[LegacyEvent]
+                # (Pydantic, extra="allow") since HHAI-4916 typed the wrapper.
                 assert len(response.events) == 3
-                assert response.events[0]["event_name"] == "event1"
-                assert response.events[1]["event_name"] == "event2"
-                assert response.events[2]["event_name"] == "event3"
+                assert response.events[0].event_name == "event1"
+                assert response.events[1].event_name == "event2"
+                assert response.events[2].event_name == "event3"
 
 
 class TestEnrichSpanEventIdFix:
@@ -398,9 +539,10 @@ class TestEnrichSpanEventIdFix:
         call_args = mock_events_api.update.call_args
         update_data = call_args.kwargs.get("data", {})
 
-        assert update_data["event_id"] == "test-event-123"
-        assert update_data["metadata"] == {"key": "value"}
-        assert update_data["metrics"] == {"score": 0.95}
+        assert isinstance(update_data, UpdateEventRequest)
+        assert update_data.event_id == "test-event-123"
+        assert update_data.metadata == {"key": "value"}
+        assert update_data.metrics == {"score": 0.95}
         assert result["success"] is True
 
     def test_enrich_existing_event_with_all_fields(self) -> None:
@@ -429,15 +571,14 @@ class TestEnrichSpanEventIdFix:
         call_args = mock_events_api.update.call_args
         update_data = call_args.kwargs.get("data", {})
 
-        assert update_data["event_id"] == "test-event-456"
-        assert update_data["metadata"] == {"meta": "data"}
-        assert update_data["metrics"] == {"latency": 100}
-        assert update_data["feedback"] == {"rating": 5}
-        assert update_data["inputs"] == {"input": "test"}
-        assert update_data["outputs"] == {"output": "result"}
-        assert update_data["config"] == {"model": "gpt-4"}
-        assert update_data["user_properties"] == {"user_id": "user-123"}
-        assert update_data["error"] == "test error"
+        assert isinstance(update_data, UpdateEventRequest)
+        assert update_data.event_id == "test-event-456"
+        assert update_data.metadata == {"meta": "data"}
+        assert update_data.metrics == {"latency": 100}
+        assert update_data.feedback == {"rating": 5}
+        assert update_data.outputs == {"output": "result"}
+        assert update_data.config == {"model": "gpt-4"}
+        assert update_data.user_properties == {"user_id": "user-123"}
         assert result["success"] is True
 
     def test_enrich_existing_event_merges_attributes_to_metadata(self) -> None:
@@ -462,9 +603,11 @@ class TestEnrichSpanEventIdFix:
         update_data = call_args.kwargs.get("data", {})
 
         # Metadata should contain merged values
-        assert update_data["metadata"]["existing"] == "value"
-        assert update_data["metadata"]["attr_key"] == "attr_value"
-        assert update_data["metadata"]["extra_kwarg"] == "kwarg_value"
+        assert isinstance(update_data, UpdateEventRequest)
+        assert update_data.metadata is not None
+        assert update_data.metadata["existing"] == "value"
+        assert update_data.metadata["attr_key"] == "attr_value"
+        assert update_data.metadata["extra_kwarg"] == "kwarg_value"
         assert result["success"] is True
 
     def test_enrich_existing_event_no_client_returns_failure(self) -> None:

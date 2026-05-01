@@ -2,7 +2,7 @@
 
 These tests validate comprehensive span lifecycle management including attributes,
 events, links, status, and relationships with backend verification as required
-by Agent OS standards.
+following project standards.
 
 NO MOCKING - All tests use real OpenTelemetry components and real API calls.
 """
@@ -43,7 +43,7 @@ class TestOTELSpanLifecycleIntegration:
         """Test comprehensive span attribute lifecycle with backend verification.
 
         Tests all attribute types, updates, and backend verification as required
-        by Agent OS standards.
+        following project standards.
         """
         # Generate unique identifiers for this test run
 
