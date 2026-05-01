@@ -192,7 +192,7 @@ traceloop-anthropic = [
 
 # Google Generative AI (traceloop-google-ai)
 traceloop-google-ai = [
-    "opentelemetry-instrumentation-google-generativeai>=0.58.0,<1.0.0",
+    "opentelemetry-instrumentation-google-generativeai>=0.60.0,<1.0.0",
     "google-generativeai>=0.3.0",
 ]
 
@@ -267,7 +267,7 @@ openinference-llm-providers = [
 all-traceloop = [
     "opentelemetry-instrumentation-openai>=0.58.0,<1.0.0",
     "opentelemetry-instrumentation-anthropic>=0.58.0,<1.0.0",
-    "opentelemetry-instrumentation-google-generativeai>=0.58.0,<1.0.0",
+    "opentelemetry-instrumentation-google-generativeai>=0.60.0,<1.0.0",
     "opentelemetry-instrumentation-bedrock>=0.58.0,<1.0.0",
     "opentelemetry-instrumentation-langchain>=0.58.0,<1.0.0",
     "opentelemetry-instrumentation-mcp>=0.58.0,<1.0.0",
@@ -283,7 +283,7 @@ all-traceloop = [
 traceloop-llm-providers = [
     "opentelemetry-instrumentation-openai>=0.58.0,<1.0.0",
     "opentelemetry-instrumentation-anthropic>=0.58.0,<1.0.0",
-    "opentelemetry-instrumentation-google-generativeai>=0.58.0,<1.0.0",
+    "opentelemetry-instrumentation-google-generativeai>=0.60.0,<1.0.0",
     "opentelemetry-instrumentation-bedrock>=0.58.0,<1.0.0",
     "openai>=1.0.0",
     "anthropic>=0.17.0",
