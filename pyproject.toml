@@ -57,7 +57,7 @@ dev = [
     "openapi-python-generator>=2.1.0",  # For SDK generation (pydantic models + client)
     "docker>=7.0.0",  # For Lambda container tests
     "build>=1.4.2",  # For building packages
-    "hatchling>=1.18.0",  # Build backend
+    "hatchling>=1.29.0",  # Build backend
 ]
 
 # Documentation dependencies (properdocs + mkdocstrings, AST-based extraction via griffe).
