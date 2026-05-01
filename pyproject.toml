@@ -128,7 +128,7 @@ openinference-google-ai = [
 
 # Google Agent Development Kit (openinference-google-adk)
 openinference-google-adk = [
-    "openinference-instrumentation-google-adk>=0.1.0",
+    "openinference-instrumentation-google-adk>=0.1.10",
     "google-adk>=1.28.1",
 ]
 
@@ -231,7 +231,7 @@ all-openinference = [
     "openinference-instrumentation-claude-agent-sdk>=0.1.0",
     "openinference-instrumentation-openai-agents>=1.4.0",
     "openinference-instrumentation-google-genai>=0.1.0",
-    "openinference-instrumentation-google-adk>=0.1.0",
+    "openinference-instrumentation-google-adk>=0.1.10",
     "openinference-instrumentation-bedrock>=0.1.0",
     "openinference-instrumentation-litellm>=0.1.30",
     "openinference-instrumentation-langchain>=0.1.0",
