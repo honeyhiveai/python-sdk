@@ -125,7 +125,7 @@ jobs:
             - Strip pre-release suffixes for readability (e.g., `v1.0.0rc18` stays as-is since we're in RC phase)
             - Write to `docs-repo/beta/changelog/product.mdx`
 
-          claude_args: "--model claude-opus-4-6 --allowedTools Read Edit Write 'Bash(cat:*)' 'Bash(ls:*)' 'Bash(head:*)' 'Bash(tail:*)' 'Bash(grep:*)' 'Bash(git log:*)'"
+          claude_args: "--model claude-opus-4-7 --allowedTools Read Edit Write Glob TodoWrite 'Bash(git:*)' 'Bash(gh pr diff:*)' 'Bash(gh pr view:*)' 'Bash(cat:*)' 'Bash(ls:*)' 'Bash(head:*)' 'Bash(tail:*)' 'Bash(date:*)' 'Bash(grep:*)' 'Bash(rg:*)' 'Bash(jq:*)' 'Bash(yq:*)' 'Bash(fd:*)'"
 
       - name: Check for docs changes
         id: changes
