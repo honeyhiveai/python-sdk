@@ -1,0 +1,11 @@
+# Lambda container using proper deployment bundle
+FROM public.ecr.aws/lambda/python:3.11
+
+# Copy the entire pre-built bundle to the Lambda task root
+COPY lambda-bundle/ ${LAMBDA_TASK_ROOT}/
+
+# Verify the bundle is properly installed (single line format)
+RUN python -c "import sys; print('✅ Python path:', sys.path[:2]); import honeyhive; print('✅ HoneyHive imported'); from honeyhive.tracer import HoneyHiveTracer; print('✅ HoneyHiveTracer ready'); import httpx, opentelemetry; print('✅ All dependencies working')"
+
+# Set the default handler
+CMD ["working_sdk_test.lambda_handler"]

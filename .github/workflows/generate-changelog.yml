@@ -1,0 +1,264 @@
+name: Generate Changelog
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Release type (auto-detect from commits, or force a specific type)'
+        required: true
+        type: choice
+        options:
+          - auto
+          - patch
+          - minor
+          - major
+        default: auto
+      release_version:
+        description: 'Override version (optional - leave empty for auto-increment based on commits)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency: generate-changelog
+
+jobs:
+  generate-changelog:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout python-sdk
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0  # Fetch full history for commit analysis
+          
+      - name: Claude Code - Generate Changelog
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          display_report: true
+          prompt: |
+            Generate BOTH an external customer-facing changelog AND an internal changelog for the HoneyHive Python SDK.
+
+            ## Inputs
+            - Release type preference: ${{ inputs.release_type }}
+            - Override version (if provided): ${{ inputs.release_version }}
+
+            ## Your Task
+
+            You will update TWO files:
+            1. `CHANGELOG.md` - External, customer-facing changelog (concise, actionable, SDK-focused)
+            2. `CHANGELOG-INTERNAL.md` - Internal changelog for developers and AI agents (comprehensive)
+
+            ### Step 1: Determine the version range to analyze
+
+            1. **Find the last changelog update:**
+               - Run: `git log -1 --format="%H" -- CHANGELOG.md`
+               - If no result, use the first commit: `git rev-list --max-parents=0 HEAD`
+               - Do NOT limit the commit range. Analyze all commits between the last changelog update and HEAD to ensure completeness
+
+            2. **Get all commits since then:**
+               - Run: `git log --oneline <starting_commit>..HEAD`
+               - Also run: `git log --name-only --format="COMMIT:%H %s" <starting_commit>..HEAD` to get all file paths at once (more efficient than per-commit git diff-tree)
+
+            ### Step 2: Determine the new version
+
+            1. **Find the current version** from pyproject.toml or `src/honeyhive/__init__.py`
+               - Also check CHANGELOG.md for the last version header
+               - Look for patterns like `## vX.Y.Z` or `## X.Y.Z`
+
+            2. **Parse conventional commits** for version bump:
+               - MAJOR: `BREAKING CHANGE:` in body, or `!` after type (e.g., `feat!:`)
+               - MINOR: `feat:` or `feat(scope):`
+               - PATCH: `fix:`, `perf:`
+               - If no bump-triggering commits are found (only `chore:`, `docs:`, `ci:`, `refactor:`, `style:`, `test:`), default to PATCH
+
+            3. **Apply version rules:**
+               - If release_type is `auto`: Use highest bump level found
+               - If release_type is `major`/`minor`/`patch`: Use that override
+               - If override_version is provided, use that exactly
+
+            ### Step 3: Generate the EXTERNAL changelog (CHANGELOG.md)
+
+            This changelog is for SDK users installing via `pip install honeyhive`. Must be concise and actionable.
+
+            **Use this tiered structure (omit empty tiers):**
+
+            ```markdown
+            ## vX.Y.Z (YYYY-MM-DD)
+
+            ### Breaking Changes
+            - Changes to public API signatures, class interfaces, or default values
+            - Removed or renamed exports, functions, or classes
+            - For each: what changed, migration path, code example if helpful
+
+            ### What's New
+            - New SDK features, methods, or configuration options
+            - New provider integrations (OpenAI, Anthropic, Bedrock, etc.)
+            - New tracing capabilities or evaluation features
+            - Include brief usage example for significant additions
+
+            ### Fixes & Improvements
+            - Bug fixes in tracing, evaluation, or API client
+            - Performance improvements (especially for high-throughput tracing)
+            - Better error messages or error handling
+            - Security fixes
+
+            ### Compatibility & Deprecations
+            - Python version requirements
+            - Dependency version changes that users need to know about
+            - Deprecated APIs with migration timeline
+            - Known issues
+            ```
+
+            **Rules for the external changelog:**
+            - EXCLUDE: internal refactors, test changes, CI/CD changes, documentation-only changes, code style changes, dev dependency bumps
+            - INCLUDE: anything that changes public API behavior, adds features, fixes bugs, or affects installation
+            - Each entry should be 1-2 lines max. Link PR numbers.
+            - For breaking changes: state what changed, the old behavior, the new behavior, and migration path
+            - If there are NO user-facing changes, still create the version entry but note "Internal improvements only"
+
+            ### Step 4: Generate the INTERNAL changelog (CHANGELOG-INTERNAL.md)
+
+            Comprehensive record for developers and AI agents working on the SDK.
+
+            **Use this structure:**
+
+            ```markdown
+            ## [Internal] vX.Y.Z (YYYY-MM-DD)
+
+            > Commits: `abc123..def456` (N commits)
+
+            ### Modules Changed
+
+            #### Core SDK
+            - **src/honeyhive/tracer/**: PR #XXX - Description (commit_hash)
+            - **src/honeyhive/evaluation/**: PR #XXX - Description (commit_hash)
+            - **src/honeyhive/experiments/**: PR #XXX - Description (commit_hash)
+            - **src/honeyhive/api/**: PR #XXX - Description (commit_hash)
+            - **src/honeyhive/models/**: PR #XXX - Description (commit_hash)
+            - **src/honeyhive/config/**: PR #XXX - Description (commit_hash)
+
+            #### Generated Code
+            - **src/honeyhive/_generated/**: PR #XXX - Description (commit_hash)
+
+            #### CLI
+            - **src/honeyhive/cli/**: PR #XXX - Description (commit_hash)
+
+            #### Utils & Internal
+            - **src/honeyhive/utils/**: PR #XXX - Description (commit_hash)
+
+            ### API Changes
+            - New public functions/classes: `function_name(params)` in `module`
+            - Changed signatures: `function_name` - old vs new
+            - New/changed models in `src/honeyhive/models/`
+
+            ### Generated Code Changes
+            - OpenAPI spec updates (if `make generate` was run)
+            - Auto-generated model changes in `src/honeyhive/models/`
+            - Auto-generated API client changes in `src/honeyhive/api/`
+
+            ### Configuration Changes
+            - pyproject.toml changes (dependencies, build config, tool settings)
+            - New environment variables or configuration options
+
+            ### Test Changes
+            - New test files or test coverage changes
+            - Test infrastructure changes
+
+            ### CI/CD & Tooling
+            - Workflow changes, tox config changes
+            - Documentation build changes
+
+            ### Dependencies
+            - Runtime dependency changes with before/after versions
+            - Dev dependency changes
+
+            ### All Commits
+            - Full list: `hash subject (#PR)`
+            ```
+
+            **Rules for the internal changelog:**
+            - To determine which module a commit belongs to, use the batched output from Step 1:
+              - Parse `git log --name-only --format="COMMIT:%H %s" <start>..HEAD` to map files to commits in a single command
+              - Map file paths to modules (e.g., `src/honeyhive/tracer/` -> Core SDK / Tracer)
+            - A commit can appear under multiple modules if it touches multiple
+            - Include EVERY commit - nothing is excluded from the internal log
+            - For API changes, check `git diff <start>..HEAD -- "src/honeyhive/models/**" "src/honeyhive/api/**"` for generated code changes
+            - For dependency changes, check `git diff <start>..HEAD -- pyproject.toml`
+
+            ### Step 5: Update both files
+
+            1. Add the new entry at the TOP of each file (after the header)
+            2. Create the file with an appropriate header if it doesn't exist
+            3. For CHANGELOG.md header (if creating):
+               ```markdown
+               # Changelog
+
+               Customer-facing changelog for the HoneyHive Python SDK.
+               For internal details, see [CHANGELOG-INTERNAL.md](./CHANGELOG-INTERNAL.md).
+               ```
+            4. For CHANGELOG-INTERNAL.md header (if creating):
+               ```markdown
+               # Internal Changelog
+
+               Comprehensive internal record of all SDK changes for developers and AI agents.
+               For customer-facing changes, see [CHANGELOG.md](./CHANGELOG.md).
+               ```
+
+            ### Step 6: Provide summary
+
+            Output a summary of:
+            - Previous version -> New version
+            - Count of user-facing vs internal-only changes
+            - Any breaking changes highlighted
+          
+          claude_args: "--model claude-opus-4-6 --allowedTools Read Edit Write 'Bash(git log:*)' 'Bash(git show:*)' 'Bash(git diff:*)' 'Bash(git diff-tree:*)' 'Bash(git rev-parse:*)' 'Bash(git rev-list:*)' 'Bash(cat:*)' 'Bash(ls:*)' 'Bash(head:*)' 'Bash(tail:*)' 'Bash(date:*)' 'Bash(grep:*)'"
+
+      - name: Check for changelog changes
+        id: changes
+        run: |
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Generate token
+        if: steps.changes.outputs.has_changes == 'true'
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.PROPOLIS_APP_ID }}
+          private-key: ${{ secrets.PROPOLIS_PRIVATE_KEY }}
+          owner: honeyhiveai
+          repositories: python-sdk
+
+      - name: Create Pull Request
+        if: steps.changes.outputs.has_changes == 'true'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          commit-message: "docs: update CHANGELOG and CHANGELOG-INTERNAL"
+          branch: changelog/latest
+          delete-branch: true
+          title: "docs: Update changelogs with latest changes"
+          body: |
+            ## Automated Changelog Update
+            
+            This PR was automatically generated by the Claude Code changelog workflow.
+            
+            **Release Type:** ${{ inputs.release_type }}
+            **Override Version:** ${{ inputs.release_version || 'auto-calculated' }}
+            
+            ### What's Included
+            
+            - `CHANGELOG.md` - External customer-facing changelog (Breaking Changes, What's New, Fixes, Compatibility)
+            - `CHANGELOG-INTERNAL.md` - Internal changelog for developers/agents (full commit detail, module-level grouping, API/dependency changes)
+            
+            Please review both changelog entries for accuracy and completeness before merging.
+          labels: documentation,automated
+          assignees: ${{ github.actor }}

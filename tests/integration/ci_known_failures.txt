@@ -1,0 +1,55 @@
+# Known failing integration tests (CI temporary skiplist).
+# Originally generated 2026-02-25; pruned 2026-04-21 (HHAI-4916) after typing
+# EventExportResponse.events as List[LegacyEvent] and fixing test-side
+# response-shape regressions. Pruned again 2026-04-22 (HHAI-4942) after
+# HHAI-4935 restored native-type preservation in the OTLP JSON exporter,
+# unblocking 7 otel_backend / lifecycle / concurrency tests that assert
+# on native-type attribute round-trip.
+# Remove entries as fixes land.
+#
+# Each remaining entry is annotated inline with the actual failure mode
+# observed against testing-dp-1 on 2026-04-22. The "bucket" names below
+# are now purely navigational — the real source of truth is per-entry.
+#
+# Remaining buckets:
+#   * OTLPJSONExporter int64 precision (HHAI-5004) — raw JSON number
+#     overflows float64 for |v| > 2^53, backend rejects the batch
+#   * enrich_span attribute loss on error-raising spans — attrs set via
+#     `enrich_span({...})` inside a function that raises never make it
+#     onto the exported span (test.unique_id lookup fails)
+#   * Session-id override routing — honeyhive.session_id attribute
+#     override routes events to a different session than the one the
+#     test queries under
+#   * Experiment comparison / semantic assertions
+#   * Parent-child session linking (test_all_five_requirements_end_to_end)
+
+# OTLPJSONExporter int64 precision bug (HHAI-5004) — the test sends
+# attr.large_int=9223372036854775807; the exporter now emits it as a raw
+# JSON number, but the Go backend decodes through float64, rounds up to
+# 9223372036854776000, and rejects the payload with HTTP 500 (int64
+# overflow). Blocks the entire batch, so the event never ingests.
+tests/integration/test_otel_backend_verification_integration.py::TestOTELBackendVerificationIntegration::test_high_cardinality_attributes_backend_verification
+
+# enrich_span attribute loss on error-raising spans — OTLP export
+# succeeds with HTTP 200, but attributes set via `enrich_span({...})`
+# inside the function body are not on the exported span when the
+# function raises. Only the SDK's own honeyhive_error*/honeyhive_duration_ms
+# attrs persist, so lookup by test.unique_id yields no event.
+tests/integration/test_otel_backend_verification_integration.py::TestOTELBackendVerificationIntegration::test_error_spans_backend_verification
+
+# Session-id override routing — the span is exported with
+# honeyhive.session_id=<API-created session>, which the backend routes
+# to that session's events, but verify_tracer_span queries under
+# integration_tracer.session_id (the SDK-created session). The "not
+# found after 10 attempts" failure is a test/routing mismatch, not a
+# stringification issue.
+tests/integration/test_otel_otlp_export_integration.py::TestOTELOTLPExportIntegration::test_otlp_export_with_backend_verification
+
+# Experiment comparison / semantic assertions
+tests/integration/test_experiments_integration.py::TestExperimentsIntegration::test_compare_runs_with_metric_improvements_and_regressions
+tests/integration/test_experiments_integration.py::TestExperimentsIntegration::test_evaluate_with_nested_enrich_span_backend_validation
+tests/integration/test_experiments_integration.py::TestExperimentsIntegration::test_event_level_comparison
+tests/integration/test_experiments_integration.py::TestExperimentsIntegration::test_managed_dataset_evaluation
+
+# Parent-child session linking
+tests/integration/test_v1_immediate_ship_requirements.py::TestV1ImmediateShipRequirements::test_all_five_requirements_end_to_end

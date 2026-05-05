@@ -1,0 +1,24 @@
+# Working Lambda container with HoneyHive SDK
+FROM public.ecr.aws/lambda/python:3.11
+
+# Install dependencies 
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir \
+    requests \
+    pydantic
+
+# Copy Lambda functions first
+COPY tests/lambda/lambda_functions/ ${LAMBDA_TASK_ROOT}/
+
+# Copy the entire src directory to make sure we get everything
+COPY src/ ${LAMBDA_TASK_ROOT}/
+
+# Verify structure
+RUN ls -la ${LAMBDA_TASK_ROOT}/
+RUN ls -la ${LAMBDA_TASK_ROOT}/honeyhive/
+
+# Create a simple working test
+RUN echo 'import sys; sys.path.insert(0, "/var/task"); import honeyhive; print("SDK accessible")' > /tmp/test.py
+RUN python /tmp/test.py
+
+CMD ["working_sdk_test.lambda_handler"]

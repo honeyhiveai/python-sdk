@@ -1,0 +1,110 @@
+{#
+  Forked from openapi-python-generator's default template:
+  https://github.com/MarcoMuellner/openapi-python-generator/blob/main/src/openapi_python_generator/language_converters/python/templates/models_pydantic_2.jinja2
+
+  Changes from upstream:
+
+  1. Required-nullable fix (issue #135): When a field is required and its
+     original OpenAPI type includes `null`, re-wrap the generated annotation
+     in Optional[...] unless the converter already emitted a nullable type.
+     This preserves correct Pydantic v2 semantics: the field must be present
+     but its value may be null.
+
+  2. Unconditional extra="allow": Every generated model accepts unknown
+     fields. The Python SDK must never silently drop data on the wire —
+     whether we're deserializing a response from the server or serializing
+     a request from a user — even if the OpenAPI schema declares the shape
+     as strict. This keeps the SDK forward-compatible with server-side
+     additions and matches zod `.passthrough()` / `.catchall(z.any())`
+     intent end-to-end, without relying on the source schema to propagate
+     `additionalProperties`.
+
+  3. Top-level array schemas emit as TypeAlias: Upstream renders
+     `type: array` component schemas as empty BaseModels, which breaks
+     Pydantic validation anywhere they are referenced by `$ref`. Emit
+     them as `Name: TypeAlias = List[Item]` instead so list input
+     validates naturally and referring fields get item-level coercion.
+
+  4. protected_namespaces=(): Pydantic v2 reserves the `model_` prefix
+     and emits runtime warnings when a field starts with it. Several
+     HoneyHive schemas (e.g. ModelEvent) legitimately expose `model_*`
+     fields — disable the protected-namespace check on every generated
+     model so customers don't see spurious warnings in their logs.
+
+  5. Explicit `from typing import ...` + `__all__`: Upstream uses
+     `from typing import *` which re-exports ~50 stdlib names (Any,
+     BinaryIO, ForwardRef, TypeVar, etc.) onto every model module. These
+     leak through `_generated/models/__init__.py`'s `from .Foo import *`
+     re-exports and pollute the auto-generated reference docs (each
+     model page would list dozens of irrelevant typing symbols).
+     Empirically only Any/Dict/List/Optional/Union are used in the
+     converted annotations, so import them explicitly. `__all__` then
+     scopes the public surface of each module to just the model class
+     (or the array TypeAlias) so wildcard re-exports don't cascade.
+#}
+{% if schema.type is defined and schema.type is not none and (schema.type.value if schema.type.value is defined else schema.type) == "array" %}
+{% set items = schema.items %}
+{% if items is not none and items.ref is defined and items.ref %}
+{% set inner = items.ref.split('/') | last %}
+from typing import List, TypeAlias
+
+from .{{ inner }} import {{ inner }}
+
+__all__ = ["{{ schema_name }}"]
+
+{{ schema_name }}: TypeAlias = List[{{ inner }}]
+{% elif items is not none and items.type is defined and items.type is not none %}
+{% set primitive = items.type.value if items.type.value is defined else items.type %}
+{% set py = {"string": "str", "integer": "int", "number": "float", "boolean": "bool", "object": "dict", "array": "list"}.get(primitive, "Any") %}
+{% if py == "Any" %}
+from typing import Any, List, TypeAlias
+{% else %}
+from typing import List, TypeAlias
+{% endif %}
+
+__all__ = ["{{ schema_name }}"]
+
+{{ schema_name }}: TypeAlias = List[{{ py }}]
+{% else %}
+from typing import Any, List, TypeAlias
+
+__all__ = ["{{ schema_name }}"]
+
+{{ schema_name }}: TypeAlias = List[Any]
+{% endif %}
+{% else %}
+from typing import Any, Dict, List, Optional, Union
+from pydantic import BaseModel, Field
+{% for property in properties %}
+{% if property.type.import_types is not none %}
+{% for import_type in property.type.import_types %}
+{{ import_type }}
+{% endfor %}
+{% endif %}
+{% endfor %}
+
+__all__ = ["{{ schema_name }}"]
+
+class {{ schema_name }}(BaseModel):
+    """
+    {% if schema.title %}{{ schema.title }}{% else %}{{ schema_name }}{% endif %} model
+    {% if schema.description %}
+    {{ schema.description }}
+    {% endif %}
+    {% if parent_comment %}
+    {{ parent_comment }}
+    {% endif %}
+    """
+    model_config = {
+        "populate_by_name": True,
+        "validate_assignment": True,
+        "extra": "allow",
+        "protected_namespaces": (),
+    }
+    {% for property in properties %}
+    {% set annotation = property.type.converted_type %}
+    {% set required_nullable = property.required and "null" in property.type.original_type and "Optional[" not in annotation and "None" not in annotation %}
+
+    {{ property.name | normalize_symbol }} : {% if required_nullable %}Optional[{{ annotation }}]{% else %}{{ annotation | safe }}{% endif %} = Field(validation_alias="{{ property.name }}" {% if not property.required %}, default = {{ property.default }} {% endif %})
+    {% endfor %}
+{% endif %}

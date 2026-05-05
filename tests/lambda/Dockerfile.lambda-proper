@@ -1,0 +1,33 @@
+# Proper Lambda container that correctly installs dependencies
+FROM public.ecr.aws/lambda/python:3.11
+
+# First, install build tools and upgrade pip
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel hatchling
+
+# Copy the entire project to temp location for installation
+COPY . /tmp/honeyhive-build/
+
+# Install the package with dependencies using pip install -e
+# This should read pyproject.toml and install all dependencies
+RUN cd /tmp/honeyhive-build && \
+    pip install --no-cache-dir -e . && \
+    echo "✅ HoneyHive SDK installed with dependencies"
+
+# Copy Lambda functions to task root
+COPY tests/lambda/lambda_functions/ ${LAMBDA_TASK_ROOT}/
+
+# Verify everything is working
+RUN python -c "
+import sys
+print('Python path:', sys.path[:3])
+from honeyhive.tracer import HoneyHiveTracer
+import httpx
+import opentelemetry
+print('✅ All imports successful')
+print('✅ HoneyHive SDK ready with all dependencies')
+"
+
+# Clean up
+RUN rm -rf /tmp/honeyhive-build
+
+CMD ["working_sdk_test.lambda_handler"]

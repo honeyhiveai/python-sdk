@@ -1,0 +1,236 @@
+from typing import *
+
+import httpx
+
+from ..api_config import APIConfig, HTTPException, _serialize_query_params
+from ..models import *
+
+
+def getDatapoints(
+    api_config_override: Optional[APIConfig] = None,
+    *,
+    datapoint_ids: Optional[List[str]] = None,
+    dataset_name: Optional[str] = None,
+) -> GetDatapointsResponse:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/v1/datapoints"
+    headers = api_config.get_default_headers()
+    query_params: Dict[str, Any] = {
+        "datapoint_ids": datapoint_ids,
+        "dataset_name": dataset_name,
+    }
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+        response = client.request(
+            "get",
+            httpx.URL(path),
+            headers=headers,
+            params=_serialize_query_params(query_params),
+        )
+
+    if response.status_code != 200:
+        raise HTTPException(
+            response.status_code,
+            f"getDatapoints failed with status code: {response.status_code}",
+        )
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return (
+        GetDatapointsResponse(**body) if body is not None else GetDatapointsResponse()
+    )
+
+
+def createDatapoint(
+    api_config_override: Optional[APIConfig] = None, *, data: CreateDatapointRequest
+) -> CreateDatapointResponse:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/v1/datapoints"
+    headers = api_config.get_default_headers()
+    query_params: Dict[str, Any] = {}
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+        response = client.request(
+            "post",
+            httpx.URL(path),
+            headers=headers,
+            params=_serialize_query_params(query_params),
+            json=data.model_dump(exclude_none=True),
+        )
+
+    if response.status_code != 200:
+        raise HTTPException(
+            response.status_code,
+            f"createDatapoint failed with status code: {response.status_code}",
+        )
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return (
+        CreateDatapointResponse(**body)
+        if body is not None
+        else CreateDatapointResponse()
+    )
+
+
+def batchCreateDatapoints(
+    api_config_override: Optional[APIConfig] = None,
+    *,
+    data: BatchCreateDatapointsRequest,
+) -> BatchCreateDatapointsResponse:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/v1/datapoints/batch"
+    headers = api_config.get_default_headers()
+    query_params: Dict[str, Any] = {}
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+        response = client.request(
+            "post",
+            httpx.URL(path),
+            headers=headers,
+            params=_serialize_query_params(query_params),
+            json=data.model_dump(exclude_none=True),
+        )
+
+    if response.status_code != 200:
+        raise HTTPException(
+            response.status_code,
+            f"batchCreateDatapoints failed with status code: {response.status_code}",
+        )
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return (
+        BatchCreateDatapointsResponse(**body)
+        if body is not None
+        else BatchCreateDatapointsResponse()
+    )
+
+
+def getDatapoint(
+    api_config_override: Optional[APIConfig] = None, *, datapoint_id: str
+) -> GetDatapointResponse:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/v1/datapoints/{datapoint_id}"
+    headers = api_config.get_default_headers()
+    query_params: Dict[str, Any] = {}
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+        response = client.request(
+            "get",
+            httpx.URL(path),
+            headers=headers,
+            params=_serialize_query_params(query_params),
+        )
+
+    if response.status_code != 200:
+        raise HTTPException(
+            response.status_code,
+            f"getDatapoint failed with status code: {response.status_code}",
+        )
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return GetDatapointResponse(**body) if body is not None else GetDatapointResponse()
+
+
+def updateDatapoint(
+    api_config_override: Optional[APIConfig] = None,
+    *,
+    datapoint_id: str,
+    data: UpdateDatapointRequest,
+) -> UpdateDatapointResponse:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/v1/datapoints/{datapoint_id}"
+    headers = api_config.get_default_headers()
+    query_params: Dict[str, Any] = {}
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+        response = client.request(
+            "put",
+            httpx.URL(path),
+            headers=headers,
+            params=_serialize_query_params(query_params),
+            json=data.model_dump(exclude_none=True),
+        )
+
+    if response.status_code != 200:
+        raise HTTPException(
+            response.status_code,
+            f"updateDatapoint failed with status code: {response.status_code}",
+        )
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return (
+        UpdateDatapointResponse(**body)
+        if body is not None
+        else UpdateDatapointResponse()
+    )
+
+
+def deleteDatapoint(
+    api_config_override: Optional[APIConfig] = None, *, datapoint_id: str
+) -> DeleteDatapointResponse:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/v1/datapoints/{datapoint_id}"
+    headers = api_config.get_default_headers()
+    query_params: Dict[str, Any] = {}
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+        response = client.request(
+            "delete",
+            httpx.URL(path),
+            headers=headers,
+            params=_serialize_query_params(query_params),
+        )
+
+    if response.status_code != 200:
+        raise HTTPException(
+            response.status_code,
+            f"deleteDatapoint failed with status code: {response.status_code}",
+        )
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return (
+        DeleteDatapointResponse(**body)
+        if body is not None
+        else DeleteDatapointResponse()
+    )

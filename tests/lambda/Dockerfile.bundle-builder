@@ -1,0 +1,35 @@
+# Multi-stage build: first stage builds the bundle
+FROM public.ecr.aws/lambda/python:3.11 AS builder
+
+# Install build tools
+RUN pip install --upgrade pip setuptools wheel
+
+# Copy project files
+COPY . /build/
+
+# Create the bundle in /lambda-bundle
+WORKDIR /lambda-bundle
+
+# Install honeyhive and all its dependencies from the project source
+# This automatically picks up all dependencies from pyproject.toml
+RUN pip install --target . /build
+
+# Copy Lambda functions from both locations
+COPY tests/lambda/lambda_functions/*.py ./
+COPY lambda_functions/*.py ./
+
+# Clean up unnecessary files
+RUN find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true && \
+    find . -type f -name "*.pyc" -delete 2>/dev/null || true && \
+    find . -type f -name "*.pyo" -delete 2>/dev/null || true
+
+# Second stage: create the runtime container
+FROM public.ecr.aws/lambda/python:3.11
+
+# Copy the bundle from builder stage
+COPY --from=builder /lambda-bundle/ ${LAMBDA_TASK_ROOT}/
+
+# Verify everything works
+RUN python -c "import sys; print('✅ Python path:', sys.path[:2]); import honeyhive; from honeyhive.tracer import HoneyHiveTracer; import httpx, opentelemetry; print('✅ All working')"
+
+CMD ["working_sdk_test.lambda_handler"]

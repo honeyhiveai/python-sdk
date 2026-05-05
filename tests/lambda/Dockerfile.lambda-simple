@@ -1,0 +1,69 @@
+# Simple Lambda container for testing concept
+FROM public.ecr.aws/lambda/python:3.11
+
+# Install basic dependencies
+RUN pip install --no-cache-dir \
+    requests \
+    pydantic \
+    opentelemetry-api \
+    opentelemetry-sdk
+
+# Copy Lambda functions
+COPY lambda_functions/ ${LAMBDA_TASK_ROOT}/
+
+# Create a minimal honeyhive module structure for testing
+RUN mkdir -p ${LAMBDA_TASK_ROOT}/honeyhive/tracer && \
+    echo "# HoneyHive SDK Mock for Lambda Testing" > ${LAMBDA_TASK_ROOT}/honeyhive/__init__.py && \
+    cat > ${LAMBDA_TASK_ROOT}/honeyhive/tracer/__init__.py << 'INNER_EOF'
+# Mock HoneyHive tracer for Lambda container testing
+
+class MockTracer:
+    def __init__(self, **kwargs):
+        self.api_key = kwargs.get('api_key', 'test')
+        self.project = kwargs.get('project', 'test')
+        print(f"✅ Mock HoneyHive tracer initialized: {self.project}")
+    
+    def start_span(self, name):
+        return MockSpan(name)
+    
+    def enrich_span(self, **kwargs):
+        return MockContextManager()
+    
+    def force_flush(self, timeout_millis=30000):
+        print(f"✅ Mock force_flush called with timeout: {timeout_millis}ms")
+        return True
+
+class MockSpan:
+    def __init__(self, name):
+        self.name = name
+    
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, *args):
+        pass
+    
+    def set_attribute(self, key, value):
+        print(f"📝 Mock span attribute: {key} = {value}")
+
+class MockContextManager:
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, *args):
+        pass
+
+class HoneyHiveTracer:
+    @classmethod
+    def init(cls, **kwargs):
+        return MockTracer(**kwargs)
+
+def enrich_span(**kwargs):
+    return MockContextManager()
+INNER_EOF
+
+# Verify the mock setup
+RUN python -c "from honeyhive.tracer import HoneyHiveTracer; tracer = HoneyHiveTracer.init(api_key='test', project='lambda-test'); print('✅ Mock HoneyHive SDK working')"
+
+# Set default handler
+CMD ["basic_tracing.lambda_handler"]

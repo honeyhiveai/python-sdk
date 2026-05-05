@@ -1,0 +1,18 @@
+# Production Lambda container using PyPI package
+FROM public.ecr.aws/lambda/python:3.11
+
+# Install the HoneyHive SDK from PyPI (production approach)
+RUN pip install --no-cache-dir honeyhive
+
+# Copy Lambda functions
+COPY lambda_functions/ ${LAMBDA_TASK_ROOT}/
+
+# Install any additional dependencies your Lambda functions need
+COPY requirements.lambda.txt /tmp/
+RUN pip install --no-cache-dir -r /tmp/requirements.lambda.txt
+
+# Verify installation
+RUN python -c "from honeyhive.tracer import HoneyHiveTracer; print('✅ HoneyHive SDK ready for production')"
+
+# Default handler
+CMD ["basic_tracing.lambda_handler"]
