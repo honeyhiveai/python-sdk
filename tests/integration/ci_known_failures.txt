@@ -47,7 +47,6 @@ tests/integration/test_otel_otlp_export_integration.py::TestOTELOTLPExportIntegr
 
 # Experiment comparison / semantic assertions
 tests/integration/test_experiments_integration.py::TestExperimentsIntegration::test_compare_runs_with_metric_improvements_and_regressions
-tests/integration/test_experiments_integration.py::TestExperimentsIntegration::test_evaluate_with_nested_enrich_span_backend_validation
 tests/integration/test_experiments_integration.py::TestExperimentsIntegration::test_event_level_comparison
 tests/integration/test_experiments_integration.py::TestExperimentsIntegration::test_managed_dataset_evaluation
 

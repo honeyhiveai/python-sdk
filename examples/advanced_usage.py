@@ -27,7 +27,6 @@ from honeyhive.models import EventType
 
 # Set environment variables for configuration
 os.environ["HH_API_KEY"] = "your-api-key-here"
-os.environ["HH_PROJECT"] = "advanced-demo"
 os.environ["HH_SOURCE"] = "development"
 
 
@@ -48,18 +47,16 @@ def main():
     # Create tracers for different environments - from docs
     prod_tracer = HoneyHiveTracer.init(
         api_key="prod-key",
-        project="production-project",  # Required for OTLP tracing
         source="prod",
     )
 
     dev_tracer = HoneyHiveTracer.init(
         api_key="dev-key",
-        project="development-project",  # Required for OTLP tracing
         source="dev",
     )
 
-    print(f"✓ Production tracer: {prod_tracer.project}")
-    print(f"✓ Development tracer: {dev_tracer.project}")
+    print(f"✓ Production tracer (source={prod_tracer.source})")
+    print(f"✓ Development tracer (source={dev_tracer.source})")
 
     # ========================================================================
     # 2. ADVANCED TRACING PATTERNS

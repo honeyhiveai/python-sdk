@@ -20,7 +20,6 @@ Run:
 
 Environment:
     HH_API_KEY
-    HH_PROJECT
     ANTHROPIC_API_KEY
     HH_SOURCE (optional, defaults to "python_sdk_example")
     OTEL_SEMCONV_STABILITY_OPT_IN (optional, set to "gen_ai_latest_experimental"
@@ -200,7 +199,6 @@ async def run_swarm_scenario() -> None:
 def main() -> None:
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY"),
-        project=os.getenv("HH_PROJECT"),
         session_name="strands_agents_example",
         source=os.getenv("HH_SOURCE", "python_sdk_example"),
     )

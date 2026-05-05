@@ -111,7 +111,7 @@ class TestConfigCommands:
         mock_tracer = Mock()
         mock_tracer.config = {
             "api_key": "test-key-123",
-            "server_url": "https://api.honeyhive.ai",
+            "server_url": "https://api.dp1.us.honeyhive.ai",
             "project": "test-project",
             "source": "dev",
             "verbose": False,
@@ -135,7 +135,7 @@ class TestConfigCommands:
         mock_tracer = Mock()
         mock_tracer.config = {
             "api_key": "test-key-456",
-            "server_url": "https://api.honeyhive.ai",
+            "server_url": "https://api.dp1.us.honeyhive.ai",
             "project": "yaml-project",
             "source": "prod",
             "verbose": True,
@@ -208,7 +208,7 @@ class TestConfigCommands:
         output_data = json.loads(result.output)
         assert output_data["api_key"] == "fallback-key"
         assert (
-            output_data["server_url"] == "https://api.honeyhive.ai"
+            output_data["server_url"] == "https://api.dp1.us.honeyhive.ai"
         )  # Default fallback
         assert output_data["project"] == "fallback-project"
 
@@ -223,7 +223,7 @@ class TestConfigCommands:
             mock_tracer = Mock()
             mock_tracer.config = {
                 "api_key": "test",
-                "server_url": "https://api.honeyhive.ai",
+                "server_url": "https://api.dp1.us.honeyhive.ai",
             }
             mock_tracer.shutdown = Mock()
             mock_tracer_class.return_value = mock_tracer
@@ -466,7 +466,8 @@ class TestAPICommands:
 
         runner = CliRunner()
         result = runner.invoke(
-            request, ["--method", "GET", "--url", "https://api.honeyhive.ai/test"]
+            request,
+            ["--method", "GET", "--url", "https://api.dp1.us.honeyhive.ai/test"],
         )
 
         assert result.exit_code == 0
@@ -499,7 +500,7 @@ class TestAPICommands:
                 "--method",
                 "POST",
                 "--url",
-                "https://api.honeyhive.ai/events",
+                "https://api.dp1.us.honeyhive.ai/events",
                 "--headers",
                 '{"Authorization": "Bearer token123"}',
                 "--data",
@@ -526,7 +527,7 @@ class TestAPICommands:
                 "--method",
                 "GET",
                 "--url",
-                "https://api.honeyhive.ai/test",
+                "https://api.dp1.us.honeyhive.ai/test",
                 "--headers",
                 "invalid-json",
             ],
@@ -547,7 +548,7 @@ class TestAPICommands:
                 "--method",
                 "POST",
                 "--url",
-                "https://api.honeyhive.ai/test",
+                "https://api.dp1.us.honeyhive.ai/test",
                 "--data",
                 "invalid-json",
             ],
@@ -577,7 +578,8 @@ class TestAPICommands:
 
         runner = CliRunner()
         result = runner.invoke(
-            request, ["--method", "GET", "--url", "https://api.honeyhive.ai/health"]
+            request,
+            ["--method", "GET", "--url", "https://api.dp1.us.honeyhive.ai/health"],
         )
 
         assert result.exit_code == 0
@@ -591,7 +593,8 @@ class TestAPICommands:
 
         runner = CliRunner()
         result = runner.invoke(
-            request, ["--method", "GET", "--url", "https://api.honeyhive.ai/test"]
+            request,
+            ["--method", "GET", "--url", "https://api.dp1.us.honeyhive.ai/test"],
         )
 
         assert result.exit_code == 1
@@ -1123,7 +1126,7 @@ class TestEdgeCasesAndErrorHandling:
             mock_tracer = Mock()
             mock_tracer.config = {
                 "api_key": None,  # None value should be skipped
-                "server_url": "https://api.honeyhive.ai",
+                "server_url": "https://api.dp1.us.honeyhive.ai",
                 "project": None,  # None value should be skipped
                 "source": "dev",
                 "verbose": False,
@@ -1137,7 +1140,7 @@ class TestEdgeCasesAndErrorHandling:
 
             assert result.exit_code == 0
             # Should only show non-None values
-            assert "HH_API_URL=https://api.honeyhive.ai" in result.output
+            assert "HH_API_URL=https://api.dp1.us.honeyhive.ai" in result.output
             assert "HH_SOURCE=dev" in result.output
             assert "HH_VERBOSE=False" in result.output
             # Should not show None values

@@ -154,7 +154,6 @@ def demonstrate_honeyhive_first_integration():
     print("1. Initializing HoneyHive tracer...")
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY", "demo-api-key"),
-        project=os.getenv("HH_PROJECT", "custom-framework-demo"),
         source="custom-framework-example",
         test_mode=True,
         verbose=True,
@@ -206,7 +205,6 @@ def demonstrate_framework_first_integration():
     print("2. Initializing HoneyHive tracer...")
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY", "demo-api-key"),
-        project=os.getenv("HH_PROJECT", "custom-framework-demo"),
         source="custom-framework-example",
         test_mode=True,
         verbose=True,
@@ -240,7 +238,6 @@ def demonstrate_multi_framework_integration():
     print("1. Initializing HoneyHive tracer...")
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY", "demo-api-key"),
-        project=os.getenv("HH_PROJECT", "multi-framework-demo"),
         source="multi-framework-example",
         test_mode=True,
         verbose=False,  # Reduce noise
@@ -304,7 +301,6 @@ def demonstrate_concurrent_operations():
     # Initialize HoneyHive
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY", "demo-api-key"),
-        project=os.getenv("HH_PROJECT", "concurrent-demo"),
         source="concurrent-example",
         test_mode=True,
         verbose=False,
@@ -370,7 +366,6 @@ def demonstrate_error_handling():
     try:
         tracer = HoneyHiveTracer.init(
             api_key=os.getenv("HH_API_KEY", "demo-api-key"),
-            project=os.getenv("HH_PROJECT", "error-demo"),
             source="error-handling-example",
             test_mode=True,
             verbose=False,
@@ -424,8 +419,6 @@ def main():
     # Check environment
     if not os.getenv("HH_API_KEY"):
         print("⚠️  HH_API_KEY not set - using demo mode")
-    if not os.getenv("HH_PROJECT"):
-        print("⚠️  HH_PROJECT not set - using default project names")
     print()
 
     try:

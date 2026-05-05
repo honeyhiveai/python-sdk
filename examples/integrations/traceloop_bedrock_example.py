@@ -44,7 +44,6 @@ def setup_tracing() -> HoneyHiveTracer:
     # Initialize HoneyHive tracer FIRST
     tracer = HoneyHiveTracer.init(
         source="traceloop_bedrock_example",
-        project=os.getenv("HH_PROJECT", "bedrock-traceloop-demo"),
     )
     print("✓ HoneyHive tracer initialized")
 

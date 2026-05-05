@@ -17,7 +17,6 @@ from honeyhive.tracer.processing.context import extract_context_from_carrier
 # Initialize HoneyHive tracer
 tracer = HoneyHiveTracer.init(
     api_key=os.getenv("HH_API_KEY"),
-    project="distributed-tracing-tutorial",
     source="llm-service",
 )
 

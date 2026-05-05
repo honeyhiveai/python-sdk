@@ -17,7 +17,6 @@ Installation:
 Usage:
     # Set your API key
     export HH_API_KEY="your-api-key"
-    export HH_PROJECT="your-project"
     
     # Run the server
     uvicorn fastapi_multi_session_example:app --reload
@@ -45,7 +44,6 @@ from honeyhive import HoneyHiveTracer, trace
 
 tracer = HoneyHiveTracer.init(
     api_key=os.getenv("HH_API_KEY"),
-    project=os.getenv("HH_PROJECT", "fastapi-example"),
     source=os.getenv("HH_SOURCE", "development"),
 )
 
@@ -252,7 +250,6 @@ if __name__ == "__main__":
     import uvicorn
 
     print("Starting FastAPI server with HoneyHive tracing...")
-    print(f"Project: {os.getenv('HH_PROJECT', 'fastapi-example')}")
     print(f"Source: {os.getenv('HH_SOURCE', 'development')}")
     print()
     print("Test with:")

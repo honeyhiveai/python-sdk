@@ -7,7 +7,6 @@ This guide explains how to generate test cases for the 3 missing providers: **Go
 1. **Environment Setup**: Ensure you have a `.env` file in the repo root with:
    ```bash
    HH_API_KEY=your_honeyhive_api_key
-   HH_PROJECT=your_project_name
    OPENAI_API_KEY=your_openai_key
    GOOGLE_API_KEY=your_google_key
    ```

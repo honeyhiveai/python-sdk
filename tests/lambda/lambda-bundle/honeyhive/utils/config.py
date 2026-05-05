@@ -9,7 +9,7 @@ class APIConfig:
     """API configuration settings."""
 
     api_key: Optional[str] = None
-    api_url: str = "https://api.honeyhive.ai"
+    api_url: str = "https://api.dp1.us.honeyhive.ai"
     project: Optional[str] = None
     source: str = "production"
 
@@ -110,7 +110,7 @@ class Config:
     @property
     def api_url(self) -> str:
         """Get API URL from sub-configuration."""
-        return self.api.api_url if self.api else "https://api.honeyhive.ai"
+        return self.api.api_url if self.api else "https://api.dp1.us.honeyhive.ai"
 
     @api_url.setter
     def api_url(self, value: str) -> None:

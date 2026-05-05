@@ -49,7 +49,7 @@ class TestAPIClientConfig:
         config = APIClientConfig()
 
         assert isinstance(config, BaseHoneyHiveConfig)
-        assert config.server_url == "https://api.honeyhive.ai"
+        assert config.server_url == "https://api.dp1.us.honeyhive.ai"
         assert isinstance(config.http_config, HTTPClientConfig)
 
     def test_initialization_with_server_url(self) -> None:
@@ -73,7 +73,7 @@ class TestAPIClientConfig:
         custom_http_config = HTTPClientConfig(timeout=60.0, max_connections=50)
         config = APIClientConfig(http_config=custom_http_config)
 
-        assert config.server_url == "https://api.honeyhive.ai"
+        assert config.server_url == "https://api.dp1.us.honeyhive.ai"
         assert config.http_config is custom_http_config
         assert hasattr(config.http_config, "timeout")
         assert hasattr(config.http_config, "max_connections")
@@ -164,7 +164,7 @@ class TestAPIClientConfig:
         """
         config = APIClientConfig(server_url="ftp://invalid.example.com")
 
-        assert config.server_url == "https://api.honeyhive.ai"
+        assert config.server_url == "https://api.dp1.us.honeyhive.ai"
 
     def test_server_url_validation_graceful_degradation(self) -> None:
         """Test server URL validation graceful degradation behavior.
@@ -174,7 +174,7 @@ class TestAPIClientConfig:
         """
         config = APIClientConfig(server_url="not-a-url")
 
-        assert config.server_url == "https://api.honeyhive.ai"
+        assert config.server_url == "https://api.dp1.us.honeyhive.ai"
 
     def test_server_url_validation_with_malformed_url(self) -> None:
         """Test server URL validation with malformed URL.
@@ -184,7 +184,7 @@ class TestAPIClientConfig:
         """
         config = APIClientConfig(server_url="://malformed")
 
-        assert config.server_url == "https://api.honeyhive.ai"
+        assert config.server_url == "https://api.dp1.us.honeyhive.ai"
 
     def test_server_url_validation_with_none_input(self) -> None:
         """Test server URL validation with None input.
@@ -194,7 +194,7 @@ class TestAPIClientConfig:
         """
         config = APIClientConfig(server_url=None)  # type: ignore[arg-type]
 
-        assert config.server_url == "https://api.honeyhive.ai"
+        assert config.server_url == "https://api.dp1.us.honeyhive.ai"
 
     def test_server_url_validation_with_empty_string_input(self) -> None:
         """Test server URL validation with empty string input.
@@ -204,7 +204,7 @@ class TestAPIClientConfig:
         """
         config = APIClientConfig(server_url="")
 
-        assert config.server_url == "https://api.honeyhive.ai"
+        assert config.server_url == "https://api.dp1.us.honeyhive.ai"
 
     def test_server_url_validation_with_non_string_input(self) -> None:
         """Test server URL validation with non-string input.
@@ -214,7 +214,7 @@ class TestAPIClientConfig:
         """
         config = APIClientConfig(server_url=12345)  # type: ignore[arg-type]
 
-        assert config.server_url == "https://api.honeyhive.ai"
+        assert config.server_url == "https://api.dp1.us.honeyhive.ai"
 
     def test_server_url_validation_with_dict_input(self) -> None:
         """Test server URL validation with dictionary input.
@@ -225,7 +225,7 @@ class TestAPIClientConfig:
         invalid_input: Dict[str, str] = {"url": "https://example.com"}
         config = APIClientConfig(server_url=invalid_input)  # type: ignore[arg-type]
 
-        assert config.server_url == "https://api.honeyhive.ai"
+        assert config.server_url == "https://api.dp1.us.honeyhive.ai"
 
     def test_server_url_validation_with_list_input(self) -> None:
         """Test server URL validation with list input.
@@ -236,7 +236,7 @@ class TestAPIClientConfig:
         invalid_input = ["https://example.com", "https://backup.com"]
         config = APIClientConfig(server_url=invalid_input)  # type: ignore[arg-type]
 
-        assert config.server_url == "https://api.honeyhive.ai"
+        assert config.server_url == "https://api.dp1.us.honeyhive.ai"
 
     def test_model_config_env_prefix(self) -> None:
         """Test model configuration does not use env_prefix.
@@ -341,7 +341,7 @@ class TestAPIClientConfig:
         # Test that model has the expected field
         config = APIClientConfig()
         assert hasattr(config, "server_url")
-        assert config.server_url == "https://api.honeyhive.ai"
+        assert config.server_url == "https://api.dp1.us.honeyhive.ai"
 
     def test_http_config_field_description(self) -> None:
         """Test http_config field has proper description.
@@ -377,7 +377,7 @@ class TestAPIClientConfig:
         the correct default value.
         """
         config = APIClientConfig()
-        assert config.server_url == "https://api.honeyhive.ai"
+        assert config.server_url == "https://api.dp1.us.honeyhive.ai"
 
     def test_docstring_examples_functionality(self) -> None:
         """Test functionality described in class docstring examples.
@@ -387,17 +387,18 @@ class TestAPIClientConfig:
         """
         # Simple usage example
         config = APIClientConfig(
-            api_key="hh_1234567890abcdef", server_url="https://api.honeyhive.ai"
+            api_key="hh_1234567890abcdef",
+            server_url="https://api.dp1.us.honeyhive.ai",
         )
-        assert config.server_url == "https://api.honeyhive.ai"
+        assert config.server_url == "https://api.dp1.us.honeyhive.ai"
 
         # Advanced usage with HTTP config example
         http_config = HTTPClientConfig(timeout=60.0, max_connections=50)
         config = APIClientConfig(
             api_key="hh_1234567890abcdef",
-            server_url="https://api.honeyhive.ai",
+            server_url="https://api.dp1.us.honeyhive.ai",
             http_config=http_config,
         )
-        assert config.server_url == "https://api.honeyhive.ai"
+        assert config.server_url == "https://api.dp1.us.honeyhive.ai"
         assert hasattr(config.http_config, "timeout")
         assert hasattr(config.http_config, "max_connections")

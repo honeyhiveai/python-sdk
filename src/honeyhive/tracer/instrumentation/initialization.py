@@ -782,7 +782,7 @@ def _create_otlp_exporter(tracer_instance: Any) -> Optional[Any]:
     try:
         # Configure custom OTLP exporter to send to backend service using dynamic logic
         server_url = getattr(
-            tracer_instance.config, "server_url", "https://api.honeyhive.ai"
+            tracer_instance.config, "server_url", "https://api.dp1.us.honeyhive.ai"
         )
         otlp_endpoint = f"{server_url}/opentelemetry/v1/traces"
 
@@ -1057,7 +1057,7 @@ def _initialize_session_management(tracer_instance: Any) -> None:
         # Extract configuration values dynamically (config object and legacy attributes)
         api_key = getattr(tracer_instance.config, "api_key", None)
         server_url = getattr(
-            tracer_instance.config, "server_url", "https://api.honeyhive.ai"
+            tracer_instance.config, "server_url", "https://api.dp1.us.honeyhive.ai"
         )
 
         # Build client parameters (new HoneyHive client only accepts api_key and base_url)
@@ -1225,8 +1225,7 @@ def _validate_configuration_gracefully(tracer_instance: Any) -> None:
         safe_log(
             tracer_instance,
             "warning",
-            "Project missing. Using default project 'unknown'. "
-            "Set HH_PROJECT environment variable for proper categorization.",
+            "Project missing. Using default project 'unknown'.",
             honeyhive_data={"operation": "project_validation"},
         )
         degraded_mode = True

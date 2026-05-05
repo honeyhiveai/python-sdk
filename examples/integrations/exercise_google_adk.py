@@ -30,7 +30,6 @@ Requirements:
 
 Environment Variables:
     HH_API_KEY: Your HoneyHive API key
-    HH_PROJECT: Your HoneyHive project name
     GOOGLE_API_KEY: Your Google API key (from https://aistudio.google.com/apikey)
 
 References:
@@ -1150,13 +1149,11 @@ async def main():
 
     # Check required environment variables
     hh_api_key = os.getenv("HH_API_KEY")
-    hh_project = os.getenv("HH_PROJECT")
     google_api_key = os.getenv("GOOGLE_API_KEY")
 
-    if not all([hh_api_key, hh_project, google_api_key]):
+    if not all([hh_api_key, google_api_key]):
         print("❌ Missing required environment variables:")
         print("   - HH_API_KEY: Your HoneyHive API key")
-        print("   - HH_PROJECT: Your HoneyHive project name")
         print("   - GOOGLE_API_KEY: Your Google API key")
         return False
 
@@ -1169,7 +1166,6 @@ async def main():
 
         print("🧪 Google ADK Instrumentation Exercise Script")
         print("=" * 60)
-        print(f"📊 Project: {hh_project}")
         print(f"🔁 Iterations: {args.iterations}")
         print(f"⏱️  Rate Limiting: {RATE_LIMIT_DELAY}s delay between calls")
         print(f"🔄 Retry Logic: Max {MAX_RETRIES} retries with exponential backoff")
@@ -1182,7 +1178,6 @@ async def main():
         # Initialize HoneyHive tracer
         tracer = HoneyHiveTracer.init(
             api_key=hh_api_key,
-            project=hh_project,
             session_name=Path(__file__).stem,
             source="google_adk_exercise",
         )
@@ -1291,7 +1286,7 @@ async def main():
         print("\n" + "=" * 60)
         print("🎉 Exercise suite completed successfully!")
         print("=" * 60)
-        print(f"\n📊 Check your HoneyHive project '{hh_project}' for trace data:")
+        print(f"\n📊 Check your HoneyHive dashboard for trace data:")
         print(
             "   - Exercise 1: MODEL spans (prompt_tokens, completion_tokens in metadata.*)"
         )

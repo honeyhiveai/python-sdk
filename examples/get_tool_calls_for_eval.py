@@ -17,14 +17,11 @@ from honeyhive.models.generated import EventFilter, Operator, Type
 load_dotenv()
 
 
-def get_tool_calls_for_evaluation(
-    project: str, session_id: str = None, limit: int = 100
-):
+def get_tool_calls_for_evaluation(session_id: str = None, limit: int = 100):
     """
     Retrieve tool call events for evaluation.
 
     Args:
-        project: Project name
         session_id: Optional session ID to filter by
         limit: Maximum number of events to return
 
@@ -33,7 +30,7 @@ def get_tool_calls_for_evaluation(
     """
     honeyhive = HoneyHive(
         api_key=os.environ["HH_API_KEY"],
-        server_url=os.environ.get("HH_API_URL", "https://api.honeyhive.ai"),
+        server_url=os.environ.get("HH_API_URL", "https://api.dp1.us.honeyhive.ai"),
     )
 
     events_api = EventsAPI(honeyhive)
@@ -57,12 +54,12 @@ def get_tool_calls_for_evaluation(
         )
 
     # Get events using the powerful get_events() method
-    result = events_api.get_events(project=project, filters=filters, limit=limit)
+    result = events_api.get_events(filters=filters, limit=limit)
 
     return result
 
 
-def get_expensive_model_calls(project: str, min_cost: float = 0.01, limit: int = 100):
+def get_expensive_model_calls(min_cost: float = 0.01, limit: int = 100):
     """
     Example: Get model events that cost more than a threshold.
 
@@ -70,7 +67,7 @@ def get_expensive_model_calls(project: str, min_cost: float = 0.01, limit: int =
     """
     honeyhive = HoneyHive(
         api_key=os.environ["HH_API_KEY"],
-        server_url=os.environ.get("HH_API_URL", "https://api.honeyhive.ai"),
+        server_url=os.environ.get("HH_API_URL", "https://api.dp1.us.honeyhive.ai"),
     )
 
     events_api = EventsAPI(honeyhive)
@@ -87,19 +84,18 @@ def get_expensive_model_calls(project: str, min_cost: float = 0.01, limit: int =
         ),
     ]
 
-    result = events_api.get_events(project=project, filters=filters, limit=limit)
+    result = events_api.get_events(filters=filters, limit=limit)
 
     return result
 
 
 def get_events_with_date_range(
-    project: str, event_type: str, start_date: str, end_date: str, limit: int = 100
+    event_type: str, start_date: str, end_date: str, limit: int = 100
 ):
     """
     Example: Get events within a specific date range.
 
     Args:
-        project: Project name
         event_type: Type of event (tool, model, chain, session)
         start_date: ISO format date string (e.g., "2024-01-01T00:00:00.000Z")
         end_date: ISO format date string
@@ -107,7 +103,7 @@ def get_events_with_date_range(
     """
     honeyhive = HoneyHive(
         api_key=os.environ["HH_API_KEY"],
-        server_url=os.environ.get("HH_API_URL", "https://api.honeyhive.ai"),
+        server_url=os.environ.get("HH_API_URL", "https://api.dp1.us.honeyhive.ai"),
     )
 
     events_api = EventsAPI(honeyhive)
@@ -123,20 +119,16 @@ def get_events_with_date_range(
 
     date_range = {"$gte": start_date, "$lte": end_date}
 
-    result = events_api.get_events(
-        project=project, filters=filters, date_range=date_range, limit=limit
-    )
+    result = events_api.get_events(filters=filters, date_range=date_range, limit=limit)
 
     return result
 
 
 if __name__ == "__main__":
-    project = os.environ["HH_PROJECT"]
-
     print("=" * 80)
     print("Example 1: Get all tool calls")
     print("=" * 80)
-    result = get_tool_calls_for_evaluation(project=project, limit=10)
+    result = get_tool_calls_for_evaluation(limit=10)
     print(f"Found {result['totalEvents']} total tool calls")
     print(f"Retrieved {len(result['events'])} events")
 
@@ -151,7 +143,7 @@ if __name__ == "__main__":
     print("\n" + "=" * 80)
     print("Example 2: Get expensive model calls (cost > $0.01)")
     print("=" * 80)
-    result = get_expensive_model_calls(project=project, min_cost=0.01, limit=10)
+    result = get_expensive_model_calls(min_cost=0.01, limit=10)
     print(f"Found {result['totalEvents']} expensive model calls")
     print(f"Retrieved {len(result['events'])} events")
 

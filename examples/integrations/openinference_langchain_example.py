@@ -19,7 +19,6 @@ Run:
 
 Environment:
     HH_API_KEY
-    HH_PROJECT
     OPENAI_API_KEY
 """
 
@@ -59,13 +58,8 @@ def main() -> None:
     if not os.getenv("OPENAI_API_KEY"):
         print("Set OPENAI_API_KEY to your OpenAI API key.", file=sys.stderr)
         raise SystemExit(1)
-    if not os.getenv("HH_PROJECT"):
-        print("Set HH_PROJECT to your HoneyHive project name.", file=sys.stderr)
-        raise SystemExit(1)
-
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY"),
-        project=os.getenv("HH_PROJECT"),
         session_name="openinference_langchain_example",
         source=os.getenv("HH_SOURCE", "python_sdk_example"),
     )

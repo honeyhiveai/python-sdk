@@ -5,6 +5,8 @@ by all components of the SDK, including cases where environment variables
 are set after import time.
 """
 
+import pytest
+
 from honeyhive.api.client import HoneyHive
 from honeyhive.tracer import HoneyHiveTracer
 
@@ -39,6 +41,40 @@ class TestEnvironmentVariableIntegration:
 
         # The client should use the custom URL from constructor
         assert client.server_url == custom_url
+
+    def test_honeyhive_client_accepts_deprecated_project_kwarg(self):
+        """project= must remain accepted for backwards compatibility (deprecated)."""
+        with pytest.warns(DeprecationWarning, match="project"):
+            client = HoneyHive(
+                api_key="test-key",
+                project="legacy-project",
+                test_mode=True,
+                server_url="https://custom.honeyhive.api",
+            )
+        assert client.api_key == "test-key"
+        assert client.server_url == "https://custom.honeyhive.api"
+
+    def test_honeyhive_client_accepts_deprecated_project_positional(self):
+        """Second positional argument was historically project name."""
+        with pytest.warns(DeprecationWarning, match="project"):
+            client = HoneyHive(
+                "test-key",
+                "legacy-project",
+                test_mode=True,
+                server_url="https://custom.honeyhive.api",
+            )
+        assert client.api_key == "test-key"
+
+    def test_honeyhive_tracer_init_warns_on_deprecated_project_kwarg(self):
+        """HoneyHiveTracer.init(project=...) should emit a DeprecationWarning."""
+        with pytest.warns(DeprecationWarning, match="project"):
+            tracer = HoneyHiveTracer.init(
+                api_key="test-key",
+                project="legacy-project",
+                test_mode=True,
+            )
+        # BC: project is still accepted and stored on the tracer instance.
+        assert tracer.project == "legacy-project"
 
     def test_environment_variable_precedence(self):
         """Test that tracer config has expected properties and structure."""

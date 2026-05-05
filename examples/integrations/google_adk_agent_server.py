@@ -19,7 +19,6 @@ from honeyhive.tracer.processing.context import with_distributed_trace_context
 # Initialize HoneyHive tracer
 tracer = HoneyHiveTracer.init(
     api_key=os.getenv("HH_API_KEY"),
-    project=os.getenv("HH_PROJECT", "sdk"),
     source="google-adk-agent-server",
     verbose=True,
 )
@@ -92,7 +91,7 @@ async def invoke_agent():
 
     # Use context manager for distributed tracing - it automatically:
     # 1. Extracts client's trace context from headers
-    # 2. Parses session_id/project/source from baggage
+    # 2. Parses session_id/source from baggage
     # 3. Attaches the context (so all spans link to client's trace)
     # 4. Detaches on exit
     with with_distributed_trace_context(dict(request.headers), tracer):

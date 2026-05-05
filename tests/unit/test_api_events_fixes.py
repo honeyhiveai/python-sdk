@@ -28,7 +28,7 @@ class TestEventOrderingFix:
         """Test that events with numeric timestamps are sorted correctly."""
         # Create EventsAPI instance with mock config
         mock_config = MagicMock()
-        mock_config.base_path = "https://api.honeyhive.ai"
+        mock_config.base_path = "https://api.dp1.us.honeyhive.ai"
         mock_config.get_access_token.return_value = "test-token"
         mock_config.verify = True
 
@@ -51,7 +51,7 @@ class TestEventOrderingFix:
     def test_sort_events_by_time_with_iso_timestamps(self) -> None:
         """Test that events with ISO string timestamps are sorted correctly."""
         mock_config = MagicMock()
-        mock_config.base_path = "https://api.honeyhive.ai"
+        mock_config.base_path = "https://api.dp1.us.honeyhive.ai"
         mock_config.get_access_token.return_value = "test-token"
         mock_config.verify = True
 
@@ -74,7 +74,7 @@ class TestEventOrderingFix:
     def test_sort_events_by_time_with_startTime_field(self) -> None:
         """Test that events with startTime (camelCase) field are sorted correctly."""
         mock_config = MagicMock()
-        mock_config.base_path = "https://api.honeyhive.ai"
+        mock_config.base_path = "https://api.dp1.us.honeyhive.ai"
         mock_config.get_access_token.return_value = "test-token"
         mock_config.verify = True
 
@@ -95,7 +95,7 @@ class TestEventOrderingFix:
     def test_sort_events_by_time_with_created_at_field(self) -> None:
         """Test that events with created_at field are sorted correctly."""
         mock_config = MagicMock()
-        mock_config.base_path = "https://api.honeyhive.ai"
+        mock_config.base_path = "https://api.dp1.us.honeyhive.ai"
         mock_config.get_access_token.return_value = "test-token"
         mock_config.verify = True
 
@@ -116,7 +116,7 @@ class TestEventOrderingFix:
     def test_sort_events_by_time_with_missing_timestamps(self) -> None:
         """Test that events with missing timestamps are handled correctly."""
         mock_config = MagicMock()
-        mock_config.base_path = "https://api.honeyhive.ai"
+        mock_config.base_path = "https://api.dp1.us.honeyhive.ai"
         mock_config.get_access_token.return_value = "test-token"
         mock_config.verify = True
 
@@ -140,7 +140,7 @@ class TestEventOrderingFix:
     def test_sort_events_by_time_empty_list(self) -> None:
         """Test that empty event list returns empty list."""
         mock_config = MagicMock()
-        mock_config.base_path = "https://api.honeyhive.ai"
+        mock_config.base_path = "https://api.dp1.us.honeyhive.ai"
         mock_config.get_access_token.return_value = "test-token"
         mock_config.verify = True
 
@@ -171,7 +171,7 @@ class TestProjectDeprecationWarning:
     def test_export_with_project_shows_deprecation_warning(self) -> None:
         """Test that export() with project parameter shows deprecation warning."""
         mock_config = MagicMock()
-        mock_config.base_path = "https://api.honeyhive.ai"
+        mock_config.base_path = "https://api.dp1.us.honeyhive.ai"
         mock_config.get_access_token.return_value = "test-token"
         mock_config.verify = True
 
@@ -197,7 +197,7 @@ class TestProjectDeprecationWarning:
     def test_export_without_project_no_deprecation_warning(self) -> None:
         """Test that export() without project parameter doesn't show warning."""
         mock_config = MagicMock()
-        mock_config.base_path = "https://api.honeyhive.ai"
+        mock_config.base_path = "https://api.dp1.us.honeyhive.ai"
         mock_config.get_access_token.return_value = "test-token"
         mock_config.verify = True
 
@@ -226,7 +226,7 @@ class TestProjectDeprecationWarning:
     def test_get_by_session_id_with_project_shows_deprecation_warning(self) -> None:
         """Test that get_by_session_id() warns for compat mode and project."""
         mock_config = MagicMock()
-        mock_config.base_path = "https://api.honeyhive.ai"
+        mock_config.base_path = "https://api.dp1.us.honeyhive.ai"
         mock_config.get_access_token.return_value = "test-token"
         mock_config.verify = True
 
@@ -270,7 +270,7 @@ class TestMetricsDeprecationWarning:
     def test_list_with_legacy_filters_shows_deprecation_warning(self) -> None:
         """Test that list() warns when legacy project/name filters are passed."""
         mock_config = MagicMock()
-        mock_config.base_path = "https://api.honeyhive.ai"
+        mock_config.base_path = "https://api.dp1.us.honeyhive.ai"
         mock_config.get_access_token.return_value = "test-token"
         mock_config.verify = True
 
@@ -300,7 +300,7 @@ class TestConfigurationsDeprecationWarning:
     def test_list_with_project_shows_deprecation_warning(self) -> None:
         """Test that list() warns when the legacy project filter is passed."""
         mock_config = MagicMock()
-        mock_config.base_path = "https://api.honeyhive.ai"
+        mock_config.base_path = "https://api.dp1.us.honeyhive.ai"
         mock_config.get_access_token.return_value = "test-token"
         mock_config.verify = True
 
@@ -326,7 +326,7 @@ class TestConfigurationsDeprecationWarning:
     async def test_list_async_with_project_shows_deprecation_warning(self) -> None:
         """Test that list_async() warns when the legacy project filter is passed."""
         mock_config = MagicMock()
-        mock_config.base_path = "https://api.honeyhive.ai"
+        mock_config.base_path = "https://api.dp1.us.honeyhive.ai"
         mock_config.get_access_token.return_value = "test-token"
         mock_config.verify = True
 
@@ -354,7 +354,7 @@ class TestConfigurationsDeprecationWarning:
     ) -> None:
         """Test that list_async() warns when legacy project/name filters are passed."""
         mock_config = MagicMock()
-        mock_config.base_path = "https://api.honeyhive.ai"
+        mock_config.base_path = "https://api.dp1.us.honeyhive.ai"
         mock_config.get_access_token.return_value = "test-token"
         mock_config.verify = True
 
@@ -383,7 +383,7 @@ class TestConfigurationsDeprecationWarning:
     def test_get_by_session_id_without_project_shows_compat_warning(self) -> None:
         """Test that get_by_session_id() warns that export() is preferred."""
         mock_config = MagicMock()
-        mock_config.base_path = "https://api.honeyhive.ai"
+        mock_config.base_path = "https://api.dp1.us.honeyhive.ai"
         mock_config.get_access_token.return_value = "test-token"
         mock_config.verify = True
 
@@ -420,7 +420,7 @@ class TestExportRequestBody:
     def test_export_without_project_does_not_include_project_in_request(self) -> None:
         """Test that export without project doesn't include project in request."""
         mock_config = MagicMock()
-        mock_config.base_path = "https://api.honeyhive.ai"
+        mock_config.base_path = "https://api.dp1.us.honeyhive.ai"
         mock_config.get_access_token.return_value = "test-token"
         mock_config.verify = True
 
@@ -445,7 +445,7 @@ class TestExportRequestBody:
     def test_export_with_project_includes_project_in_request(self) -> None:
         """Test that export with project includes project in request."""
         mock_config = MagicMock()
-        mock_config.base_path = "https://api.honeyhive.ai"
+        mock_config.base_path = "https://api.dp1.us.honeyhive.ai"
         mock_config.get_access_token.return_value = "test-token"
         mock_config.verify = True
 
@@ -474,7 +474,7 @@ class TestGetBySessionIdSorting:
     def test_get_by_session_id_returns_sorted_events(self) -> None:
         """Test that get_by_session_id returns events sorted by start_time."""
         mock_config = MagicMock()
-        mock_config.base_path = "https://api.honeyhive.ai"
+        mock_config.base_path = "https://api.dp1.us.honeyhive.ai"
         mock_config.get_access_token.return_value = "test-token"
         mock_config.verify = True
 

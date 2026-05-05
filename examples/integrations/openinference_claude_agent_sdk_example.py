@@ -15,7 +15,6 @@ Run:
 
 Environment:
     HH_API_KEY
-    HH_PROJECT
     ANTHROPIC_API_KEY
     HH_SOURCE (optional, defaults to "python_sdk_example")
 
@@ -43,7 +42,6 @@ from honeyhive import HoneyHiveTracer
 async def main() -> None:
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY"),
-        project=os.getenv("HH_PROJECT"),
         session_name="openinference_claude_agent_sdk_example",
         source=os.getenv("HH_SOURCE", "python_sdk_example"),
     )

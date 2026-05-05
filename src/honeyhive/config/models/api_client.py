@@ -41,7 +41,8 @@ class APIClientConfig(BaseHoneyHiveConfig, ServerURLMixin):
 
     Inherited Fields:
         - api_key: HoneyHive API key for authentication
-        - project: Project name (required by backend API)
+        - project: Deprecated; accepted for backwards compatibility but ignored
+          (project is inferred from the API key by the backend)
         - test_mode: Enable test mode (no data sent to backend)
         - verbose: Enable verbose logging output
 
@@ -53,14 +54,14 @@ class APIClientConfig(BaseHoneyHiveConfig, ServerURLMixin):
         >>> # Simple usage
         >>> config = APIClientConfig(
         ...     api_key="hh_1234567890abcdef",
-        ...     server_url="https://api.honeyhive.ai"
+        ...     server_url="https://api.dp1.us.honeyhive.ai"
         ... )
 
         >>> # Advanced usage with HTTP config
         >>> http_config = HTTPClientConfig(timeout=60.0, max_connections=50)
         >>> config = APIClientConfig(
         ...     api_key="hh_1234567890abcdef",
-        ...     server_url="https://api.honeyhive.ai",
+        ...     server_url="https://api.dp1.us.honeyhive.ai",
         ...     http_config=http_config
         ... )
 
@@ -70,7 +71,7 @@ class APIClientConfig(BaseHoneyHiveConfig, ServerURLMixin):
         # Current backwards compatible usage:
         >>> client = HoneyHive(
         ...     bearer_auth="hh_1234567890abcdef",
-        ...     server_url="https://api.honeyhive.ai",
+        ...     server_url="https://api.dp1.us.honeyhive.ai",
         ...     timeout_ms=30000
         ... )
     """

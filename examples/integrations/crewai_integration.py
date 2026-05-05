@@ -14,7 +14,6 @@ Run:
 
 Environment:
     HH_API_KEY
-    HH_PROJECT
     OPENAI_API_KEY
     HH_API_URL (optional, defaults to production)
 
@@ -78,7 +77,6 @@ def lookup_policy(topic: str) -> str:
 
 tracer = HoneyHiveTracer.init(
     api_key=os.environ["HH_API_KEY"],
-    project=os.environ["HH_PROJECT"],
     session_name="crewai-example",
     server_url=os.environ.get("HH_API_URL"),
 )

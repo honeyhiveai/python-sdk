@@ -13,7 +13,6 @@ Run:
 
 Environment:
     HH_API_KEY
-    HH_PROJECT
     AWS_ACCESS_KEY_ID
     AWS_SECRET_ACCESS_KEY
     AWS_DEFAULT_REGION  (optional, defaults to "us-east-1")
@@ -37,7 +36,6 @@ def main() -> None:
     # 1. Initialize HoneyHive tracer
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY"),
-        project=os.getenv("HH_PROJECT"),
         session_name="openinference_bedrock_example",
         source=os.getenv("HH_SOURCE", "python_sdk_example"),
     )

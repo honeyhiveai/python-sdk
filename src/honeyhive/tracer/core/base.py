@@ -18,6 +18,7 @@ dynamic logic for flexible configuration handling and graceful degradation.
 import os
 import platform
 import threading
+import warnings
 from typing import Any, Dict, Optional, Self, Union
 
 from opentelemetry.trace import INVALID_SPAN_CONTEXT, SpanKind
@@ -542,6 +543,18 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
         Returns:
             Initialized HoneyHive tracer instance
         """
+        # Mirror the deprecation warning emitted by HoneyHive() when callers
+        # pass `project=` — the backend now infers project from the API key,
+        # so the value is accepted for BC but no longer required.
+        if kwargs.get("project") is not None:
+            warnings.warn(
+                "The 'project' argument to HoneyHiveTracer.init() is deprecated; "
+                "it will be removed in v2.0. Remove it from HoneyHiveTracer.init() "
+                "calls — the backend infers project context from the API key.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
         # Simple pass-through to constructor
         return cls(
             config=config,

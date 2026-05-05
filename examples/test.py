@@ -38,10 +38,8 @@ time.sleep(10)
 
 # Fetch events for this session using the SDK client
 session_id = tracer.session_id
-project_name = tracer.project_name
 
 print(f"\nFetching events for session: {session_id}")
-print(f"Project: {project_name}")
 
 try:
     # Use the HoneyHive API client to export events
@@ -49,7 +47,6 @@ try:
 
     # Export events using the new export() method with EventFilter
     response = client.events.export(
-        project=project_name,
         filters=[
             EventFilter(
                 field="session_id",
@@ -69,7 +66,6 @@ try:
 
     # Alternative: Use backwards-compatible list_events() alias
     # response = client.events.list_events(
-    #     project=project_name,
     #     filters=[{"field": "session_id", "operator": "is", "value": session_id, "type": "string"}],
     #     limit=100,
     # )

@@ -13,7 +13,6 @@ Requirements:
 
 Environment variables:
     HH_API_KEY: Your HoneyHive API key
-    HH_PROJECT: Your HoneyHive project name
     GOOGLE_API_KEY: Your Google API key for Gemini
 """
 
@@ -163,7 +162,6 @@ if __name__ == "__main__":
         dataset=dataset,
         evaluators=[check_response_contains],
         api_key=os.environ["HH_API_KEY"],
-        project=os.environ["HH_PROJECT"],
         name=f"adk-eval-{datetime.datetime.now().isoformat()}",
         instrumentors=[lambda: GoogleADKInstrumentor()],
         verbose=True,

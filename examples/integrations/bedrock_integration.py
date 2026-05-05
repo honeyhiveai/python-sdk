@@ -10,7 +10,6 @@ Requirements:
 
 Environment Variables:
     HH_API_KEY: Your HoneyHive API key
-    HH_PROJECT: Your HoneyHive project name
     AWS_ACCESS_KEY_ID: Your AWS access key
     AWS_SECRET_ACCESS_KEY: Your AWS secret key
     AWS_SESSION_TOKEN: Your AWS session token (optional, for temporary credentials)
@@ -32,7 +31,6 @@ async def main():
 
     # Check required environment variables
     hh_api_key = os.getenv("HH_API_KEY")
-    hh_project = os.getenv("HH_PROJECT")
     aws_access_key = os.getenv("AWS_ACCESS_KEY_ID")
     aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
     aws_session_token = os.getenv(
@@ -40,10 +38,9 @@ async def main():
     )  # Optional for temporary credentials
     aws_region = os.getenv("AWS_REGION", "us-east-1")
 
-    if not all([hh_api_key, hh_project]):
+    if not hh_api_key:
         print("❌ Missing required HoneyHive environment variables:")
         print("   - HH_API_KEY: Your HoneyHive API key")
-        print("   - HH_PROJECT: Your HoneyHive project name")
         print("\nSet these environment variables and try again.")
         return False
 
@@ -81,7 +78,6 @@ async def main():
         print("🔧 Setting up HoneyHive tracer...")
         tracer = HoneyHiveTracer.init(
             api_key=hh_api_key,
-            project=hh_project,
             session_name=Path(__file__).stem,  # Use filename as session name
             source="bedrock_example",
         )
@@ -160,7 +156,7 @@ async def main():
         print("✓ Instrumentor cleaned up")
 
         print("\n🎉 AWS Bedrock integration example completed successfully!")
-        print(f"📊 Check your HoneyHive project '{hh_project}' for trace data")
+        print(f"📊 Check your HoneyHive dashboard for trace data")
 
         return True
 

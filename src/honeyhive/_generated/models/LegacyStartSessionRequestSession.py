@@ -2,12 +2,12 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
-__all__ = ["StartSessionRequestSession"]
+__all__ = ["LegacyStartSessionRequestSession"]
 
 
-class StartSessionRequestSession(BaseModel):
+class LegacyStartSessionRequestSession(BaseModel):
     """
-    StartSessionRequestSession model
+    LegacyStartSessionRequestSession model
     """
 
     model_config = {

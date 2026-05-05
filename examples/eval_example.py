@@ -221,7 +221,6 @@ if __name__ == "__main__":
     # Initialize tracer with explicit server URL from environment
     tracer = HoneyHiveTracer.init(
         api_key=os.environ.get("HH_API_KEY"),
-        project=os.environ.get("HH_PROJECT", "evaluation-example"),
         session_name=f"{DATASET_NAME}-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
         source="eval-example",
         server_url=os.environ.get("HH_API_URL"),

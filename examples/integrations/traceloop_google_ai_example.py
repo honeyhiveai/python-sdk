@@ -52,7 +52,6 @@ def setup_tracing() -> HoneyHiveTracer:
     tracer = HoneyHiveTracer.init(
         # instrumentors=[google_instrumentor],  # TODO: Enable when working
         source="traceloop_google_ai_example",
-        project=os.getenv("HH_PROJECT", "google-ai-traceloop-demo"),
     )
 
     print(

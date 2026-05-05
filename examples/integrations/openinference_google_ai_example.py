@@ -13,7 +13,6 @@ Run:
 
 Environment:
     HH_API_KEY
-    HH_PROJECT
     GOOGLE_API_KEY
 """
 
@@ -33,7 +32,6 @@ def main() -> None:
     # 1. Initialize HoneyHive tracer
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY"),
-        project=os.getenv("HH_PROJECT"),
         session_name="openinference_google_ai_example",
         source=os.getenv("HH_SOURCE", "python_sdk_example"),
     )

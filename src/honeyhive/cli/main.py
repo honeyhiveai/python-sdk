@@ -88,7 +88,9 @@ def show(output_format: str) -> None:
 
             # Get the actual resolved values, including defaults
             # The tracer's config merging system should have resolved defaults
-            server_url = tracer_config.get("server_url") or "https://api.honeyhive.ai"
+            server_url = (
+                tracer_config.get("server_url") or "https://api.dp1.us.honeyhive.ai"
+            )
 
             config_dict = {
                 "api_key": tracer_config.get("api_key"),
@@ -117,7 +119,8 @@ def show(output_format: str) -> None:
             fallback_config = TracerConfig()
             return {
                 "api_key": fallback_config.api_key,
-                "server_url": fallback_config.server_url or "https://api.honeyhive.ai",
+                "server_url": fallback_config.server_url
+                or "https://api.dp1.us.honeyhive.ai",
                 "project": fallback_config.project,
                 "source": fallback_config.source,
                 "verbose": fallback_config.verbose,
@@ -333,7 +336,7 @@ def request(
         base_url = (
             os.getenv("HONEYHIVE_SERVER_URL")
             or os.getenv("HH_API_URL")
-            or "https://api.honeyhive.ai"
+            or "https://api.dp1.us.honeyhive.ai"
         )
 
         if not api_key:

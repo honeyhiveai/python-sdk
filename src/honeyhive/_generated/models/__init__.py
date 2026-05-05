@@ -119,6 +119,8 @@ from .LegacyRunMetricRequestMetric import *
 from .LegacyRunMetricRequestMetricCategoriesItem import *
 from .LegacyRunMetricRequestMetricChildMetricsItem import *
 from .LegacyRunMetricRequestMetricFilters import *
+from .LegacyStartSessionRequest import *
+from .LegacyStartSessionRequestSession import *
 from .LegacyUpdateDatasetRequest import *
 from .LegacyUpdateEventRequest import *
 from .LegacyUpdateMetricRequest import *
@@ -172,7 +174,6 @@ from .SessionProperties import *
 from .SessionTracesResponse import *
 from .SingleFilter import *
 from .StartSessionRequest import *
-from .StartSessionRequestSession import *
 from .TemplateItem import *
 from .TODOSchema import *
 from .UpdateAnnotationQueueRequest import *

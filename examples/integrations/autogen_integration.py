@@ -18,7 +18,6 @@ Run:
 
 Environment:
     HH_API_KEY
-    HH_PROJECT
     OPENAI_API_KEY
     HH_SOURCE (optional, defaults to "python_sdk_example")
 """
@@ -39,7 +38,6 @@ MODEL = "gpt-4o-mini"
 # Initialize HoneyHive tracer at module level so @trace decorators can reference it
 tracer = HoneyHiveTracer.init(
     api_key=os.getenv("HH_API_KEY"),
-    project=os.getenv("HH_PROJECT"),
     session_name="autogen_integration_example",
     source=os.getenv("HH_SOURCE", "python_sdk_example"),
 )

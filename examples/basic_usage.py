@@ -22,7 +22,6 @@ from honeyhive.config.models import TracerConfig
 
 # Set environment variables for configuration
 os.environ["HH_API_KEY"] = "your-api-key-here"
-os.environ["HH_PROJECT"] = "my-project"
 os.environ["HH_SOURCE"] = "development"
 
 
@@ -44,26 +43,23 @@ def main():
     print("\n🔄 Method 1: Traditional .init() Method (Backwards Compatible)")
     tracer_traditional = HoneyHiveTracer.init(
         api_key="your-api-key",
-        project="my-project",  # Required for OTLP tracing
         source="production",
         verbose=True,
     )
     print(
-        f"✓ Traditional tracer initialized for project: {tracer_traditional.project_name}"
+        f"✓ Traditional tracer initialized (session: {tracer_traditional.session_id})"
     )
 
     # Method 2: Modern Pydantic Config Objects (New Pattern)
     print("\n🆕 Method 2: Modern Config Objects (New Pattern)")
-    config = TracerConfig(
-        api_key="your-api-key", project="my-project", source="production", verbose=True
-    )
+    config = TracerConfig(api_key="your-api-key", source="production", verbose=True)
     tracer_modern = HoneyHiveTracer(config=config)
-    print(f"✓ Modern tracer initialized for project: {tracer_modern.project_name}")
+    print(f"✓ Modern tracer initialized (session: {tracer_modern.session_id})")
 
     # Method 3: Environment Variables with .init() (DevOps Friendly)
     print("\n🌍 Method 3: Environment Variables with .init()")
     tracer_env = HoneyHiveTracer.init()  # Loads from HH_* environment variables
-    print(f"✓ Environment tracer initialized for project: {tracer_env.project_name}")
+    print(f"✓ Environment tracer initialized (session: {tracer_env.session_id})")
 
     # Use the traditional tracer for the rest of the examples (backwards compatible)
     tracer = tracer_traditional

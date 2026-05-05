@@ -61,6 +61,7 @@ from honeyhive._generated.models import (
     LegacyPostEventBatchRequest,
     LegacyPostEventRequest,
     LegacyRemoveDatapointFromDatasetParams,
+    LegacyStartSessionRequest,
     LegacyUpdateDatasetRequest,
     LegacyUpdateEventRequest,
     LegacyUpdateMetricRequest,
@@ -78,7 +79,6 @@ from honeyhive._generated.models import (
     RemoveDatapointResponse,
     RunMetricRequest,
     RunMetricResponse,
-    StartSessionRequest,
     TODOSchema,
     UpdateConfigurationRequest,
     UpdateConfigurationResponse,
@@ -169,6 +169,17 @@ class GetExperimentRunCompareEventsQuery(LegacyGetExperimentRunCompareEventsQuer
 # existing customer code that constructs PostEventRequest(event={...}) keeps
 # resolving to the wrapped wire shape we send.
 class PostEventRequest(LegacyPostEventRequest):
+    pass
+
+
+# Public name kept pointing at the legacy session-create schema. The new
+# generated StartSessionRequest targets POST /v1/sessions with a bare
+# session-object body and drops the `{session: {...}}` wrapper. The Python
+# SDK still calls the legacy POST /session/start endpoint
+# (sessions.start / sessions.start_async) so existing customer code that
+# constructs StartSessionRequest(session={...}) keeps resolving to the
+# wrapped wire shape we send.
+class StartSessionRequest(LegacyStartSessionRequest):
     pass
 
 

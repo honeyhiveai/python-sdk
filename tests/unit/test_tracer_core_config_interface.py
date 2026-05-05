@@ -261,7 +261,9 @@ class TestTracerConfigInterface:
         # Act & Assert
         assert config_interface._is_default_value("source", "dev") is True
         assert (
-            config_interface._is_default_value("server_url", "https://api.honeyhive.ai")
+            config_interface._is_default_value(
+                "server_url", "https://api.dp1.us.honeyhive.ai"
+            )
             is True
         )
         assert config_interface._is_default_value("session_name", "unknown") is True
@@ -630,7 +632,7 @@ class TestTracerConfigInterface:
         assert config_interface._get_sensible_default("api_key") is None
         assert (
             config_interface._get_sensible_default("server_url")
-            == "https://api.honeyhive.ai"
+            == "https://api.dp1.us.honeyhive.ai"
         )
         assert config_interface._get_sensible_default("project") is None
         assert config_interface._get_sensible_default("source") == "dev"

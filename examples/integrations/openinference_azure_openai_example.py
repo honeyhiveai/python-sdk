@@ -13,7 +13,6 @@ Run:
 
 Environment:
     HH_API_KEY
-    HH_PROJECT
     AZURE_OPENAI_API_KEY
     AZURE_OPENAI_ENDPOINT
     AZURE_OPENAI_DEPLOYMENT  (optional, defaults to "gpt-4o-mini")
@@ -34,7 +33,6 @@ def main() -> None:
     # 1. Initialize HoneyHive tracer
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY"),
-        project=os.getenv("HH_PROJECT"),
         session_name="openinference_azure_openai_example",
         source=os.getenv("HH_SOURCE", "python_sdk_example"),
     )

@@ -1,5 +1,17 @@
 ## [Unreleased]
 
+## [1.0.1] - 2026-05-05
+
+### Fixed
+
+- **Default API URL fallback corrected to `https://api.dp1.us.honeyhive.ai`**
+  - The fallback value for the base API URL in the v1.0.0 release was incorrect. Any callers who relied on the implicit default would fail. The default now points at the host the SDK is built against, though self-hosted / non-default Data Plane deployments will still need to set `HH_API_URL` explicitly. Callers that explicitly set `base_url=` / `server_url=` or `HH_API_URL` are unaffected.
+
+### Deprecated
+
+- **`project` argument and `HH_PROJECT` environment variable**
+  - The SDK's public surface has accepted `project=` on `HoneyHive()` and `HoneyHiveTracer.init()` and the `HH_PROJECT` env var for historical reasons. These arguments and env vars have no influence on the backend and they were maintained purely for backwards compatibility of callers. This release sweeps the stale references out of the example scripts, README, and docstrings, and adds a `DeprecationWarning` at the remaining call sites that previously didn't emit one. The argument and the `HH_PROJECT` env var alias **remain** accepted for backwards compatibility and will be removed in v2.0.
+
 ## [1.0.0] - 2026-05-04
 
 First stable GA release of the HoneyHive Python SDK. Public APIs follow semver from this release forward — breaking changes only on major versions, additive on minor and patch.

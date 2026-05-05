@@ -15,13 +15,12 @@ from honeyhive.models import EventType
 # Initialize tracer using the recommended pattern
 tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
-    project="my-project",  # Required for OTLP tracing
     source="development",
 )
 
 print("🚀 HoneyHive Tracing Decorators Example")
 print("=" * 50)
-print(f"✓ Tracer initialized for project: {tracer.project}")
+print(f"✓ Tracer initialized (session: {tracer.session_id})")
 print(f"✓ Source environment: {tracer.source}")
 print(f"✓ Session ID: {tracer.session_id}")
 print()

@@ -45,7 +45,6 @@ def setup_tracing() -> HoneyHiveTracer:
     # Initialize HoneyHive tracer FIRST
     tracer = HoneyHiveTracer.init(
         source="traceloop_azure_openai_example",
-        project=os.getenv("HH_PROJECT", "azure-openai-traceloop-demo"),
     )
     print("✓ HoneyHive tracer initialized")
 

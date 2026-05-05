@@ -571,7 +571,7 @@ def fetch_session_events(
         raise ValueError("HH_API_KEY not set")
 
     # Use HH_API_URL for both base_url and cp_base_url (DP only)
-    dp_url = os.getenv("HH_API_URL", "https://api.honeyhive.ai")
+    dp_url = os.getenv("HH_API_URL", "https://api.dp1.us.honeyhive.ai")
     project = project or os.getenv("HH_PROJECT", "sdk-integration-tests")
 
     # Use DP URL for both data plane and control plane operations

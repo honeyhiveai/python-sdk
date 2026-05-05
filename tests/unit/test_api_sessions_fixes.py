@@ -13,7 +13,7 @@ from honeyhive.models import StartSessionRequest
 def _make_mock_config() -> MagicMock:
     """Create a minimal API config mock for SessionsAPI tests."""
     mock_config = MagicMock()
-    mock_config.base_path = "https://api.honeyhive.ai"
+    mock_config.base_path = "https://api.dp1.us.honeyhive.ai"
     mock_config.get_access_token.return_value = "test-token"
     mock_config.verify = True
     return mock_config
@@ -32,7 +32,7 @@ class TestSessionsAPICompatibility:
         expected_response = MagicMock()
 
         with patch(
-            "honeyhive.api.client.sessions_svc.startSession",
+            "honeyhive.api.client.sessions_svc.startSessionLegacy",
             return_value=expected_response,
         ) as mock_start:
             with warnings.catch_warnings(record=True) as caught_warnings:
@@ -59,7 +59,7 @@ class TestSessionsAPICompatibility:
         expected_response = MagicMock()
 
         with patch(
-            "honeyhive.api.client.sessions_svc.startSession",
+            "honeyhive.api.client.sessions_svc.startSessionLegacy",
             return_value=expected_response,
         ) as mock_start:
             with warnings.catch_warnings(record=True) as caught_warnings:
@@ -85,7 +85,7 @@ class TestSessionsAPICompatibility:
         expected_response = MagicMock()
 
         with patch(
-            "honeyhive.api.client.sessions_svc_async.startSession",
+            "honeyhive.api.client.sessions_svc_async.startSessionLegacy",
             new=AsyncMock(return_value=expected_response),
         ) as mock_start:
             with warnings.catch_warnings(record=True) as caught_warnings:

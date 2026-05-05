@@ -10,7 +10,6 @@ Run:
 
 Environment:
     HH_API_KEY
-    HH_PROJECT
     ANTHROPIC_API_KEY       (or key for whichever provider MODEL uses)
     PYDANTIC_AI_MODEL       (optional, defaults to "anthropic:claude-haiku-4-5")
     HH_SOURCE               (optional, defaults to "python_sdk_example")
@@ -202,7 +201,6 @@ async def run_streaming_scenario() -> None:
 async def main() -> None:
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY"),
-        project=os.getenv("HH_PROJECT"),
         session_name="pydantic_ai_integration_example",
         source=os.getenv("HH_SOURCE", "python_sdk_example"),
     )

@@ -50,13 +50,6 @@ else
     echo "✅ HH_API_KEY is set"
 fi
 
-if [ -z "$HH_PROJECT" ]; then
-    echo "⚠️  HH_PROJECT is not set, will use 'demo'"
-    echo "   Set it with: export HH_PROJECT='your_project_name'"
-else
-    echo "✅ HH_PROJECT is set to: $HH_PROJECT"
-fi
-
 if [ -z "$HH_SOURCE" ]; then
     echo "⚠️  HH_SOURCE is not set, will use 'production'"
     echo "   Set it with: export HH_SOURCE='your_source_name'"
@@ -102,7 +95,6 @@ echo "Testing basic tracing example..."
 python3 -c "
 import os
 os.environ.setdefault('HH_API_KEY', 'test-key')
-os.environ.setdefault('HH_PROJECT', 'test')
 os.environ.setdefault('HH_SOURCE', 'test')
 
 try:
@@ -123,7 +115,6 @@ echo "Testing enhanced tracing demo..."
 python3 -c "
 import os
 os.environ.setdefault('HH_API_KEY', 'test-key')
-os.environ.setdefault('HH_PROJECT', 'test')
 os.environ.setdefault('HH_SOURCE', 'test')
 
 try:
@@ -136,7 +127,7 @@ except Exception as e:
 
 if [ $? -ne 0 ]; then
     echo "❌ Enhanced tracing demo test failed"
-    exit(1
+    exit 1
 fi
 
 echo ""
@@ -146,13 +137,10 @@ echo "📋 Next steps:"
 echo "1. Set your HoneyHive API key:"
 echo "   export HH_API_KEY='your_honeyhive_api_key'"
 echo ""
-echo "2. Set your project name:"
-echo "   export HH_PROJECT='your_project_name'"
-echo ""
-echo "3. Set your source name:"
+echo "2. Set your source name:"
 echo "   export HH_SOURCE='your_source_name'"
 echo ""
-echo "4. Run the examples:"
+echo "3. Run the examples:"
 echo "   python3 basic_usage.py"
 echo "   python3 enhanced_tracing_demo.py"
 echo "   python3 openinference_openai_example.py"
