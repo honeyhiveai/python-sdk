@@ -14,7 +14,7 @@ name: Deploy Documentation to GitHub Pages
 
 on:
   push:
-    branches: [federated-sdk-release-candidate]
+    branches: [main]
     paths:
       - 'docs/**'
       - 'src/honeyhive/**'
