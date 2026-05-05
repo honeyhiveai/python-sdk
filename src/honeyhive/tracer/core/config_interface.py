@@ -140,7 +140,7 @@ class TracerConfigInterface:
         # Common default value patterns (based on original SDK defaults)
         default_patterns = {
             "source": "dev",  # Original: os.getenv("HH_SOURCE", "dev")
-            "server_url": "https://api.honeyhive.ai",  # Original DEFAULT_API_URL
+            "server_url": "https://api.dp1.us.honeyhive.ai",  # Original DEFAULT_API_URL
             "session_name": "unknown",  # Original fallback when script name fails
             "disable_http_tracing": True,  # New SDK default for performance
             "disable_batch": False,  # Original constructor default
@@ -324,7 +324,7 @@ class TracerConfigInterface:
         defaults = {
             # API Configuration (matches original main branch behavior)
             "api_key": None,  # Required - fallback to HH_API_KEY env var
-            "server_url": "https://api.honeyhive.ai",  # Original DEFAULT_API_URL
+            "server_url": "https://api.dp1.us.honeyhive.ai",  # Original DEFAULT_API_URL
             "project": None,  # Required - fallback to HH_PROJECT env var
             "source": "dev",  # Original: os.getenv("HH_SOURCE", "dev")
             # "session_name" removed - should use dynamic inference

@@ -527,7 +527,7 @@ class TestOTLPConfigIntegration:
         """Test complete configuration with all fields specified."""
         config_data = {
             "otlp_enabled": True,
-            "otlp_endpoint": "https://api.honeyhive.ai/otlp",
+            "otlp_endpoint": "https://api.dp1.us.honeyhive.ai/otlp",
             "otlp_headers": {"Authorization": "Bearer test-token"},
             "batch_size": 250,
             "flush_interval": 2.0,
@@ -538,7 +538,7 @@ class TestOTLPConfigIntegration:
         config = OTLPConfig(**config_data)
 
         assert config.otlp_enabled is True
-        assert config.otlp_endpoint == "https://api.honeyhive.ai/otlp"
+        assert config.otlp_endpoint == "https://api.dp1.us.honeyhive.ai/otlp"
         assert config.otlp_headers == {"Authorization": "Bearer test-token"}
         assert config.batch_size == 250
         assert config.flush_interval == 2.0

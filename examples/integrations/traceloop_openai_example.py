@@ -39,7 +39,6 @@ def setup_tracing() -> tuple[HoneyHiveTracer, OpenAIInstrumentor]:
     # Step 1: HoneyHive tracer first (BYOI), then attach the OpenAI instrumentor
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY"),
-        project=os.getenv("HH_PROJECT", "openai-traceloop-demo"),
         session_name="traceloop_openai_example",
         source=os.path.basename(__file__),
     )

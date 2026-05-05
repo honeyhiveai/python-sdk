@@ -16,7 +16,6 @@ Run:
 
 Environment:
     HH_API_KEY
-    HH_PROJECT
     OPENAI_API_KEY
     HH_SOURCE (optional, defaults to "python_sdk_example")
 """
@@ -199,7 +198,6 @@ async def run_agents_as_tools_scenario() -> None:
 async def main() -> None:
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY"),
-        project=os.getenv("HH_PROJECT"),
         session_name="openai_agents_example",
         source=os.getenv("HH_SOURCE", "python_sdk_example"),
     )

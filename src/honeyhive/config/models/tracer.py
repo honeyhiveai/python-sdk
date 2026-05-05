@@ -138,10 +138,13 @@ class TracerConfig(BaseHoneyHiveConfig):
     )
 
     server_url: str = Field(  # type: ignore[call-overload,pydantic-alias]
-        default="https://api.honeyhive.ai",
+        default="https://api.dp1.us.honeyhive.ai",
         description="Custom HoneyHive server URL",
         validation_alias=AliasChoices("HH_API_URL", "server_url"),
-        examples=["https://api.honeyhive.ai", "https://custom.honeyhive.com"],
+        examples=[
+            "https://api.dp1.us.honeyhive.ai",
+            "https://custom.honeyhive.com",
+        ],
     )
 
     disable_http_tracing: bool = Field(  # type: ignore[call-overload,pydantic-alias]
@@ -314,13 +317,16 @@ class TracerConfig(BaseHoneyHiveConfig):
             The validated and normalized server URL, or default if invalid
         """
         if v is None:
-            return "https://api.honeyhive.ai"
+            return "https://api.dp1.us.honeyhive.ai"
 
         validated = _safe_validate_url(
-            v, "server_url", allow_none=False, default="https://api.honeyhive.ai"
+            v,
+            "server_url",
+            allow_none=False,
+            default="https://api.dp1.us.honeyhive.ai",
         )
         # Remove trailing slash for consistency
-        return validated.rstrip("/") if validated else "https://api.honeyhive.ai"
+        return validated.rstrip("/") if validated else "https://api.dp1.us.honeyhive.ai"
 
     @field_validator("source", mode="before")
     @classmethod

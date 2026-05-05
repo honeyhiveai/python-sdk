@@ -19,7 +19,6 @@ from honeyhive.tracer.processing.context import (
 # Initialize HoneyHive tracer
 tracer = HoneyHiveTracer.init(
     api_key=os.getenv("HH_API_KEY"),
-    project="distributed-tracing-tutorial",
     source="user-service",
 )
 

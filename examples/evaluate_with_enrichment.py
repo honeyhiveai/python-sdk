@@ -24,7 +24,6 @@ from honeyhive.sdk.evals import evaluate
 # Set environment variables for configuration
 # In production, load from .env or secure config
 os.environ.setdefault("HH_API_KEY", "your-api-key-here")
-os.environ.setdefault("HH_PROJECT", "evaluate-demo")
 
 
 def main():
@@ -44,11 +43,10 @@ def main():
 
     tracer = HoneyHiveTracer.init(
         api_key=os.environ["HH_API_KEY"],
-        project=os.environ["HH_PROJECT"],
         source="evaluate-enrichment-example",
         verbose=True,
     )
-    print(f"✓ Tracer initialized for project: {tracer.project_name}")
+    print(f"✓ Tracer initialized (session: {tracer.session_id})")
 
     # ========================================================================
     # 2. DEFINE TASK WITH ENRICHMENT (PRIMARY PATTERN)

@@ -89,7 +89,10 @@ class OTLPConfig(BaseHoneyHiveConfig):
         default=None,
         description="Custom OTLP endpoint URL",
         validation_alias=AliasChoices("HH_OTLP_ENDPOINT", "otlp_endpoint"),
-        examples=["https://api.honeyhive.ai/otlp", "https://custom.otlp.endpoint"],
+        examples=[
+            "https://api.dp1.us.honeyhive.ai/otlp",
+            "https://custom.otlp.endpoint",
+        ],
     )
 
     otlp_headers: Optional[Dict[str, Any]] = Field(  # type: ignore[call-overload,pydantic-alias]  # pylint: disable=line-too-long

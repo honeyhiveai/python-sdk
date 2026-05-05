@@ -1141,7 +1141,7 @@ class TestErrorHandlerIntegration:
         context = ErrorContext(
             operation="api_call",
             method="POST",
-            url="https://api.honeyhive.ai/projects",
+            url="https://api.dp1.us.honeyhive.ai/projects",
             client_name="test_client",
         )
 
@@ -1192,7 +1192,7 @@ class TestErrorHandlerIntegration:
         mock_get_logger.return_value = mock_logger
         handler = ErrorHandler()
         context = ErrorContext(
-            operation="create_project", url="https://api.honeyhive.ai"
+            operation="create_project", url="https://api.dp1.us.honeyhive.ai"
         )
 
         # Create realistic HTTP error

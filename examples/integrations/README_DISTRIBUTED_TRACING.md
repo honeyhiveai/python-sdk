@@ -24,7 +24,6 @@ pip install honeyhive google-adk openinference-instrumentation-google-adk flask 
 2. **Set environment variables:**
 ```bash
 export HH_API_KEY="your-honeyhive-api-key"
-export HH_PROJECT="your-project-name"
 export GOOGLE_API_KEY="your-google-api-key"
 ```
 
@@ -116,4 +115,4 @@ After running both scripts, check HoneyHive dashboard for:
 - ✅ Single unified trace with both client and server spans
 - ✅ `call_agent_1` span has children from the remote server
 - ✅ `call_agent_2` span has children in the same process
-- ✅ All Google ADK spans have correct `session_id`, `project`, `source` from client
+- ✅ All Google ADK spans have correct `session_id` and `source` from client

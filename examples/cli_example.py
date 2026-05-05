@@ -7,7 +7,7 @@ including configuration management, monitoring, and API testing.
 
 Prerequisites:
 - HoneyHive package installed: pip install honeyhive
-- Environment variables set: HH_API_KEY, HH_PROJECT, etc.
+- Environment variables set: HH_API_KEY, etc.
 - Valid HoneyHive API key (get from https://app.honeyhive.ai)
 
 This script shows CLI usage patterns and can be run alongside CLI commands.
@@ -135,7 +135,7 @@ def demonstrate_api_testing():
     # Test API connectivity with a simple endpoint
     print("\n1. API Connectivity Test:")
     print(
-        "Command: honeyhive api request --method GET --url 'https://api.honeyhive.ai/api/v1/health' --timeout 10"
+        "Command: honeyhive api request --method GET --url 'https://api.dp1.us.honeyhive.ai/api/v1/health' --timeout 10"
     )
     result = run_cli_command(
         [
@@ -145,7 +145,7 @@ def demonstrate_api_testing():
             "--method",
             "GET",
             "--url",
-            "https://api.honeyhive.ai/api/v1/health",
+            "https://api.dp1.us.honeyhive.ai/api/v1/health",
             "--timeout",
             "10",
         ]
@@ -159,7 +159,7 @@ def demonstrate_api_testing():
     # Test with verbose logging
     print("\n2. API Test with Verbose Logging:")
     print(
-        "Command: honeyhive --verbose api request --method GET --url 'https://api.honeyhive.ai/api/v1/health'"
+        "Command: honeyhive --verbose api request --method GET --url 'https://api.dp1.us.honeyhive.ai/api/v1/health'"
     )
     result = run_cli_command(
         [
@@ -170,7 +170,7 @@ def demonstrate_api_testing():
             "--method",
             "GET",
             "--url",
-            "https://api.honeyhive.ai/api/v1/health",
+            "https://api.dp1.us.honeyhive.ai/api/v1/health",
             "--timeout",
             "5",
         ]
@@ -281,13 +281,6 @@ def check_prerequisites():
     else:
         print("⚠️  HH_API_KEY not set. Some features may not work.")
 
-    # Check for project
-    project = os.environ.get("HH_PROJECT")
-    if project:
-        print(f"✓ HH_PROJECT is set to: {project}")
-    else:
-        print("⚠️  HH_PROJECT not set. Using default project.")
-
     return True
 
 
@@ -325,7 +318,7 @@ def main():
         print("✅ Comprehensive help system")
 
         print("\nNext steps:")
-        print("• Set up your environment variables (HH_API_KEY, HH_PROJECT)")
+        print("• Set up your environment variables (HH_API_KEY)")
         print("• Try interactive commands like 'honeyhive trace start'")
         print("• Use 'honeyhive monitor watch' for real-time monitoring")
         print("• Explore 'honeyhive --help' for all available commands")

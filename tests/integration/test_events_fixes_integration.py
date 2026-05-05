@@ -31,7 +31,7 @@ pytestmark = pytest.mark.skipif(
 @pytest.fixture
 def api_client() -> HoneyHive:
     """Create HoneyHive API client using HH_API_URL for both DP and CP."""
-    dp_url = os.getenv("HH_API_URL", "https://api.honeyhive.ai")
+    dp_url = os.getenv("HH_API_URL", "https://api.dp1.us.honeyhive.ai")
     return HoneyHive(
         api_key=os.getenv("HH_API_KEY"),
         base_url=dp_url,

@@ -10,20 +10,21 @@ servers:
 paths:
   /session/start:
     post:
-      summary: Start a new session
-      operationId: startSession
+      summary: Start a new session (deprecated)
+      operationId: startSessionLegacy
       x-cli-exclude: true
       x-ts-sdk-exclude: true
+      deprecated: true
       tags:
         - Sessions
       description: |
-        Start a new session. The request body wraps the session event object under the `session` key, matching the pattern used by POST /events.
+        Deprecated. Use `POST /v1/sessions` instead. The legacy route wraps the session object under a `session` key; the v1 route accepts a bare session object.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/StartSessionRequest'
+              $ref: '#/components/schemas/LegacyStartSessionRequest'
       responses:
         '200':
           description: Session successfully started
@@ -62,6 +63,63 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SessionTracesResponse'
+      x-honeyhive-plane: dp
+  /v1/sessions:
+    post:
+      tags:
+        - Sessions
+      operationId: createSession
+      x-cli-name: create
+      x-ts-sdk-name: create
+      summary: Start a new session
+      description: |
+        Start a new session. The request body is a bare session object (no `session` wrapper). The server creates a session event and returns it.
+
+        **No required properties** — every field has a server-side fallback.
+
+        **Auto-generated properties** (provided by the server when omitted):
+        - `session_id` (string, UUID) — Server generates a UUIDv4 if omitted
+          or if the supplied value is not a valid UUID.
+
+        **Optional properties with defaults:**
+        - `event_name` (string) — Falls back to `session_name` when not
+          provided; defaults to `"unknown"` if both are absent.
+
+        - `source` (string) — Defaults to `"unknown"`.
+        **Optional properties:**
+        - `session_name` (string) — Display name for the session.
+        - `start_time` (number) — Session start time as Unix milliseconds.
+          The session normalizer uses `getInt64()` which only accepts numeric
+          types; if a string is passed, the server silently falls back to the
+          current time.
+
+        - `end_time` (number) — Session end time as Unix milliseconds (same
+          numeric-only caveat as `start_time`).
+
+        - `duration` (number) — Session duration in milliseconds.
+        - `config` (object) — Configuration associated with the session.
+        - `inputs` (object) — Input data for the session.
+        - `outputs` (object) — Output data from the session.
+        - `metadata` (object) — Arbitrary metadata.
+        - `user_properties` (object) — User properties.
+        - `children_ids` (array of strings) — IDs of child events.
+
+        Idempotent on `session_id`: posting twice with the same `session_id` merges metadata/user_properties into the existing session and returns the existing event.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartSessionRequest'
+      responses:
+        '200':
+          description: Session successfully started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostSessionStartResponse'
+        '400':
+          description: Bad request (invalid session data)
       x-honeyhive-plane: dp
   /events:
     post:
@@ -4424,7 +4482,7 @@ components:
           type: number
           minimum: 0
           maximum: 100
-          default: 100
+          default: 10
         model_provider:
           type:
             - string
@@ -5111,14 +5169,66 @@ components:
         - tenant
       additionalProperties: {}
       description: Minimal event object used by evaluation and session endpoints; permissive (passthrough)
-    StartSessionRequest:
+    LegacyStartSessionRequest:
       type: object
       properties:
         session:
-          $ref: '#/components/schemas/StartSessionRequestSession'
+          $ref: '#/components/schemas/LegacyStartSessionRequestSession'
       required:
         - session
-      description: Request to start a new session
+      description: Request body for POST /session/start (deprecated — use POST /v1/sessions)
+      deprecated: true
+    StartSessionRequest:
+      type: object
+      properties:
+        session_id:
+          type: string
+          description: Client-provided session ID (server generates one if omitted)
+        session_name:
+          type: string
+          description: Display name for the session
+        event_name:
+          type: string
+          description: Fallback name if session_name is not provided
+        source:
+          type: string
+          description: Source of the session (e.g., sdk-python)
+        start_time:
+          type: number
+          description: Session start time as Unix milliseconds
+        end_time:
+          type: number
+          description: Session end time as Unix milliseconds
+        duration:
+          type: number
+          description: Session duration in milliseconds
+        config:
+          type: object
+          additionalProperties: {}
+          description: Configuration associated with the session
+        inputs:
+          type: object
+          additionalProperties: {}
+          description: Input data for the session
+        outputs:
+          type: object
+          additionalProperties: {}
+          description: Output data from the session
+        metadata:
+          type: object
+          additionalProperties: {}
+          description: Arbitrary metadata for the session
+        user_properties:
+          type: object
+          additionalProperties: {}
+          description: User properties associated with the session
+        children_ids:
+          type: array
+          items:
+            type: string
+          description: IDs of child events in this session
+      additionalProperties: false
+      description: Request body for POST /v1/sessions (bare session object)
     AddSessionTracesRequest:
       type: object
       properties:
@@ -5613,7 +5723,7 @@ components:
           type: number
           minimum: 0
           maximum: 100
-          default: 100
+          default: 10
         model_provider:
           type:
             - string
@@ -5770,7 +5880,7 @@ components:
           type: number
           minimum: 0
           maximum: 100
-          default: 100
+          default: 10
         model_provider:
           type:
             - string
@@ -6062,7 +6172,7 @@ components:
       type: object
       properties:
         ground_truth: {}
-    StartSessionRequestSession:
+    LegacyStartSessionRequestSession:
       type: object
       properties:
         session_id:

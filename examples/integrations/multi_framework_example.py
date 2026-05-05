@@ -296,7 +296,6 @@ def demonstrate_basic_multi_framework():
     print("1. Initializing HoneyHive tracer...")
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY", "demo-api-key"),
-        project=os.getenv("HH_PROJECT", "multi-framework-demo"),
         source="multi-framework-basic",
         test_mode=True,
         verbose=False,
@@ -349,7 +348,6 @@ def demonstrate_workflow_orchestration():
     # Initialize HoneyHive
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY", "demo-api-key"),
-        project=os.getenv("HH_PROJECT", "workflow-orchestration"),
         source="workflow-orchestrator",
         test_mode=True,
         verbose=False,
@@ -409,7 +407,6 @@ def demonstrate_context_propagation():
     # Initialize HoneyHive
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY", "demo-api-key"),
-        project=os.getenv("HH_PROJECT", "context-propagation"),
         source="context-demo",
         test_mode=True,
         verbose=False,
@@ -485,7 +482,6 @@ def demonstrate_performance_monitoring():
     # Initialize HoneyHive
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY", "demo-api-key"),
-        project=os.getenv("HH_PROJECT", "performance-monitoring"),
         source="performance-demo",
         test_mode=True,
         verbose=False,
@@ -572,8 +568,6 @@ def main():
     # Environment check
     if not os.getenv("HH_API_KEY"):
         print("⚠️  HH_API_KEY not set - using demo mode")
-    if not os.getenv("HH_PROJECT"):
-        print("⚠️  HH_PROJECT not set - using default project names")
     print()
 
     try:

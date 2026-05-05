@@ -49,7 +49,7 @@ Read:
 - Existing examples in `python-sdk/examples/integrations/` for this framework and others (match style and conventions)
 - Use code as source of truth for exact behavior (do not assume docs are up to date)
 
-`HH_API_KEY`, `HH_API_URL`, and `HH_PROJECT` are expected to be in the environment (via direnv or repo-level config). No manual env setup needed.
+`HH_API_KEY` and `HH_API_URL` are expected to be in the environment (via direnv or repo-level config). No manual env setup needed.
 
 ---
 

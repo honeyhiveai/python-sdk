@@ -11,7 +11,7 @@ the wrong import path for Google GenerativeAI types.
 Requirements:
 - pip install honeyhive[traceloop-google-ai]
 - Set GEMINI_API_KEY environment variable
-- Set HH_API_KEY and HH_PROJECT environment variables
+- Set HH_API_KEY (and GEMINI_API_KEY) environment variables
 """
 
 import os
@@ -53,7 +53,7 @@ def setup_google_genai_workaround():
 
 def main():
     # Check required environment variables
-    required_vars = ["GEMINI_API_KEY", "HH_API_KEY", "HH_PROJECT"]
+    required_vars = ["GEMINI_API_KEY", "HH_API_KEY"]
     missing_vars = [var for var in required_vars if not os.getenv(var)]
 
     if missing_vars:
@@ -94,7 +94,6 @@ def main():
         print("🔧 Initializing HoneyHive tracer...")
         tracer = HoneyHiveTracer.init(
             api_key=os.getenv("HH_API_KEY"),
-            project=os.getenv("HH_PROJECT"),
             source="traceloop_example_with_workaround",
         )
         print("✓ HoneyHive tracer initialized")

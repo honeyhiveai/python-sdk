@@ -174,3 +174,9 @@ var/
 venv.bak/
 venv/
 wheels/
+
+# uv lockfile — intentionally untracked. Customers install from pyproject.toml
+# constraints, not the lockfile, so committing it offers no consumer benefit and
+# would add merge-conflict noise on every dependency change. Ignoring here also
+# prevents the public-repo Generated Code Check from flagging it as untracked.
+uv.lock

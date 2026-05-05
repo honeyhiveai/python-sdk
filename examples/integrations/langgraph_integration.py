@@ -16,7 +16,6 @@ Run:
 
 Environment:
     HH_API_KEY
-    HH_PROJECT
     OPENAI_API_KEY
     HH_SOURCE (optional, defaults to "python_sdk_example")
 """
@@ -266,7 +265,6 @@ def run_multi_turn_scenario() -> None:
 def main() -> None:
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY"),
-        project=os.getenv("HH_PROJECT"),
         session_name="langgraph-example",
         source=os.getenv("HH_SOURCE", "python_sdk_example"),
     )

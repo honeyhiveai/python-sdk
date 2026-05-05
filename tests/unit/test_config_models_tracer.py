@@ -37,7 +37,7 @@ class TestTracerConfig:
             assert config.verbose is False
             assert config.session_name is None
             assert config.source == "dev"
-            assert config.server_url == "https://api.honeyhive.ai"
+            assert config.server_url == "https://api.dp1.us.honeyhive.ai"
             assert config.disable_http_tracing is True
             assert config.disable_batch is False
             assert config.disable_tracing is False
@@ -66,7 +66,7 @@ class TestTracerConfig:
             project="test-project",
             session_name="test-session",
             source="production",
-            server_url="https://api.honeyhive.ai",
+            server_url="https://api.dp1.us.honeyhive.ai",
             verbose=True,
             test_mode=True,
             disable_http_tracing=False,
@@ -89,7 +89,7 @@ class TestTracerConfig:
         assert config.project == "test-project"
         assert config.session_name == "test-session"
         assert config.source == "production"
-        assert config.server_url == "https://api.honeyhive.ai"
+        assert config.server_url == "https://api.dp1.us.honeyhive.ai"
         assert config.verbose is True
         assert config.test_mode is True
         assert config.disable_http_tracing is False
@@ -110,8 +110,8 @@ class TestTracerConfig:
 
     def test_validate_server_url_valid_https(self) -> None:
         """Test server URL validation with valid HTTPS URL."""
-        config = TracerConfig(server_url="https://api.honeyhive.ai")
-        assert config.server_url == "https://api.honeyhive.ai"
+        config = TracerConfig(server_url="https://api.dp1.us.honeyhive.ai")
+        assert config.server_url == "https://api.dp1.us.honeyhive.ai"
 
     def test_validate_server_url_valid_http(self) -> None:
         """Test server URL validation with valid HTTP URL."""
@@ -123,7 +123,7 @@ class TestTracerConfig:
         """Test server URL validation with invalid protocol falls back to default."""
         config = TracerConfig(server_url="ftp://invalid.com")
 
-        assert config.server_url == "https://api.honeyhive.ai"
+        assert config.server_url == "https://api.dp1.us.honeyhive.ai"
         mock_logger.warning.assert_called_once()
         call_args = mock_logger.warning.call_args
         assert (
@@ -135,7 +135,7 @@ class TestTracerConfig:
         """Test server URL validation with non-string value falls back to default."""
         config = TracerConfig(server_url=12345)  # type: ignore[arg-type]
 
-        assert config.server_url == "https://api.honeyhive.ai"
+        assert config.server_url == "https://api.dp1.us.honeyhive.ai"
         mock_logger.warning.assert_called_once()
         call_args = mock_logger.warning.call_args
         assert (
@@ -147,7 +147,7 @@ class TestTracerConfig:
     def test_validate_server_url_none(self) -> None:
         """Test server URL validation with None value defaults to API URL."""
         config = TracerConfig(server_url=None)
-        assert config.server_url == "https://api.honeyhive.ai"
+        assert config.server_url == "https://api.dp1.us.honeyhive.ai"
 
     def test_validate_source_valid_string(self) -> None:
         """Test source validation with valid string."""
@@ -626,7 +626,7 @@ class TestConfigModelIntegration:
             session_id="invalid-uuid",  # Invalid UUID, should become None
         )
 
-        assert tracer_config.server_url == "https://api.honeyhive.ai"
+        assert tracer_config.server_url == "https://api.dp1.us.honeyhive.ai"
         assert tracer_config.source == "dev"
         assert tracer_config.session_id is None
 

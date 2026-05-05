@@ -9,7 +9,7 @@ Demonstrates:
 Requirements: pip install honeyhive google-adk openinference-instrumentation-google-adk requests
 
 Environment:
-- HH_API_KEY, HH_PROJECT, GOOGLE_API_KEY (required)
+- HH_API_KEY, GOOGLE_API_KEY (required)
 - AGENT_SERVER_URL (optional, default: http://localhost:5003)
 """
 
@@ -43,7 +43,6 @@ def init_honeyhive_telemetry() -> HoneyHiveTracer:
     # Initialize tracer
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY"),
-        project=os.getenv("HH_PROJECT"),
         session_name=Path(__file__).stem,
         source="google_adk_conditional_agents",
     )

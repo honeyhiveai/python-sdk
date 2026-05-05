@@ -44,7 +44,6 @@ def main():
     # Initialize HoneyHive tracer FIRST
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY", "demo-api-key"),
-        project="simple-mcp-demo",
         source="example-script",
         test_mode=os.getenv("HH_API_KEY") is None,  # Use test mode if no real API key
     )

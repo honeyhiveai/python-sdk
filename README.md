@@ -26,7 +26,7 @@ HoneyHive supports both OpenInference (lightweight) and OpenLLMetry (enhanced me
 # Install with OpenAI integration (most common)
 pip install honeyhive[openinference-openai]
 
-# Install with Anthropic integration  
+# Install with Anthropic integration
 pip install honeyhive[openinference-anthropic]
 
 # Install with Google AI integration
@@ -45,7 +45,7 @@ pip install honeyhive[all-openinference]
 # Install with OpenAI integration (enhanced metrics)
 pip install honeyhive[traceloop-openai]
 
-# Install with Anthropic integration  
+# Install with Anthropic integration
 pip install honeyhive[traceloop-anthropic]
 
 # Install with Google AI integration
@@ -85,7 +85,6 @@ from honeyhive import HoneyHiveTracer, trace
 # Initialize tracer
 tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
-    project="your-project",
     source="production"
 )
 
@@ -141,7 +140,6 @@ from openinference.instrumentation.openai import OpenAIInstrumentor
 # All features are available in the init method
 tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
-    project="your-project",
     source="production",
     test_mode=True,  # Test mode support
     instrumentors=[OpenAIInstrumentor()],  # Auto-integration
@@ -160,7 +158,6 @@ from openinference.instrumentation.openai import OpenAIInstrumentor
 # Initialize tracer with OpenInference instrumentor (recommended pattern)
 tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
-    project="your-project",
     source="production",
     instrumentors=[OpenAIInstrumentor()]  # Auto-integration
 )
@@ -183,20 +180,19 @@ from honeyhive import HoneyHiveTracer
 # Initialize tracer
 tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
-    project="your-project"
 )
 
 # Use instance methods for enrichment (PRIMARY - Recommended)
 @tracer.trace(event_type="tool")
 def my_function(input_data):
     result = process_data(input_data)
-    
+
     # ✅ Instance method (PRIMARY pattern in v1.0+)
     tracer.enrich_span(
         metadata={"input": input_data, "result": result},
         metrics={"processing_time_ms": 150}
     )
-    
+
     return result
 
 # Enrich session with user properties
@@ -216,13 +212,13 @@ from honeyhive import trace, enrich_span, enrich_session
 @trace(event_type="tool")
 def my_function(input_data):
     result = process_data(input_data)
-    
+
     # Free function with auto-discovery (backward compatible)
     enrich_span(
         metadata={"input": input_data, "result": result},
         metrics={"processing_time_ms": 150}
     )
-    
+
     return result
 
 # Enrich session via free function
@@ -286,8 +282,7 @@ src/honeyhive/
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `HH_API_KEY` | HoneyHive API key | Required |
-| `HH_API_URL` | API base URL | `https://api.honeyhive.ai` |
-| `HH_PROJECT` | Project name | `default` |
+| `HH_API_URL` | API base URL | `https://api.dp1.us.honeyhive.ai` |
 | `HH_SOURCE` | Source environment | `production` |
 | `HH_DISABLE_TRACING` | Disable tracing completely | `false` |
 | `HH_DISABLE_HTTP_TRACING` | Disable HTTP request tracing | `false` |

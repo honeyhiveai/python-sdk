@@ -21,7 +21,6 @@ Run:
 
 Environment:
     HH_API_KEY
-    HH_PROJECT
     OPENAI_API_KEY
     HH_SOURCE          (optional, defaults to "python_sdk_example")
     DSPY_MODEL          (optional, defaults to "openai/gpt-4o-mini")
@@ -273,7 +272,6 @@ def main() -> None:
 
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY"),
-        project=os.getenv("HH_PROJECT"),
         session_name="dspy_integration_example",
         source=os.getenv("HH_SOURCE", "python_sdk_example"),
     )

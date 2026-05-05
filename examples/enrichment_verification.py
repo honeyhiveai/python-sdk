@@ -96,7 +96,6 @@ def main():
         print("   Set HH_API_KEY environment variable to test with real API.\n")
         api_key = "test-key"
 
-    project = os.environ.get("HH_PROJECT", "enrichment-verification")
     source = os.environ.get("HH_SOURCE", "examples")
 
     # Initialize tracer
@@ -104,11 +103,10 @@ def main():
     print("-" * 40)
     tracer = HoneyHiveTracer.init(
         api_key=api_key,
-        project=project,
         source=source,
         verbose=True,
     )
-    print(f"✓ Tracer initialized for project: {tracer.project_name}\n")
+    print(f"✓ Tracer initialized (session: {tracer.session_id})\n")
 
     # Initialize API client for fetching events
     client = HoneyHive(api_key=api_key) if api_key != "test-key" else None
@@ -245,7 +243,6 @@ def main():
                     ]
 
                     events_result = client.events.get_events(
-                        project=project,
                         filters=filters,
                         limit=10,
                     )

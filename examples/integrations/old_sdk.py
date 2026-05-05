@@ -12,7 +12,6 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 # Place the code below at the beginning of your application to initialize the tracer
 HoneyHiveTracer.init(
     api_key=os.getenv("HH_API_KEY"),
-    project="sdk",  # Your HoneyHive project name
     source="dev",  # Optional
     session_name="Test Session",  # Optional
     server_url="https://api.staging.honeyhive.ai",

@@ -684,7 +684,7 @@ class DynamicModelsAndClientGenerator:
             "class HoneyHiveGenerated:",
             '    """Generated HoneyHive client for comparison."""',
             "    ",
-            '    def __init__(self, api_key: str, base_url: str = "https://api.honeyhive.ai"):',
+            '    def __init__(self, api_key: str, base_url: str = "https://api.dp1.us.honeyhive.ai"):',
             '        """Initialize the generated client."""',
             "        self.api_key = api_key",
             "        self.base_url = base_url",

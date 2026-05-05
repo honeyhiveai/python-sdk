@@ -41,10 +41,13 @@ class ServerURLMixin:  # pylint: disable=too-few-public-methods
     """
 
     server_url: str = Field(
-        default="https://api.honeyhive.ai",
+        default="https://api.dp1.us.honeyhive.ai",
         description="Custom HoneyHive server URL",
         validation_alias=AliasChoices("HH_API_URL", "server_url"),
-        examples=["https://api.honeyhive.ai", "https://custom.honeyhive.com"],
+        examples=[
+            "https://api.dp1.us.honeyhive.ai",
+            "https://custom.honeyhive.com",
+        ],
     )
 
     @field_validator("server_url", mode="before")
@@ -59,13 +62,16 @@ class ServerURLMixin:  # pylint: disable=too-few-public-methods
             The validated and normalized server URL, or default if invalid
         """
         if v is None:
-            return "https://api.honeyhive.ai"
+            return "https://api.dp1.us.honeyhive.ai"
 
         validated = _safe_validate_url(
-            v, "server_url", allow_none=False, default="https://api.honeyhive.ai"
+            v,
+            "server_url",
+            allow_none=False,
+            default="https://api.dp1.us.honeyhive.ai",
         )
         # Remove trailing slash for consistency
-        return validated.rstrip("/") if validated else "https://api.honeyhive.ai"
+        return validated.rstrip("/") if validated else "https://api.dp1.us.honeyhive.ai"
 
 
 def _safe_validate_string(
@@ -174,7 +180,11 @@ class BaseHoneyHiveConfig(BaseSettings):
 
     project: Optional[str] = Field(  # type: ignore[call-overload,pydantic-alias]
         default=None,
-        description="Project name (required by backend API)",
+        description=(
+            "Deprecated. Legacy project name accepted for backwards compatibility "
+            "but no longer used — the backend infers project context from the API "
+            "key. Will be removed in v2.0."
+        ),
         validation_alias=AliasChoices("HH_PROJECT", "project"),
         examples=["my-llm-project", "chatbot-v2"],
     )

@@ -15,7 +15,6 @@ from honeyhive.tracer.processing.context import inject_context_into_carrier
 # Initialize HoneyHive tracer
 tracer = HoneyHiveTracer.init(
     api_key=os.getenv("HH_API_KEY"),
-    project="distributed-tracing-tutorial",
     source="api-gateway",
 )
 

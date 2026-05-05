@@ -75,7 +75,7 @@ def setup_test_environment():
         )
 
         # Reset the config to use default values
-        config.api_url = "https://api.honeyhive.ai"
+        config.api_url = "https://api.dp1.us.honeyhive.ai"
     except ImportError:
         # Config module doesn't exist or has changed - this is expected
         pass

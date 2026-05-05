@@ -45,7 +45,6 @@ def setup_tracing() -> HoneyHiveTracer:
     # Initialize HoneyHive tracer FIRST
     tracer = HoneyHiveTracer.init(
         source="traceloop_mcp_example",
-        project=os.getenv("HH_PROJECT", "mcp-traceloop-demo"),
     )
     print("✓ HoneyHive tracer initialized")
 

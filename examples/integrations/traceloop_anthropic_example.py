@@ -39,7 +39,6 @@ def setup_tracing() -> tuple[HoneyHiveTracer, AnthropicInstrumentor]:
     # Step 1: HoneyHive tracer first (BYOI), then attach the Anthropic instrumentor
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY"),
-        project=os.getenv("HH_PROJECT", "anthropic-traceloop-demo"),
         session_name="traceloop_anthropic_example",
         source=os.path.basename(__file__),
     )

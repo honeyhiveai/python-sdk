@@ -36,9 +36,6 @@ load_dotenv()  # Fallback to .env
 # Configuration - support both HH_* and HONEYHIVE_* variable names
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 HH_API_KEY = os.getenv("HONEYHIVE_API_KEY") or os.getenv("HH_API_KEY")
-HH_PROJECT = (
-    os.getenv("HONEYHIVE_PROJECT") or os.getenv("HH_PROJECT") or "debug-project"
-)
 HH_SERVER_URL = os.getenv("HONEYHIVE_SERVER_URL") or os.getenv("HH_API_URL")
 
 # Verify required environment variables
@@ -55,7 +52,6 @@ def init_honeyhive_tracer(session_name: str):
     print(f"\n{'='*80}")
     print(f"INITIALIZING HONEYHIVE TRACER")
     print(f"{'='*80}")
-    print(f"Project: {HH_PROJECT}")
     print(f"Session: {session_name}")
     print(f"Server URL: {HH_SERVER_URL or 'default'}")
     print(f"Verbose: True")
@@ -63,7 +59,6 @@ def init_honeyhive_tracer(session_name: str):
 
     tracer = HoneyHiveTracer.init(
         api_key=HH_API_KEY,
-        project=HH_PROJECT,
         source="debug",
         session_name=session_name,
         server_url=HH_SERVER_URL,
@@ -324,7 +319,7 @@ if __name__ == "__main__":
 ║ REQUIRED ENVIRONMENT VARIABLES:                                            ║
 ║   - OPENAI_API_KEY                                                        ║
 ║   - HONEYHIVE_API_KEY                                                     ║
-║   - HONEYHIVE_PROJECT (optional, defaults to 'debug-project')            ║
+║   - HONEYHIVE_SERVER_URL / HH_API_URL (optional)                        ║
 ║                                                                            ║
 ║ GREP COMMANDS TO EXTRACT SPAN DATA:                                       ║
 ║                                                                            ║

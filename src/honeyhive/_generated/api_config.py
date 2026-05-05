@@ -4,8 +4,8 @@ from typing import Any, Dict, Optional, Union
 from pydantic import BaseModel, Field
 
 # Default production URLs
-DEFAULT_BASE_URL = "https://api.honeyhive.ai"
-DEFAULT_CP_BASE_URL = "https://api.honeyhive.ai"
+DEFAULT_BASE_URL = "https://api.dp1.us.honeyhive.ai"
+DEFAULT_CP_BASE_URL = "https://api.dp1.us.honeyhive.ai"
 
 
 class APIConfig(BaseModel):

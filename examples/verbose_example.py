@@ -21,7 +21,6 @@ from honeyhive import HoneyHive, HoneyHiveTracer
 
 # Set environment variables for configuration
 os.environ["HH_API_KEY"] = "demo-api-key-for-testing"
-os.environ["HH_PROJECT"] = "verbose-demo"
 os.environ["HH_SOURCE"] = "development"
 
 
@@ -80,13 +79,11 @@ def demonstrate_tracer_verbose():
     # Initialize tracer with verbose logging
     tracer = HoneyHiveTracer.init(
         api_key="demo-api-key",
-        project="verbose-demo-project",  # Required for OTLP tracing
         source="development",
         test_mode=True,  # Use test mode
     )
 
     print("✓ Tracer initialized with verbose session creation")
-    print(f"✓ Project: {tracer.project}")
     print(f"✓ Session ID: {tracer.session_id}")
 
     # Create some traced operations
@@ -147,7 +144,6 @@ def demonstrate_configuration_debugging():
 
     print("Current configuration (with verbose details):")
     print(f"  API Key: {'✓ Set' if config.api_key else '✗ Not set'}")
-    print(f"  Project: {config.project}")
     print(f"  Source: {config.source}")
     print(f"  Debug Mode: {config.debug_mode}")
     print(f"  Verbose Mode: {config.verbose}")
@@ -159,7 +155,6 @@ def demonstrate_configuration_debugging():
         "HH_VERBOSE",
         "HH_DEBUG_MODE",
         "HH_API_KEY",
-        "HH_PROJECT",
         "HH_SOURCE",
         "HH_TEST_MODE",
     ]

@@ -11,7 +11,7 @@ LangGraph ``StateGraph`` workflows; see ``examples/integrations/langgraph_integr
 
 Requirements:
 - pip install honeyhive[traceloop-langchain] langchain-openai
-- Set environment variables: HH_API_KEY, HH_PROJECT, OPENAI_API_KEY
+- Set environment variables: HH_API_KEY, OPENAI_API_KEY
 """
 
 from __future__ import annotations
@@ -32,14 +32,11 @@ def setup_tracing() -> tuple[HoneyHiveTracer, LangchainInstrumentor]:
 
     if not os.getenv("HH_API_KEY"):
         raise ValueError("HH_API_KEY environment variable is required")
-    if not os.getenv("HH_PROJECT"):
-        raise ValueError("HH_PROJECT environment variable is required")
     if not os.getenv("OPENAI_API_KEY"):
         raise ValueError("OPENAI_API_KEY environment variable is required")
 
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY"),
-        project=os.getenv("HH_PROJECT"),
         session_name="traceloop_langchain_example",
         source=os.path.basename(__file__),
     )

@@ -56,7 +56,7 @@ class OTLPJSONExporter(SpanExporter):
 
         Args:
             endpoint: OTLP endpoint URL
-                (e.g., "https://api.honeyhive.ai/opentelemetry/v1/traces")
+                (e.g., "https://api.dp1.us.honeyhive.ai/opentelemetry/v1/traces")
             headers: Optional HTTP headers to include in requests
             session: Optional requests.Session to use for HTTP requests
             timeout: Optional timeout in seconds for HTTP requests

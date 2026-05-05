@@ -116,9 +116,7 @@ def troubleshoot_initialization_order():
     trace._TRACER_PROVIDER = None  # Reset
 
     try:
-        tracer = HoneyHiveTracer.init(
-            api_key="test-key", project="init-order-test", test_mode=True, verbose=False
-        )
+        tracer = HoneyHiveTracer.init(api_key="test-key", test_mode=True, verbose=False)
 
         framework = ProblematicFramework("none")
         result = framework.do_work("honeyhive_first")
@@ -135,9 +133,7 @@ def troubleshoot_initialization_order():
     try:
         framework = ProblematicFramework("early_provider_setup")
 
-        tracer = HoneyHiveTracer.init(
-            api_key="test-key", project="init-order-test", test_mode=True, verbose=False
-        )
+        tracer = HoneyHiveTracer.init(api_key="test-key", test_mode=True, verbose=False)
 
         result = framework.do_work("framework_first")
         print(f"   ✅ Success: {result['status']}")
@@ -152,9 +148,7 @@ def troubleshoot_initialization_order():
     try:
         framework = ProblematicFramework("no_provider_access")
 
-        tracer = HoneyHiveTracer.init(
-            api_key="test-key", project="init-order-test", test_mode=True, verbose=False
-        )
+        tracer = HoneyHiveTracer.init(api_key="test-key", test_mode=True, verbose=False)
 
         result = framework.do_work("problematic")
         print(f"   ✅ Success despite problems: {result['status']}")
@@ -181,22 +175,14 @@ def troubleshoot_missing_spans():
     else:
         print("   ❌ HH_API_KEY is not set")
 
-    print("2. Checking project configuration...")
-    project = os.getenv("HH_PROJECT")
-    if project:
-        print(f"   ✅ HH_PROJECT is set: {project}")
-    else:
-        print("   ⚠️  HH_PROJECT is not set (using default)")
-
-    print("3. Checking OTLP configuration...")
+    print("2. Checking OTLP configuration...")
     otlp_enabled = os.getenv("HH_OTLP_ENABLED", "true")
     print(f"   OTLP enabled: {otlp_enabled}")
 
-    print("4. Testing span creation and export...")
+    print("3. Testing span creation and export...")
     try:
         tracer = HoneyHiveTracer.init(
             api_key=api_key or "test-key",
-            project=project or "troubleshooting-test",
             test_mode=True,  # Use test mode to avoid API calls
             verbose=True,  # Enable verbose logging
         )
@@ -215,7 +201,7 @@ def troubleshoot_missing_spans():
     except Exception as e:
         print(f"   ❌ Error creating spans: {e}")
 
-    print("5. Checking span processor integration...")
+    print("4. Checking span processor integration...")
     try:
         from honeyhive.tracer.processor_integrator import ProcessorIntegrator
 
@@ -260,7 +246,6 @@ def troubleshoot_performance_issues():
     # With HoneyHive
     tracer = HoneyHiveTracer.init(
         api_key="perf-test-key",
-        project="performance-test",
         test_mode=True,
         verbose=False,
     )
@@ -322,9 +307,7 @@ def troubleshoot_integration_errors():
         incompatible = IncompatibleProvider()
 
         # HoneyHive should handle this gracefully
-        tracer = HoneyHiveTracer.init(
-            api_key="test-key", project="error-test", test_mode=True, verbose=False
-        )
+        tracer = HoneyHiveTracer.init(api_key="test-key", test_mode=True, verbose=False)
 
         print("   ✅ HoneyHive handled incompatible provider gracefully")
 
@@ -341,7 +324,6 @@ def troubleshoot_integration_errors():
     try:
         tracer = HoneyHiveTracer.init(
             api_key=None,
-            project="error-test",
             test_mode=False,  # This should cause an error
         )
         print("   ⚠️  No error with missing API key (unexpected)")
@@ -349,21 +331,9 @@ def troubleshoot_integration_errors():
     except Exception as e:
         print(f"   ✅ Expected error with missing API key: {type(e).__name__}")
 
-    # Test empty project
-    try:
-        tracer = HoneyHiveTracer.init(
-            api_key="test-key", project="", test_mode=True  # Empty project
-        )
-        print("   ✅ Empty project handled gracefully")
-
-    except Exception as e:
-        print(f"   ⚠️  Error with empty project: {e}")
-
     print("3. Testing framework errors...")
 
-    tracer = HoneyHiveTracer.init(
-        api_key="test-key", project="error-test", test_mode=True, verbose=False
-    )
+    tracer = HoneyHiveTracer.init(api_key="test-key", test_mode=True, verbose=False)
 
     framework = ProblematicFramework("none")
 
@@ -392,9 +362,7 @@ def troubleshoot_context_propagation():
 
     print("1. Testing basic context propagation...")
 
-    tracer = HoneyHiveTracer.init(
-        api_key="test-key", project="context-test", test_mode=True, verbose=False
-    )
+    tracer = HoneyHiveTracer.init(api_key="test-key", test_mode=True, verbose=False)
 
     framework = ProblematicFramework("none")
     otel_tracer = trace.get_tracer("context-test")
@@ -469,7 +437,7 @@ def generate_troubleshooting_report():
     }
 
     # Environment variables
-    env_vars = ["HH_API_KEY", "HH_PROJECT", "HH_SOURCE", "HH_OTLP_ENABLED"]
+    env_vars = ["HH_API_KEY", "HH_SOURCE", "HH_OTLP_ENABLED"]
     for var in env_vars:
         value = os.getenv(var)
         if var == "HH_API_KEY" and value:
@@ -482,7 +450,6 @@ def generate_troubleshooting_report():
     try:
         tracer = HoneyHiveTracer.init(
             api_key="report-test-key",
-            project="troubleshooting-report",
             test_mode=True,
             verbose=False,
         )
@@ -490,7 +457,6 @@ def generate_troubleshooting_report():
         report["honeyhive_config"] = {
             "initialization": "success",
             "session_id": tracer.session_id,
-            "project": getattr(tracer, "project", "unknown"),
             "source": getattr(tracer, "source", "unknown"),
             "test_mode": getattr(tracer, "test_mode", "unknown"),
         }
@@ -523,11 +489,6 @@ def generate_troubleshooting_report():
     # Generate recommendations
     if not report["environment"]["HH_API_KEY"]:
         report["recommendations"].append("Set HH_API_KEY environment variable")
-
-    if not report["environment"]["HH_PROJECT"]:
-        report["recommendations"].append(
-            "Set HH_PROJECT environment variable (required for OTLP)"
-        )
 
     if report["environment"]["HH_OTLP_ENABLED"] == "false":
         report["recommendations"].append(
@@ -580,7 +541,7 @@ def main():
         print("\n🎉 All troubleshooting examples completed!")
         print("\n💡 Tips for successful integration:")
         print("   1. Initialize HoneyHive early in your application")
-        print("   2. Set required environment variables (HH_API_KEY, HH_PROJECT)")
+        print("   2. Set required environment variables (HH_API_KEY)")
         print("   3. Use test_mode=True during development")
         print("   4. Enable verbose=True for debugging")
         print("   5. Check the HoneyHive dashboard for traces")

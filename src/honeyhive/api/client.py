@@ -10,10 +10,10 @@ Usage::
     client = HoneyHive(api_key="your-api-key")
 
     # Sync usage
-    configs = client.configurations.list(project="my-project")
+    configs = client.configurations.list()
 
     # Async usage
-    configs = await client.configurations.list_async(project="my-project")
+    configs = await client.configurations.list_async()
 """
 
 import asyncio
@@ -1858,7 +1858,7 @@ class SessionsAPI(BaseAPI):
     ) -> PostSessionStartResponse:
         """Start a new session."""
         request = self._coerce_start_session_request(data)
-        return sessions_svc.startSession(self._api_config, data=request)
+        return sessions_svc.startSessionLegacy(self._api_config, data=request)
 
     # Async methods
     async def start_async(
@@ -1866,7 +1866,9 @@ class SessionsAPI(BaseAPI):
     ) -> PostSessionStartResponse:
         """Start a new session asynchronously."""
         request = self._coerce_start_session_request(data)
-        return await sessions_svc_async.startSession(self._api_config, data=request)
+        return await sessions_svc_async.startSessionLegacy(
+            self._api_config, data=request
+        )
 
     # Backwards compatible aliases
     def create_session(
@@ -1893,10 +1895,10 @@ class HoneyHive:
         client = HoneyHive(api_key="your-api-key")
 
         # Sync
-        configs = client.configurations.list(project="my-project")
+        configs = client.configurations.list()
 
         # Async
-        configs = await client.configurations.list_async(project="my-project")
+        configs = await client.configurations.list_async()
 
     Attributes:
         configurations: API for managing configurations.
@@ -1911,6 +1913,12 @@ class HoneyHive:
     def __init__(
         self,
         api_key: Optional[str] = None,
+        # `project` sits at positional slot #2 to mirror the legacy SDK shape
+        # — pre-1.0 callers wrote `HoneyHive("key", "project-name")` positionally.
+        # Keeping the slot reserved means those calls still execute (with a
+        # DeprecationWarning) instead of binding the value to `base_url` or
+        # raising TypeError. The argument is otherwise ignored.
+        project: Optional[str] = None,
         *,
         # Primary URL parameters
         base_url: Optional[str] = None,
@@ -1933,8 +1941,11 @@ class HoneyHive:
         Args:
             api_key: HoneyHive API key (typically starts with ``hh_``).
                      Falls back to HH_API_KEY environment variable.
+            project: Deprecated. Accepted for backwards compatibility only;
+                the backend infers project context from the API key and session.
+                Ignored when constructing the client.
             base_url: API base URL for Data Plane/ingestion.
-                      Falls back to HH_API_URL env var, then https://api.honeyhive.ai.
+                      Falls back to HH_API_URL env var, then https://api.dp1.us.honeyhive.ai.
             cp_base_url: Control Plane API URL for query endpoints.
                          Falls back to HH_CP_API_URL, then HH_API_URL env var.
             server_url: Deprecated alias for base_url (for backwards compatibility).
@@ -1950,6 +1961,14 @@ class HoneyHive:
         """
         import os
 
+        if project is not None:
+            warnings.warn(
+                "The 'project' argument to HoneyHive() is deprecated and ignored; "
+                "it will be removed in v2.0. Remove it from HoneyHive() calls.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
         # Resolve API key from parameter or environment
         self._api_key = api_key or os.environ.get("HH_API_KEY", "")
 
@@ -1958,7 +1977,7 @@ class HoneyHive:
             base_url
             or server_url  # Legacy parameter
             or os.environ.get("HH_API_URL")
-            or "https://api.honeyhive.ai"
+            or "https://api.dp1.us.honeyhive.ai"
         )
 
         # Resolve CP base URL: cp_base_url > HH_CP_API_URL > HH_API_URL > base_url
