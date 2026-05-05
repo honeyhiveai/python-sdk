@@ -8,7 +8,7 @@ __all__ = ["RunMetricResponse"]
 class RunMetricResponse(BaseModel):
     """
     RunMetricResponse model
-        Response for POST /metrics/run_metric
+        Response for POST /metrics/run
     """
 
     model_config = {

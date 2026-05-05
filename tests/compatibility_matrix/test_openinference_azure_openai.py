@@ -20,7 +20,7 @@ def test_azure_openai_integration():
     azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
     azure_key = os.getenv("AZURE_OPENAI_API_KEY")
     azure_version = os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview")
-    deployment_name = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME")
+    deployment_name = os.getenv("AZURE_OPENAI_DEPLOYMENT")
 
     if not all([api_key, project, azure_endpoint, azure_key, deployment_name]):
         print("❌ Missing required environment variables:")
@@ -28,7 +28,7 @@ def test_azure_openai_integration():
         print("   - HH_PROJECT (HoneyHive project)")
         print("   - AZURE_OPENAI_ENDPOINT (Azure OpenAI endpoint)")
         print("   - AZURE_OPENAI_API_KEY (Azure OpenAI API key)")
-        print("   - AZURE_OPENAI_DEPLOYMENT_NAME (Azure deployment name)")
+        print("   - AZURE_OPENAI_DEPLOYMENT (Azure deployment name)")
         print(
             "   - AZURE_OPENAI_API_VERSION (optional, defaults to 2024-02-15-preview)"
         )

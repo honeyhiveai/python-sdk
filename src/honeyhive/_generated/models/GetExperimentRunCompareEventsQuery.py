@@ -8,7 +8,7 @@ __all__ = ["GetExperimentRunCompareEventsQuery"]
 class GetExperimentRunCompareEventsQuery(BaseModel):
     """
     GetExperimentRunCompareEventsQuery model
-        Query parameters for GET /runs/compare/events
+        Query parameters for GET /runs/{new_run_id}/compare/{old_run_id}/events
     """
 
     model_config = {
@@ -17,10 +17,6 @@ class GetExperimentRunCompareEventsQuery(BaseModel):
         "extra": "allow",
         "protected_namespaces": (),
     }
-
-    run_id_1: str = Field(validation_alias="run_id_1")
-
-    run_id_2: str = Field(validation_alias="run_id_2")
 
     event_name: Optional[str] = Field(validation_alias="event_name", default=None)
 

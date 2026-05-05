@@ -1074,6 +1074,7 @@ def _initialize_session_management(tracer_instance: Any) -> None:
         # session_id and explicitly request skipping init-time creation.
         provided_session_id = None
         has_valid_provided_session_id = False
+        has_user_provided_session_id = bool(tracer_instance.session_id)
         skip_backend_session_creation = getattr(
             tracer_instance.config, "skip_backend_session_creation", False
         )
@@ -1120,6 +1121,25 @@ def _initialize_session_management(tracer_instance: Any) -> None:
                 "debug",
                 "Skipping backend session initialization for provided session_id",
                 honeyhive_data={"session_id": provided_session_id},
+            )
+        elif skip_backend_session_creation and not has_user_provided_session_id:
+            # No session_id supplied; caller opted out of the init-time roundtrip.
+            # Set the auto-create flag so the span processor stamps every emitted
+            # span with honeyhive.session_auto_create=true. Per-request session_ids
+            # come from explicit create_session() calls; ingestion materializes
+            # the Session row from the first span carrying each session_id.
+            #
+            # NB: the auto-create attribute is only stamped when a session_id is
+            # in context (baggage or tracer.session_id) — see span_processor.py
+            # `if session_id:` gate. Spans emitted before any create_session()
+            # call (module-level instrumentation, framework boot, etc.) carry
+            # no session_id and fall back to the ingestion-side default.
+            tracer_instance._session_auto_create = True
+            safe_log(
+                tracer_instance,
+                "debug",
+                "Skipping backend session initialization; "
+                "auto-create flag set for spans emitted under this tracer",
             )
         else:
             # Always create/initialize session in backend unless the caller

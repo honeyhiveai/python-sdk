@@ -464,7 +464,7 @@ class DatasetsAPI(BaseAPI):
 
     def delete(self, id: str) -> DeleteDatasetResponse:
         """Delete a dataset."""
-        return datasets_svc.deleteDataset(self._api_config, dataset_id=id)
+        return datasets_svc.deleteDatasetLegacy(self._api_config, dataset_id=id)
 
     def add_datapoints(
         self, dataset_id: str, request: AddDatapointsToDatasetRequest
@@ -494,7 +494,7 @@ class DatasetsAPI(BaseAPI):
         Returns:
             RemoveDatapointResponse with dereferenced status and message.
         """
-        return datasets_svc.removeDatapoint(
+        return datasets_svc.removeDatapointLegacy(
             self._api_config, dataset_id=dataset_id, datapoint_id=datapoint_id
         )
 
@@ -532,7 +532,9 @@ class DatasetsAPI(BaseAPI):
 
     async def delete_async(self, id: str) -> DeleteDatasetResponse:
         """Delete a dataset asynchronously."""
-        return await datasets_svc_async.deleteDataset(self._api_config, dataset_id=id)
+        return await datasets_svc_async.deleteDatasetLegacy(
+            self._api_config, dataset_id=id
+        )
 
     async def add_datapoints_async(
         self, dataset_id: str, request: AddDatapointsToDatasetRequest
@@ -562,7 +564,7 @@ class DatasetsAPI(BaseAPI):
         Returns:
             RemoveDatapointResponse with dereferenced status and message.
         """
-        return await datasets_svc_async.removeDatapoint(
+        return await datasets_svc_async.removeDatapointLegacy(
             self._api_config, dataset_id=dataset_id, datapoint_id=datapoint_id
         )
 
@@ -749,15 +751,15 @@ class EventsAPI(BaseAPI):
 
     def create(self, request: PostEventRequest) -> PostEventResponse:
         """Create an event."""
-        return events_svc.createEvent(self._api_config, data=request)
+        return events_svc.createEventLegacy(self._api_config, data=request)
 
     def update(self, data: UpdateEventRequest) -> None:
         """Update an event."""
-        return events_svc.updateEvent(self._api_config, data=data)
+        return events_svc.updateEventLegacy(self._api_config, data=data)
 
     def create_batch(self, data: PostEventBatchRequest) -> PostEventBatchResponse:
         """Create events in batch."""
-        return events_svc.createEventBatch(self._api_config, data=data)
+        return events_svc.createEventBatchLegacy(self._api_config, data=data)
 
     def export(
         self,
@@ -1053,17 +1055,19 @@ class EventsAPI(BaseAPI):
 
     async def create_async(self, request: PostEventRequest) -> PostEventResponse:
         """Create an event asynchronously."""
-        return await events_svc_async.createEvent(self._api_config, data=request)
+        return await events_svc_async.createEventLegacy(self._api_config, data=request)
 
     async def update_async(self, data: UpdateEventRequest) -> None:
         """Update an event asynchronously."""
-        return await events_svc_async.updateEvent(self._api_config, data=data)
+        return await events_svc_async.updateEventLegacy(self._api_config, data=data)
 
     async def create_batch_async(
         self, data: PostEventBatchRequest
     ) -> PostEventBatchResponse:
         """Create events in batch asynchronously."""
-        return await events_svc_async.createEventBatch(self._api_config, data=data)
+        return await events_svc_async.createEventBatchLegacy(
+            self._api_config, data=data
+        )
 
     async def export_async(
         self,
@@ -1324,7 +1328,7 @@ class ExperimentsAPI(BaseAPI):
             dateRange: Filter by date range (string or dict with $gte/$lte).
             evaluation_id: Filter by evaluation/run ID.
         """
-        return events_svc.getEventsSchema(
+        return events_svc.getEventsSchemaLegacy(
             self._api_config, dateRange=dateRange, evaluation_id=evaluation_id
         )
 
@@ -1462,7 +1466,7 @@ class ExperimentsAPI(BaseAPI):
             dateRange: Filter by date range (string or dict with $gte/$lte).
             evaluation_id: Filter by evaluation/run ID.
         """
-        return await events_svc_async.getEventsSchema(
+        return await events_svc_async.getEventsSchemaLegacy(
             self._api_config, dateRange=dateRange, evaluation_id=evaluation_id
         )
 
@@ -1620,7 +1624,7 @@ class ExperimentsAPI(BaseAPI):
             aggregate_function: Aggregation function to apply.
             filters: Optional filters to apply.
         """
-        result = experiments_svc.getExperimentComparison(
+        result = experiments_svc.getExperimentComparisonLegacy(
             self._api_config,
             new_run_id=new_run_id,
             old_run_id=old_run_id,
@@ -1666,7 +1670,7 @@ class ExperimentsAPI(BaseAPI):
             aggregate_function: Aggregation function to apply.
             filters: Optional filters to apply.
         """
-        result = await experiments_svc_async.getExperimentComparison(
+        result = await experiments_svc_async.getExperimentComparisonLegacy(
             self._api_config,
             new_run_id=new_run_id,
             old_run_id=old_run_id,
@@ -1706,7 +1710,7 @@ class ExperimentsAPI(BaseAPI):
             limit: Maximum number of results.
             page: Page number for pagination.
         """
-        return experiments_svc.getExperimentCompareEvents(
+        return experiments_svc.getExperimentCompareEventsLegacy(
             self._api_config,
             run_id_1=new_run_id,
             run_id_2=old_run_id,
@@ -1750,11 +1754,11 @@ class MetricsAPI(BaseAPI):
 
     def update(self, request: UpdateMetricRequest) -> UpdateMetricResponse:
         """Update a metric."""
-        return metrics_svc.updateMetric(self._api_config, data=request)
+        return metrics_svc.updateMetricLegacy(self._api_config, data=request)
 
     def delete(self, id: str) -> DeleteMetricResponse:
         """Delete a metric."""
-        return metrics_svc.deleteMetric(self._api_config, metric_id=id)
+        return metrics_svc.deleteMetricLegacy(self._api_config, metric_id=id)
 
     # Async methods
     async def list_async(
@@ -1783,11 +1787,15 @@ class MetricsAPI(BaseAPI):
 
     async def update_async(self, request: UpdateMetricRequest) -> UpdateMetricResponse:
         """Update a metric asynchronously."""
-        return await metrics_svc_async.updateMetric(self._api_config, data=request)
+        return await metrics_svc_async.updateMetricLegacy(
+            self._api_config, data=request
+        )
 
     async def delete_async(self, id: str) -> DeleteMetricResponse:
         """Delete a metric asynchronously."""
-        return await metrics_svc_async.deleteMetric(self._api_config, metric_id=id)
+        return await metrics_svc_async.deleteMetricLegacy(
+            self._api_config, metric_id=id
+        )
 
     # Backwards compatible aliases
     def get_metric(self, id: str) -> List[MetricItem]:

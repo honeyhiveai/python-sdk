@@ -10,7 +10,7 @@ __all__ = ["GetEventsSchemaResponse"]
 class GetEventsSchemaResponse(BaseModel):
     """
     GetEventsSchemaResponse model
-        Response for GET /events/schema
+        Response for GET /events/schema, GET /runs/{run_id}/schema, and GET /runs/schema
     """
 
     model_config = {

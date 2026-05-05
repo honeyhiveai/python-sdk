@@ -1,0 +1,21 @@
+from typing import Any, Dict, List, Optional, Union
+
+from pydantic import BaseModel, Field
+
+__all__ = ["LegacyDeleteMetricQuery"]
+
+
+class LegacyDeleteMetricQuery(BaseModel):
+    """
+    LegacyDeleteMetricQuery model
+        Query parameters for DELETE /metrics (deprecated — use DELETE /metrics/{metric_id})
+    """
+
+    model_config = {
+        "populate_by_name": True,
+        "validate_assignment": True,
+        "extra": "allow",
+        "protected_namespaces": (),
+    }
+
+    metric_id: str = Field(validation_alias="metric_id")

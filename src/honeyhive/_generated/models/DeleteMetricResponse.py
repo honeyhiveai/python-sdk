@@ -8,7 +8,7 @@ __all__ = ["DeleteMetricResponse"]
 class DeleteMetricResponse(BaseModel):
     """
     DeleteMetricResponse model
-        Response for DELETE /metrics
+        Response for DELETE /metrics/{metric_id}
     """
 
     model_config = {

@@ -89,7 +89,7 @@ class CompatibilityTestRunner:
                 "required_env": [
                     "AZURE_OPENAI_ENDPOINT",
                     "AZURE_OPENAI_API_KEY",
-                    "AZURE_OPENAI_DEPLOYMENT_NAME",
+                    "AZURE_OPENAI_DEPLOYMENT",
                 ],
             },
             "test_openinference_anthropic.py": {
@@ -136,7 +136,7 @@ class CompatibilityTestRunner:
                 "required_env": [
                     "AZURE_OPENAI_ENDPOINT",
                     "AZURE_OPENAI_API_KEY",
-                    "AZURE_OPENAI_DEPLOYMENT_NAME",
+                    "AZURE_OPENAI_DEPLOYMENT",
                 ],
             },
             "test_traceloop_anthropic.py": {

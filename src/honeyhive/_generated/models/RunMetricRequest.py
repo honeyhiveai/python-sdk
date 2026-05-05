@@ -11,7 +11,7 @@ __all__ = ["RunMetricRequest"]
 class RunMetricRequest(BaseModel):
     """
     RunMetricRequest model
-        Request body for POST /metrics/run_metric
+        Request body for POST /metrics/run
     """
 
     model_config = {

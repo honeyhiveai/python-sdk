@@ -2,12 +2,12 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
-__all__ = ["GetEventsSchemaDateRangeOneOf1"]
+__all__ = ["GetEventsSchemaLegacyDateRangeOneOf1"]
 
 
-class GetEventsSchemaDateRangeOneOf1(BaseModel):
+class GetEventsSchemaLegacyDateRangeOneOf1(BaseModel):
     """
-    GetEventsSchemaDateRangeOneOf1 model
+    GetEventsSchemaLegacyDateRangeOneOf1 model
     """
 
     model_config = {

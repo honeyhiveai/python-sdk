@@ -8,7 +8,7 @@ __all__ = ["GetExperimentRunCompareQuery"]
 class GetExperimentRunCompareQuery(BaseModel):
     """
     GetExperimentRunCompareQuery model
-        Query parameters for GET /runs/{new_run_id}/compare-with/{old_run_id}
+        Query parameters for GET /runs/{new_run_id}/compare/{old_run_id}
     """
 
     model_config = {

@@ -776,6 +776,120 @@ class TestHoneyHiveSpanProcessorOnStart:
 
         mock_safe_log.assert_called()
 
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_on_start_stamps_auto_create_when_flag_is_true(
+        self, mock_safe_log: Mock
+    ) -> None:
+        """When tracer._session_auto_create is True, the processor stamps
+        honeyhive.session_auto_create=True on the span."""
+        mock_tracer = Mock(spec=HoneyHiveTracer)
+        mock_tracer.session_id = "tracer-session"
+        mock_tracer.session_name = "my-session"
+        mock_tracer._session_auto_create = True
+        processor = HoneyHiveSpanProcessor(tracer_instance=mock_tracer)
+
+        mock_span = Mock(spec=Span)
+        mock_span.name = "test_span"
+        mock_span.get_span_context.return_value = Mock(span_id=12345)
+        mock_context = Mock(spec=Context)
+
+        processor.on_start(mock_span, mock_context)
+
+        attribute_calls = {
+            call.args[0]: call.args[1]
+            for call in mock_span.set_attribute.call_args_list
+            if len(call.args) == 2
+        }
+        assert attribute_calls.get("honeyhive.session_auto_create") is True
+        assert attribute_calls.get("honeyhive.session_name") == "my-session"
+
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_on_start_does_not_stamp_auto_create_when_flag_is_false(
+        self, mock_safe_log: Mock
+    ) -> None:
+        """When tracer._session_auto_create is not set, the processor does NOT
+        stamp honeyhive.session_auto_create on the span."""
+        mock_tracer = Mock(spec=HoneyHiveTracer)
+        mock_tracer.session_id = "tracer-session"
+        mock_tracer.session_name = None
+        # _session_auto_create deliberately unset (getattr default = False)
+        del mock_tracer._session_auto_create
+        processor = HoneyHiveSpanProcessor(tracer_instance=mock_tracer)
+
+        mock_span = Mock(spec=Span)
+        mock_span.name = "test_span"
+        mock_span.get_span_context.return_value = Mock(span_id=12345)
+        mock_context = Mock(spec=Context)
+
+        processor.on_start(mock_span, mock_context)
+
+        attribute_calls = {
+            call.args[0]: call.args[1]
+            for call in mock_span.set_attribute.call_args_list
+            if len(call.args) == 2
+        }
+        assert "honeyhive.session_auto_create" not in attribute_calls
+
+    @patch("honeyhive.tracer.processing.span_processor.baggage.get_baggage")
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_on_start_prefers_baggage_session_name_over_tracer_instance(
+        self, mock_safe_log: Mock, mock_get_baggage: Mock
+    ) -> None:
+        """When both baggage and tracer instance carry session_name, the
+        per-request baggage value wins (mirrors session_id precedence)."""
+        mock_tracer = Mock(spec=HoneyHiveTracer)
+        mock_tracer.session_id = "tracer-session"
+        mock_tracer.session_name = "init-time-name"
+        mock_tracer._session_auto_create = True
+        processor = HoneyHiveSpanProcessor(tracer_instance=mock_tracer)
+
+        mock_span = Mock(spec=Span)
+        mock_span.name = "test_span"
+        mock_span.get_span_context.return_value = Mock(span_id=12345)
+        mock_context = Mock(spec=Context)
+
+        mock_get_baggage.side_effect = lambda key, ctx: {
+            "session_id": "tracer-session",
+            "session_name": "per-request-name",
+        }.get(key)
+
+        processor.on_start(mock_span, mock_context)
+
+        attribute_calls = {
+            call.args[0]: call.args[1]
+            for call in mock_span.set_attribute.call_args_list
+            if len(call.args) == 2
+        }
+        assert attribute_calls.get("honeyhive.session_auto_create") is True
+        assert attribute_calls.get("honeyhive.session_name") == "per-request-name"
+
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_on_start_stamps_auto_create_but_not_name_when_session_name_is_none(
+        self, mock_safe_log: Mock
+    ) -> None:
+        """When tracer._session_auto_create is True and session_name is None,
+        only the auto-create flag is stamped (no honeyhive.session_name)."""
+        mock_tracer = Mock(spec=HoneyHiveTracer)
+        mock_tracer.session_id = "tracer-session"
+        mock_tracer.session_name = None
+        mock_tracer._session_auto_create = True
+        processor = HoneyHiveSpanProcessor(tracer_instance=mock_tracer)
+
+        mock_span = Mock(spec=Span)
+        mock_span.name = "test_span"
+        mock_span.get_span_context.return_value = Mock(span_id=12345)
+        mock_context = Mock(spec=Context)
+
+        processor.on_start(mock_span, mock_context)
+
+        attribute_calls = {
+            call.args[0]: call.args[1]
+            for call in mock_span.set_attribute.call_args_list
+            if len(call.args) == 2
+        }
+        assert attribute_calls.get("honeyhive.session_auto_create") is True
+        assert "honeyhive.session_name" not in attribute_calls
+
 
 class TestHoneyHiveSpanProcessorOnEnd:
     """Test on_end method functionality with all conditional branches."""

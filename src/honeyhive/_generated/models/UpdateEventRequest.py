@@ -8,7 +8,7 @@ __all__ = ["UpdateEventRequest"]
 class UpdateEventRequest(BaseModel):
     """
     UpdateEventRequest model
-        Request to update an existing event
+        Request body for PUT /v1/events/{event_id}
     """
 
     model_config = {
@@ -17,8 +17,6 @@ class UpdateEventRequest(BaseModel):
         "extra": "allow",
         "protected_namespaces": (),
     }
-
-    event_id: str = Field(validation_alias="event_id")
 
     metadata: Optional[Dict[str, Any]] = Field(
         validation_alias="metadata", default=None
