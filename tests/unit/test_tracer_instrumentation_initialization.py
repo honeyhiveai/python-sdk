@@ -1370,6 +1370,31 @@ class TestTracerInitialization:
         mock_create.assert_called_once_with(self.mock_tracer)
         mock_log.assert_called()
 
+    @patch("honeyhive.tracer.instrumentation.initialization._create_new_session")
+    @patch("honeyhive.tracer.instrumentation.initialization.uuid")
+    @patch("honeyhive.tracer.instrumentation.initialization.HoneyHive")
+    @patch("honeyhive.tracer.instrumentation.initialization.safe_log")
+    def test__initialize_session_management_skips_backend_creation_no_session_id(
+        self, mock_log: Any, mock_client: Any, mock_uuid: Any, mock_create: Any
+    ) -> None:
+        """Test skip_backend_session_creation=True without a session_id sets the
+        auto-create flag and skips the backend call without minting a UUID."""
+        mock_client_instance = Mock()
+        mock_client.return_value = mock_client_instance
+        self.mock_tracer.session_id = None
+        self.mock_tracer.config.skip_backend_session_creation = True
+
+        initialization._initialize_session_management(self.mock_tracer)
+
+        assert self.mock_tracer.client == mock_client_instance
+        assert self.mock_tracer._session_auto_create is True
+        # No UUID minted at init — session_id stays None until per-request
+        # create_session() sets one in baggage.
+        assert self.mock_tracer.session_id is None
+        mock_uuid.uuid4.assert_not_called()
+        mock_create.assert_not_called()
+        mock_log.assert_called()
+
     # ========================================================================
     # Tests for _validate_configuration_gracefully
     # ========================================================================

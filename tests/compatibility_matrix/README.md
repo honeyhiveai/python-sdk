@@ -101,7 +101,6 @@ export GOOGLE_ADK_API_KEY="your_google_adk_api_key"
 # Azure OpenAI (Required for: Azure OpenAI tests)
 export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com/"
 export AZURE_OPENAI_API_KEY="your_azure_openai_api_key"
-export AZURE_OPENAI_DEPLOYMENT_NAME="your_deployment_name"
 export AZURE_OPENAI_API_VERSION="2024-02-15-preview"  # Optional
 export AZURE_OPENAI_DEPLOYMENT="gpt-35-turbo"  # Optional
 export AZURE_OPENAI_GPT4_DEPLOYMENT="gpt-4"  # Optional

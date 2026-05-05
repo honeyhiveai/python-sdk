@@ -2,12 +2,12 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
-__all__ = ["PostEventRequestEvent"]
+__all__ = ["LegacyPostEventRequestEvent"]
 
 
-class PostEventRequestEvent(BaseModel):
+class LegacyPostEventRequestEvent(BaseModel):
     """
-    PostEventRequestEvent model
+    LegacyPostEventRequestEvent model
         Full event object for legacy event creation endpoints
     """
 

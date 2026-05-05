@@ -392,6 +392,8 @@ class TracerContextMixin(TracerContextInterface):
             if session_id and skip_api_call:
                 current_ctx = context.get_current()
                 new_ctx = baggage.set_baggage("session_id", session_id, current_ctx)
+                if session_name:
+                    new_ctx = baggage.set_baggage("session_name", session_name, new_ctx)
                 context.attach(new_ctx)
 
                 safe_log(
@@ -400,6 +402,7 @@ class TracerContextMixin(TracerContextInterface):
                     f"Set provided session_id in baggage (no API call): {session_id}",
                     honeyhive_data={
                         "session_id": session_id,
+                        "session_name": session_name,
                         "storage": "baggage",
                         "source": "provided",
                         "api_call": False,
@@ -520,6 +523,8 @@ class TracerContextMixin(TracerContextInterface):
             if session_id and skip_api_call:
                 current_ctx = context.get_current()
                 new_ctx = baggage.set_baggage("session_id", session_id, current_ctx)
+                if session_name:
+                    new_ctx = baggage.set_baggage("session_name", session_name, new_ctx)
                 context.attach(new_ctx)
 
                 safe_log(
@@ -528,6 +533,7 @@ class TracerContextMixin(TracerContextInterface):
                     f"Set provided session_id in baggage (async, no API): {session_id}",
                     honeyhive_data={
                         "session_id": session_id,
+                        "session_name": session_name,
                         "storage": "baggage",
                         "source": "provided",
                         "api_call": False,

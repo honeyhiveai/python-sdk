@@ -24,7 +24,7 @@ from opentelemetry.trace import SpanKind, Status, StatusCode
 
 # Event request is now built as a dict and passed directly to the API
 # EventType values are now plain strings since we pass dicts to the API
-from ..._generated.models import PostEventRequest
+from ...models import PostEventRequest
 from ...utils.logger import is_shutdown_detected, safe_log
 from ..lifecycle.core import is_new_span_creation_disabled
 from .base import NoOpSpan

@@ -403,8 +403,13 @@ class SessionConfig(BaseHoneyHiveConfig):
     skip_backend_session_creation: bool = Field(  # type: ignore[call-overload]
         default=False,
         description=(
-            "If True and session_id is provided, trust that the session already "
-            "exists on the backend and skip the init-time session creation call."
+            "If True, skip the init-time backend session creation call. "
+            "If a valid session_id is also provided, the SDK trusts that the "
+            "session already exists on the backend. Otherwise, callers are "
+            "expected to manage session_ids via per-request "
+            "create_session(session_id=<uuid>, skip_api_call=True) calls. "
+            "Note: an invalid session_id (e.g. non-UUID) triggers the "
+            "degraded-mode path and still calls the backend."
         ),
     )
 

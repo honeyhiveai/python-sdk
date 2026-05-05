@@ -101,6 +101,45 @@ def createRun(
     )
 
 
+def getRunsSchema(
+    api_config_override: Optional[APIConfig] = None,
+    *,
+    dateRange: Optional[Union[str, GetRunsSchemaDateRangeOneOf1]] = None,
+) -> GetEventsSchemaResponse:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/v1/runs/schema"
+    headers = api_config.get_default_headers()
+    query_params: Dict[str, Any] = {"dateRange": dateRange}
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+        response = client.request(
+            "get",
+            httpx.URL(path),
+            headers=headers,
+            params=_serialize_query_params(query_params),
+        )
+
+    if response.status_code != 200:
+        raise HTTPException(
+            response.status_code,
+            f"getRunsSchema failed with status code: {response.status_code}",
+        )
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return (
+        GetEventsSchemaResponse(**body)
+        if body is not None
+        else GetEventsSchemaResponse()
+    )
+
+
 def getRun(
     api_config_override: Optional[APIConfig] = None, *, run_id: str
 ) -> GetExperimentRunResponse:
@@ -216,6 +255,46 @@ def deleteRun(
     )
 
 
+def getRunSchema(
+    api_config_override: Optional[APIConfig] = None,
+    *,
+    run_id: str,
+    dateRange: Optional[Union[str, GetRunSchemaDateRangeOneOf1]] = None,
+) -> GetEventsSchemaResponse:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/v1/runs/{run_id}/schema"
+    headers = api_config.get_default_headers()
+    query_params: Dict[str, Any] = {"dateRange": dateRange}
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+        response = client.request(
+            "get",
+            httpx.URL(path),
+            headers=headers,
+            params=_serialize_query_params(query_params),
+        )
+
+    if response.status_code != 200:
+        raise HTTPException(
+            response.status_code,
+            f"getRunSchema failed with status code: {response.status_code}",
+        )
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return (
+        GetEventsSchemaResponse(**body)
+        if body is not None
+        else GetEventsSchemaResponse()
+    )
+
+
 def getExperimentRunMetrics(
     api_config_override: Optional[APIConfig] = None,
     *,
@@ -312,7 +391,7 @@ def getExperimentComparison(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/v1/runs/{new_run_id}/compare-with/{old_run_id}"
+    path = f"/v1/runs/{new_run_id}/compare/{old_run_id}"
     headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {
         "aggregate_function": aggregate_function,
@@ -346,7 +425,103 @@ def getExperimentComparison(
     )
 
 
+def getExperimentComparisonLegacy(
+    api_config_override: Optional[APIConfig] = None,
+    *,
+    new_run_id: str,
+    old_run_id: str,
+    aggregate_function: Optional[str] = None,
+    filters: Optional[Union[str, List[Dict[str, Any]]]] = None,
+) -> GetExperimentRunCompareResponse:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/v1/runs/{new_run_id}/compare-with/{old_run_id}"
+    headers = api_config.get_default_headers()
+    query_params: Dict[str, Any] = {
+        "aggregate_function": aggregate_function,
+        "filters": filters,
+    }
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+        response = client.request(
+            "get",
+            httpx.URL(path),
+            headers=headers,
+            params=_serialize_query_params(query_params),
+        )
+
+    if response.status_code != 200:
+        raise HTTPException(
+            response.status_code,
+            f"getExperimentComparisonLegacy failed with status code: {response.status_code}",
+        )
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return (
+        GetExperimentRunCompareResponse(**body)
+        if body is not None
+        else GetExperimentRunCompareResponse()
+    )
+
+
 def getExperimentCompareEvents(
+    api_config_override: Optional[APIConfig] = None,
+    *,
+    new_run_id: str,
+    old_run_id: str,
+    event_name: Optional[str] = None,
+    event_type: Optional[str] = None,
+    filter: Optional[Union[str, Dict[str, Any]]] = None,
+    limit: Optional[int] = None,
+    page: Optional[int] = None,
+) -> GetExperimentCompareEventsResponse:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/v1/runs/{new_run_id}/compare/{old_run_id}/events"
+    headers = api_config.get_default_headers()
+    query_params: Dict[str, Any] = {
+        "event_name": event_name,
+        "event_type": event_type,
+        "filter": filter,
+        "limit": limit,
+        "page": page,
+    }
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+        response = client.request(
+            "get",
+            httpx.URL(path),
+            headers=headers,
+            params=_serialize_query_params(query_params),
+        )
+
+    if response.status_code != 200:
+        raise HTTPException(
+            response.status_code,
+            f"getExperimentCompareEvents failed with status code: {response.status_code}",
+        )
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return (
+        GetExperimentCompareEventsResponse(**body)
+        if body is not None
+        else GetExperimentCompareEventsResponse()
+    )
+
+
+def getExperimentCompareEventsLegacy(
     api_config_override: Optional[APIConfig] = None,
     *,
     run_id_1: str,
@@ -387,7 +562,7 @@ def getExperimentCompareEvents(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"getExperimentCompareEvents failed with status code: {response.status_code}",
+            f"getExperimentCompareEventsLegacy failed with status code: {response.status_code}",
         )
     else:
         body = None if 200 == 204 else response.json()

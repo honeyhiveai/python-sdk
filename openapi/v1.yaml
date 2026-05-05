@@ -2,6 +2,9 @@ openapi: 3.1.0
 info:
   title: HoneyHive API
   version: 1.1.0
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
 servers:
   - url: https://api.honeyhive.ai
 paths:
@@ -9,21 +12,18 @@ paths:
     post:
       summary: Start a new session
       operationId: startSession
+      x-cli-exclude: true
+      x-ts-sdk-exclude: true
       tags:
-        - Session
-      description: Start a new session. The session field should contain a JSON-encoded session object as a string.
+        - Sessions
+      description: |
+        Start a new session. The request body wraps the session event object under the `session` key, matching the pattern used by POST /events.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - session
-              properties:
-                session:
-                  type: string
-                  description: JSON-encoded session object containing session properties (session_id, project, session_name, source, user_properties, etc.)
+              $ref: '#/components/schemas/StartSessionRequest'
       responses:
         '200':
           description: Session successfully started
@@ -31,104 +31,55 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PostSessionStartResponse'
-  /v1/sessions/{session_id}:
-    get:
-      summary: Get session tree by session ID
-      operationId: getSession
-      description: Retrieve a complete session event tree including all nested events and metadata
-      tags:
-        - Sessions
-      parameters:
-        - name: session_id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-          description: Session ID (UUIDv4)
-      responses:
-        '200':
-          description: Session tree with nested events
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GetSessionResponse'
-        '400':
-          description: 'Missing required scope: org_id'
-        '404':
-          description: Session not found
-        '500':
-          description: Error fetching session
-    delete:
-      summary: Delete all events for a session
-      operationId: deleteSession
-      description: Delete all events associated with the given session ID from both events and aggregates tables
-      tags:
-        - Sessions
-      parameters:
-        - name: session_id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-          description: Session ID (UUIDv4)
-      responses:
-        '200':
-          description: Session deleted successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DeleteSessionResponse'
-        '400':
-          description: Invalid session ID or missing required scope
-        '500':
-          description: Error deleting session
-  /events:
+      x-honeyhive-plane: dp
+  /session/{session_id}/traces:
     post:
+      summary: Add traces to a session
+      operationId: addSessionTraces
+      x-cli-exclude: true
+      x-ts-sdk-exclude: true
       tags:
-        - Events
-      operationId: createEvent
-      summary: Create a new event
+        - Sessions
       description: |
-        Create a new event (span) within a session trace. The request body wraps the event in a JSON-encoded string under the `event` key.
-        **Required properties** within the JSON-encoded event string:
-        - `event_type` (string) — Must be one of: `chain`, `model`, `tool`, `session`.
-        - `inputs` (object) — Input data for the event.
-        **Auto-generated properties** (provided by the server when omitted):
-        - `event_id` (string, UUID) — Unique identifier for the event.
-        - `session_id` (string, UUID) — Session/trace identifier.
-        - `parent_id` (string, UUID) — Parent event ID. Defaults to `session_id`.
-        **Optional properties with defaults:**
-        - `event_name` (string) — Name of the event. Defaults to `"unknown"`.
-        - `source` (string) — Source of the event (e.g. `sdk-python`). Defaults to `"unknown"`.
-        **Optional properties:**
-        - `config` (object) — Configuration data (e.g. model parameters, prompt templates).
-        - `outputs` (object) — Output data from the event.
-        - `error` (string or null) — Error message if the event failed.
-        - `children_ids` (array of strings) — IDs of child events.
-        - `duration` (number) — Duration of the event in milliseconds.
-        - `start_time` (number) — Unix timestamp in milliseconds for event start.
-        - `end_time` (number) — Unix timestamp in milliseconds for event end.
-        - `metadata` (object) — Additional metadata (e.g. token counts, cost).
-        - `metrics` (object) — Custom metrics.
-        - `feedback` (object) — Feedback data (e.g. ratings, ground truth).
-        - `user_properties` (object) — User properties associated with the event.
+        Add trace events to an existing session. The field is named `logs` for legacy compatibility with the Go ingestion handler.
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Session ID to add traces to
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - event
-              properties:
-                event:
-                  type: string
-                  description: |
-                    JSON-encoded event object string. Must be valid JSON containing at minimum `event_type` (one of: `chain`, `model`, `tool`, `session`) and `inputs` (object). Fields like `event_id` and `session_id` are auto-generated if not provided.
-            example:
-              event: '{"event_type":"model","event_name":"llm_call","inputs":{"prompt":"hello"},"outputs":{"response":"hi"},"config":{"model":"gpt-4","temperature":0.7},"metadata":{"cost":0.00008,"completion_tokens":23,"prompt_tokens":35},"source":"sdk-python","duration":1500,"start_time":1700000000000,"end_time":1700000001500}'
+              $ref: '#/components/schemas/AddSessionTracesRequest'
+      responses:
+        '200':
+          description: Traces added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionTracesResponse'
+      x-honeyhive-plane: dp
+  /events:
+    post:
+      tags:
+        - Events
+      operationId: createEventLegacy
+      x-cli-exclude: true
+      x-ts-sdk-exclude: true
+      deprecated: true
+      summary: Create a new event (deprecated)
+      description: |
+        Deprecated. Use `POST /v1/events` instead. The legacy route wraps the event object under an `event` key; the v1 route accepts a bare event object.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LegacyPostEventRequest'
       responses:
         '200':
           description: Event created successfully
@@ -141,42 +92,23 @@ paths:
                 success: true
         '400':
           description: Bad request (invalid event data or missing required fields)
+      x-honeyhive-plane: dp
     put:
       tags:
         - Events
-      operationId: updateEvent
-      summary: Update an event
+      operationId: updateEventLegacy
+      x-cli-exclude: true
+      x-ts-sdk-exclude: true
+      deprecated: true
+      summary: Update an event (deprecated)
+      description: |
+        Deprecated. Use `PUT /v1/events/{event_id}` instead.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                event_id:
-                  type: string
-                metadata:
-                  type: object
-                  additionalProperties: true
-                feedback:
-                  type: object
-                  additionalProperties: true
-                metrics:
-                  type: object
-                  additionalProperties: true
-                outputs:
-                  type: object
-                  additionalProperties: true
-                config:
-                  type: object
-                  additionalProperties: true
-                user_properties:
-                  type: object
-                  additionalProperties: true
-                duration:
-                  type: number
-              required:
-                - event_id
+              $ref: '#/components/schemas/LegacyUpdateEventRequest'
             example:
               event_id: 7f22137a-6911-4ed3-bc36-110f1dde6b66
               metadata:
@@ -203,279 +135,49 @@ paths:
           description: Event updated
         '400':
           description: Bad request
-    get:
-      tags:
-        - Events
-      operationId: getEvents
-      summary: Query events with filters and projections
-      description: Retrieve events with optional filtering, projections, and pagination
-      parameters:
-        - name: dateRange
-          in: query
-          required: false
-          schema:
-            oneOf:
-              - type: string
-              - type: object
-                properties:
-                  $gte:
-                    type: string
-                    format: date-time
-                  $lte:
-                    type: string
-                    format: date-time
-          description: Date range filter (ISO string or object with $gte/$lte)
-        - name: filters
-          in: query
-          required: false
-          schema:
-            oneOf:
-              - type: array
-                items:
-                  type: object
-              - type: string
-          description: Array of filter objects or JSON string
-        - name: projections
-          in: query
-          required: false
-          schema:
-            oneOf:
-              - type: array
-                items:
-                  type: string
-              - type: string
-          description: Fields to include in response (array or JSON string)
-        - name: ignore_order
-          in: query
-          required: false
-          schema:
-            oneOf:
-              - type: boolean
-              - type: string
-          description: Whether to ignore ordering
-        - name: limit
-          in: query
-          required: false
-          schema:
-            oneOf:
-              - type: integer
-              - type: string
-          description: Maximum number of results (default 1000)
-        - name: page
-          in: query
-          required: false
-          schema:
-            oneOf:
-              - type: integer
-              - type: string
-          description: Page number (default 1)
-        - name: evaluation_id
-          in: query
-          required: false
-          schema:
-            type: string
-          description: Filter by evaluation ID
-      responses:
-        '200':
-          description: Events retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GetEventsResponse'
-        '400':
-          description: Bad request (missing required scopes or invalid parameters)
-  /v1/events/chart:
-    get:
-      tags:
-        - Events
-      operationId: getEventsChart
-      summary: Get charting data for events
-      description: Retrieve aggregated chart data for events with optional grouping and bucketing
-      parameters:
-        - name: dateRange
-          in: query
-          required: false
-          schema:
-            oneOf:
-              - type: string
-              - type: object
-                properties:
-                  $gte:
-                    type: string
-                    format: date-time
-                  $lte:
-                    type: string
-                    format: date-time
-          description: Date range filter (ISO string or object with $gte/$lte)
-        - name: filters
-          in: query
-          required: false
-          schema:
-            oneOf:
-              - type: array
-                items:
-                  type: object
-              - type: string
-          description: Array of filter objects or JSON string
-        - name: metric
-          in: query
-          required: false
-          schema:
-            type: string
-          description: Metric to aggregate (default 'duration')
-        - name: groupBy
-          in: query
-          required: false
-          schema:
-            type: string
-          description: Field to group by
-        - name: bucket
-          in: query
-          required: false
-          schema:
-            type: string
-            enum:
-              - minute
-              - minutes
-              - 1m
-              - hour
-              - hours
-              - 1h
-              - day
-              - days
-              - 1d
-              - week
-              - weeks
-              - 1w
-              - month
-              - months
-              - 1M
-          description: Time bucket for aggregation (default 'hour')
-        - name: aggregation
-          in: query
-          required: false
-          schema:
-            type: string
-            enum:
-              - avg
-              - average
-              - mean
-              - p50
-              - p75
-              - p90
-              - p95
-              - p99
-              - count
-              - sum
-              - min
-              - max
-              - median
-          description: Aggregation function (default 'average')
-        - name: evaluation_id
-          in: query
-          required: false
-          schema:
-            type: string
-          description: Filter by evaluation ID
-        - name: only_experiments
-          in: query
-          required: false
-          schema:
-            oneOf:
-              - type: boolean
-              - type: string
-          description: Filter to only experiment events
-      responses:
-        '200':
-          description: Chart data retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GetEventsChartResponse'
-        '400':
-          description: Bad request (missing required scopes or invalid parameters)
-  /v1/events/{id}:
-    get:
-      tags:
-        - Events
-      operationId: getEventsBySessionId
-      summary: Get nested events for a session
-      description: Retrieve all nested events for a specific session ID. The `id` parameter is interpreted as a session_id for this operation.
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-          description: Session ID (UUIDv4) - retrieves all events belonging to this session
-      responses:
-        '200':
-          description: Session events retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GetEventsBySessionIdResponse'
-        '400':
-          description: Bad request (missing required scopes or invalid session ID)
-    delete:
-      tags:
-        - Events
-      operationId: deleteEvent
-      summary: Delete an event
-      description: Delete a specific event by event ID. The `id` parameter is interpreted as an event_id for this operation.
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-          description: Event ID (UUIDv4) - the specific event to delete
-      responses:
-        '200':
-          description: Event deleted successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DeleteEventResponse'
-        '400':
-          description: Bad request (missing required scopes or invalid event ID)
-  /v1/events/export:
+      x-honeyhive-plane: dp
+  /v1/events:
     post:
       tags:
         - Events
-      operationId: exportEvents
-      summary: Retrieve events based on filters
+      operationId: createEvent
+      x-cli-name: create
+      x-ts-sdk-name: create
+      summary: Create a new event
+      description: |
+        Create a new event (span) within a session trace. The request body is a bare event object (no `event` wrapper).
+
+        **Required properties:**
+        - `event_type` (string) — Must be one of: `chain`, `model`, `tool`, `session`.
+        - `inputs` (object) — Input data for the event.
+        **Auto-generated properties** (provided by the server when omitted):
+        - `event_id` (string, UUID) — Unique identifier for the event.
+        - `session_id` (string, UUID) — Session/trace identifier.
+        - `parent_id` (string, UUID) — Parent event ID. Defaults to `session_id`.
+        **Optional properties with defaults:**
+        - `event_name` (string) — Name of the event. Defaults to `"unknown"`.
+        - `source` (string) — Source of the event (e.g. `sdk-python`). Defaults to `"unknown"`.
+        **Optional properties:**
+        - `config` (object) — Configuration data (e.g. model parameters, prompt templates).
+        - `outputs` (object) — Output data from the event.
+        - `error` (string or null) — Error message if the event failed.
+        - `children_ids` (array of strings) — IDs of child events.
+        - `duration` (number) — Duration of the event in milliseconds.
+        - `start_time` (number) — Unix timestamp in milliseconds for event start.
+        - `end_time` (number) — Unix timestamp in milliseconds for event end.
+        - `metadata` (object) — Additional metadata (e.g. token counts, cost).
+        - `metrics` (object) — Custom metrics.
+        - `feedback` (object) — Feedback data (e.g. ratings, ground truth).
+        - `user_properties` (object) — User properties associated with the event.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GetEventsLegacyRequest'
+              $ref: '#/components/schemas/PostEventRequest'
       responses:
         '200':
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GetEventsLegacyResponse'
-  /events/model:
-    post:
-      tags:
-        - Events
-      operationId: createModelEvent
-      summary: Create a new model event
-      description: Please refer to our instrumentation guide for detailed information
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PostModelEventRequest'
-      responses:
-        '200':
-          description: Model event created
+          description: Event created successfully
           content:
             application/json:
               schema:
@@ -483,13 +185,132 @@ paths:
               example:
                 event_id: 7f22137a-6911-4ed3-bc36-110f1dde6b66
                 success: true
-  /events/batch:
+        '400':
+          description: Bad request (invalid event data or missing required fields)
+      x-honeyhive-plane: dp
+  /v1/events/{event_id}:
+    put:
+      tags:
+        - Events
+      operationId: updateEvent
+      x-cli-name: update
+      x-ts-sdk-name: update
+      summary: Update an event
+      description: |
+        Update fields on an existing event. Only the provided fields are modified; omitted fields are left unchanged. Extra fields not listed below are accepted by the server but silently ignored.
+      parameters:
+        - in: path
+          name: event_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the event to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEventRequest'
+            example:
+              metadata:
+                cost: 0.00008
+                completion_tokens: 23
+                prompt_tokens: 35
+                total_tokens: 58
+              feedback:
+                rating: 5
+              metrics:
+                num_words: 2
+              outputs:
+                role: assistant
+                content: Hello world
+              config:
+                template:
+                  - role: system
+                    content: Hello, {{ name }}!
+              user_properties:
+                user_id: 691b1f94-d38c-4e92-b051-5e03fee9ff86
+              duration: 42
+      responses:
+        '200':
+          description: Event updated
+        '400':
+          description: Bad request
+      x-honeyhive-plane: dp
+  /v1/events/export:
+    post:
+      tags:
+        - Events
+      operationId: exportEventsLegacy
+      x-cli-exclude: true
+      x-ts-sdk-exclude: true
+      deprecated: true
+      summary: Retrieve events based on filters (deprecated)
+      description: |
+        Deprecated. Use `POST /v1/events/search` instead.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LegacyExportEventsRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportEventsResponse'
+      x-honeyhive-plane: dp
+  /v1/events/search:
+    post:
+      tags:
+        - Events
+      operationId: searchEvents
+      x-cli-name: search
+      x-ts-sdk-name: search
+      summary: Retrieve events based on filters
+      description: |
+        Search events via POST with filtering and pagination. This is the primary method for retrieving events from HoneyHive.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchEventsRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportEventsResponse'
+      x-honeyhive-plane: dp
+  /v1/events/batch:
     post:
       tags:
         - Events
       operationId: createEventBatch
+      x-cli-name: create-batch
+      x-ts-sdk-name: createBatch
       summary: Create a batch of events
-      description: Please refer to our instrumentation guide for detailed information
+      description: |
+        Create multiple events in a single request. When `single_session` is true, all events share the same session created from `session_properties`.
+
+        **Required properties:**
+        - `events` (array of event objects) — Each event must include
+          `event_type` (one of `chain`, `model`, `tool`, `session`) and `inputs`.
+
+        **Optional properties:**
+        - `single_session` (boolean) — If true, all events share a single session
+          created from `session_properties`. Defaults to false.
+
+        - `session_properties` (object) — Session metadata used when
+          `single_session` is true. May include `session_name`, `start_time`,
+          `metadata`.
+
+        Unknown top-level fields and per-event fields are rejected at the SDK boundary; the legacy aliases `is_single_session`, `session`, and per-event `project` are no longer accepted.
       requestBody:
         required: true
         content:
@@ -509,39 +330,81 @@ paths:
                   - 7f22137a-6911-4ed3-bc36-110f1dde6b67
                 session_id: caf77ace-3417-4da4-944d-f4a0688f3c23
                 success: true
+        '400':
+          description: Bad request (invalid event data or missing required fields)
         '500':
           description: Events partially created
+      x-honeyhive-plane: dp
+  /events/model:
+    post:
+      tags:
+        - Events
+      operationId: createModelEvent
+      x-cli-exclude: true
+      x-ts-sdk-exclude: true
+      summary: Create a new model event
+      description: |
+        Create a model event. The event_type is automatically set to 'model'. Please refer to our instrumentation guide for detailed information.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostModelEventRequest'
+      responses:
+        '200':
+          description: Model event created
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  event_ids:
-                    type: array
-                    items:
-                      type: string
-                  errors:
-                    type: array
-                    items:
-                      type: string
-                      description: Any failure messages for events that could not be created
-                  success:
-                    type: boolean
-                example:
-                  event_ids:
-                    - 7f22137a-6911-4ed3-bc36-110f1dde6b66
-                    - 7f22137a-6911-4ed3-bc36-110f1dde6b67
-                  errors:
-                    - Could not create event due to missing inputs
-                    - Could not create event due to missing source
-                  success: true
+                $ref: '#/components/schemas/PostEventResponse'
+              example:
+                event_id: 7f22137a-6911-4ed3-bc36-110f1dde6b66
+                success: true
+      x-honeyhive-plane: dp
+  /events/batch:
+    post:
+      tags:
+        - Events
+      operationId: createEventBatchLegacy
+      x-cli-exclude: true
+      x-ts-sdk-exclude: true
+      deprecated: true
+      summary: Create a batch of events (deprecated)
+      description: |
+        Deprecated. Use `POST /v1/events/batch` instead. The legacy route accepts the deprecated `is_single_session` and `session` aliases and lets per-event objects carry the deprecated `project` field; the v1 route rejects all three at the SDK boundary.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LegacyPostEventBatchRequest'
+      responses:
+        '200':
+          description: Events created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostEventBatchResponse'
+              example:
+                event_ids:
+                  - 7f22137a-6911-4ed3-bc36-110f1dde6b66
+                  - 7f22137a-6911-4ed3-bc36-110f1dde6b67
+                session_id: caf77ace-3417-4da4-944d-f4a0688f3c23
+                success: true
+        '500':
+          description: Events partially created
+      x-honeyhive-plane: dp
   /events/model/batch:
     post:
       tags:
         - Events
       operationId: createModelEventBatch
+      x-cli-exclude: true
+      x-ts-sdk-exclude: true
       summary: Create a batch of model events
-      description: Please refer to our instrumentation guide for detailed information
+      description: |
+        Create multiple model events in a single request. The event_type is automatically set to 'model' for all events. When single_session is true, all events share the same session. Please refer to our instrumentation guide for detailed information.
       requestBody:
         required: true
         content:
@@ -562,35 +425,14 @@ paths:
                 success: true
         '500':
           description: Model events partially created
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  event_ids:
-                    type: array
-                    items:
-                      type: string
-                  errors:
-                    type: array
-                    items:
-                      type: string
-                      description: Any failure messages for events that could not be created
-                  success:
-                    type: boolean
-                example:
-                  event_ids:
-                    - 7f22137a-6911-4ed3-bc36-110f1dde6b66
-                    - 7f22137a-6911-4ed3-bc36-110f1dde6b67
-                  errors:
-                    - Could not create event due to missing model
-                    - Could not create event due to missing provider
-                  success: true
+      x-honeyhive-plane: dp
   /v1/metrics:
     get:
       tags:
         - Metrics
       operationId: getMetrics
+      x-cli-name: list
+      x-ts-sdk-name: list
       summary: Get all metrics
       description: Retrieve a list of all metrics
       parameters:
@@ -608,17 +450,18 @@ paths:
           description: Filter by specific metric ID
       responses:
         '200':
-          description: A list of metrics
+          description: Metrics retrieved successfully
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/GetMetricsResponse'
+                $ref: '#/components/schemas/GetMetricsResponse'
+      x-honeyhive-plane: dp
     post:
       tags:
         - Metrics
       operationId: createMetric
+      x-cli-name: create
+      x-ts-sdk-name: create
       summary: Create a new metric
       description: Add a new metric
       requestBody:
@@ -634,18 +477,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CreateMetricResponse'
+      x-honeyhive-plane: dp
     put:
       tags:
         - Metrics
-      operationId: updateMetric
-      summary: Update an existing metric
-      description: Edit a metric
+      operationId: updateMetricLegacy
+      x-cli-exclude: true
+      x-ts-sdk-exclude: true
+      deprecated: true
+      summary: Update an existing metric (deprecated)
+      description: Deprecated. Use `PUT /v1/metrics/{metric_id}` instead.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateMetricRequest'
+              $ref: '#/components/schemas/LegacyUpdateMetricRequest'
       responses:
         '200':
           description: Metric updated successfully
@@ -653,12 +500,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UpdateMetricResponse'
+      x-honeyhive-plane: dp
     delete:
       tags:
         - Metrics
-      operationId: deleteMetric
-      summary: Delete a metric
-      description: Remove a metric
+      operationId: deleteMetricLegacy
+      x-cli-exclude: true
+      x-ts-sdk-exclude: true
+      deprecated: true
+      summary: Delete a metric (deprecated)
+      description: Deprecated. Use `DELETE /v1/metrics/{metric_id}` instead.
       parameters:
         - name: metric_id
           in: query
@@ -673,11 +524,67 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DeleteMetricResponse'
-  /v1/metrics/run_metric:
+      x-honeyhive-plane: dp
+  /v1/metrics/{metric_id}:
+    put:
+      tags:
+        - Metrics
+      operationId: updateMetric
+      x-cli-name: update
+      x-ts-sdk-name: update
+      summary: Update an existing metric
+      description: Update a metric's editable fields. Only fields included in the request body are modified.
+      parameters:
+        - in: path
+          name: metric_id
+          required: true
+          schema:
+            type: string
+          description: The unique identifier of the metric to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMetricRequest'
+      responses:
+        '200':
+          description: Metric updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateMetricResponse'
+      x-honeyhive-plane: dp
+    delete:
+      tags:
+        - Metrics
+      operationId: deleteMetric
+      x-cli-name: delete
+      x-ts-sdk-name: delete
+      summary: Delete a metric
+      description: Remove a metric by id.
+      parameters:
+        - in: path
+          name: metric_id
+          required: true
+          schema:
+            type: string
+          description: The unique identifier of the metric to delete
+      responses:
+        '200':
+          description: Metric deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteMetricResponse'
+      x-honeyhive-plane: dp
+  /v1/metrics/run:
     post:
       tags:
         - Metrics
       operationId: runMetric
+      x-cli-name: run
+      x-ts-sdk-name: run
       summary: Run a metric evaluation
       description: Execute a metric on a specific event
       requestBody:
@@ -693,12 +600,41 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RunMetricResponse'
+      x-honeyhive-plane: dp
+  /v1/metrics/run_metric:
+    post:
+      tags:
+        - Metrics
+      operationId: runMetricLegacy
+      deprecated: true
+      x-cli-exclude: true
+      x-ts-sdk-exclude: true
+      summary: Run a metric evaluation (deprecated)
+      description: Deprecated. Use `POST /v1/metrics/run` instead.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LegacyRunMetricRequest'
+      responses:
+        '200':
+          description: Metric execution result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunMetricResponse'
+      x-honeyhive-plane: dp
   /v1/datapoints:
     get:
       summary: Retrieve a list of datapoints
       operationId: getDatapoints
+      x-cli-name: list
+      x-ts-sdk-name: list
       tags:
         - Datapoints
+      description: |
+        Retrieve datapoints, optionally filtered by a list of datapoint IDs or dataset name.
       parameters:
         - name: datapoint_ids
           in: query
@@ -721,11 +657,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GetDatapointsResponse'
+      x-honeyhive-plane: dp
     post:
       summary: Create a new datapoint
       operationId: createDatapoint
+      x-cli-name: create
+      x-ts-sdk-name: create
       tags:
         - Datapoints
+      description: Create a single datapoint with inputs, history, ground truth, and metadata.
       requestBody:
         required: true
         content:
@@ -739,12 +679,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CreateDatapointResponse'
+      x-honeyhive-plane: dp
   /v1/datapoints/batch:
     post:
       summary: Create multiple datapoints in batch
       operationId: batchCreateDatapoints
+      x-cli-name: create-batch
+      x-ts-sdk-name: createBatch
       tags:
         - Datapoints
+      description: Create multiple datapoints from events using field mappings and optional filters.
       requestBody:
         required: true
         content:
@@ -758,14 +702,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BatchCreateDatapointsResponse'
-  /v1/datapoints/{id}:
+      x-honeyhive-plane: dp
+  /v1/datapoints/{datapoint_id}:
     get:
       summary: Retrieve a specific datapoint
       operationId: getDatapoint
+      x-cli-name: get
+      x-ts-sdk-name: get
       tags:
         - Datapoints
+      description: Get a single datapoint by its unique identifier.
       parameters:
-        - name: id
+        - name: datapoint_id
           in: path
           required: true
           schema:
@@ -776,23 +724,22 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  datapoint:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/GetDatapointResponse'
+                $ref: '#/components/schemas/GetDatapointResponse'
           description: Successful response
+      x-honeyhive-plane: dp
     put:
       summary: Update a specific datapoint
+      description: Update fields on an existing datapoint. Only the provided fields are modified.
       parameters:
-        - name: id
+        - name: datapoint_id
           in: path
           required: true
           schema:
             type: string
           description: ID of datapoint to update
       operationId: updateDatapoint
+      x-cli-name: update
+      x-ts-sdk-name: update
       tags:
         - Datapoints
       requestBody:
@@ -810,13 +757,17 @@ paths:
                 $ref: '#/components/schemas/UpdateDatapointResponse'
         '400':
           description: Error updating datapoint
+      x-honeyhive-plane: dp
     delete:
       summary: Delete a specific datapoint
       operationId: deleteDatapoint
+      x-cli-name: delete
+      x-ts-sdk-name: delete
       tags:
         - Datapoints
+      description: Permanently delete a datapoint by its unique identifier.
       parameters:
-        - name: id
+        - name: datapoint_id
           in: path
           required: true
           schema:
@@ -829,12 +780,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DeleteDatapointResponse'
+      x-honeyhive-plane: dp
   /v1/datasets:
     get:
       tags:
         - Datasets
       summary: Get datasets
       operationId: getDatasets
+      x-cli-name: list
+      x-ts-sdk-name: list
+      description: Retrieve datasets, optionally filtered by dataset ID or name.
       parameters:
         - in: query
           name: dataset_id
@@ -855,11 +810,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GetDatasetsResponse'
+      x-honeyhive-plane: dp
     post:
       tags:
         - Datasets
       operationId: createDataset
+      x-cli-name: create
+      x-ts-sdk-name: create
       summary: Create a dataset
+      description: Create a new dataset with an optional name, description, and initial set of datapoint IDs.
       requestBody:
         required: true
         content:
@@ -873,17 +832,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CreateDatasetResponse'
+      x-honeyhive-plane: dp
     put:
       tags:
         - Datasets
-      operationId: updateDataset
-      summary: Update a dataset
+      operationId: updateDatasetLegacy
+      x-cli-exclude: true
+      x-ts-sdk-exclude: true
+      deprecated: true
+      summary: Update a dataset (deprecated)
+      description: Deprecated. Use `PUT /v1/datasets/{dataset_id}` instead.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateDatasetRequest'
+              $ref: '#/components/schemas/LegacyUpdateDatasetRequest'
       responses:
         '200':
           description: Successful update
@@ -891,11 +855,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UpdateDatasetResponse'
+      x-honeyhive-plane: dp
     delete:
       tags:
         - Datasets
-      operationId: deleteDataset
-      summary: Delete a dataset
+      operationId: deleteDatasetLegacy
+      x-cli-exclude: true
+      x-ts-sdk-exclude: true
+      deprecated: true
+      summary: Delete a dataset (deprecated)
+      description: Deprecated. Use `DELETE /v1/datasets/{dataset_id}` instead.
       parameters:
         - in: query
           name: dataset_id
@@ -910,12 +879,70 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DeleteDatasetResponse'
+      x-honeyhive-plane: dp
+  /v1/datasets/{dataset_id}:
+    put:
+      tags:
+        - Datasets
+      operationId: updateDataset
+      x-cli-name: update
+      x-ts-sdk-name: update
+      summary: Update a dataset
+      description: Update a dataset's name, description, or list of datapoint IDs.
+      parameters:
+        - in: path
+          name: dataset_id
+          required: true
+          schema:
+            type: string
+          description: The unique identifier of the dataset to update like `663876ec4611c47f4970f0c3`
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDatasetRequest'
+      responses:
+        '200':
+          description: Successful update
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateDatasetResponse'
+      x-honeyhive-plane: dp
+    delete:
+      tags:
+        - Datasets
+      operationId: deleteDataset
+      x-cli-name: delete
+      x-ts-sdk-name: delete
+      summary: Delete a dataset
+      description: Permanently delete a dataset by its unique identifier.
+      parameters:
+        - in: path
+          name: dataset_id
+          required: true
+          schema:
+            type: string
+          description: The unique identifier of the dataset to be deleted like `663876ec4611c47f4970f0c3`
+      responses:
+        '200':
+          description: Successful delete
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteDatasetResponse'
+      x-honeyhive-plane: dp
   /v1/datasets/{dataset_id}/datapoints:
     post:
       tags:
         - Datasets
       summary: Add datapoints to a dataset
       operationId: addDatapoints
+      x-cli-name: add-datapoints
+      x-ts-sdk-name: addDatapoints
+      description: |
+        Add new datapoints to an existing dataset. Provide raw data objects and a field mapping that specifies which fields map to inputs, ground truth, and history.
       parameters:
         - in: path
           name: dataset_id
@@ -936,12 +963,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AddDatapointsResponse'
+      x-honeyhive-plane: dp
   /v1/datasets/{dataset_id}/datapoints/{datapoint_id}:
     delete:
       tags:
         - Datasets
       summary: Remove a datapoint from a dataset
       operationId: removeDatapoint
+      x-cli-name: remove-datapoint
+      x-ts-sdk-name: removeDatapoint
+      description: Remove a specific datapoint from a dataset. The datapoint itself is not deleted, only dereferenced from the dataset.
       parameters:
         - in: path
           name: dataset_id
@@ -962,79 +993,48 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RemoveDatapointResponse'
-  /v1/projects:
-    get:
-      tags:
-        - Projects
-      summary: Get a list of projects
-      operationId: getProjects
-      parameters:
-        - in: query
-          name: name
-          required: false
-          schema:
-            type: string
-          description: Filter projects by name
-      responses:
-        '200':
-          description: A list of projects
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GetProjectsResponse'
-    post:
-      tags:
-        - Projects
-      summary: Create a new project
-      operationId: createProject
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PostProjectRequest'
-      responses:
-        '200':
-          description: The created project
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PostProjectResponse'
-    put:
-      tags:
-        - Projects
-      summary: Update an existing project
-      operationId: updateProject
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PutProjectRequest'
-      responses:
-        '200':
-          description: Successfully updated the project
+      x-honeyhive-plane: dp
+  /v1/datasets/{dataset_id}/{datapoint_id}:
     delete:
       tags:
-        - Projects
-      summary: Delete a project
-      operationId: deleteProject
+        - Datasets
+      summary: Remove a datapoint from a dataset (deprecated)
+      operationId: removeDatapointLegacy
+      x-cli-exclude: true
+      x-ts-sdk-exclude: true
+      deprecated: true
+      description: Deprecated. Use `DELETE /v1/datasets/{dataset_id}/datapoints/{datapoint_id}` instead.
       parameters:
-        - in: query
-          name: name
+        - in: path
+          name: dataset_id
           required: true
           schema:
             type: string
+          description: The unique identifier of the dataset
+        - in: path
+          name: datapoint_id
+          required: true
+          schema:
+            type: string
+          description: The unique identifier of the datapoint to remove
       responses:
         '200':
-          description: Project deleted
-  /v1/runs/schema:
+          description: Datapoint successfully removed from dataset
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RemoveDatapointResponse'
+      x-honeyhive-plane: dp
+  /v1/events/schema:
     get:
-      summary: Get experiment runs schema
-      operationId: getExperimentRunsSchema
+      summary: Get events schema (deprecated)
+      operationId: getEventsSchemaLegacy
+      deprecated: true
+      x-cli-exclude: true
+      x-ts-sdk-exclude: true
       tags:
-        - Experiments
-      description: Retrieve the schema and metadata for experiment runs
+        - Events
+      description: Deprecated. Use `GET /v1/runs/{run_id}/schema` (single-run) or `GET /v1/runs/schema` (project-wide) instead.
       parameters:
         - in: query
           name: dateRange
@@ -1042,16 +1042,7 @@ paths:
           schema:
             oneOf:
               - type: string
-              - type: object
-                properties:
-                  $gte:
-                    oneOf:
-                      - type: string
-                      - type: number
-                  $lte:
-                    oneOf:
-                      - type: string
-                      - type: number
+              - $ref: '#/components/schemas/GetEventsSchemaLegacyDateRangeOneOf1'
           description: Filter by date range
         - in: query
           name: evaluation_id
@@ -1061,17 +1052,21 @@ paths:
           description: Filter by evaluation/run ID
       responses:
         '200':
-          description: Experiment runs schema retrieved successfully
+          description: Events schema retrieved successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GetExperimentRunsSchemaResponse'
+                $ref: '#/components/schemas/GetEventsSchemaResponse'
+      x-honeyhive-plane: dp
   /v1/runs:
     post:
       summary: Create a new evaluation run
       operationId: createRun
+      x-cli-name: create-run
+      x-ts-sdk-name: createRun
       tags:
         - Experiments
+      description: Create a new experiment run to track an evaluation against a dataset.
       requestBody:
         required: true
         content:
@@ -1087,11 +1082,16 @@ paths:
                 $ref: '#/components/schemas/PostExperimentRunResponse'
         '400':
           description: Invalid input
+      x-honeyhive-plane: dp
     get:
       summary: Get a list of evaluation runs
       operationId: getRuns
+      x-cli-name: list-runs
+      x-ts-sdk-name: listRuns
       tags:
         - Experiments
+      description: |
+        List experiment runs with optional filtering by dataset, status, name, date range, and specific run IDs. Results are paginated and sortable.
       parameters:
         - in: query
           name: dataset_id
@@ -1148,16 +1148,7 @@ paths:
           schema:
             oneOf:
               - type: string
-              - type: object
-                properties:
-                  $gte:
-                    oneOf:
-                      - type: string
-                      - type: number
-                  $lte:
-                    oneOf:
-                      - type: string
-                      - type: number
+              - $ref: '#/components/schemas/GetRunsDateRangeOneOf1'
           description: Filter by date range
         - in: query
           name: sort_by
@@ -1190,18 +1181,51 @@ paths:
                 $ref: '#/components/schemas/GetExperimentRunsResponse'
         '400':
           description: Error fetching evaluations
+      x-honeyhive-plane: dp
+  /v1/runs/schema:
+    get:
+      summary: Get events schema across all experiment runs in a project
+      operationId: getRunsSchema
+      x-cli-name: get-runs-schema
+      x-ts-sdk-name: getRunsSchema
+      tags:
+        - Experiments
+      description: Retrieve the aggregated events schema (fields, datasets, mappings) across all experiment runs in the project.
+      parameters:
+        - in: query
+          name: dateRange
+          required: false
+          schema:
+            oneOf:
+              - type: string
+              - $ref: '#/components/schemas/GetRunsSchemaDateRangeOneOf1'
+          description: Filter by date range
+      responses:
+        '200':
+          description: Events schema retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetEventsSchemaResponse'
+        '400':
+          description: Error fetching events schema
+      x-honeyhive-plane: dp
   /v1/runs/{run_id}:
     get:
       summary: Get details of an evaluation run
       operationId: getRun
+      x-cli-name: get-run
+      x-ts-sdk-name: getRun
       tags:
         - Experiments
+      description: Retrieve the full details of a single experiment run by its run ID.
       parameters:
         - in: path
           name: run_id
           required: true
           schema:
             type: string
+            format: uuid
       responses:
         '200':
           description: Successful response
@@ -1211,17 +1235,22 @@ paths:
                 $ref: '#/components/schemas/GetExperimentRunResponse'
         '400':
           description: Error fetching evaluation
+      x-honeyhive-plane: dp
     put:
       summary: Update an evaluation run
       operationId: updateRun
+      x-cli-name: update-run
+      x-ts-sdk-name: updateRun
       tags:
         - Experiments
+      description: Update fields on an existing experiment run such as name, status, metadata, or results.
       parameters:
         - in: path
           name: run_id
           required: true
           schema:
             type: string
+            format: uuid
       requestBody:
         required: true
         content:
@@ -1237,17 +1266,22 @@ paths:
                 $ref: '#/components/schemas/PutExperimentRunResponse'
         '400':
           description: Invalid input
+      x-honeyhive-plane: dp
     delete:
       summary: Delete an evaluation run
       operationId: deleteRun
+      x-cli-name: delete-run
+      x-ts-sdk-name: deleteRun
       tags:
         - Experiments
+      description: Permanently delete an experiment run by its run ID.
       parameters:
         - in: path
           name: run_id
           required: true
           schema:
             type: string
+            format: uuid
       responses:
         '200':
           description: Successful response
@@ -1257,10 +1291,48 @@ paths:
                 $ref: '#/components/schemas/DeleteExperimentRunResponse'
         '400':
           description: Error deleting evaluation
+      x-honeyhive-plane: dp
+  /v1/runs/{run_id}/schema:
+    get:
+      summary: Get events schema for a single experiment run
+      operationId: getRunSchema
+      x-cli-name: get-run-schema
+      x-ts-sdk-name: getRunSchema
+      tags:
+        - Experiments
+      description: Retrieve the events schema (fields, datasets, mappings) for a single experiment run.
+      parameters:
+        - name: run_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Experiment run ID (UUIDv4)
+        - in: query
+          name: dateRange
+          required: false
+          schema:
+            oneOf:
+              - type: string
+              - $ref: '#/components/schemas/GetRunSchemaDateRangeOneOf1'
+          description: Filter by date range
+      responses:
+        '200':
+          description: Events schema retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetEventsSchemaResponse'
+        '400':
+          description: Error fetching events schema
+      x-honeyhive-plane: dp
   /v1/runs/{run_id}/metrics:
     get:
       summary: Get event metrics for an experiment run
       operationId: getExperimentRunMetrics
+      x-cli-name: get-run-metrics
+      x-ts-sdk-name: getRunMetrics
       tags:
         - Experiments
       description: Retrieve event metrics from ClickHouse for a specific experiment run
@@ -1294,22 +1366,19 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  events:
-                    type: array
-                    items:
-                      type: object
-                    description: Array of event objects with metrics
+                $ref: '#/components/schemas/GetExperimentRunMetricsResponse'
         '400':
           description: Error fetching event metrics
+      x-honeyhive-plane: dp
   /v1/runs/{run_id}/result:
     get:
       summary: Retrieve experiment result
       operationId: getExperimentResult
+      x-cli-exclude: true
+      x-ts-sdk-exclude: true
       tags:
         - Experiments
-      description: Compute evaluation summary for an experiment run including pass/fail status, metrics, and datapoints
+      description: 'Compute evaluation summary for an experiment run: pass/fail results, metric aggregations, per-datapoint results, event details, and the experiment run object.'
       parameters:
         - name: run_id
           in: path
@@ -1354,10 +1423,13 @@ paths:
                 $ref: '#/components/schemas/GetExperimentRunResultResponse'
         '400':
           description: Error processing experiment result
-  /v1/runs/{new_run_id}/compare-with/{old_run_id}:
+      x-honeyhive-plane: dp
+  /v1/runs/{new_run_id}/compare/{old_run_id}:
     get:
       summary: Retrieve experiment comparison
       operationId: getExperimentComparison
+      x-cli-name: compare-runs
+      x-ts-sdk-name: compareRuns
       tags:
         - Experiments
       description: Compare metrics and results between two experiment runs
@@ -1412,13 +1484,139 @@ paths:
                 $ref: '#/components/schemas/GetExperimentRunCompareResponse'
         '400':
           description: Error processing experiment comparison
-  /v1/runs/compare/events:
+      x-honeyhive-plane: dp
+  /v1/runs/{new_run_id}/compare-with/{old_run_id}:
+    get:
+      summary: Retrieve experiment comparison (deprecated)
+      operationId: getExperimentComparisonLegacy
+      deprecated: true
+      x-cli-exclude: true
+      x-ts-sdk-exclude: true
+      tags:
+        - Experiments
+      description: Deprecated. Use `GET /v1/runs/{new_run_id}/compare/{old_run_id}` instead.
+      parameters:
+        - name: new_run_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: New experiment run ID to compare (UUIDv4)
+        - name: old_run_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Old experiment run ID to compare against (UUIDv4)
+        - name: aggregate_function
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Aggregation function to apply to metrics
+        - name: filters
+          in: query
+          required: false
+          schema:
+            oneOf:
+              - type: string
+              - type: array
+                items:
+                  type: object
+          description: Optional filters to apply (JSON string or array of filter objects)
+      responses:
+        '200':
+          description: Experiment comparison retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetExperimentRunCompareResponse'
+        '400':
+          description: Error processing experiment comparison
+      x-honeyhive-plane: dp
+  /v1/runs/{new_run_id}/compare/{old_run_id}/events:
     get:
       summary: Compare events between two experiment runs
       operationId: getExperimentCompareEvents
+      x-cli-name: compare-run-events
+      x-ts-sdk-name: compareRunEvents
       tags:
         - Experiments
       description: Retrieve and compare events between two experiment runs for detailed analysis
+      parameters:
+        - name: new_run_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: New experiment run ID (UUIDv4)
+        - name: old_run_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Old experiment run ID to compare against (UUIDv4)
+        - name: event_name
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by event name
+        - name: event_type
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by event type
+        - name: filter
+          in: query
+          required: false
+          schema:
+            oneOf:
+              - type: string
+              - type: object
+          description: Additional filter criteria (JSON string or object)
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 1000
+          description: Maximum number of results
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
+      responses:
+        '200':
+          description: Event comparison retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetExperimentCompareEventsResponse'
+        '400':
+          description: Error fetching event comparison
+      x-honeyhive-plane: dp
+  /v1/runs/compare/events:
+    get:
+      summary: Compare events between two experiment runs (deprecated)
+      operationId: getExperimentCompareEventsLegacy
+      deprecated: true
+      x-cli-exclude: true
+      x-ts-sdk-exclude: true
+      tags:
+        - Experiments
+      description: Deprecated. Use `GET /v1/runs/{new_run_id}/compare/{old_run_id}/events` instead.
       parameters:
         - name: run_id_1
           in: query
@@ -1477,30 +1675,153 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  events:
-                    type: array
-                    items:
-                      type: object
-                    description: Array of matched event pairs from both runs
-                  pagination:
-                    type: object
-                    properties:
-                      page:
-                        type: integer
-                      limit:
-                        type: integer
-                      total:
-                        type: integer
+                $ref: '#/components/schemas/GetExperimentCompareEventsResponse'
         '400':
           description: Error fetching event comparison
+      x-honeyhive-plane: dp
+  /v1/queues:
+    get:
+      tags:
+        - Queues
+      operationId: getQueues
+      x-cli-name: list
+      x-ts-sdk-name: list
+      summary: List annotation queues
+      description: |
+        List annotation queues for the current project scope, optionally filtered by enabled status.
+      parameters:
+        - name: enabled
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: Filter by enabled status
+      responses:
+        '200':
+          description: Queues retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetAnnotationQueuesResponse'
+      x-honeyhive-plane: dp
+    post:
+      tags:
+        - Queues
+      operationId: createQueue
+      x-cli-name: create
+      x-ts-sdk-name: create
+      summary: Create an annotation queue
+      description: |
+        Create a new annotation queue with a name, optional description, filters, and an initial set of event IDs to add.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAnnotationQueueRequest'
+      responses:
+        '201':
+          description: Queue created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateAnnotationQueueResponse'
+        '400':
+          description: Bad request (invalid queue data or missing required fields)
+      x-honeyhive-plane: dp
+  /v1/queues/{queue_id}:
+    get:
+      tags:
+        - Queues
+      operationId: getQueue
+      x-cli-name: get
+      x-ts-sdk-name: get
+      summary: Get an annotation queue
+      description: Retrieve a single annotation queue by its unique identifier.
+      parameters:
+        - name: queue_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Annotation queue ID
+      responses:
+        '200':
+          description: Queue retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetAnnotationQueueByIdResponse'
+        '404':
+          description: Queue not found
+      x-honeyhive-plane: dp
+    put:
+      tags:
+        - Queues
+      operationId: updateQueue
+      x-cli-name: update
+      x-ts-sdk-name: update
+      summary: Update an annotation queue
+      description: |
+        Update fields on an existing annotation queue. Supports updating name, description, filters, enabled status, and adding/removing events.
+      parameters:
+        - name: queue_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Annotation queue ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAnnotationQueueRequest'
+      responses:
+        '200':
+          description: Queue updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateAnnotationQueueResponse'
+        '404':
+          description: Queue not found
+      x-honeyhive-plane: dp
+    delete:
+      tags:
+        - Queues
+      operationId: deleteQueue
+      x-cli-name: delete
+      x-ts-sdk-name: delete
+      summary: Delete an annotation queue
+      description: Soft-delete an annotation queue by its unique identifier.
+      parameters:
+        - name: queue_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Annotation queue ID
+      responses:
+        '200':
+          description: Queue deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteAnnotationQueueResponse'
+        '404':
+          description: Queue not found
+      x-honeyhive-plane: dp
   /v1/configurations:
     get:
       summary: Retrieve a list of configurations
       operationId: getConfigurations
+      x-cli-exclude: true
+      x-ts-sdk-exclude: true
+      deprecated: true
       tags:
         - Configurations
+      description: List configurations with optional filtering by name, environment, and tags.
       parameters:
         - name: name
           in: query
@@ -1522,18 +1843,21 @@ paths:
           description: Tags to filter configurations
       responses:
         '200':
-          description: An array of configurations
+          description: Configurations retrieved successfully
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/GetConfigurationsResponse'
+                $ref: '#/components/schemas/GetConfigurationsResponse'
+      x-honeyhive-plane: dp
     post:
       summary: Create a new configuration
       operationId: createConfiguration
+      x-cli-exclude: true
+      x-ts-sdk-exclude: true
+      deprecated: true
       tags:
         - Configurations
+      description: Create a new LLM or pipeline configuration with provider, parameters, and environment settings.
       requestBody:
         required: true
         content:
@@ -1547,14 +1871,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CreateConfigurationResponse'
-  /v1/configurations/{id}:
+      x-honeyhive-plane: dp
+  /v1/configurations/{configId}:
     put:
       summary: Update an existing configuration
       operationId: updateConfiguration
+      x-cli-exclude: true
+      x-ts-sdk-exclude: true
+      deprecated: true
       tags:
         - Configurations
+      description: Update an existing configuration's name, provider, parameters, environment, or tags.
       parameters:
-        - name: id
+        - name: configId
           in: path
           required: true
           schema:
@@ -1573,13 +1902,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UpdateConfigurationResponse'
+      x-honeyhive-plane: dp
     delete:
       summary: Delete a configuration
       operationId: deleteConfiguration
+      x-cli-exclude: true
+      x-ts-sdk-exclude: true
+      deprecated: true
       tags:
         - Configurations
+      description: Permanently delete a configuration by its unique identifier.
       parameters:
-        - name: id
+        - name: configId
           in: path
           required: true
           schema:
@@ -1592,6 +1926,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DeleteConfigurationResponse'
+      x-honeyhive-plane: dp
 components:
   schemas:
     SelectedFunction:
@@ -1682,7 +2017,6 @@ components:
           enum:
             - LLM
             - pipeline
-          default: LLM
         provider:
           type: string
         parameters:
@@ -1715,6 +2049,7 @@ components:
       required:
         - id
         - name
+        - type
         - provider
         - parameters
         - env
@@ -1759,6 +2094,7 @@ components:
         - provider
         - parameters
       additionalProperties: false
+      description: Request body for POST /configurations
     UpdateConfigurationRequest:
       type: object
       properties:
@@ -1796,16 +2132,21 @@ components:
       required:
         - name
       additionalProperties: false
+      description: Request body for PUT /configurations
     GetConfigurationsQuery:
       type: object
       properties:
         name:
           type: string
           maxLength: 200
+          description: Filter configurations by name
         env:
           type: string
+          description: Filter configurations by environment
         tags:
           type: string
+          description: Filter configurations by tags
+      description: Query parameters for GET /configurations
     CreateConfigurationResponse:
       type: object
       properties:
@@ -1817,6 +2158,7 @@ components:
       required:
         - acknowledged
         - insertedId
+      description: Response for POST /configurations
     UpdateConfigurationResponse:
       type: object
       properties:
@@ -1825,7 +2167,9 @@ components:
         modifiedCount:
           type: number
         upsertedId:
-          type: 'null'
+          type:
+            - string
+            - 'null'
         upsertedCount:
           type: number
         matchedCount:
@@ -1836,6 +2180,7 @@ components:
         - upsertedId
         - upsertedCount
         - matchedCount
+      description: Response for PUT /configurations
     DeleteConfigurationResponse:
       type: object
       properties:
@@ -1846,10 +2191,17 @@ components:
       required:
         - acknowledged
         - deletedCount
+      description: Response for DELETE /configurations
     GetConfigurationsResponse:
-      type: array
-      items:
-        $ref: '#/components/schemas/ConfigurationItem'
+      type: object
+      properties:
+        configurations:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConfigurationItem'
+      required:
+        - configurations
+      description: Response for GET /configurations
     DatapointMapping:
       type: object
       properties:
@@ -1888,25 +2240,21 @@ components:
         inputs:
           type: object
           additionalProperties: {}
-          default: {}
         history:
           type: array
           items:
             type: object
             additionalProperties: {}
-            default: {}
         ground_truth:
           type:
             - object
             - 'null'
           additionalProperties: {}
-          default: {}
         metadata:
           type:
             - object
             - 'null'
           additionalProperties: {}
-          default: {}
         linked_event:
           anyOf:
             - type: string
@@ -1921,7 +2269,10 @@ components:
             type: string
       required:
         - id
+        - inputs
         - history
+        - ground_truth
+        - metadata
         - linked_event
         - created_at
     GetDatapointsQuery:
@@ -1932,18 +2283,23 @@ components:
           items:
             type: string
             minLength: 1
+          description: List of datapoint IDs to fetch
         dataset_name:
           type: string
           maxLength: 200
+          description: Dataset name to filter by
       additionalProperties: false
+      description: Query parameters for GET /datapoints
     GetDatapointParams:
       type: object
       properties:
-        id:
+        datapoint_id:
           type: string
           minLength: 1
+          description: Unique identifier of the datapoint
       required:
-        - id
+        - datapoint_id
+      description: Path parameters for GET /datapoints/{datapoint_id}
     CreateDatapointRequest:
       type: object
       properties:
@@ -1956,16 +2312,13 @@ components:
           items:
             type: object
             additionalProperties: {}
-            default: {}
           default: []
         ground_truth:
           type: object
           additionalProperties: {}
-          default: {}
         metadata:
           type: object
           additionalProperties: {}
-          default: {}
         linked_event:
           type: string
         linked_datasets:
@@ -1974,27 +2327,24 @@ components:
             type: string
             minLength: 1
           default: []
+      description: Request body for POST /datapoints
     UpdateDatapointRequest:
       type: object
       properties:
         inputs:
           type: object
           additionalProperties: {}
-          default: {}
         history:
           type: array
           items:
             type: object
             additionalProperties: {}
-            default: {}
         ground_truth:
           type: object
           additionalProperties: {}
-          default: {}
         metadata:
           type: object
           additionalProperties: {}
-          default: {}
         linked_event:
           type: string
         linked_datasets:
@@ -2002,6 +2352,7 @@ components:
           items:
             type: string
             minLength: 1
+      description: Request body for PUT /datapoints/{datapoint_id}
     UpdateDatapointParams:
       type: object
       properties:
@@ -2010,6 +2361,7 @@ components:
           minLength: 1
       required:
         - datapoint_id
+      description: Path parameters for PUT /datapoints/{datapoint_id}
     DeleteDatapointParams:
       type: object
       properties:
@@ -2018,6 +2370,7 @@ components:
           minLength: 1
       required:
         - datapoint_id
+      description: Path parameters for DELETE /datapoints/{datapoint_id}
     BatchCreateDatapointsRequest:
       type: object
       properties:
@@ -2026,18 +2379,18 @@ components:
           items:
             type: string
             minLength: 1
+          deprecated: true
         mapping:
           $ref: '#/components/schemas/DatapointMapping'
+          deprecated: true
         filters:
           anyOf:
             - type: object
               additionalProperties: {}
-              default: {}
             - type: array
               items:
                 type: object
                 additionalProperties: {}
-                default: {}
         dateRange:
           $ref: '#/components/schemas/BatchDateRange'
         checkState:
@@ -2047,6 +2400,7 @@ components:
         dataset_id:
           type: string
           minLength: 1
+      description: Request body for POST /datapoints/batch
     GetDatapointsResponse:
       type: object
       properties:
@@ -2056,6 +2410,7 @@ components:
             $ref: '#/components/schemas/Datapoint'
       required:
         - datapoints
+      description: Response for GET /datapoints
     GetDatapointResponse:
       type: object
       properties:
@@ -2065,39 +2420,29 @@ components:
             $ref: '#/components/schemas/Datapoint'
       required:
         - datapoint
+      description: Response for GET /datapoints/{datapoint_id}
     CreateDatapointResponse:
       type: object
       properties:
         inserted:
           type: boolean
         result:
-          type: object
-          properties:
-            insertedIds:
-              type: array
-              items:
-                type: string
-                minLength: 1
-          required:
-            - insertedIds
+          $ref: '#/components/schemas/CreateDatapointResponseResult'
       required:
         - inserted
         - result
+      description: Response for POST /datapoints
     UpdateDatapointResponse:
       type: object
       properties:
         updated:
           type: boolean
         result:
-          type: object
-          properties:
-            modifiedCount:
-              type: number
-          required:
-            - modifiedCount
+          $ref: '#/components/schemas/UpdateDatapointResponseResult'
       required:
         - updated
         - result
+      description: Response for PUT /datapoints/{datapoint_id}
     DeleteDatapointResponse:
       type: object
       properties:
@@ -2105,6 +2450,7 @@ components:
           type: boolean
       required:
         - deleted
+      description: Response for DELETE /datapoints/{datapoint_id}
     BatchCreateDatapointsResponse:
       type: object
       properties:
@@ -2118,6 +2464,7 @@ components:
       required:
         - inserted
         - insertedIds
+      description: Response for POST /datapoints/batch
     Dataset:
       type: object
       properties:
@@ -2136,7 +2483,6 @@ components:
           items:
             type: string
             minLength: 1
-          default: []
         created_at:
           type: string
         updated_at:
@@ -2144,6 +2490,7 @@ components:
       required:
         - id
         - name
+        - datapoints
     CreateDatasetRequest:
       type: object
       properties:
@@ -2151,40 +2498,82 @@ components:
           type: string
           maxLength: 200
           default: Untitled Dataset
+          description: Name of the dataset
         description:
           type: string
+          description: Description of the dataset
         datapoints:
           type: array
           items:
             type: string
             minLength: 1
           default: []
+          description: Initial datapoint IDs to include
+      description: Request body for POST /datasets
     UpdateDatasetRequest:
       type: object
       properties:
-        dataset_id:
-          type: string
-          minLength: 1
         name:
           type: string
           maxLength: 200
+          description: New dataset name
         description:
           type: string
+          description: New dataset description
         datapoints:
           type: array
           items:
             type: string
             minLength: 1
-      required:
-        - dataset_id
-    DeleteDatasetQuery:
+          description: Updated list of datapoint IDs
+      additionalProperties: false
+      description: Request body for PUT /datasets/{dataset_id}
+    LegacyUpdateDatasetRequest:
       type: object
       properties:
         dataset_id:
           type: string
           minLength: 1
+          description: Unique identifier of the dataset to update
+        name:
+          type: string
+          maxLength: 200
+          description: New dataset name
+        description:
+          type: string
+          description: New dataset description
+        datapoints:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          description: Updated list of datapoint IDs
       required:
         - dataset_id
+      description: Request body for PUT /datasets (deprecated — use PUT /datasets/{dataset_id})
+      deprecated: true
+    DeleteDatasetParams:
+      type: object
+      properties:
+        dataset_id:
+          type: string
+          minLength: 1
+          description: Unique identifier of the dataset to delete
+      required:
+        - dataset_id
+      additionalProperties: false
+      description: Path parameters for DELETE /datasets/{dataset_id}
+    LegacyDeleteDatasetQuery:
+      type: object
+      properties:
+        dataset_id:
+          type: string
+          minLength: 1
+          description: Unique identifier of the dataset to delete
+      required:
+        - dataset_id
+      description: Query parameters for DELETE /datasets (deprecated — use DELETE /datasets/{dataset_id})
+      deprecated: true
     AddDatapointsToDatasetRequest:
       type: object
       properties:
@@ -2193,25 +2582,47 @@ components:
           items:
             type: object
             additionalProperties: {}
-            default: {}
           minItems: 1
+          description: Array of datapoint data objects to add
         mapping:
           $ref: '#/components/schemas/DatapointMapping'
+          description: Field mapping for inputs, ground truth, and history
       required:
         - data
         - mapping
+      description: Request body for POST /datasets/{dataset_id}/datapoints
     RemoveDatapointFromDatasetParams:
       type: object
       properties:
         dataset_id:
           type: string
           minLength: 1
+          description: Unique identifier of the dataset
         datapoint_id:
           type: string
           minLength: 1
+          description: Unique identifier of the datapoint to remove
       required:
         - dataset_id
         - datapoint_id
+      additionalProperties: false
+      description: Path parameters for DELETE /datasets/{dataset_id}/datapoints/{datapoint_id}
+    LegacyRemoveDatapointFromDatasetParams:
+      type: object
+      properties:
+        dataset_id:
+          type: string
+          minLength: 1
+          description: Unique identifier of the dataset
+        datapoint_id:
+          type: string
+          minLength: 1
+          description: Unique identifier of the datapoint to remove
+      required:
+        - dataset_id
+        - datapoint_id
+      description: Path parameters for DELETE /datasets/{dataset_id}/{datapoint_id} (deprecated — use DELETE /datasets/{dataset_id}/datapoints/{datapoint_id})
+      deprecated: true
     CreateDatasetResponse:
       type: object
       properties:
@@ -2222,6 +2633,7 @@ components:
       required:
         - inserted
         - result
+      description: Response for POST /datasets
     InsertResult:
       type: object
       properties:
@@ -2237,6 +2649,7 @@ components:
           $ref: '#/components/schemas/Dataset'
       required:
         - result
+      description: Response for PUT /datasets
     GetDatasetsResponse:
       type: object
       properties:
@@ -2246,6 +2659,7 @@ components:
             $ref: '#/components/schemas/Dataset'
       required:
         - datasets
+      description: Response for GET /datasets
     DeleteDatasetResponse:
       type: object
       properties:
@@ -2253,6 +2667,7 @@ components:
           $ref: '#/components/schemas/DeleteResult'
       required:
         - result
+      description: Response for DELETE /datasets
     DeleteResult:
       type: object
       properties:
@@ -2274,6 +2689,7 @@ components:
       required:
         - inserted
         - datapoint_ids
+      description: Response for POST /datasets/{dataset_id}/datapoints
     RemoveDatapointResponse:
       type: object
       properties:
@@ -2284,49 +2700,25 @@ components:
       required:
         - dereferenced
         - message
-    FilterFieldType:
-      type: string
-      enum:
-        - string
-        - number
-        - boolean
-        - datetime
+      description: Response for DELETE /datasets/{dataset_id}/datapoints/{datapoint_id}
     SingleFilter:
       type: object
       properties:
         field:
           type: string
         operator:
-          anyOf:
-            - type: string
-              enum:
-                - exists
-                - not exists
-                - is
-                - is not
-                - contains
-                - not contains
-            - type: string
-              enum:
-                - exists
-                - not exists
-                - is
-                - is not
-                - greater than
-                - less than
-            - type: string
-              enum:
-                - exists
-                - not exists
-                - is
-            - type: string
-              enum:
-                - exists
-                - not exists
-                - is
-                - is not
-                - after
-                - before
+          type: string
+          enum:
+            - exists
+            - not exists
+            - is
+            - is not
+            - contains
+            - not contains
+            - greater than
+            - less than
+            - after
+            - before
         value:
           anyOf:
             - type: string
@@ -2334,7 +2726,12 @@ components:
             - type: boolean
             - type: 'null'
         type:
-          $ref: '#/components/schemas/FilterFieldType'
+          type: string
+          enum:
+            - string
+            - number
+            - boolean
+            - datetime
       required:
         - field
         - operator
@@ -2344,6 +2741,46 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/SingleFilter'
+    EventSearchFilter:
+      type: object
+      properties:
+        field:
+          type: string
+        operator:
+          type: string
+          enum:
+            - exists
+            - not exists
+            - is
+            - is not
+            - contains
+            - not contains
+            - greater than
+            - less than
+            - after
+            - before
+        value:
+          anyOf:
+            - type: string
+            - type: number
+            - type: boolean
+            - type: 'null'
+        type:
+          type: string
+          enum:
+            - string
+            - number
+            - boolean
+            - datetime
+      required:
+        - field
+        - operator
+        - value
+      additionalProperties: false
+    EventSearchFiltersArray:
+      type: array
+      items:
+        $ref: '#/components/schemas/EventSearchFilter'
     Event:
       type: object
       properties:
@@ -2364,20 +2801,20 @@ components:
           type: object
           additionalProperties: {}
         feedback:
-          type: object
-          properties:
-            ground_truth: {}
+          $ref: '#/components/schemas/EventFeedback'
       required:
         - event_id
         - project_id
         - tenant
       additionalProperties: {}
+      description: Minimal event object used by evaluation and session endpoints; permissive (passthrough)
     LegacyEvent:
       type: object
       properties:
         project:
           type: string
-          description: Project name
+          deprecated: true
+          description: Project name (ignored by server — project is determined from API key scope)
         project_id:
           type: string
           description: Project ID
@@ -2394,56 +2831,207 @@ components:
             - tool
             - chain
             - session
+          description: Type of event (model, tool, chain, or session)
         event_id:
           type: string
+          description: Unique event identifier
         session_id:
           type: string
+          description: Session this event belongs to
         parent_id:
           type: string
+          description: Parent event ID in the trace hierarchy
         children_ids:
           type: array
           items:
             type: string
+          description: Child event IDs in the trace hierarchy
         config:
           type: object
           additionalProperties: {}
+          description: Configuration used for this event
         inputs:
           type: object
           additionalProperties: {}
+          description: Input data for the event
         outputs:
           type: object
           additionalProperties: {}
+          description: Output data from the event
         error:
           type:
             - string
             - 'null'
+          description: Error message if the event failed
         start_time:
           type: number
+          description: Event start time as Unix milliseconds
         end_time:
           type: number
+          description: Event end time as Unix milliseconds
         duration:
           type: number
+          description: Event duration in milliseconds
         metadata:
           type: object
           additionalProperties: {}
+          description: Arbitrary metadata for the event
         feedback:
           type: object
           additionalProperties: {}
+          description: Feedback data associated with the event
         metrics:
           type: object
           additionalProperties: {}
+          description: Metric values computed for the event
         user_properties:
           type: object
           additionalProperties: {}
-      required:
-        - project
+          description: User properties associated with the event
       additionalProperties: {}
       description: Full event object for legacy event creation endpoints
+    ModelEvent:
+      type: object
+      properties:
+        project:
+          type: string
+          deprecated: true
+          description: Project name (ignored by server — project is determined from API key scope)
+        project_id:
+          type: string
+          description: Project ID
+        source:
+          type: string
+          description: Source of the event (e.g., sdk-python)
+        event_name:
+          type: string
+          description: Name of the event
+        event_type:
+          type: string
+          enum:
+            - model
+            - tool
+            - chain
+            - session
+          description: Type of event (model, tool, chain, or session)
+        event_id:
+          type: string
+          description: Unique event identifier
+        session_id:
+          type: string
+          description: Session this event belongs to
+        parent_id:
+          type: string
+          description: Parent event ID in the trace hierarchy
+        children_ids:
+          type: array
+          items:
+            type: string
+          description: Child event IDs in the trace hierarchy
+        config:
+          type: object
+          additionalProperties: {}
+          description: Configuration used for this event
+        inputs:
+          type: object
+          additionalProperties: {}
+          description: Input data for the event
+        outputs:
+          type: object
+          additionalProperties: {}
+          description: Output data from the event
+        error:
+          type:
+            - string
+            - 'null'
+          deprecated: true
+          description: Legacy alias — remapped to inputs.error for model events
+        start_time:
+          type: number
+          description: Event start time as Unix milliseconds
+        end_time:
+          type: number
+          description: Event end time as Unix milliseconds
+        duration:
+          type: number
+          deprecated: true
+          description: Legacy alias — remapped to inputs.duration for model events
+        metadata:
+          type: object
+          additionalProperties: {}
+          description: Arbitrary metadata for the event
+        feedback:
+          type: object
+          additionalProperties: {}
+          description: Feedback data associated with the event
+        metrics:
+          type: object
+          additionalProperties: {}
+          description: Metric values computed for the event
+        user_properties:
+          type: object
+          additionalProperties: {}
+          description: User properties associated with the event
+        model_name:
+          type: string
+          description: Model identifier (either this or event_name required)
+        model_version:
+          type: string
+          description: Model version string
+        model:
+          type: string
+          deprecated: true
+          description: Legacy alias for model_name
+        messages:
+          type: array
+          items: {}
+          deprecated: true
+          description: Legacy alias — remapped to inputs.messages
+        response:
+          deprecated: true
+          description: Legacy alias — remapped to outputs.response
+        provider:
+          type: string
+          deprecated: true
+          description: Legacy alias — remapped to inputs.provider
+        usage:
+          type: object
+          additionalProperties: {}
+          deprecated: true
+          description: Legacy alias — remapped to inputs.usage
+        cost:
+          deprecated: true
+          description: Legacy alias — remapped to inputs.cost
+        hyperparameters:
+          type: object
+          additionalProperties: {}
+          deprecated: true
+          description: Legacy alias — remapped to inputs.hyperparameters
+        template:
+          deprecated: true
+          description: Legacy alias — remapped to inputs.template
+        template_inputs:
+          deprecated: true
+          description: Legacy alias — remapped to inputs.template_inputs
+        tools:
+          deprecated: true
+          description: Legacy alias — remapped to inputs.tools
+        tool_choice:
+          deprecated: true
+          description: Legacy alias — remapped to inputs.tool_choice
+        response_format:
+          deprecated: true
+          description: Legacy alias — remapped to inputs.response_format
+      additionalProperties: {}
+      description: Model event object with model-specific fields and legacy aliases
     SessionProperties:
       type: object
       properties:
         session_name:
           type: string
+        start_time:
+          type: number
+          description: Session start time as Unix milliseconds
         user_properties:
           type: object
           additionalProperties: {}
@@ -2452,62 +3040,209 @@ components:
           additionalProperties: {}
       additionalProperties: {}
       description: Session properties for batch event creation
+    UpdateEventRequest:
+      type: object
+      properties:
+        metadata:
+          type: object
+          additionalProperties: {}
+          description: Metadata fields to merge into the event
+        feedback:
+          type: object
+          additionalProperties: {}
+          description: Feedback fields to merge into the event
+        metrics:
+          type: object
+          additionalProperties: {}
+          description: Metric values to merge into the event
+        outputs:
+          description: Output data to replace on the event (accepts objects, strings, arrays, or scalars)
+        config:
+          type: object
+          additionalProperties: {}
+          description: Configuration fields to merge into the event
+        user_properties:
+          type: object
+          additionalProperties: {}
+          description: User properties to merge into the event
+        duration:
+          type: number
+          description: Event duration in milliseconds
+        end_time:
+          type: number
+          description: Unix timestamp in milliseconds for event end
+        children_ids:
+          type: array
+          items:
+            type: string
+          description: IDs of child events to set (must be non-empty; an empty array is ignored)
+      description: Request body for PUT /v1/events/{event_id}
+    LegacyUpdateEventRequest:
+      type: object
+      properties:
+        event_id:
+          type: string
+          description: Event ID to update
+        metadata:
+          type: object
+          additionalProperties: {}
+          description: Metadata fields to merge into the event
+        feedback:
+          type: object
+          additionalProperties: {}
+          description: Feedback fields to merge into the event
+        metrics:
+          type: object
+          additionalProperties: {}
+          description: Metric values to merge into the event
+        outputs:
+          description: Output data to replace on the event (accepts objects, strings, arrays, or scalars)
+        config:
+          type: object
+          additionalProperties: {}
+          description: Configuration fields to merge into the event
+        user_properties:
+          type: object
+          additionalProperties: {}
+          description: User properties to merge into the event
+        duration:
+          type: number
+          description: Event duration in milliseconds
+        end_time:
+          type: number
+          description: Unix timestamp in milliseconds for event end
+        children_ids:
+          type: array
+          items:
+            type: string
+          description: IDs of child events to set (must be non-empty; an empty array is ignored)
+      required:
+        - event_id
+      description: Request to update an existing event (deprecated — use PUT /v1/events/{event_id})
+      deprecated: true
     PostEventRequest:
       type: object
       properties:
-        event:
+        project_id:
+          type: string
+          description: Project ID
+        source:
+          type: string
+          description: Source of the event (e.g., sdk-python)
+        event_name:
+          type: string
+          description: Name of the event
+        event_type:
+          type: string
+          enum:
+            - model
+            - tool
+            - chain
+            - session
+          description: Type of event (model, tool, chain, or session)
+        event_id:
+          type: string
+          description: Unique event identifier
+        session_id:
+          type: string
+          description: Session this event belongs to
+        parent_id:
+          type: string
+          description: Parent event ID in the trace hierarchy
+        children_ids:
+          type: array
+          items:
+            type: string
+          description: Child event IDs in the trace hierarchy
+        config:
           type: object
-          properties:
-            event_id:
-              type: string
-            project_id:
-              type: string
-            tenant:
-              type: string
-            event_name:
-              type: string
-            event_type:
-              type: string
-            metrics:
-              type: object
-              additionalProperties: {}
-            metadata:
-              type: object
-              additionalProperties: {}
-            feedback:
-              type: object
-              properties:
-                ground_truth: {}
-          required:
-            - event_id
-            - project_id
-            - tenant
           additionalProperties: {}
+          description: Configuration used for this event
+        inputs:
+          type: object
+          additionalProperties: {}
+          description: Input data for the event
+        outputs:
+          type: object
+          additionalProperties: {}
+          description: Output data from the event
+        error:
+          type:
+            - string
+            - 'null'
+          description: Error message if the event failed
+        start_time:
+          type: number
+          description: Event start time as Unix milliseconds
+        end_time:
+          type: number
+          description: Event end time as Unix milliseconds
+        duration:
+          type: number
+          description: Event duration in milliseconds
+        metadata:
+          type: object
+          additionalProperties: {}
+          description: Arbitrary metadata for the event
+        feedback:
+          type: object
+          additionalProperties: {}
+          description: Feedback data associated with the event
+        metrics:
+          type: object
+          additionalProperties: {}
+          description: Metric values computed for the event
+        user_properties:
+          type: object
+          additionalProperties: {}
+          description: User properties associated with the event
       required:
-        - event
-      description: Request to create a new event
-    GetEventsLegacyRequest:
+        - event_type
+        - inputs
+      additionalProperties: false
+      description: Request body for POST /v1/events (bare event object)
+    LegacyPostEventRequest:
       type: object
       properties:
-        project:
-          type: string
-          description: Name of the project
+        event:
+          $ref: '#/components/schemas/LegacyPostEventRequestEvent'
+      required:
+        - event
+      description: Request body for POST /events (deprecated — use POST /v1/events)
+      deprecated: true
+    SearchEventsRequest:
+      type: object
+      properties:
         filters:
-          allOf:
-            - $ref: '#/components/schemas/FiltersArray'
-            - description: Array of filter conditions
+          $ref: '#/components/schemas/EventSearchFiltersArray'
+          description: Array of filter criteria to apply
         dateRange:
-          type: object
-          properties:
-            $gte:
-              type: string
-              description: ISO String for start of date range
-            $lte:
-              type: string
-              description: ISO String for end of date range
-          required:
-            - $gte
-            - $lte
+          $ref: '#/components/schemas/SearchEventsRequestDateRange'
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          description: Limit number of results (default 1000, max 1000)
+        page:
+          type: integer
+          minimum: 1
+          description: Page number of results (default 1)
+        ignore_order:
+          type: boolean
+          description: 'Deprecated: accepted for SDK back-compat but treated as a no-op. Pagination requires a stable ORDER BY to produce consistent pages, and with the 1000-row cap skipping the sort is not worth the inconsistency. The route always orders by start_time DESC.'
+        evaluation_id:
+          type: string
+          description: Filter by evaluation/experiment run ID
+      additionalProperties: false
+      description: Request body for POST /v1/events/search
+    LegacyExportEventsRequest:
+      type: object
+      properties:
+        filters:
+          $ref: '#/components/schemas/FiltersArray'
+          description: Array of filter criteria to apply
+        dateRange:
+          $ref: '#/components/schemas/LegacyExportEventsRequestDateRange'
         projections:
           type: array
           items:
@@ -2519,80 +3254,18 @@ components:
         page:
           type: number
           description: Page number of results (default 1)
-      required:
-        - project
-        - filters
-      description: Request body for GET /events legacy endpoint
+        ignore_order:
+          type: boolean
+          description: If true, skip result ordering for faster queries
+        evaluation_id:
+          type: string
+          description: Filter by evaluation/experiment run ID
+      description: Request body for POST /v1/events/export
     PostModelEventRequest:
       type: object
       properties:
         model_event:
-          type: object
-          properties:
-            project:
-              type: string
-              description: Project name
-            project_id:
-              type: string
-              description: Project ID
-            source:
-              type: string
-              description: Source of the event (e.g., sdk-python)
-            event_name:
-              type: string
-              description: Name of the event
-            event_type:
-              type: string
-              enum:
-                - model
-                - tool
-                - chain
-                - session
-            event_id:
-              type: string
-            session_id:
-              type: string
-            parent_id:
-              type: string
-            children_ids:
-              type: array
-              items:
-                type: string
-            config:
-              type: object
-              additionalProperties: {}
-            inputs:
-              type: object
-              additionalProperties: {}
-            outputs:
-              type: object
-              additionalProperties: {}
-            error:
-              type:
-                - string
-                - 'null'
-            start_time:
-              type: number
-            end_time:
-              type: number
-            duration:
-              type: number
-            metadata:
-              type: object
-              additionalProperties: {}
-            feedback:
-              type: object
-              additionalProperties: {}
-            metrics:
-              type: object
-              additionalProperties: {}
-            user_properties:
-              type: object
-              additionalProperties: {}
-          required:
-            - project
-          additionalProperties: {}
-          description: Full event object for legacy event creation endpoints
+          $ref: '#/components/schemas/ModelEvent'
       required:
         - model_event
       description: Request body for POST /events/model
@@ -2602,181 +3275,63 @@ components:
         events:
           type: array
           items:
-            type: object
-            properties:
-              project:
-                type: string
-                description: Project name
-              project_id:
-                type: string
-                description: Project ID
-              source:
-                type: string
-                description: Source of the event (e.g., sdk-python)
-              event_name:
-                type: string
-                description: Name of the event
-              event_type:
-                type: string
-                enum:
-                  - model
-                  - tool
-                  - chain
-                  - session
-              event_id:
-                type: string
-              session_id:
-                type: string
-              parent_id:
-                type: string
-              children_ids:
-                type: array
-                items:
-                  type: string
-              config:
-                type: object
-                additionalProperties: {}
-              inputs:
-                type: object
-                additionalProperties: {}
-              outputs:
-                type: object
-                additionalProperties: {}
-              error:
-                type:
-                  - string
-                  - 'null'
-              start_time:
-                type: number
-              end_time:
-                type: number
-              duration:
-                type: number
-              metadata:
-                type: object
-                additionalProperties: {}
-              feedback:
-                type: object
-                additionalProperties: {}
-              metrics:
-                type: object
-                additionalProperties: {}
-              user_properties:
-                type: object
-                additionalProperties: {}
-            required:
-              - project
-            additionalProperties: {}
-            description: Full event object for legacy event creation endpoints
+            $ref: '#/components/schemas/PostEventRequest'
           description: Array of events to create
-        is_single_session:
+        single_session:
           type: boolean
           description: If true, all events share the same session
         session_properties:
-          type: object
-          properties:
-            session_name:
-              type: string
-            user_properties:
-              type: object
-              additionalProperties: {}
-            metadata:
-              type: object
-              additionalProperties: {}
-          additionalProperties: {}
-          description: Session properties for batch event creation
+          $ref: '#/components/schemas/SessionProperties'
       required:
         - events
-      description: Request body for POST /events/batch
+      additionalProperties: false
+      description: Request body for POST /v1/events/batch
+    LegacyPostEventBatchRequest:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/LegacyEvent'
+          description: Array of events to create
+        single_session:
+          type: boolean
+          description: If true, all events share the same session
+        is_single_session:
+          type: boolean
+          deprecated: true
+          description: Legacy field name for single_session (backward compatibility)
+        session:
+          $ref: '#/components/schemas/SessionProperties'
+          description: Alias for session_properties (backward compatibility)
+          deprecated: true
+        session_properties:
+          $ref: '#/components/schemas/SessionProperties'
+      required:
+        - events
+      description: Request body for POST /events/batch (deprecated — use POST /v1/events/batch)
+      deprecated: true
     PostModelEventBatchRequest:
       type: object
       properties:
         model_events:
           type: array
           items:
-            type: object
-            properties:
-              project:
-                type: string
-                description: Project name
-              project_id:
-                type: string
-                description: Project ID
-              source:
-                type: string
-                description: Source of the event (e.g., sdk-python)
-              event_name:
-                type: string
-                description: Name of the event
-              event_type:
-                type: string
-                enum:
-                  - model
-                  - tool
-                  - chain
-                  - session
-              event_id:
-                type: string
-              session_id:
-                type: string
-              parent_id:
-                type: string
-              children_ids:
-                type: array
-                items:
-                  type: string
-              config:
-                type: object
-                additionalProperties: {}
-              inputs:
-                type: object
-                additionalProperties: {}
-              outputs:
-                type: object
-                additionalProperties: {}
-              error:
-                type:
-                  - string
-                  - 'null'
-              start_time:
-                type: number
-              end_time:
-                type: number
-              duration:
-                type: number
-              metadata:
-                type: object
-                additionalProperties: {}
-              feedback:
-                type: object
-                additionalProperties: {}
-              metrics:
-                type: object
-                additionalProperties: {}
-              user_properties:
-                type: object
-                additionalProperties: {}
-            required:
-              - project
-            additionalProperties: {}
-            description: Full event object for legacy event creation endpoints
+            $ref: '#/components/schemas/ModelEvent'
           description: Array of model events to create
-        is_single_session:
+        single_session:
           type: boolean
           description: If true, all events share the same session
+        is_single_session:
+          type: boolean
+          deprecated: true
+          description: Legacy field name for single_session (backward compatibility)
+        session:
+          $ref: '#/components/schemas/SessionProperties'
+          description: Alias for session_properties (backward compatibility)
+          deprecated: true
         session_properties:
-          type: object
-          properties:
-            session_name:
-              type: string
-            user_properties:
-              type: object
-              additionalProperties: {}
-            metadata:
-              type: object
-              additionalProperties: {}
-          additionalProperties: {}
-          description: Session properties for batch event creation
+          $ref: '#/components/schemas/SessionProperties'
       required:
         - model_events
       description: Request body for POST /events/model/batch
@@ -2787,23 +3342,30 @@ components:
           $ref: '#/components/schemas/DateRange'
         filters:
           $ref: '#/components/schemas/FiltersArray'
+          description: Event filters to apply
         projections:
           type: array
           items:
             type: string
+          description: Fields to include in the response
         ignore_order:
           type: boolean
+          description: If true, skip result ordering for faster queries
         limit:
           type: number
+          description: Maximum number of results to return
         page:
           type: number
+          description: Page number for pagination
         evaluation_id:
           type: string
+          description: Filter by evaluation/experiment run ID
       description: Query parameters for GET /events
     DateRange:
       anyOf:
         - $ref: '#/components/schemas/RelativeDateRange'
         - $ref: '#/components/schemas/AbsoluteDateRange'
+      description: Date range filter
     RelativeDateRange:
       type: object
       properties:
@@ -2826,42 +3388,6 @@ components:
       required:
         - $gte
         - $lte
-    GetEventsChartQuery:
-      type: object
-      properties:
-        dateRange:
-          $ref: '#/components/schemas/DateRange'
-        filters:
-          $ref: '#/components/schemas/FiltersArray'
-        metric:
-          type: string
-        groupBy:
-          type: string
-        bucket:
-          type: string
-        aggregation:
-          type: string
-        evaluation_id:
-          type: string
-        only_experiments:
-          type: boolean
-      description: Query parameters for GET /events/chart
-    GetEventsBySessionIdParams:
-      type: object
-      properties:
-        session_id:
-          type: string
-      required:
-        - session_id
-      description: Path parameters for GET /events/:session_id
-    DeleteEventParams:
-      type: object
-      properties:
-        event_id:
-          type: string
-      required:
-        - event_id
-      description: Path parameters for DELETE /events/:event_id
     PostEventResponse:
       type: object
       properties:
@@ -2883,190 +3409,20 @@ components:
       required:
         - events
         - totalEvents
-    GetEventsLegacyResponse:
+      description: Response for GET /events
+    ExportEventsResponse:
       type: object
       properties:
         events:
           type: array
           items:
-            type: object
-            properties:
-              project:
-                type: string
-                description: Project name
-              project_id:
-                type: string
-                description: Project ID
-              source:
-                type: string
-                description: Source of the event (e.g., sdk-python)
-              event_name:
-                type: string
-                description: Name of the event
-              event_type:
-                type: string
-                enum:
-                  - model
-                  - tool
-                  - chain
-                  - session
-              event_id:
-                type: string
-              session_id:
-                type: string
-              parent_id:
-                type: string
-              children_ids:
-                type: array
-                items:
-                  type: string
-              config:
-                type: object
-                additionalProperties: {}
-              inputs:
-                type: object
-                additionalProperties: {}
-              outputs:
-                type: object
-                additionalProperties: {}
-              error:
-                type:
-                  - string
-                  - 'null'
-              start_time:
-                type: number
-              end_time:
-                type: number
-              duration:
-                type: number
-              metadata:
-                type: object
-                additionalProperties: {}
-              feedback:
-                type: object
-                additionalProperties: {}
-              metrics:
-                type: object
-                additionalProperties: {}
-              user_properties:
-                type: object
-                additionalProperties: {}
-            required:
-              - project
-            additionalProperties: {}
-            description: Full event object for legacy event creation endpoints
-        totalEvents:
+            $ref: '#/components/schemas/LegacyEvent'
+        count:
           type: number
       required:
         - events
-        - totalEvents
-      description: Response for GET /events legacy endpoint
-    GetEventsChartResponse:
-      type: object
-      properties:
-        events:
-          type: array
-          items: {}
-        totalEvents:
-          type: number
-      required:
-        - events
-        - totalEvents
-      description: Chart data response for events
-    GetEventsBySessionIdResponse:
-      type: object
-      properties:
-        event_id:
-          type: string
-        event_type:
-          type: string
-          enum:
-            - session
-            - model
-            - chain
-            - tool
-        event_name:
-          type: string
-        children:
-          type: array
-          items: {}
-        start_time:
-          type: number
-        end_time:
-          type: number
-        duration:
-          type: number
-        metadata:
-          type: object
-          properties:
-            num_events:
-              type: number
-            num_model_events:
-              type: number
-            has_feedback:
-              type: boolean
-            cost:
-              type: number
-            total_tokens:
-              type: number
-            prompt_tokens:
-              type: number
-            completion_tokens:
-              type: number
-            scope:
-              type: object
-              properties:
-                name:
-                  type: string
-          additionalProperties: {}
-        parent_id:
-          type: string
-        session_id:
-          type: string
-        children_ids:
-          type: array
-          items:
-            type: string
-        config: {}
-        inputs: {}
-        outputs: {}
-        error:
-          type: string
-        source:
-          type: string
-        user_properties: {}
-        metrics: {}
-        feedback: {}
-        org_id:
-          type: string
-        workspace_id:
-          type: string
-        project_id:
-          type: string
-      required:
-        - event_id
-        - event_type
-        - event_name
-        - children
-        - start_time
-        - end_time
-        - duration
-        - metadata
-        - org_id
-        - project_id
-      additionalProperties: {}
-      description: Event node in session tree with nested children
-    DeleteEventResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-        deleted:
-          type: string
-      required:
-        - success
-        - deleted
-      description: Response for DELETE /events/:event_id
+        - count
+      description: Response for POST /v1/events/search and POST /v1/events/export
     PostEventBatchResponse:
       type: object
       properties:
@@ -3164,13 +3520,9 @@ components:
             type: number
           description: Individual metric values across datapoints
         passing_range:
-          allOf:
-            - $ref: '#/components/schemas/PassingRange'
-            - description: Threshold range for pass/fail determination
+          $ref: '#/components/schemas/PassingRange'
         datapoints:
-          allOf:
-            - $ref: '#/components/schemas/MetricDatapoints'
-            - description: Per-metric pass/fail breakdown by datapoint
+          $ref: '#/components/schemas/MetricDatapoints'
       required:
         - metric_name
     DatapointResult:
@@ -3251,23 +3603,22 @@ components:
         metadata:
           type: object
           additionalProperties: {}
-          default: {}
         results:
           type: object
           additionalProperties: {}
-          default: {}
+        metrics:
+          type: object
+          additionalProperties:
+            type: number
         event_ids:
           type: array
           items:
             type: string
-          default: []
         configuration:
           type: object
           additionalProperties: {}
-          default: {}
         is_active:
           type: boolean
-          default: true
         created_at:
           anyOf:
             - type: string
@@ -3290,6 +3641,11 @@ components:
       required:
         - id
         - run_id
+        - metadata
+        - results
+        - event_ids
+        - configuration
+        - is_active
         - created_at
         - scope_type
         - scope_id
@@ -3327,6 +3683,47 @@ components:
           type: number
       required:
         - metric_name
+    EventMetricData:
+      type: object
+      properties:
+        event_name:
+          type: string
+        event_type:
+          type: string
+        session_id:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/EventMetricDataMetadata'
+        metrics:
+          type: object
+          additionalProperties:
+            anyOf:
+              - type: number
+              - type: boolean
+          description: Metric name → value, merged from numeric, float, and boolean ClickHouse columns
+      required:
+        - event_name
+        - event_type
+        - session_id
+        - metadata
+        - metrics
+    ComparableEvent:
+      type: object
+      properties:
+        datapoint_id:
+          type: string
+        event_1:
+          type: object
+          additionalProperties: {}
+          description: Full event record from the first run
+        event_2:
+          type: object
+          additionalProperties: {}
+          description: Full event record from the second run
+      required:
+        - datapoint_id
+        - event_1
+        - event_2
     PostExperimentRunRequest:
       type: object
       properties:
@@ -3348,11 +3745,9 @@ components:
         metadata:
           type: object
           additionalProperties: {}
-          default: {}
         results:
           type: object
           additionalProperties: {}
-          default: {}
         dataset_id:
           type:
             - string
@@ -3365,7 +3760,6 @@ components:
         configuration:
           type: object
           additionalProperties: {}
-          default: {}
         evaluators:
           type: array
           items: {}
@@ -3385,6 +3779,7 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/PassingRange'
+      description: Request body for POST /runs
     PutExperimentRunRequest:
       type: object
       properties:
@@ -3403,11 +3798,9 @@ components:
         metadata:
           type: object
           additionalProperties: {}
-          default: {}
         results:
           type: object
           additionalProperties: {}
-          default: {}
         event_ids:
           type: array
           items:
@@ -3415,7 +3808,6 @@ components:
         configuration:
           type: object
           additionalProperties: {}
-          default: {}
         evaluators:
           type: array
           items: {}
@@ -3432,27 +3824,33 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/PassingRange'
+      description: Request body for PUT /runs/{run_id}
     GetExperimentRunsQuery:
       type: object
       properties:
         dataset_id:
           type: string
           minLength: 1
+          description: Filter by dataset ID
         page:
           type: integer
           minimum: 1
           default: 1
+          description: Page number for pagination
         limit:
           type: integer
           minimum: 1
           maximum: 100
           default: 20
+          description: Number of results per page (max 100)
         run_ids:
           type: array
           items:
             type: string
+          description: Filter by specific run IDs
         name:
           type: string
+          description: Filter by run name
         status:
           type: string
           enum:
@@ -3461,10 +3859,12 @@ components:
             - failed
             - cancelled
             - running
+          description: Filter by run status
         dateRange:
           anyOf:
             - type: string
             - $ref: '#/components/schemas/AbsoluteDateRange'
+          description: Filter by date range
         sort_by:
           type: string
           enum:
@@ -3473,12 +3873,15 @@ components:
             - name
             - status
           default: created_at
+          description: Field to sort results by
         sort_order:
           type: string
           enum:
             - asc
             - desc
           default: desc
+          description: Sort order
+      description: Query parameters for GET /runs
     GetExperimentRunParams:
       type: object
       properties:
@@ -3486,76 +3889,181 @@ components:
           type: string
       required:
         - run_id
+      description: Path parameters for GET /runs/{run_id}
     GetExperimentRunMetricsQuery:
       type: object
       properties:
         dateRange:
           type: string
+          description: Date range filter as JSON string
         filters:
           anyOf:
             - type: string
             - type: array
               items: {}
+          description: Filters to apply to metrics
+      description: Query parameters for GET /runs/{run_id}/metrics
     GetExperimentRunResultQuery:
       type: object
       properties:
         aggregate_function:
           type: string
           default: average
+          description: 'Aggregation function to apply (default: average)'
         filters:
           anyOf:
             - type: string
             - type: array
               items: {}
+          description: Filters to apply to results
+      description: Query parameters for GET /runs/{run_id}/result
     GetExperimentRunCompareParams:
       type: object
       properties:
         new_run_id:
           type: string
+          description: The new run ID to compare
         old_run_id:
           type: string
+          description: The old run ID to compare against
       required:
         - new_run_id
         - old_run_id
+      additionalProperties: false
+      description: Path parameters for GET /runs/{new_run_id}/compare/{old_run_id}
     GetExperimentRunCompareQuery:
       type: object
       properties:
         aggregate_function:
           type: string
+          enum:
+            - average
+            - min
+            - max
+            - median
+            - p95
+            - p99
+            - p90
+            - sum
+            - count
           default: average
+          description: 'Aggregation function to apply (default: average)'
         filters:
           anyOf:
             - type: string
             - type: array
               items: {}
+          description: Filters to apply to comparison
+      additionalProperties: false
+      description: Query parameters for GET /runs/{new_run_id}/compare/{old_run_id}
+    LegacyGetExperimentRunCompareParams:
+      type: object
+      properties:
+        new_run_id:
+          type: string
+          description: The new run ID to compare
+        old_run_id:
+          type: string
+          description: The old run ID to compare against
+      required:
+        - new_run_id
+        - old_run_id
+      description: Path parameters for GET /runs/{new_run_id}/compare-with/{old_run_id} (deprecated — use GET /runs/{new_run_id}/compare/{old_run_id})
+      deprecated: true
+    LegacyGetExperimentRunCompareQuery:
+      type: object
+      properties:
+        aggregate_function:
+          type: string
+          default: average
+          description: 'Aggregation function to apply (default: average)'
+        filters:
+          anyOf:
+            - type: string
+            - type: array
+              items: {}
+          description: Filters to apply to comparison
+      description: Query parameters for GET /runs/{new_run_id}/compare-with/{old_run_id} (deprecated — use GET /runs/{new_run_id}/compare/{old_run_id})
+      deprecated: true
+    GetExperimentRunCompareEventsParams:
+      type: object
+      properties:
+        new_run_id:
+          type: string
+          description: The new run ID to compare
+        old_run_id:
+          type: string
+          description: The old run ID to compare against
+      required:
+        - new_run_id
+        - old_run_id
+      additionalProperties: false
+      description: Path parameters for GET /runs/{new_run_id}/compare/{old_run_id}/events
     GetExperimentRunCompareEventsQuery:
       type: object
       properties:
-        run_id_1:
-          type: string
-        run_id_2:
-          type: string
         event_name:
           type: string
+          description: Filter by event name
         event_type:
           type: string
+          description: Filter by event type
         filter:
           anyOf:
             - type: string
             - type: object
               additionalProperties: {}
+          description: Additional filter criteria
         limit:
           type: integer
           exclusiveMinimum: 0
           maximum: 1000
           default: 1000
+          description: Maximum number of results (max 1000)
         page:
           type: integer
           exclusiveMinimum: 0
           default: 1
+          description: Page number for pagination
+      additionalProperties: false
+      description: Query parameters for GET /runs/{new_run_id}/compare/{old_run_id}/events
+    LegacyGetExperimentRunCompareEventsQuery:
+      type: object
+      properties:
+        run_id_1:
+          type: string
+          description: First run ID to compare
+        run_id_2:
+          type: string
+          description: Second run ID to compare
+        event_name:
+          type: string
+          description: Filter by event name
+        event_type:
+          type: string
+          description: Filter by event type
+        filter:
+          anyOf:
+            - type: string
+            - type: object
+              additionalProperties: {}
+          description: Additional filter criteria
+        limit:
+          type: integer
+          exclusiveMinimum: 0
+          maximum: 1000
+          default: 1000
+          description: Maximum number of results (max 1000)
+        page:
+          type: integer
+          exclusiveMinimum: 0
+          default: 1
+          description: Page number for pagination
       required:
         - run_id_1
         - run_id_2
+      description: Query parameters for GET /runs/compare/events (deprecated — use GET /runs/{new_run_id}/compare/{old_run_id}/events)
+      deprecated: true
     DeleteExperimentRunParams:
       type: object
       properties:
@@ -3563,35 +4071,68 @@ components:
           type: string
       required:
         - run_id
-    GetExperimentRunsSchemaQuery:
+      description: Path parameters for DELETE /runs/{run_id}
+    LegacyGetEventsSchemaQuery:
       type: object
       properties:
         dateRange:
           anyOf:
             - type: string
             - $ref: '#/components/schemas/AbsoluteDateRange'
+          description: Date range to filter schema by
         evaluation_id:
           type: string
+          description: Filter by evaluation/run ID
+      description: Query parameters for GET /events/schema (deprecated — use GET /runs/{run_id}/schema or GET /runs/schema)
+      deprecated: true
+    GetRunSchemaQuery:
+      type: object
+      properties:
+        dateRange:
+          anyOf:
+            - type: string
+            - $ref: '#/components/schemas/AbsoluteDateRange'
+          description: Date range to filter schema by
+      additionalProperties: false
+      description: Query parameters for GET /runs/{run_id}/schema
+    GetRunsSchemaQuery:
+      type: object
+      properties:
+        dateRange:
+          anyOf:
+            - type: string
+            - $ref: '#/components/schemas/AbsoluteDateRange'
+          description: Date range to filter schema by
+      additionalProperties: false
+      description: Query parameters for GET /runs/schema
     PostExperimentRunResponse:
       type: object
       properties:
-        evaluation: {}
+        evaluation:
+          $ref: '#/components/schemas/ExperimentRunObject'
         run_id:
           type: string
       required:
+        - evaluation
         - run_id
+      description: Response for POST /runs
     PutExperimentRunResponse:
       type: object
       properties:
-        evaluation: {}
+        evaluation:
+          $ref: '#/components/schemas/ExperimentRunObject'
         warning:
           type: string
+      required:
+        - evaluation
+      description: Response for PUT /runs/{run_id}
     GetExperimentRunsResponse:
       type: object
       properties:
         evaluations:
           type: array
-          items: {}
+          items:
+            $ref: '#/components/schemas/ExperimentRunObject'
         pagination:
           $ref: '#/components/schemas/Pagination'
         metrics:
@@ -3602,10 +4143,15 @@ components:
         - evaluations
         - pagination
         - metrics
+      description: Response for GET /runs
     GetExperimentRunResponse:
       type: object
       properties:
-        evaluation: {}
+        evaluation:
+          $ref: '#/components/schemas/ExperimentRunObject'
+      required:
+        - evaluation
+      description: Response for GET /runs/{run_id}
     GetExperimentRunResultResponse:
       type: object
       properties:
@@ -3644,7 +4190,7 @@ components:
         - datapoints
         - event_details
         - run_object
-      description: Evaluation summary for an experiment run including pass/fail status, metrics, and datapoints
+      description: 'Evaluation summary for an experiment run: pass/fail results, metric aggregations, per-datapoint results, event details, and the experiment run object.'
     GetExperimentRunCompareResponse:
       type: object
       properties:
@@ -3671,7 +4217,21 @@ components:
         - old_run
         - new_run
       description: Comparison between two experiment runs including metrics, common datapoints, and event details
-    GetExperimentRunsSchemaResponse:
+    GetExperimentRunMetricsResponse:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventMetricData'
+        totalEvents:
+          type: integer
+          description: Total number of events matching the query
+      required:
+        - events
+        - totalEvents
+      description: Response for GET /runs/{run_id}/metrics
+    GetEventsSchemaResponse:
       type: object
       properties:
         fields:
@@ -3692,6 +4252,21 @@ components:
         - fields
         - datasets
         - mappings
+      description: Response for GET /events/schema, GET /runs/{run_id}/schema, and GET /runs/schema
+    GetExperimentCompareEventsResponse:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComparableEvent'
+        totalEvents:
+          type: integer
+          description: Total number of events matching the comparison query
+      required:
+        - events
+        - totalEvents
+      description: Response for GET /runs/{new_run_id}/compare/{old_run_id}/events
     DeleteExperimentRunResponse:
       type: object
       properties:
@@ -3702,6 +4277,7 @@ components:
       required:
         - id
         - deleted
+      description: Response for DELETE /runs/{run_id}
     MetricItem:
       type: object
       properties:
@@ -3719,8 +4295,9 @@ components:
           type: string
           minLength: 1
         description:
-          type: string
-          default: ''
+          type:
+            - string
+            - 'null'
         return_type:
           type: string
           enum:
@@ -3728,18 +4305,14 @@ components:
             - boolean
             - string
             - categorical
-          default: float
         enabled_in_prod:
           type: boolean
-          default: false
         needs_ground_truth:
           type: boolean
-          default: false
         sampling_percentage:
           type: number
           minimum: 0
           maximum: 100
-          default: 100
         model_provider:
           type:
             - string
@@ -3778,55 +4351,17 @@ components:
             - array
             - 'null'
           items:
-            type: object
-            properties:
-              category:
-                type: string
-                maxLength: 200
-              score:
-                type:
-                  - number
-                  - 'null'
-            required:
-              - category
-              - score
-            additionalProperties: false
+            $ref: '#/components/schemas/MetricItemCategoriesItem'
           minItems: 1
         child_metrics:
           type:
             - array
             - 'null'
           items:
-            type: object
-            properties:
-              id:
-                type: string
-                minLength: 1
-              name:
-                type: string
-                maxLength: 200
-              weight:
-                type: number
-              scale:
-                type:
-                  - integer
-                  - 'null'
-                exclusiveMinimum: 0
-            required:
-              - name
-              - weight
-            additionalProperties: false
+            $ref: '#/components/schemas/MetricItemChildMetricsItem'
           minItems: 1
         filters:
-          type: object
-          properties:
-            filterArray:
-              $ref: '#/components/schemas/FiltersArray'
-          default:
-            filterArray: &ref_0 []
-          required:
-            - filterArray
-          additionalProperties: false
+          $ref: '#/components/schemas/MetricItemFilters'
         id:
           type: string
           minLength: 1
@@ -3842,6 +4377,12 @@ components:
         - name
         - type
         - criteria
+        - description
+        - return_type
+        - enabled_in_prod
+        - needs_ground_truth
+        - sampling_percentage
+        - filters
         - id
         - created_at
         - updated_at
@@ -3922,60 +4463,23 @@ components:
             - array
             - 'null'
           items:
-            type: object
-            properties:
-              category:
-                type: string
-                maxLength: 200
-              score:
-                type:
-                  - number
-                  - 'null'
-            required:
-              - category
-              - score
-            additionalProperties: false
+            $ref: '#/components/schemas/CreateMetricRequestCategoriesItem'
           minItems: 1
         child_metrics:
           type:
             - array
             - 'null'
           items:
-            type: object
-            properties:
-              id:
-                type: string
-                minLength: 1
-              name:
-                type: string
-                maxLength: 200
-              weight:
-                type: number
-              scale:
-                type:
-                  - integer
-                  - 'null'
-                exclusiveMinimum: 0
-            required:
-              - name
-              - weight
-            additionalProperties: false
+            $ref: '#/components/schemas/CreateMetricRequestChildMetricsItem'
           minItems: 1
         filters:
-          type: object
-          properties:
-            filterArray:
-              $ref: '#/components/schemas/FiltersArray'
-          default:
-            filterArray: *ref_0
-          required:
-            - filterArray
-          additionalProperties: false
+          $ref: '#/components/schemas/CreateMetricRequestFilters'
       required:
         - name
         - type
         - criteria
       additionalProperties: false
+      description: Request body for POST /metrics
     UpdateMetricRequest:
       type: object
       properties:
@@ -3993,8 +4497,9 @@ components:
           type: string
           minLength: 1
         description:
-          type: string
-          default: ''
+          type:
+            - string
+            - 'null'
         return_type:
           type: string
           enum:
@@ -4002,18 +4507,89 @@ components:
             - boolean
             - string
             - categorical
-          default: float
         enabled_in_prod:
           type: boolean
-          default: false
         needs_ground_truth:
           type: boolean
-          default: false
         sampling_percentage:
           type: number
           minimum: 0
           maximum: 100
-          default: 100
+        model_provider:
+          type:
+            - string
+            - 'null'
+        model_name:
+          type:
+            - string
+            - 'null'
+        scale:
+          type:
+            - integer
+            - 'null'
+          exclusiveMinimum: 0
+        threshold:
+          $ref: '#/components/schemas/UpdateMetricRequestThreshold'
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/UpdateMetricRequestCategoriesItem'
+          minItems: 1
+        child_metrics:
+          type: array
+          items:
+            $ref: '#/components/schemas/UpdateMetricRequestChildMetricsItem'
+          minItems: 1
+        filters:
+          $ref: '#/components/schemas/UpdateMetricRequestFilters'
+      additionalProperties: false
+      description: Request body for PUT /metrics/{metric_id}
+    UpdateMetricParams:
+      type: object
+      properties:
+        metric_id:
+          type: string
+          minLength: 1
+          description: Unique identifier of the metric to update
+      required:
+        - metric_id
+      additionalProperties: false
+      description: Path parameters for PUT /metrics/{metric_id}
+    LegacyUpdateMetricRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        type:
+          type: string
+          enum:
+            - PYTHON
+            - LLM
+            - HUMAN
+            - COMPOSITE
+        criteria:
+          type: string
+          minLength: 1
+        description:
+          type:
+            - string
+            - 'null'
+        return_type:
+          type: string
+          enum:
+            - float
+            - boolean
+            - string
+            - categorical
+        enabled_in_prod:
+          type: boolean
+        needs_ground_truth:
+          type: boolean
+        sampling_percentage:
+          type: number
+          minimum: 0
+          maximum: 100
         model_provider:
           type:
             - string
@@ -4052,217 +4628,92 @@ components:
             - array
             - 'null'
           items:
-            type: object
-            properties:
-              category:
-                type: string
-                maxLength: 200
-              score:
-                type:
-                  - number
-                  - 'null'
-            required:
-              - category
-              - score
-            additionalProperties: false
+            $ref: '#/components/schemas/LegacyUpdateMetricRequestCategoriesItem'
           minItems: 1
         child_metrics:
           type:
             - array
             - 'null'
           items:
-            type: object
-            properties:
-              id:
-                type: string
-                minLength: 1
-              name:
-                type: string
-                maxLength: 200
-              weight:
-                type: number
-              scale:
-                type:
-                  - integer
-                  - 'null'
-                exclusiveMinimum: 0
-            required:
-              - name
-              - weight
-            additionalProperties: false
+            $ref: '#/components/schemas/LegacyUpdateMetricRequestChildMetricsItem'
           minItems: 1
         filters:
-          type: object
-          properties:
-            filterArray:
-              $ref: '#/components/schemas/FiltersArray'
-          default:
-            filterArray: *ref_0
-          required:
-            - filterArray
-          additionalProperties: false
+          $ref: '#/components/schemas/LegacyUpdateMetricRequestFilters'
         id:
           type: string
           minLength: 1
       required:
         - id
       additionalProperties: false
+      description: Request body for PUT /metrics (deprecated — use PUT /metrics/{metric_id})
+      deprecated: true
     GetMetricsQuery:
       type: object
       properties:
         type:
           type: string
+          description: Filter metrics by type
         id:
           type: string
           minLength: 1
-    DeleteMetricQuery:
+          description: Filter by metric ID
+      description: Query parameters for GET /metrics
+    DeleteMetricParams:
       type: object
       properties:
         metric_id:
           type: string
           minLength: 1
+          description: Unique identifier of the metric to delete
       required:
         - metric_id
+      additionalProperties: false
+      description: Path parameters for DELETE /metrics/{metric_id}
+    LegacyDeleteMetricQuery:
+      type: object
+      properties:
+        metric_id:
+          type: string
+          minLength: 1
+          description: Unique identifier of the metric to delete
+      required:
+        - metric_id
+      description: Query parameters for DELETE /metrics (deprecated — use DELETE /metrics/{metric_id})
+      deprecated: true
     RunMetricRequest:
       type: object
       properties:
         metric:
-          type: object
-          properties:
-            name:
-              type: string
-              maxLength: 200
-            type:
-              type: string
-              enum:
-                - PYTHON
-                - LLM
-                - HUMAN
-                - COMPOSITE
-            criteria:
-              type: string
-              minLength: 1
-            description:
-              type: string
-              default: ''
-            return_type:
-              type: string
-              enum:
-                - float
-                - boolean
-                - string
-                - categorical
-              default: float
-            enabled_in_prod:
-              type: boolean
-              default: false
-            needs_ground_truth:
-              type: boolean
-              default: false
-            sampling_percentage:
-              type: number
-              minimum: 0
-              maximum: 100
-              default: 100
-            model_provider:
-              type:
-                - string
-                - 'null'
-            model_name:
-              type:
-                - string
-                - 'null'
-            scale:
-              type:
-                - integer
-                - 'null'
-              exclusiveMinimum: 0
-            threshold:
-              type:
-                - object
-                - 'null'
-              properties:
-                min:
-                  type: number
-                max:
-                  type: number
-                pass_when:
-                  anyOf:
-                    - type: boolean
-                    - type: number
-                passing_categories:
-                  type: array
-                  items:
-                    type: string
-                    maxLength: 200
-                  minItems: 1
-              additionalProperties: false
-            categories:
-              type:
-                - array
-                - 'null'
-              items:
-                type: object
-                properties:
-                  category:
-                    type: string
-                    maxLength: 200
-                  score:
-                    type:
-                      - number
-                      - 'null'
-                required:
-                  - category
-                  - score
-                additionalProperties: false
-              minItems: 1
-            child_metrics:
-              type:
-                - array
-                - 'null'
-              items:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    minLength: 1
-                  name:
-                    type: string
-                    maxLength: 200
-                  weight:
-                    type: number
-                  scale:
-                    type:
-                      - integer
-                      - 'null'
-                    exclusiveMinimum: 0
-                required:
-                  - name
-                  - weight
-                additionalProperties: false
-              minItems: 1
-            filters:
-              type: object
-              properties:
-                filterArray:
-                  $ref: '#/components/schemas/FiltersArray'
-              default:
-                filterArray: *ref_0
-              required:
-                - filterArray
-              additionalProperties: false
-          required:
-            - name
-            - type
-            - criteria
-          additionalProperties: false
-        event: {}
+          $ref: '#/components/schemas/RunMetricRequestMetric'
+        event:
+          $ref: '#/components/schemas/RunMetricRequestEvent'
       required:
         - metric
+        - event
+      additionalProperties: false
+      description: Request body for POST /metrics/run
+    LegacyRunMetricRequest:
+      type: object
+      properties:
+        metric:
+          $ref: '#/components/schemas/LegacyRunMetricRequestMetric'
+        event:
+          $ref: '#/components/schemas/LegacyRunMetricRequestEvent'
+      required:
+        - metric
+        - event
+      description: Request body for POST /metrics/run_metric (deprecated — use POST /metrics/run)
+      deprecated: true
     GetMetricsResponse:
-      type: array
-      items:
-        $ref: '#/components/schemas/MetricItem'
+      type: object
+      properties:
+        metrics:
+          type: array
+          items:
+            $ref: '#/components/schemas/MetricItem'
+      required:
+        - metrics
+      description: Response for GET /metrics
     CreateMetricResponse:
       type: object
       properties:
@@ -4274,6 +4725,7 @@ components:
       required:
         - inserted
         - metric_id
+      description: Response for POST /metrics
     UpdateMetricResponse:
       type: object
       properties:
@@ -4281,6 +4733,7 @@ components:
           type: boolean
       required:
         - updated
+      description: Response for PUT /metrics
     DeleteMetricResponse:
       type: object
       properties:
@@ -4288,7 +4741,30 @@ components:
           type: boolean
       required:
         - deleted
-    RunMetricResponse: {}
+      description: Response for DELETE /metrics/{metric_id}
+    RunMetricResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        loading:
+          type: boolean
+        result:
+          anyOf:
+            - type: boolean
+            - type: number
+            - type: string
+            - type: 'null'
+        explanation:
+          type:
+            - string
+            - 'null'
+      required:
+        - success
+        - loading
+        - result
+        - explanation
+      description: Response for POST /metrics/run
     ProjectItem:
       type: object
       properties:
@@ -4403,6 +4879,211 @@ components:
         - org_id
       additionalProperties: {}
       description: Created project
+    AnnotationQueue:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 1000
+        filters:
+          $ref: '#/components/schemas/AnnotationQueueFilters'
+        enabled:
+          type: boolean
+        id:
+          type: string
+          minLength: 1
+        scope_id:
+          type: string
+        scope_type:
+          type: string
+          enum:
+            - system
+            - controlplane
+            - dataplane
+            - org
+            - workspace
+            - project
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+      required:
+        - name
+        - description
+        - filters
+        - enabled
+        - id
+        - scope_id
+        - scope_type
+        - is_active
+        - created_at
+        - updated_at
+    BaseAnnotationQueue:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 1000
+        filters:
+          $ref: '#/components/schemas/BaseAnnotationQueueFilters'
+        enabled:
+          type: boolean
+      required:
+        - name
+        - description
+        - filters
+        - enabled
+    CreateAnnotationQueueRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 1000
+          default: ''
+        filters:
+          $ref: '#/components/schemas/CreateAnnotationQueueRequestFilters'
+        enabled:
+          type: boolean
+          default: true
+        event_ids:
+          type: array
+          items:
+            type: string
+          default: []
+      required:
+        - name
+    UpdateAnnotationQueueRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 1000
+        filters:
+          $ref: '#/components/schemas/UpdateAnnotationQueueRequestFilters'
+        enabled:
+          type: boolean
+        id:
+          type: string
+          minLength: 1
+        add_event_ids:
+          type: array
+          items:
+            type: string
+        remove_event_ids:
+          type: array
+          items:
+            type: string
+      required:
+        - id
+    GetAnnotationQueuesQuery:
+      type: object
+      properties:
+        enabled:
+          type:
+            - boolean
+            - 'null'
+    CreateAnnotationQueueResponse:
+      type: object
+      properties:
+        queue:
+          $ref: '#/components/schemas/CreateAnnotationQueueResponseQueue'
+        message:
+          type: string
+      required:
+        - queue
+        - message
+    UpdateAnnotationQueueResponse:
+      type: object
+      properties:
+        queue:
+          $ref: '#/components/schemas/UpdateAnnotationQueueResponseQueue'
+        message:
+          type: string
+      required:
+        - queue
+        - message
+    GetAnnotationQueuesResponse:
+      type: object
+      properties:
+        queues:
+          type: array
+          items:
+            $ref: '#/components/schemas/GetAnnotationQueuesResponseQueuesItem'
+      required:
+        - queues
+    GetAnnotationQueueByIdResponse:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 1000
+        filters:
+          $ref: '#/components/schemas/GetAnnotationQueueByIdResponseFilters'
+        enabled:
+          type: boolean
+        id:
+          type: string
+          minLength: 1
+        scope_id:
+          type: string
+        scope_type:
+          type: string
+          enum:
+            - system
+            - controlplane
+            - dataplane
+            - org
+            - workspace
+            - project
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+      required:
+        - name
+        - description
+        - filters
+        - enabled
+        - id
+        - scope_id
+        - scope_type
+        - is_active
+        - created_at
+        - updated_at
+    DeleteAnnotationQueueResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
     PostSessionRequest:
       type: object
       properties:
@@ -4423,25 +5104,38 @@ components:
           type: object
           additionalProperties: {}
         feedback:
-          type: object
-          properties:
-            ground_truth: {}
+          $ref: '#/components/schemas/PostSessionRequestFeedback'
       required:
         - event_id
         - project_id
         - tenant
       additionalProperties: {}
+      description: Minimal event object used by evaluation and session endpoints; permissive (passthrough)
+    StartSessionRequest:
+      type: object
+      properties:
+        session:
+          $ref: '#/components/schemas/StartSessionRequestSession'
+      required:
+        - session
+      description: Request to start a new session
+    AddSessionTracesRequest:
+      type: object
+      properties:
+        logs:
+          type: array
+          items:
+            $ref: '#/components/schemas/LegacyEvent'
+      required:
+        - logs
+      description: Request to add traces to a session
     PostSessionStartResponse:
       type: object
       properties:
         event_id:
-          type:
-            - string
-            - 'null'
+          type: string
         session_id:
-          type:
-            - string
-            - 'null'
+          type: string
         parent_id:
           type:
             - string
@@ -4450,7 +5144,6 @@ components:
           type: array
           items:
             type: string
-          default: []
         event_type:
           type:
             - string
@@ -4493,105 +5186,21 @@ components:
             - number
             - 'null'
       required:
+        - event_id
+        - session_id
         - org_id
         - workspace_id
         - project_id
       additionalProperties: {}
       description: Full session event object returned after starting a new session
-    GetSessionResponse:
-      type: object
-      properties:
-        event_id:
-          type: string
-        event_type:
-          type: string
-          enum:
-            - session
-            - model
-            - chain
-            - tool
-        event_name:
-          type: string
-        children:
-          type: array
-          items: {}
-        start_time:
-          type: number
-        end_time:
-          type: number
-        duration:
-          type: number
-        metadata:
-          type: object
-          properties:
-            num_events:
-              type: number
-            num_model_events:
-              type: number
-            has_feedback:
-              type: boolean
-            cost:
-              type: number
-            total_tokens:
-              type: number
-            prompt_tokens:
-              type: number
-            completion_tokens:
-              type: number
-            scope:
-              type: object
-              properties:
-                name:
-                  type: string
-          additionalProperties: {}
-        parent_id:
-          type: string
-        session_id:
-          type: string
-        children_ids:
-          type: array
-          items:
-            type: string
-        config: {}
-        inputs: {}
-        outputs: {}
-        error:
-          type: string
-        source:
-          type: string
-        user_properties: {}
-        metrics: {}
-        feedback: {}
-        org_id:
-          type: string
-        workspace_id:
-          type: string
-        project_id:
-          type: string
-      required:
-        - event_id
-        - event_type
-        - event_name
-        - children
-        - start_time
-        - end_time
-        - duration
-        - metadata
-        - org_id
-        - project_id
-      additionalProperties: {}
-      description: Event node in session tree with nested children
-    DeleteSessionResponse:
+    SessionTracesResponse:
       type: object
       properties:
         success:
           type: boolean
-        deleted:
-          type: string
       required:
         - success
-        - deleted
-      description: Confirmation of session deletion
+      description: Response from adding traces to a session
     TODOSchema:
       type: object
       properties:
@@ -4601,6 +5210,952 @@ components:
       required:
         - message
       description: 'TODO: This is a placeholder schema. Proper Zod schemas need to be created in @hive-kube/iso-core-ts for: Sessions, Events, Projects, and Experiment comparison/result endpoints.'
+    CreateDatapointResponseResult:
+      type: object
+      properties:
+        insertedIds:
+          type: array
+          items:
+            type: string
+            minLength: 1
+      required:
+        - insertedIds
+    UpdateDatapointResponseResult:
+      type: object
+      properties:
+        modifiedCount:
+          type: number
+      required:
+        - modifiedCount
+    EventFeedback:
+      type: object
+      properties:
+        ground_truth: {}
+    LegacyPostEventRequestEvent:
+      type: object
+      properties:
+        project:
+          type: string
+          deprecated: true
+          description: Project name (ignored by server — project is determined from API key scope)
+        project_id:
+          type: string
+          description: Project ID
+        source:
+          type: string
+          description: Source of the event (e.g., sdk-python)
+        event_name:
+          type: string
+          description: Name of the event
+        event_type:
+          type: string
+          enum:
+            - model
+            - tool
+            - chain
+            - session
+        event_id:
+          type: string
+          description: Unique event identifier
+        session_id:
+          type: string
+          description: Session this event belongs to
+        parent_id:
+          type: string
+          description: Parent event ID in the trace hierarchy
+        children_ids:
+          type: array
+          items:
+            type: string
+          description: Child event IDs in the trace hierarchy
+        config:
+          type: object
+          additionalProperties: {}
+          description: Configuration used for this event
+        inputs:
+          type: object
+          additionalProperties: {}
+        outputs:
+          type: object
+          additionalProperties: {}
+          description: Output data from the event
+        error:
+          type:
+            - string
+            - 'null'
+          description: Error message if the event failed
+        start_time:
+          type: number
+          description: Event start time as Unix milliseconds
+        end_time:
+          type: number
+          description: Event end time as Unix milliseconds
+        duration:
+          type: number
+          description: Event duration in milliseconds
+        metadata:
+          type: object
+          additionalProperties: {}
+          description: Arbitrary metadata for the event
+        feedback:
+          type: object
+          additionalProperties: {}
+          description: Feedback data associated with the event
+        metrics:
+          type: object
+          additionalProperties: {}
+          description: Metric values computed for the event
+        user_properties:
+          type: object
+          additionalProperties: {}
+          description: User properties associated with the event
+      required:
+        - event_type
+        - inputs
+      additionalProperties: {}
+      description: Full event object for legacy event creation endpoints
+    SearchEventsRequestDateRange:
+      type: object
+      properties:
+        start_time:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp for start of date range (inclusive)
+        end_time:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp for end of date range (inclusive)
+      required:
+        - start_time
+        - end_time
+      additionalProperties: false
+    LegacyExportEventsRequestDateRange:
+      type: object
+      properties:
+        $gte:
+          type: string
+          description: ISO String for start of date range
+        $lte:
+          type: string
+          description: ISO String for end of date range
+      required:
+        - $gte
+        - $lte
+    EventMetricDataMetadata:
+      type: object
+      properties:
+        datapoint_id:
+          type: string
+    MetricItemCategoriesItem:
+      type: object
+      properties:
+        category:
+          type: string
+          maxLength: 200
+        score:
+          type:
+            - number
+            - 'null'
+      required:
+        - category
+        - score
+      additionalProperties: false
+    MetricItemChildMetricsItem:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          maxLength: 200
+        weight:
+          type: number
+        scale:
+          type:
+            - integer
+            - 'null'
+          exclusiveMinimum: 0
+      required:
+        - name
+        - weight
+      additionalProperties: false
+    MetricItemFilters:
+      type: object
+      properties:
+        filterArray:
+          $ref: '#/components/schemas/FiltersArray'
+      required:
+        - filterArray
+      additionalProperties: false
+    CreateMetricRequestCategoriesItem:
+      type: object
+      properties:
+        category:
+          type: string
+          maxLength: 200
+        score:
+          type:
+            - number
+            - 'null'
+      required:
+        - category
+        - score
+      additionalProperties: false
+    CreateMetricRequestChildMetricsItem:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          maxLength: 200
+        weight:
+          type: number
+        scale:
+          type:
+            - integer
+            - 'null'
+          exclusiveMinimum: 0
+      required:
+        - name
+        - weight
+      additionalProperties: false
+    CreateMetricRequestFilters:
+      type: object
+      properties:
+        filterArray:
+          $ref: '#/components/schemas/FiltersArray'
+      default:
+        filterArray: []
+      required:
+        - filterArray
+      additionalProperties: false
+    UpdateMetricRequestThreshold:
+      type: object
+      properties:
+        min:
+          type: number
+        max:
+          type: number
+        pass_when:
+          anyOf:
+            - type: boolean
+            - type: number
+        passing_categories:
+          type: array
+          items:
+            type: string
+            maxLength: 200
+          minItems: 1
+      additionalProperties: false
+    UpdateMetricRequestCategoriesItem:
+      type: object
+      properties:
+        category:
+          type: string
+          maxLength: 200
+        score:
+          type:
+            - number
+            - 'null'
+      required:
+        - category
+        - score
+      additionalProperties: false
+    UpdateMetricRequestChildMetricsItem:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          maxLength: 200
+        weight:
+          type: number
+        scale:
+          type:
+            - integer
+            - 'null'
+          exclusiveMinimum: 0
+      required:
+        - name
+        - weight
+      additionalProperties: false
+    UpdateMetricRequestFilters:
+      type: object
+      properties:
+        filterArray:
+          $ref: '#/components/schemas/FiltersArray'
+      required:
+        - filterArray
+      additionalProperties: false
+    LegacyUpdateMetricRequestCategoriesItem:
+      type: object
+      properties:
+        category:
+          type: string
+          maxLength: 200
+        score:
+          type:
+            - number
+            - 'null'
+      required:
+        - category
+        - score
+      additionalProperties: false
+    LegacyUpdateMetricRequestChildMetricsItem:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          maxLength: 200
+        weight:
+          type: number
+        scale:
+          type:
+            - integer
+            - 'null'
+          exclusiveMinimum: 0
+      required:
+        - name
+        - weight
+      additionalProperties: false
+    LegacyUpdateMetricRequestFilters:
+      type: object
+      properties:
+        filterArray:
+          $ref: '#/components/schemas/FiltersArray'
+      required:
+        - filterArray
+      additionalProperties: false
+    RunMetricRequestMetricCategoriesItem:
+      type: object
+      properties:
+        category:
+          type: string
+          maxLength: 200
+        score:
+          type:
+            - number
+            - 'null'
+      required:
+        - category
+        - score
+      additionalProperties: false
+    RunMetricRequestMetricChildMetricsItem:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          maxLength: 200
+        weight:
+          type: number
+        scale:
+          type:
+            - integer
+            - 'null'
+          exclusiveMinimum: 0
+      required:
+        - name
+        - weight
+      additionalProperties: false
+    RunMetricRequestMetricFilters:
+      type: object
+      properties:
+        filterArray:
+          $ref: '#/components/schemas/FiltersArray'
+      default:
+        filterArray: []
+      required:
+        - filterArray
+      additionalProperties: false
+    RunMetricRequestMetric:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        type:
+          type: string
+          enum:
+            - LLM
+            - PYTHON
+        criteria:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          default: ''
+        return_type:
+          type: string
+          enum:
+            - float
+            - boolean
+            - string
+            - categorical
+          default: float
+        enabled_in_prod:
+          type: boolean
+          default: false
+        needs_ground_truth:
+          type: boolean
+          default: false
+        sampling_percentage:
+          type: number
+          minimum: 0
+          maximum: 100
+          default: 100
+        model_provider:
+          type:
+            - string
+            - 'null'
+        model_name:
+          type:
+            - string
+            - 'null'
+        scale:
+          type:
+            - integer
+            - 'null'
+          exclusiveMinimum: 0
+        threshold:
+          type:
+            - object
+            - 'null'
+          properties:
+            min:
+              type: number
+            max:
+              type: number
+            pass_when:
+              anyOf:
+                - type: boolean
+                - type: number
+            passing_categories:
+              type: array
+              items:
+                type: string
+                maxLength: 200
+              minItems: 1
+          additionalProperties: false
+        categories:
+          type:
+            - array
+            - 'null'
+          items:
+            $ref: '#/components/schemas/RunMetricRequestMetricCategoriesItem'
+          minItems: 1
+        child_metrics:
+          type:
+            - array
+            - 'null'
+          items:
+            $ref: '#/components/schemas/RunMetricRequestMetricChildMetricsItem'
+          minItems: 1
+        filters:
+          $ref: '#/components/schemas/RunMetricRequestMetricFilters'
+      required:
+        - name
+        - type
+        - criteria
+      additionalProperties: false
+    RunMetricRequestEventFeedback:
+      type: object
+      properties:
+        ground_truth: {}
+      additionalProperties: {}
+    RunMetricRequestEvent:
+      type: object
+      properties:
+        event_type:
+          type: string
+        event_name:
+          type: string
+        inputs:
+          type: object
+          additionalProperties: {}
+        outputs:
+          type: object
+          additionalProperties: {}
+        workspace_id:
+          type: string
+        feedback:
+          $ref: '#/components/schemas/RunMetricRequestEventFeedback'
+      additionalProperties: {}
+    LegacyRunMetricRequestMetricCategoriesItem:
+      type: object
+      properties:
+        category:
+          type: string
+          maxLength: 200
+        score:
+          type:
+            - number
+            - 'null'
+      required:
+        - category
+        - score
+      additionalProperties: false
+    LegacyRunMetricRequestMetricChildMetricsItem:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          maxLength: 200
+        weight:
+          type: number
+        scale:
+          type:
+            - integer
+            - 'null'
+          exclusiveMinimum: 0
+      required:
+        - name
+        - weight
+      additionalProperties: false
+    LegacyRunMetricRequestMetricFilters:
+      type: object
+      properties:
+        filterArray:
+          $ref: '#/components/schemas/FiltersArray'
+      default:
+        filterArray: []
+      required:
+        - filterArray
+      additionalProperties: false
+    LegacyRunMetricRequestMetric:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        type:
+          type: string
+          enum:
+            - LLM
+            - PYTHON
+        criteria:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          default: ''
+        return_type:
+          type: string
+          enum:
+            - float
+            - boolean
+            - string
+            - categorical
+          default: float
+        enabled_in_prod:
+          type: boolean
+          default: false
+        needs_ground_truth:
+          type: boolean
+          default: false
+        sampling_percentage:
+          type: number
+          minimum: 0
+          maximum: 100
+          default: 100
+        model_provider:
+          type:
+            - string
+            - 'null'
+        model_name:
+          type:
+            - string
+            - 'null'
+        scale:
+          type:
+            - integer
+            - 'null'
+          exclusiveMinimum: 0
+        threshold:
+          type:
+            - object
+            - 'null'
+          properties:
+            min:
+              type: number
+            max:
+              type: number
+            pass_when:
+              anyOf:
+                - type: boolean
+                - type: number
+            passing_categories:
+              type: array
+              items:
+                type: string
+                maxLength: 200
+              minItems: 1
+          additionalProperties: false
+        categories:
+          type:
+            - array
+            - 'null'
+          items:
+            $ref: '#/components/schemas/LegacyRunMetricRequestMetricCategoriesItem'
+          minItems: 1
+        child_metrics:
+          type:
+            - array
+            - 'null'
+          items:
+            $ref: '#/components/schemas/LegacyRunMetricRequestMetricChildMetricsItem'
+          minItems: 1
+        filters:
+          $ref: '#/components/schemas/LegacyRunMetricRequestMetricFilters'
+      required:
+        - name
+        - type
+        - criteria
+      additionalProperties: false
+    LegacyRunMetricRequestEventFeedback:
+      type: object
+      properties:
+        ground_truth: {}
+      additionalProperties: {}
+    LegacyRunMetricRequestEvent:
+      type: object
+      properties:
+        event_type:
+          type: string
+        event_name:
+          type: string
+        inputs:
+          type: object
+          additionalProperties: {}
+        outputs:
+          type: object
+          additionalProperties: {}
+        workspace_id:
+          type: string
+        feedback:
+          $ref: '#/components/schemas/LegacyRunMetricRequestEventFeedback'
+      additionalProperties: {}
+    AnnotationQueueFilters:
+      type: object
+      properties:
+        filterArray:
+          $ref: '#/components/schemas/FiltersArray'
+      required:
+        - filterArray
+      additionalProperties: false
+    BaseAnnotationQueueFilters:
+      type: object
+      properties:
+        filterArray:
+          $ref: '#/components/schemas/FiltersArray'
+      required:
+        - filterArray
+      additionalProperties: false
+    CreateAnnotationQueueRequestFilters:
+      type: object
+      properties:
+        filterArray:
+          $ref: '#/components/schemas/FiltersArray'
+      default:
+        filterArray: []
+      required:
+        - filterArray
+      additionalProperties: false
+    UpdateAnnotationQueueRequestFilters:
+      type: object
+      properties:
+        filterArray:
+          $ref: '#/components/schemas/FiltersArray'
+      required:
+        - filterArray
+      additionalProperties: false
+    CreateAnnotationQueueResponseQueueFilters:
+      type: object
+      properties:
+        filterArray:
+          $ref: '#/components/schemas/FiltersArray'
+      required:
+        - filterArray
+      additionalProperties: false
+    CreateAnnotationQueueResponseQueue:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 1000
+        filters:
+          $ref: '#/components/schemas/CreateAnnotationQueueResponseQueueFilters'
+        enabled:
+          type: boolean
+        id:
+          type: string
+          minLength: 1
+        scope_id:
+          type: string
+        scope_type:
+          type: string
+          enum:
+            - system
+            - controlplane
+            - dataplane
+            - org
+            - workspace
+            - project
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+      required:
+        - name
+        - description
+        - filters
+        - enabled
+        - id
+        - scope_id
+        - scope_type
+        - is_active
+        - created_at
+        - updated_at
+    UpdateAnnotationQueueResponseQueueFilters:
+      type: object
+      properties:
+        filterArray:
+          $ref: '#/components/schemas/FiltersArray'
+      required:
+        - filterArray
+      additionalProperties: false
+    UpdateAnnotationQueueResponseQueue:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 1000
+        filters:
+          $ref: '#/components/schemas/UpdateAnnotationQueueResponseQueueFilters'
+        enabled:
+          type: boolean
+        id:
+          type: string
+          minLength: 1
+        scope_id:
+          type: string
+        scope_type:
+          type: string
+          enum:
+            - system
+            - controlplane
+            - dataplane
+            - org
+            - workspace
+            - project
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+      required:
+        - name
+        - description
+        - filters
+        - enabled
+        - id
+        - scope_id
+        - scope_type
+        - is_active
+        - created_at
+        - updated_at
+    GetAnnotationQueuesResponseQueuesItemFilters:
+      type: object
+      properties:
+        filterArray:
+          $ref: '#/components/schemas/FiltersArray'
+      required:
+        - filterArray
+      additionalProperties: false
+    GetAnnotationQueuesResponseQueuesItem:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 1000
+        filters:
+          $ref: '#/components/schemas/GetAnnotationQueuesResponseQueuesItemFilters'
+        enabled:
+          type: boolean
+        id:
+          type: string
+          minLength: 1
+        scope_id:
+          type: string
+        scope_type:
+          type: string
+          enum:
+            - system
+            - controlplane
+            - dataplane
+            - org
+            - workspace
+            - project
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+      required:
+        - name
+        - description
+        - filters
+        - enabled
+        - id
+        - scope_id
+        - scope_type
+        - is_active
+        - created_at
+        - updated_at
+    GetAnnotationQueueByIdResponseFilters:
+      type: object
+      properties:
+        filterArray:
+          $ref: '#/components/schemas/FiltersArray'
+      required:
+        - filterArray
+      additionalProperties: false
+    PostSessionRequestFeedback:
+      type: object
+      properties:
+        ground_truth: {}
+    StartSessionRequestSession:
+      type: object
+      properties:
+        session_id:
+          type: string
+          description: Client-provided session ID (server generates one if omitted)
+        session_name:
+          type: string
+          description: Display name for the session
+        event_name:
+          type: string
+          description: Fallback name if session_name is not provided
+        source:
+          type: string
+          description: Source of the session (e.g., sdk-python)
+        start_time:
+          type: number
+          description: Session start time as Unix milliseconds
+        end_time:
+          type: number
+          description: Session end time as Unix milliseconds
+        duration:
+          type: number
+          description: Session duration in milliseconds
+        config:
+          type: object
+          additionalProperties: {}
+          description: Configuration associated with the session
+        inputs:
+          type: object
+          additionalProperties: {}
+          description: Input data for the session
+        outputs:
+          type: object
+          additionalProperties: {}
+          description: Output data from the session
+        metadata:
+          type: object
+          additionalProperties: {}
+          description: Arbitrary metadata for the session
+        user_properties:
+          type: object
+          additionalProperties: {}
+          description: User properties associated with the session
+        children_ids:
+          type: array
+          items:
+            type: string
+          description: IDs of child events in this session
+      additionalProperties: {}
+    GetEventsSchemaLegacyDateRangeOneOf1:
+      type: object
+      properties:
+        $gte:
+          oneOf:
+            - type: string
+            - type: number
+        $lte:
+          oneOf:
+            - type: string
+            - type: number
+    GetRunsDateRangeOneOf1:
+      type: object
+      properties:
+        $gte:
+          oneOf:
+            - type: string
+            - type: number
+        $lte:
+          oneOf:
+            - type: string
+            - type: number
+    GetRunsSchemaDateRangeOneOf1:
+      type: object
+      properties:
+        $gte:
+          oneOf:
+            - type: string
+            - type: number
+        $lte:
+          oneOf:
+            - type: string
+            - type: number
+    GetRunSchemaDateRangeOneOf1:
+      type: object
+      properties:
+        $gte:
+          oneOf:
+            - type: string
+            - type: number
+        $lte:
+          oneOf:
+            - type: string
+            - type: number
   parameters: {}
   securitySchemes:
     BearerAuth:
@@ -4608,3 +6163,28 @@ components:
       scheme: bearer
 security:
   - BearerAuth: []
+tags:
+  - name: Configurations
+    description: |
+      Manage prompt configurations — model parameters, message templates, and response settings — that can be versioned and deployed without code changes.
+  - name: Datapoints
+    description: |
+      Manage individual records inside datasets, including batch creation and mapping to source events.
+  - name: Datasets
+    description: |
+      Curate collections of datapoints used as test sets for evaluations and experiments.
+  - name: Events
+    description: |
+      Read and write trace events — the spans that capture every step of an AI application's execution.
+  - name: Experiments
+    description: |
+      Run, retrieve, and compare evaluation runs to measure how prompt or configuration changes affect agent performance.
+  - name: Metrics
+    description: |
+      Define and run evaluators — automated quality checks that score traces against criteria like accuracy, safety, or correctness.
+  - name: Queues
+    description: |
+      Manage annotation queues for human review of traces, turning expert feedback into labeled datasets.
+  - name: Sessions
+    description: |
+      Group related trace events into sessions, the top-level container for a multi-step or multi-service AI interaction.

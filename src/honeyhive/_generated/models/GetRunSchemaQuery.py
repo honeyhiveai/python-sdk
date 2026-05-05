@@ -4,13 +4,13 @@ from pydantic import BaseModel, Field
 
 from .AbsoluteDateRange import AbsoluteDateRange
 
-__all__ = ["GetEventsSchemaQuery"]
+__all__ = ["GetRunSchemaQuery"]
 
 
-class GetEventsSchemaQuery(BaseModel):
+class GetRunSchemaQuery(BaseModel):
     """
-    GetEventsSchemaQuery model
-        Query parameters for GET /events/schema
+    GetRunSchemaQuery model
+        Query parameters for GET /runs/{run_id}/schema
     """
 
     model_config = {
@@ -23,5 +23,3 @@ class GetEventsSchemaQuery(BaseModel):
     dateRange: Optional[Union[str, AbsoluteDateRange]] = Field(
         validation_alias="dateRange", default=None
     )
-
-    evaluation_id: Optional[str] = Field(validation_alias="evaluation_id", default=None)

@@ -2,7 +2,10 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
+from .UpdateMetricRequestCategoriesItem import UpdateMetricRequestCategoriesItem
+from .UpdateMetricRequestChildMetricsItem import UpdateMetricRequestChildMetricsItem
 from .UpdateMetricRequestFilters import UpdateMetricRequestFilters
+from .UpdateMetricRequestThreshold import UpdateMetricRequestThreshold
 
 __all__ = ["UpdateMetricRequest"]
 
@@ -10,7 +13,7 @@ __all__ = ["UpdateMetricRequest"]
 class UpdateMetricRequest(BaseModel):
     """
     UpdateMetricRequest model
-        Request body for PUT /metrics
+        Request body for PUT /metrics/{metric_id}
     """
 
     model_config = {
@@ -50,18 +53,18 @@ class UpdateMetricRequest(BaseModel):
 
     scale: Optional[int] = Field(validation_alias="scale", default=None)
 
-    threshold: Optional[Dict[str, Any]] = Field(
+    threshold: Optional[UpdateMetricRequestThreshold] = Field(
         validation_alias="threshold", default=None
     )
 
-    categories: Optional[List[Any]] = Field(validation_alias="categories", default=None)
+    categories: Optional[List[Optional[UpdateMetricRequestCategoriesItem]]] = Field(
+        validation_alias="categories", default=None
+    )
 
-    child_metrics: Optional[List[Any]] = Field(
-        validation_alias="child_metrics", default=None
+    child_metrics: Optional[List[Optional[UpdateMetricRequestChildMetricsItem]]] = (
+        Field(validation_alias="child_metrics", default=None)
     )
 
     filters: Optional[UpdateMetricRequestFilters] = Field(
         validation_alias="filters", default=None
     )
-
-    id: str = Field(validation_alias="id")

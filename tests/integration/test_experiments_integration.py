@@ -23,7 +23,7 @@ import pytest
 
 from honeyhive import HoneyHive, enrich_span, trace
 from honeyhive.experiments import compare_runs, evaluate
-from honeyhive.models import CreateDatapointRequest, CreateDatasetRequest
+from honeyhive.models import CreateDatapointRequest, CreateDatasetRequest, EventFilter
 
 
 @pytest.mark.integration
@@ -664,21 +664,20 @@ class TestExperimentsIntegration:
         # Helper: Extract ID from object
         def get_id_from_object(obj: Any) -> Optional[str]:
             """Extract ID from object/dict with multiple field support."""
-            if isinstance(obj, dict):
-                for key in ("_id", "id"):
+            for key in ("insertedId", "inserted_id", "_id", "id"):
+                if isinstance(obj, dict):
                     id_value = obj.get(key)
-                    if id_value:
-                        return str(id_value)
-                return None
-
-            if hasattr(obj, "_id"):
-                id_value = getattr(obj, "_id", None)
+                else:
+                    id_value = getattr(obj, key, None)
                 if id_value:
                     return str(id_value)
-            if hasattr(obj, "id"):
-                id_value = getattr(obj, "id", None)
-                if id_value:
-                    return str(id_value)
+            ids_list = (
+                obj.get("insertedIds")
+                if isinstance(obj, dict)
+                else getattr(obj, "insertedIds", None)
+            )
+            if ids_list:
+                return str(ids_list[0])
             return None
 
         # Helper: Create dataset and get ID
@@ -694,43 +693,7 @@ class TestExperimentsIntegration:
             print("✅ Dataset created")
 
             created_result = getattr(created, "result", None)
-            dataset_obj: Any = created
-            if created_result is not None:
-                dataset_obj = (
-                    created_result[0]
-                    if isinstance(created_result, list) and created_result
-                    else created_result
-                )
-
-            dataset_name_value = (
-                dataset_obj.get("name")
-                if isinstance(dataset_obj, dict)
-                else getattr(dataset_obj, "name", None)
-            )
-            if dataset_name_value:
-                print(f"   Name: {dataset_name_value}")
-
-            dataset_project_value = (
-                dataset_obj.get("project")
-                if isinstance(dataset_obj, dict)
-                else getattr(dataset_obj, "project", None)
-            )
-            if dataset_project_value:
-                print(f"   Project: {dataset_project_value}")
-
-            # Try to get ID from response
-            ds_id = get_id_from_object(dataset_obj) or get_id_from_object(created)
-
-            if not ds_id:
-                # Fallback: search by name
-                print("   Searching by name...")
-                datasets = integration_client.datasets.list_datasets(name=name)
-                for ds in datasets:
-                    if getattr(ds, "name", None) == name:
-                        ds_id = get_id_from_object(ds)
-                        if ds_id:
-                            print(f"   Found: {ds_id}")
-                            break
+            ds_id = get_id_from_object(created_result) if created_result else None
 
             assert ds_id, f"Could not get dataset_id for {name}"
             print(f"   ID: {ds_id}")
@@ -780,7 +743,7 @@ class TestExperimentsIntegration:
                 metadata=None,
             )
             created = integration_client.datapoints.create_datapoint(datapoint_request)
-            datapoint_id = get_id_from_object(created)
+            datapoint_id = get_id_from_object(getattr(created, "result", None))
             print(f"✅ Datapoint {idx} created")
             if datapoint_id:
                 print(f"   ID: {datapoint_id}")
@@ -1070,25 +1033,24 @@ class TestExperimentsIntegration:
     def _fetch_all_session_events(
         integration_client: HoneyHive, event_ids: list, real_project: str
     ) -> list:
-        """Fetch all events for given session IDs."""
+        """Fetch all events for given session IDs via /events/export."""
+        del real_project
         all_events = []
         for session_id in event_ids:
             try:
-                # Convert UUID to string for EventFilter
-                # (backend returns UUIDType objects)
                 session_id_str = str(session_id)
-                # TODO: EventFilter doesn't exist in v1, need to update to v1 API
-                # events_response = integration_client.events.get_events(
-                #     project=real_project,
-                #     filters=[
-                #         EventFilter(
-                #             field="session_id", value=session_id_str, operator="is"
-                #         ),
-                #     ],
-                # )
-                # Placeholder response until v1 API is implemented
-                events_response = {"events": []}
-                session_events = events_response.get("events", [])
+                events_response = integration_client.events.export(
+                    filters=[
+                        EventFilter(
+                            field="session_id",
+                            operator="is",
+                            value=session_id_str,
+                            type="string",
+                        )
+                    ],
+                    limit=1000,
+                )
+                session_events = list(getattr(events_response, "events", []) or [])
                 all_events.extend(session_events)
                 print(
                     f"   ✅ Session {session_id_str[:16]}... "

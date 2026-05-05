@@ -1,5 +1,24 @@
 ## [Unreleased]
 
+## [1.0.0] - 2026-05-04
+
+First stable GA release of the HoneyHive Python SDK. Public APIs follow semver from this release forward — breaking changes only on major versions, additive on minor and patch.
+
+The changes below are relative to `1.0.0rc22`. For the full picture of what shipped during the release-candidate cycle, see the `1.0.0rc1`–`1.0.0rc22` entries.
+
+### Changed
+
+- **Tracing: `skip_backend_session_creation=True` now works without an explicit `session_id`**
+  - Previously the flag only opted out of the init-time backend roundtrip when a `session_id` was also supplied. Setting the flag alone is now supported: the SDK skips the roundtrip, does not mint a UUID, and per-request `create_session(session_id=..., skip_api_call=True)` calls emit spans that ingestion materializes into Session rows on first arrival.
+
+- **Tracing: `create_session(skip_api_call=True)` propagates `session_name` into baggage**
+  - When `session_name` is supplied, it now travels with `session_id` across async / threaded boundaries.
+
+### Removed
+
+- **`DeleteMetricQuery` removed from `honeyhive.models`**
+  - Internal query-params type that was exported but unused — no public method accepted or returned it. The public `client.metrics.delete(id=...)` signature is unchanged.
+
 ## [1.0.0rc22] - 2026-05-01
 
 ### Added
@@ -42,10 +61,10 @@
 
 ### Fixed
 
-- **Tracing: OTLP exporter preserves attribute types [HHAI-4935]**
+- **Tracing: OTLP exporter preserves attribute types**
   - The exporter previously wrapped every attribute as `{"stringValue": str(value)}`, so numeric and boolean attributes round-tripped through the backend as strings. Now mapped to the correct OTLP `AnyValue` variant.
 
-- **Tracing: OTLP batch export groups spans by instrumentation scope [HHAI-4245]**
+- **Tracing: OTLP batch export groups spans by instrumentation scope**
   - All spans in a batch were previously placed under the first span's scope, causing `BatchSpanProcessor` mixes (e.g. pydantic-ai `chat` + httpx `POST`) to misclassify model events as chains. Spans are now grouped by their actual `instrumentation_scope`.
 
 - **Integrations: Anthropic / LangChain + LangGraph / AWS Bedrock audits**
@@ -238,7 +257,7 @@ No customer-facing changes. Internal CI/release automation improvements only.
 ### Added
 
 - **✨ API Client: Auto-generated v1 API client from OpenAPI spec**
-  - Generated Python client from `hive-kube` OpenAPI specification using `openapi-python-generator`
+  - Generated Python client from the HoneyHive OpenAPI specification using `openapi-python-generator`
   - Full type-safe Pydantic models for all API requests/responses
   - Sync and async methods for all endpoints
   - New endpoint support: batch events, experiment results/comparison, project CRUD

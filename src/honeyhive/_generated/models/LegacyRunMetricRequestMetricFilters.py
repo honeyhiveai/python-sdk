@@ -2,13 +2,14 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
-__all__ = ["DeleteMetricQuery"]
+from .FiltersArray import FiltersArray
+
+__all__ = ["LegacyRunMetricRequestMetricFilters"]
 
 
-class DeleteMetricQuery(BaseModel):
+class LegacyRunMetricRequestMetricFilters(BaseModel):
     """
-    DeleteMetricQuery model
-        Query parameters for DELETE /metrics
+    LegacyRunMetricRequestMetricFilters model
     """
 
     model_config = {
@@ -18,4 +19,4 @@ class DeleteMetricQuery(BaseModel):
         "protected_namespaces": (),
     }
 
-    metric_id: str = Field(validation_alias="metric_id")
+    filterArray: FiltersArray = Field(validation_alias="filterArray")

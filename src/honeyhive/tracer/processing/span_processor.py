@@ -790,6 +790,22 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                     session_id
                 )
 
+                # Signal ingestion to auto-create the Session row if it doesn't
+                # exist yet. Stamped on every span; ingestion is idempotent on
+                # session_id.
+                if getattr(self.tracer_instance, "_session_auto_create", False):
+                    attributes_to_set["honeyhive.session_auto_create"] = True
+                    # Prefer session_name from baggage (per-request) over the
+                    # tracer-instance value (init-time), matching how
+                    # session_id is resolved.
+                    session_name = baggage.get_baggage("session_name", ctx)
+                    if not session_name:
+                        session_name = getattr(
+                            self.tracer_instance, "session_name", None
+                        )
+                    if session_name:
+                        attributes_to_set["honeyhive.session_name"] = session_name
+
                 # Get other baggage attributes (project, source, etc.)
                 other_baggage_attrs = self._get_basic_baggage_attributes(ctx)
                 # Remove session_id from baggage attrs since we're setting it directly

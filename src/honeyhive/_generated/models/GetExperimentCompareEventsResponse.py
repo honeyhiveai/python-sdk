@@ -10,7 +10,7 @@ __all__ = ["GetExperimentCompareEventsResponse"]
 class GetExperimentCompareEventsResponse(BaseModel):
     """
     GetExperimentCompareEventsResponse model
-        Response for GET /runs/compare/events
+        Response for GET /runs/{new_run_id}/compare/{old_run_id}/events
     """
 
     model_config = {

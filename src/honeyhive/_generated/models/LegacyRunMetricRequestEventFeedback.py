@@ -2,13 +2,12 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
-__all__ = ["DeleteDatasetQuery"]
+__all__ = ["LegacyRunMetricRequestEventFeedback"]
 
 
-class DeleteDatasetQuery(BaseModel):
+class LegacyRunMetricRequestEventFeedback(BaseModel):
     """
-    DeleteDatasetQuery model
-        Query parameters for DELETE /datasets
+    LegacyRunMetricRequestEventFeedback model
     """
 
     model_config = {
@@ -18,4 +17,4 @@ class DeleteDatasetQuery(BaseModel):
         "protected_namespaces": (),
     }
 
-    dataset_id: str = Field(validation_alias="dataset_id")
+    ground_truth: Optional[Any] = Field(validation_alias="ground_truth", default=None)
