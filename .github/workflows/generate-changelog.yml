@@ -32,7 +32,7 @@ jobs:
       - name: Checkout python-sdk
         uses: actions/checkout@v6
         with:
-          ref: federated-sdk-release-candidate  # Pinned: this is the current default/release branch for federated SDK releases
+          ref: main
           fetch-depth: 0  # Fetch full history for commit analysis
           
       - name: Claude Code - Generate Changelog

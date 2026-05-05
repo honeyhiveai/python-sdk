@@ -73,7 +73,7 @@ jobs:
         if: steps.check-workflow.outputs.skip != 'true'
         uses: actions/checkout@v6
         with:
-          ref: federated-sdk-release-candidate
+          ref: main
           fetch-depth: 1
 
       - name: Run Claude Code Review
@@ -109,7 +109,7 @@ jobs:
               `examples/` need corresponding updates. Include a "Documentation" section in the
               top-level PR comment listing any suggested doc updates.
 
-            NOTE: the default branch of this repository is `federated-sdk-release-candidate`.
+            NOTE: the default branch of this repository is `main`.
 
             ## How to post feedback
 

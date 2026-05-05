@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       branch:
-        description: 'Branch to publish from (e.g., federated-sdk-release-candidate for RC testing)'
+        description: 'Branch to publish from'
         required: false
-        default: 'federated-sdk-release-candidate'
+        default: 'main'
 
 permissions:
   contents: write  # For creating GitHub releases
