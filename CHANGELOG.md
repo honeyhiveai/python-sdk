@@ -1,5 +1,31 @@
 ## [Unreleased]
 
+## [1.0.2] - 2026-05-11
+
+### Fixed
+
+- **Experiments: client-side evaluator scores now flow end-to-end in `evaluate()`**
+  - Scores returned by evaluators in `evaluate()` are now written to the correct user-function chain span via `enrich_span(metrics=…)`, exported over OTLP, and surfaced in server-side run comparison's per-event `metric_deltas`. Previously, evaluator scores were duplicated into `run.metadata.evaluator_metrics` and onto the per-datapoint session event, but neither path actually populated the per-event surface that run comparison requires — client-side evaluator scoring and comparison did not work end-to-end.
+  - The two legacy write paths have been removed now that the scores are correctly written to the chain span as the single source of truth.
+
+- **API Client: `event_id` typed as required on `POST /events` responses**
+  - `PostEventResponse.event_id` was incorrectly typed as `Optional[str]` in the OpenAPI spec; the backend always returns the field on a 2xx response. The spec was corrected and the generated SDK now reflects the runtime guarantee, removing the need for defensive `if event.event_id:` guards. No runtime behavior change, but strictly typed mypy codebases with `warn_unreachable = True` or pyright with `reportUnnecessaryComparison` enabled may produce "unnecessary comparison" or "redundant Optional guard" warnings, depending on exact usage patterns. 
+
+### Added
+
+- **`FilterFieldType.DATETIME` enum value**
+  - The SDK enum was missing the `"datetime"` wire value supported by the backend. Additive — no behavior change for existing callers.
+
+### Deprecated
+
+- **`FilterFieldType.ID`**
+  - `ID = "id"` was never a valid backend wire value and has always been rejected on the wire. Use `"string"` for UUID-shaped fields such as `session_id`. The alias is preserved so existing imports continue to resolve and will be removed in the next major.
+
+### Removed
+
+- **`honeyhive` Python CLI entry point removed from `pyproject.toml`**
+  - The shipped Python `honeyhive` console script was non-functional (dead code) and shadowed the official TypeScript CLI on `$PATH`. CLI functionality is now provided by the official [`honeyhive` TypeScript CLI](https://docs.honeyhive.ai/v2/sdk-reference/cli); removing the Python script entry point lets `honeyhive` resolve correctly when both packages are installed globally.
+
 ## [1.0.1] - 2026-05-05
 
 ### Fixed

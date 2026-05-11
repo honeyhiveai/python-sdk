@@ -20,4 +20,4 @@ class PostEventResponse(BaseModel):
 
     success: bool = Field(validation_alias="success")
 
-    event_id: Optional[str] = Field(validation_alias="event_id", default=None)
+    event_id: str = Field(validation_alias="event_id")

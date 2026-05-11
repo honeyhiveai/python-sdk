@@ -253,12 +253,14 @@ class TestSimpleIntegration:
                     event.session_id == session_id for event in session_events.events
                 )
 
-                # Retrieve events for this session - v1 API uses .list() method
+                # Retrieve events for this session - v1 API uses .list() method.
+                # `EventSearchFilter` accepts type=string|number|boolean|datetime
+                # since #3685 (HHAI-4989); session_id is a UUID string.
                 session_filter = {
                     "field": "session_id",
                     "value": session_id,
                     "operator": "is",
-                    "type": "id",
+                    "type": "string",
                 }
 
                 events_result = integration_client.events.list(

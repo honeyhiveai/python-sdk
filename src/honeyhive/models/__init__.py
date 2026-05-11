@@ -60,11 +60,20 @@ class FilterOperator(str, Enum):
 
 
 class FilterFieldType(str, Enum):
-    """Field types for event filters."""
+    """Field types for event filters.
+
+    The server only accepts ``string``, ``number``, ``boolean``, ``datetime``;
+    use ``STRING`` for UUID-style fields like ``session_id`` / ``event_id``.
+    """
 
     STRING = "string"
     NUMBER = "number"
     BOOLEAN = "boolean"
+    DATETIME = "datetime"
+    # DEPRECATED: never accepted by the backend (the server enum is
+    # string|number|boolean|datetime). Kept as an alias so existing imports
+    # don't AttributeError, but the wire value "id" is rejected with HTTP 400.
+    # Use STRING for UUID/ID fields. Will be removed in a future SDK major.
     ID = "id"
 
 
@@ -113,7 +122,7 @@ class EventFilter(BaseModel):
     value: str = Field(description="The value to filter for")
     type: str = Field(
         default="string",
-        description="Data type: 'string', 'number', 'boolean', 'id'",
+        description="Data type: 'string', 'number', 'boolean', 'datetime'",
     )
 
     def to_dict(self) -> Dict[str, Any]:

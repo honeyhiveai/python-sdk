@@ -14,6 +14,9 @@ import statistics
 import time
 from typing import Any
 
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+
 from honeyhive.tracer import HoneyHiveTracer, trace
 
 
@@ -34,6 +37,14 @@ class TestTracerPerformance:
             test_mode=False,
             session_name="performance_test",
         )
+
+        # Attach an in-memory span exporter alongside the OTLP pipeline so we
+        # can directly verify the tracer is wired up and emitting spans.
+        # Behavioral check replaces a brittle timing-based "tracer is alive"
+        # assertion that false-positived on fast hardware where overhead
+        # dropped below the noise floor of statistics.mean(...) subtraction.
+        captured_exporter = InMemorySpanExporter()
+        tracer.provider.add_span_processor(SimpleSpanProcessor(captured_exporter))
 
         @trace(tracer=tracer, event_type="tool")  # type: ignore[misc]
         def performance_function() -> float:
@@ -155,7 +166,6 @@ class TestTracerPerformance:
                 "flush_time_ms": 3000.0,  # < 3000ms total flush time
                 "decorator_cv_percent": 500.0,  # < 500% coefficient of variation
                 "overall_ratio": 50.0,  # < 50x total overhead
-                "min_tracer_overhead_ms": 0.5,  # > 0.5ms tracer overhead
             }
         else:
             # Isolation execution: stricter thresholds for more predictable performance
@@ -166,7 +176,6 @@ class TestTracerPerformance:
                 "flush_time_ms": 1000.0,  # < 1000ms total flush time
                 "decorator_cv_percent": 100.0,  # < 100% coefficient of variation
                 "overall_ratio": 15.0,  # < 15x total overhead
-                "min_tracer_overhead_ms": 1.0,  # > 1ms tracer overhead
             }
 
         # Enhanced assertions with execution-mode-specific thresholds
@@ -218,14 +227,28 @@ class TestTracerPerformance:
             f"(expected < {ratio_limit}x in {execution_mode} mode)"
         )
 
-        # Ensure we're actually tracing (sanity check)
-        assert total_mean > pure_mean, "Traced function should have some overhead"
-
-        # Ensure tracer overhead is significant enough to be meaningful
-        min_tracer_ms = thresholds["min_tracer_overhead_ms"]
-        assert tracer_overhead_mean > min_tracer_ms / 1000.0, (
-            f"Tracer overhead too low: {tracer_overhead_mean*1000:.2f}ms "
-            f"(may indicate tracing not working, expected > {min_tracer_ms}ms)"
+        # Behavioral sanity check: confirm the tracer is wired up and actually
+        # emitting spans for the decorated function. Counts spans captured by
+        # the in-memory exporter attached above. Expect 1 warm-up call + 100
+        # measurement calls = 101 spans, all named after performance_function.
+        captured_spans = captured_exporter.get_finished_spans()
+        expected_min_spans = num_iterations + 1  # warm-up + measured
+        assert len(captured_spans) >= expected_min_spans, (
+            f"Tracer emitted {len(captured_spans)} spans; expected at least "
+            f"{expected_min_spans} (1 warm-up + {num_iterations} measured). "
+            f"This indicates tracing is disconnected or not capturing the "
+            f"decorated function."
+        )
+        # Use endswith on the qualified name (e.g. "<module>.performance_function")
+        # rather than a substring match so we'd notice if @trace stopped naming
+        # spans after the decorated function.
+        traced_fn_spans = [
+            s for s in captured_spans if s.name.endswith(".performance_function")
+        ]
+        assert traced_fn_spans, (
+            f"No spans ending with '.performance_function' found in "
+            f"{len(captured_spans)} captured spans. Span names: "
+            f"{[s.name for s in captured_spans[:5]]}"
         )
 
         # Enhanced performance metrics output with execution mode context

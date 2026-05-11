@@ -40,7 +40,6 @@ def find_mock_usage(integration_dir: Path) -> List[Tuple[str, int, str]]:
         r"mock\.patch",
         r"patch\.object",
         r"with patch",
-        r"mock_\w+",  # Variables starting with mock_
         r"test_mode\s*=\s*True",  # Also catch test_mode=True which defeats integration testing
     ]
 

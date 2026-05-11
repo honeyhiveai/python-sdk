@@ -18,7 +18,7 @@ These tests validate end-to-end behavior with REAL API calls and backend verific
 import os
 import time
 import traceback
-from typing import Any, Dict
+from typing import Any, Dict, Set
 
 import pytest
 
@@ -113,7 +113,10 @@ class TestV1ImmediateShipRequirements:
         print("✅ TASK 5: Session linking (run_id in metadata)")
         print(f"   run_id: {metadata['run_id']}")
 
-        # TASK 4 & 5: Get all child events
+        # TASK 4 & 5: Get all child events. The `type` field is advisory at
+        # the SQL layer but `EventSearchFilter` validates it as one of
+        # string|number|boolean|datetime; session_id is a UUID string, so
+        # "string" is the correct value here.
         events_response = integration_client.events.get_events(
             project=real_project,
             filters=[
@@ -121,7 +124,7 @@ class TestV1ImmediateShipRequirements:
                     "field": "session_id",
                     "operator": "is",
                     "value": session_id_str,
-                    "type": "id",
+                    "type": "string",
                 },
             ],
             limit=100,
@@ -135,10 +138,16 @@ class TestV1ImmediateShipRequirements:
         ), "TASK 4 & 5 FAILED: Should have child events (nested @trace spans)"
         print(f"\n✅ TASK 4 & 5: Found {len(child_events)} child events")
 
-        # Validate child events
+        # Validate child events. evaluate() auto-wraps the user function in a
+        # chain span, so nested children may link through that span rather
+        # than directly to the session; we walk the parent chain to verify
+        # every child eventually reaches the session root.
+        events_by_id: Dict[str, Any] = {
+            e.event_id: e for e in all_events if e.event_id is not None
+        }
         for child in child_events:
             print()
-            self._validate_child_event(child, session_id_str)
+            self._validate_child_event(child, events_by_id, session_id_str)
 
     @staticmethod
     def _validate_child_inputs(child: Any) -> None:
@@ -172,18 +181,44 @@ class TestV1ImmediateShipRequirements:
         )
 
     @staticmethod
-    def _validate_child_event(child: Any, session_id_str: str) -> None:
+    def _validate_child_event(
+        child: Any,
+        events_by_id: Dict[str, Any],
+        session_id_str: str,
+    ) -> None:
         """Validate a single child event for TASK 4 & 5."""
         child_name = getattr(child, "event_name", "unknown")
         print(f"   Child: {child_name}")
 
-        # TASK 5: Verify parent-child linking
-        child_parent_id = getattr(child, "parent_id", None)
-        assert child_parent_id == session_id_str, (
-            f"TASK 5 FAILED: Child parent_id should link to session. "
-            f"Got {child_parent_id}, expected {session_id_str}"
+        # TASK 5: walk the parent chain up to the session root. The SDK's
+        # evaluate() auto-wraps the user function in a chain span
+        # (honeyhive.experiments.core), so nested @trace spans link to that
+        # wrapper rather than directly to the session.
+        chain = [child.event_id]
+        current_id = getattr(child, "parent_id", None)
+        seen: Set[str] = set()
+        reason = "unterminated"
+        while current_id and current_id != session_id_str:
+            if current_id in seen:
+                reason = "cycle"
+                break
+            seen.add(current_id)
+            chain.append(current_id)
+            parent = events_by_id.get(current_id)
+            if parent is None:
+                reason = "missing_parent"
+                break
+            current_id = getattr(parent, "parent_id", None)
+        if current_id == session_id_str:
+            reason = "reached_session"
+        elif current_id is None:
+            reason = "null_parent_id"
+        assert reason == "reached_session", (
+            f"TASK 5 FAILED: Child '{child_name}' parent chain should reach "
+            f"session {session_id_str}. Reason: {reason}, walked: {chain}, "
+            f"last seen: {current_id}"
         )
-        print("   ✅ TASK 5: Correctly linked to parent")
+        print("   ✅ TASK 5: Parent chain links to session")
 
         # TASK 4: Check for auto-captured inputs
         TestV1ImmediateShipRequirements._validate_child_inputs(child)
