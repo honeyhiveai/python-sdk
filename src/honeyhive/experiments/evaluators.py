@@ -83,6 +83,8 @@ class EvalSettings:
     transform: Optional[str] = None
     aggregate: Optional[str] = None
     checker: Optional[str] = None
+    # ``target`` is the assertion/checker target (e.g. "score in range
+    # [target]") consumed by run_asserts/pre_run_checker.
     target: Optional[str] = None
     evaluate: Optional[str] = None
 

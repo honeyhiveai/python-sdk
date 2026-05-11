@@ -6,22 +6,18 @@ async evaluation -> scores on event -> scores readable via DP event export
 because project API keys authenticate the Data Plane; CP ``GET /events`` expects
 a user/session token and returns 401 for API-key-only clients.
 
-Requires a live stack and project-scoped API key. Runs when either
-``OPENAI_API_KEY`` is set (cloud OpenAI via workspace Provider Secrets) or
-``HH_EVALUATOR_E2E_USE_OLLAMA=true`` with ``OPENAI_API_BASE`` (and optionally
-``OPENAI_API_KEY``) on ``dp-llm-proxy`` so the proxy can merge env into LiteLLM
-kwargs when the workspace has no OpenAI Provider Secret (CI Ollama uses base only;
-``api_key`` defaults to ``ollama`` in the server).
+Requires a live stack and project-scoped API key. Defaults to the lightweight
+``mock_llm`` provider backed by the mock-llm docker-compose service. Set
+``HH_EVALUATOR_E2E_USE_OPENAI=1`` with ``OPENAI_API_KEY`` to use real cloud
+OpenAI instead.
 
 The created metric includes an ``event_name`` filter matching the test span so
 evaluation does not run on every event in the shared integration project under
-``pytest-xdist``; otherwise CI Ollama (effectively one completion at a time)
-would queue many duplicate jobs and the poll could time out.
+``pytest-xdist``.
 """
 
 from __future__ import annotations
 
-import os
 import time
 import uuid
 from typing import Any
@@ -31,6 +27,7 @@ import pytest
 from honeyhive.api.client import HoneyHive
 from honeyhive.models import CreateMetricRequest, CreateMetricResponse
 from honeyhive.tracer import HoneyHiveTracer
+from tests.integration._experiments_helpers import require_server_side_eval_creds
 
 
 def _event_to_dict(event: Any) -> dict[str, Any]:
@@ -103,21 +100,7 @@ class TestEvaluatorLlmE2E:
         real_source: str,
     ) -> None:
         """Create LLM metric, emit trace, wait for evaluator scores, verify APIs."""
-        use_ollama = os.environ.get("HH_EVALUATOR_E2E_USE_OLLAMA", "").lower() in (
-            "1",
-            "true",
-            "yes",
-        )
-        if not os.environ.get("OPENAI_API_KEY") and not use_ollama:
-            pytest.skip(
-                "Set OPENAI_API_KEY (cloud eval + Provider Secrets) or "
-                "HH_EVALUATOR_E2E_USE_OLLAMA=1 with OPENAI_API_BASE on dp-llm-proxy (e.g. CI Ollama)"
-            )
-
-        ollama_model = os.environ.get(
-            "HH_EVALUATOR_E2E_OLLAMA_MODEL", "python-sdk-ci-glider"
-        )
-        model_name = ollama_model if use_ollama else "gpt-4o-mini"
+        model_name, model_provider = require_server_side_eval_creds()
 
         if (
             not integration_client.api_key
@@ -147,7 +130,7 @@ class TestEvaluatorLlmE2E:
             return_type="float",
             scale=5,
             threshold={"min": 1, "max": 5},
-            model_provider="openai",
+            model_provider=model_provider,
             model_name=model_name,
             enabled_in_prod=True,
             sampling_percentage=100.0,

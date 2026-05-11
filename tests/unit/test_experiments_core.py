@@ -2,31 +2,27 @@
 
 This module contains comprehensive unit tests for the experiments module's
 core orchestration logic, including experiment context, concurrent execution
-with tracer multi-instance pattern, evaluator execution, and full evaluate()
-orchestration.
+with tracer multi-instance pattern, and full evaluate() orchestration.
 
 Tests cover:
 - ExperimentContext initialization and tracer config generation
 - run_experiment() with ThreadPoolExecutor and tracer multi-instance
-- _run_evaluators() with concurrent evaluator execution (sync/async)
 - evaluate() full orchestration (dataset prep, run creation, execution, results)
 - Error handling, edge cases, and failure scenarios
 
-NOTE: Tests temporarily skipped - test expectations don't match current implementation.
-TODO: Update tests to match current experiments core implementation.
+Per-datapoint evaluator orchestration is exercised in
+tests/unit/test_evaluator_metric_normalization.py (TestRunSingleEvaluator,
+TestRunEvaluatorsForDatapoint, TestApplyInlineEvaluators).
 """
 
 from typing import Any, Dict
 from unittest.mock import Mock, patch
 
+import httpx
 import pytest
 
-from honeyhive.experiments.core import (
-    ExperimentContext,
-    _run_evaluators,
-    evaluate,
-    run_experiment,
-)
+from honeyhive._generated.api_config import HTTPException
+from honeyhive.experiments.core import ExperimentContext, evaluate, run_experiment
 
 # Tests updated to match current implementation (base_url instead of server_url)
 
@@ -367,113 +363,11 @@ class TestRunExperiment:
             assert mock_logger.info.called
 
 
-class TestRunEvaluators:
-    """Test suite for _run_evaluators function."""
-
-    def test_successful_sync_evaluator_execution(self) -> None:
-        """Test successful execution with synchronous evaluator."""
-
-        def accuracy_eval(inputs: Dict, outputs: Any, ground_truth: Any) -> float:
-            return 0.95
-
-        execution_results = [
-            {
-                "datapoint_id": "dp-1",
-                "inputs": {"query": "test"},
-                "outputs": {"answer": "a1"},
-                "ground_truth": {"answer": "a1"},
-            }
-        ]
-
-        metrics = _run_evaluators(
-            evaluators=[accuracy_eval],
-            execution_results=execution_results,
-            max_workers=1,
-            verbose=False,
-        )
-
-        assert "dp-1" in metrics
-        assert metrics["dp-1"]["accuracy_eval"] == 0.95
-
-    def test_multiple_evaluators(self) -> None:
-        """Test execution with multiple evaluators."""
-
-        def accuracy(inputs: Dict, outputs: Any, ground_truth: Any) -> float:
-            return 0.95
-
-        def relevance(inputs: Dict, outputs: Any, ground_truth: Any) -> float:
-            return 0.87
-
-        execution_results = [
-            {
-                "datapoint_id": "dp-1",
-                "inputs": {},
-                "outputs": {},
-                "ground_truth": {},
-            }
-        ]
-
-        metrics = _run_evaluators(
-            evaluators=[accuracy, relevance],
-            execution_results=execution_results,
-            max_workers=2,
-        )
-
-        assert "dp-1" in metrics
-        assert "accuracy" in metrics["dp-1"]
-        assert "relevance" in metrics["dp-1"]
-
-    def test_evaluator_without_ground_truth(self) -> None:
-        """Test evaluator execution when ground_truth is None."""
-
-        def fluency_eval(inputs: Dict, outputs: Any) -> float:
-            return 0.9
-
-        execution_results = [
-            {
-                "datapoint_id": "dp-1",
-                "inputs": {},
-                "outputs": {},
-                "ground_truth": None,  # No ground truth
-            }
-        ]
-
-        metrics = _run_evaluators(
-            evaluators=[fluency_eval],
-            execution_results=execution_results,
-            max_workers=1,
-        )
-
-        assert "dp-1" in metrics
-        assert metrics["dp-1"]["fluency_eval"] == 0.9
-
-    def test_evaluator_error_handling(self) -> None:
-        """Test that evaluator errors are caught and return None."""
-
-        def failing_evaluator(inputs: Dict, outputs: Any) -> float:
-            raise ValueError("Evaluator failed")
-
-        execution_results = [
-            {
-                "datapoint_id": "dp-1",
-                "inputs": {},
-                "outputs": {},
-                "ground_truth": None,
-            }
-        ]
-
-        metrics = _run_evaluators(
-            evaluators=[failing_evaluator],
-            execution_results=execution_results,
-            max_workers=1,
-        )
-
-        assert "dp-1" in metrics
-        assert metrics["dp-1"]["failing_evaluator"] is None
-
-    # NOTE: Async evaluator testing removed - too complex to properly mock
-    # asyncio is imported inside the function (import-outside-toplevel)
-    # This should be covered by integration tests instead
+# NOTE: per-datapoint evaluator orchestration is now exercised in
+# tests/unit/test_evaluator_metric_normalization.py
+# (TestRunEvaluatorsForDatapoint + TestApplyInlineEvaluators); the
+# legacy cross-datapoint _run_evaluators() helper was removed when
+# evaluators moved inline into process_datapoint.
 
 
 class TestEvaluate:
@@ -539,97 +433,6 @@ class TestEvaluate:
                 project=None,
             )
 
-    @pytest.mark.skip(
-        reason="HHAI-3939: Test expects HH_API_URL env var (set in v2 tox env but not unit env)"
-    )
-    @patch("honeyhive.experiments.core.get_run_result")
-    @patch("honeyhive.experiments.core._run_evaluators")
-    @patch("honeyhive.experiments.core.run_experiment")
-    @patch("honeyhive.experiments.core.ExperimentContext")
-    @patch("honeyhive.experiments.core.prepare_run_request_data")
-    @patch("honeyhive.experiments.core.prepare_external_dataset")
-    @patch("honeyhive.experiments.core.uuid.uuid4")
-    @patch("honeyhive.experiments.core.HoneyHive")
-    def test_evaluate_with_external_dataset(
-        self,
-        mock_honeyhive_class: Mock,
-        mock_uuid: Mock,
-        mock_prepare_external: Mock,
-        mock_prepare_run: Mock,
-        mock_context_class: Mock,
-        mock_run_experiment: Mock,
-        mock_run_evaluators: Mock,
-        mock_get_result: Mock,
-        simple_function: Any,
-    ) -> None:
-        """Test evaluate() with external dataset."""
-        # Setup mocks
-        mock_uuid.return_value = Mock(hex="abc123")
-        mock_prepare_external.return_value = ("EXT-dataset-123", ["dp-1", "dp-2"])
-        mock_prepare_run.return_value = {
-            "name": "test-experiment",
-            "project": "test-project",
-            "dataset_id": "EXT-dataset-123",
-            "event_ids": [],
-        }
-
-        mock_client = Mock()
-        mock_run_response = Mock()
-        mock_run_response.run_id = "run-456"
-        mock_client.evaluations.create_run.return_value = mock_run_response
-        mock_client.evaluations.update_run_from_dict.return_value = None
-        mock_honeyhive_class.return_value = mock_client
-
-        mock_context = Mock()
-        mock_context_class.return_value = mock_context
-
-        mock_run_experiment.return_value = [
-            {"datapoint_id": "dp-1", "outputs": {"result": "A"}},
-            {"datapoint_id": "dp-2", "outputs": {"result": "B"}},
-        ]
-
-        mock_run_evaluators.return_value = {
-            "dp-1": {"accuracy": 0.9},
-            "dp-2": {"accuracy": 0.8},
-        }
-
-        mock_result = Mock()
-        mock_result.success = True
-        mock_result.passed = ["dp-1", "dp-2"]
-        mock_result.failed = []
-        mock_get_result.return_value = mock_result
-
-        # Execute
-        dataset = [{"inputs": {"x": 1}}, {"inputs": {"x": 2}}]
-
-        def eval_func(inputs: Any, outputs: Any, ground_truth: Any = None) -> float:
-            return 0.9
-
-        result = evaluate(
-            function=simple_function,
-            dataset=dataset,
-            api_key="test-key",
-            project="test-project",
-            evaluators=[eval_func],
-            max_workers=2,
-            aggregate_function="average",
-            verbose=True,
-        )
-
-        # Verify
-        assert result == mock_result
-        # base_url comes from HH_API_URL environment variable if set
-        # The code converts server_url -> base_url when calling HoneyHive client
-        mock_honeyhive_class.assert_called_once()
-        call_kwargs = mock_honeyhive_class.call_args[1]
-        assert call_kwargs["api_key"] == "test-key"
-        assert "base_url" in call_kwargs  # base_url is set from env var
-        mock_prepare_external.assert_called_once_with(dataset)
-        mock_run_experiment.assert_called_once()
-        mock_run_evaluators.assert_called_once()
-        mock_client.experiments.update_run.assert_called_once()
-        mock_get_result.assert_called_once()
-
     @patch("honeyhive.experiments.core.get_run_result")
     @patch("honeyhive.experiments.core.run_experiment")
     @patch("honeyhive.experiments.core.ExperimentContext")
@@ -665,24 +468,19 @@ class TestEvaluate:
         mock_ds_response.datasets = [mock_ds]
         mock_client.datasets.list.return_value = mock_ds_response
 
-        # Mock datapoint responses - returns dict with "datapoint" key
+        # Mock datapoint responses — typed GetDatapointResponse with
+        # `.datapoint` (List[Datapoint]) attribute.
+        dp1 = Mock(inputs={"x": 1}, ground_truth={"y": 2}, id="dp-1")
+        dp2 = Mock(inputs={"x": 3}, ground_truth={"y": 4}, id="dp-2")
         mock_client.datapoints.get_datapoint.side_effect = [
-            {
-                "datapoint": [
-                    {"inputs": {"x": 1}, "ground_truth": {"y": 2}, "id": "dp-1"}
-                ]
-            },
-            {
-                "datapoint": [
-                    {"inputs": {"x": 3}, "ground_truth": {"y": 4}, "id": "dp-2"}
-                ]
-            },
+            Mock(datapoint=[dp1]),
+            Mock(datapoint=[dp2]),
         ]
 
         mock_run_response = Mock()
         mock_run_response.run_id = "run-789"
-        mock_client.evaluations.create_run.return_value = mock_run_response
-        mock_client.evaluations.update_run.return_value = None
+        mock_client.experiments.create_run.return_value = mock_run_response
+        mock_client.experiments.update_run.return_value = None
         mock_honeyhive_class.return_value = mock_client
 
         mock_context = Mock()
@@ -733,7 +531,13 @@ class TestEvaluate:
         mock_get_result: Mock,
         simple_function: Any,
     ) -> None:
-        """Test evaluate() handles datapoint fetch errors gracefully."""
+        """evaluate() keeps going when a single datapoint fetch hits an HTTP error.
+
+        Per-datapoint HTTP/network failures shouldn't kill the whole run
+        — log a warning and continue with whatever datapoints did
+        return. Anything that isn't a transient HTTP/transport failure
+        is covered by ``test_evaluate_datapoint_fetch_propagates_non_http_errors``.
+        """
         # Setup mocks
         mock_uuid.return_value = Mock(hex="abc123")
         mock_prepare_run.return_value = {
@@ -751,20 +555,25 @@ class TestEvaluate:
         mock_ds_response.datasets = [mock_ds]
         mock_client.datasets.list.return_value = mock_ds_response
 
-        # First datapoint succeeds, second fails
+        # First datapoint succeeds — the SDK returns a typed
+        # GetDatapointResponse whose `.datapoint` is a list of Datapoint
+        # Pydantic models; mock the attribute shape directly.
+        first_dp = Mock(inputs={"x": 1}, ground_truth={"y": 2}, id="dp-1")
+        first_response = Mock(datapoint=[first_dp])
+        # Second datapoint hits a 503 — this is the kind of transient
+        # failure the per-dp try/except is supposed to absorb.
         mock_client.datapoints.get_datapoint.side_effect = [
-            {
-                "datapoint": [
-                    {"inputs": {"x": 1}, "ground_truth": {"y": 2}, "id": "dp-1"}
-                ]
-            },
-            Exception("Network error"),
+            first_response,
+            HTTPException(503, "service unavailable"),
         ]
 
         mock_run_response = Mock()
         mock_run_response.run_id = "run-abc"
-        mock_client.evaluations.create_run.return_value = mock_run_response
-        mock_client.evaluations.update_run.return_value = None
+        # The runtime client aliases self.evaluations = self.experiments,
+        # but Mock() makes them independent auto-children; evaluate()
+        # actually calls client.experiments.create_run/update_run.
+        mock_client.experiments.create_run.return_value = mock_run_response
+        mock_client.experiments.update_run.return_value = None
         mock_honeyhive_class.return_value = mock_client
 
         mock_context = Mock()
@@ -791,6 +600,186 @@ class TestEvaluate:
         # Verify - should continue with available datapoints
         assert result == mock_result
         assert mock_client.datapoints.get_datapoint.call_count == 2
+
+    @patch("honeyhive.experiments.core.get_run_result")
+    @patch("honeyhive.experiments.core.run_experiment")
+    @patch("honeyhive.experiments.core.ExperimentContext")
+    @patch("honeyhive.experiments.core.prepare_run_request_data")
+    @patch("honeyhive.experiments.core.uuid.uuid4")
+    @patch("honeyhive.experiments.core.HoneyHive")
+    def test_evaluate_datapoint_fetch_propagates_non_http_errors(
+        self,
+        mock_honeyhive_class: Mock,
+        mock_uuid: Mock,
+        mock_prepare_run: Mock,
+        mock_context_class: Mock,  # noqa: ARG002 — fixture wiring only
+        mock_run_experiment: Mock,  # noqa: ARG002 — fixture wiring only
+        mock_get_result: Mock,  # noqa: ARG002 — fixture wiring only
+        simple_function: Any,
+    ) -> None:
+        """Programming errors during datapoint fetch must propagate, not be swallowed.
+
+        Regression for the bug fixed in this PR: ``get_datapoint``
+        previously hit ``AttributeError`` on every call (we were calling
+        ``.get()`` on a Pydantic model). The per-datapoint broad except
+        swallowed it as a warning, the loop yielded zero datapoints,
+        and the run completed with status=success / passed=0 — silent
+        data loss. The narrow except (HTTPException, httpx.HTTPError)
+        now lets programming errors bubble up so the run fails loudly.
+        """
+        mock_uuid.return_value = Mock(hex="abc123")
+        mock_prepare_run.return_value = {
+            "name": "test-experiment",
+            "project": "test-project",
+            "event_ids": [],
+        }
+
+        mock_client = Mock()
+        mock_ds = Mock()
+        mock_ds.datapoints = ["dp-1"]
+        mock_ds_response = Mock()
+        mock_ds_response.datasets = [mock_ds]
+        mock_client.datasets.list.return_value = mock_ds_response
+
+        # Programming error — must propagate.
+        mock_client.datapoints.get_datapoint.side_effect = AttributeError(
+            "'GetDatapointResponse' object has no attribute 'get'"
+        )
+        mock_honeyhive_class.return_value = mock_client
+
+        with pytest.raises(AttributeError, match="GetDatapointResponse"):
+            evaluate(
+                function=simple_function,
+                dataset_id="ds-123",
+                api_key="test-key",
+                project="test-project",
+            )
+
+    @patch("honeyhive.experiments.core.get_run_result")
+    @patch("honeyhive.experiments.core.run_experiment")
+    @patch("honeyhive.experiments.core.ExperimentContext")
+    @patch("honeyhive.experiments.core.prepare_run_request_data")
+    @patch("honeyhive.experiments.core.uuid.uuid4")
+    @patch("honeyhive.experiments.core.HoneyHive")
+    def test_evaluate_datapoint_fetch_handles_httpx_transport_errors(
+        self,
+        mock_honeyhive_class: Mock,
+        mock_uuid: Mock,
+        mock_prepare_run: Mock,
+        mock_context_class: Mock,
+        mock_run_experiment: Mock,
+        mock_get_result: Mock,
+        simple_function: Any,
+    ) -> None:
+        """``httpx`` transport errors (connection refused, timeout, ...) are absorbed.
+
+        These are also "transient fetch failure" shaped and should be
+        treated like ``HTTPException`` — log + skip, don't crash.
+        """
+        mock_uuid.return_value = Mock(hex="abc123")
+        mock_prepare_run.return_value = {
+            "name": "test-experiment",
+            "project": "test-project",
+            "event_ids": [],
+        }
+
+        mock_client = Mock()
+        mock_ds = Mock()
+        mock_ds.datapoints = ["dp-1", "dp-2"]
+        mock_ds_response = Mock()
+        mock_ds_response.datasets = [mock_ds]
+        mock_client.datasets.list.return_value = mock_ds_response
+
+        first_dp = Mock(inputs={"x": 1}, ground_truth={"y": 2}, id="dp-1")
+        first_response = Mock(datapoint=[first_dp])
+        mock_client.datapoints.get_datapoint.side_effect = [
+            first_response,
+            httpx.ConnectError("connection refused"),
+        ]
+
+        mock_run_response = Mock()
+        mock_run_response.run_id = "run-abc"
+        # See note in test_evaluate_datapoint_fetch_error_handling re. the
+        # experiments/evaluations alias not propagating through Mock().
+        mock_client.experiments.create_run.return_value = mock_run_response
+        mock_client.experiments.update_run.return_value = None
+        mock_honeyhive_class.return_value = mock_client
+
+        mock_context_class.return_value = Mock()
+        mock_run_experiment.return_value = [
+            {"datapoint_id": "dp-1", "outputs": {"result": "A"}},
+        ]
+        mock_result = Mock()
+        mock_result.success = True
+        mock_get_result.return_value = mock_result
+
+        # Should not raise.
+        result = evaluate(
+            function=simple_function,
+            dataset_id="ds-123",
+            api_key="test-key",
+            project="test-project",
+        )
+        assert result == mock_result
+        assert mock_client.datapoints.get_datapoint.call_count == 2
+
+    @patch("honeyhive.experiments.core.get_run_result")
+    @patch("honeyhive.experiments.core.run_experiment")
+    @patch("honeyhive.experiments.core.ExperimentContext")
+    @patch("honeyhive.experiments.core.prepare_run_request_data")
+    @patch("honeyhive.experiments.core.uuid.uuid4")
+    @patch("honeyhive.experiments.core.HoneyHive")
+    def test_evaluate_raises_when_all_datapoint_fetches_fail(
+        self,
+        mock_honeyhive_class: Mock,
+        mock_uuid: Mock,
+        mock_prepare_run: Mock,
+        mock_context_class: Mock,  # noqa: ARG002 — fixture wiring only
+        mock_run_experiment: Mock,  # noqa: ARG002 — fixture wiring only
+        mock_get_result: Mock,  # noqa: ARG002 — fixture wiring only
+        simple_function: Any,
+    ) -> None:
+        """Every-datapoint-failed → ValueError, not silent passed=0 run.
+
+        With the narrow except in place, transient HTTPException on a
+        single datapoint logs+skips. But if EVERY fetch hits a
+        transient failure, the loop ends with dataset_list=[] and the
+        old behavior would proceed to run_experiment(dataset=[]) and
+        report passed=0 — the same silent-data-loss shape the broad
+        except produced before. Guard raises ValueError instead.
+        """
+        mock_uuid.return_value = Mock(hex="abc123")
+        mock_prepare_run.return_value = {
+            "name": "test-experiment",
+            "project": "test-project",
+            "event_ids": [],
+        }
+
+        mock_client = Mock()
+        mock_ds = Mock()
+        mock_ds.datapoints = ["dp-1", "dp-2", "dp-3"]
+        mock_ds_response = Mock()
+        mock_ds_response.datasets = [mock_ds]
+        mock_client.datasets.list.return_value = mock_ds_response
+
+        # All three datapoint fetches hit transient errors — narrow
+        # except absorbs them, but the post-loop guard must raise.
+        mock_client.datapoints.get_datapoint.side_effect = [
+            HTTPException(503, "service unavailable"),
+            HTTPException(503, "service unavailable"),
+            HTTPException(503, "service unavailable"),
+        ]
+        mock_honeyhive_class.return_value = mock_client
+
+        with pytest.raises(ValueError, match="every fetch returned no usable"):
+            evaluate(
+                function=simple_function,
+                dataset_id="ds-123",
+                api_key="test-key",
+                project="test-project",
+            )
+        # Confirm we did try every datapoint before raising.
+        assert mock_client.datapoints.get_datapoint.call_count == 3
 
     @patch("honeyhive.experiments.core.get_run_result")
     @patch("honeyhive.experiments.core.run_experiment")
@@ -914,8 +903,6 @@ class TestEvaluate:
 
         # Verify
         assert result == mock_result
-        # _run_evaluators should NOT have been called
-        # (can't directly verify since it's not patched, but no error means it wasn't called)
 
     @patch.dict("os.environ", {"HONEYHIVE_API_KEY": "env-api-key"})
     @patch("honeyhive.experiments.core.get_run_result")

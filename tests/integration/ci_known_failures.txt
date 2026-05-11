@@ -21,7 +21,6 @@
 #     override routes events to a different session than the one the
 #     test queries under
 #   * Experiment comparison / semantic assertions
-#   * Parent-child session linking (test_all_five_requirements_end_to_end)
 
 # OTLPJSONExporter int64 precision bug (HHAI-5004) — the test sends
 # attr.large_int=9223372036854775807; the exporter now emits it as a raw
@@ -45,10 +44,13 @@ tests/integration/test_otel_backend_verification_integration.py::TestOTELBackend
 # stringification issue.
 tests/integration/test_otel_otlp_export_integration.py::TestOTELOTLPExportIntegration::test_otlp_export_with_backend_verification
 
-# Experiment comparison / semantic assertions
-tests/integration/test_experiments_integration.py::TestExperimentsIntegration::test_compare_runs_with_metric_improvements_and_regressions
-tests/integration/test_experiments_integration.py::TestExperimentsIntegration::test_event_level_comparison
-tests/integration/test_experiments_integration.py::TestExperimentsIntegration::test_managed_dataset_evaluation
-
-# Parent-child session linking
+# _enrich_session_with_results race against OTLP→writer pipeline — the
+# session event is exported via OTLP at the end of evaluate(), then
+# _enrich_session_with_results immediately PUTs ground_truth feedback
+# onto it via events.update(). On the local CI stack the writer hasn't
+# materialized the session row yet, so the PUT 404s
+# ("updateEventLegacy failed with status code: 404") and feedback stays
+# empty, tripping the TASK 3 assertion. Passes against testing-dp-1
+# where the writer keeps up. Fix is SDK-side: retry the enrich PUT with
+# a short backoff, separate change.
 tests/integration/test_v1_immediate_ship_requirements.py::TestV1ImmediateShipRequirements::test_all_five_requirements_end_to_end

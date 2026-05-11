@@ -8,13 +8,18 @@ This module provides the core experiment execution functionality including:
 
 # pylint: disable=too-many-lines
 import asyncio
-import inspect  # ✅ TASK 2: Needed for signature detection
+import functools
+import inspect
 import os
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Any, Callable, Dict, List, Optional
+from dataclasses import dataclass, field
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from uuid import UUID
 
+import httpx
+
+from honeyhive._generated.api_config import HTTPException
 from honeyhive.api.client import HoneyHive
 from honeyhive.experiments.evaluators import evaluator as evaluator_class
 from honeyhive.experiments.results import get_run_result
@@ -35,6 +40,152 @@ from honeyhive.utils.logger import get_logger, safe_log
 
 # Module-level logger for orchestration code (no tracer instance yet)
 logger = get_logger("honeyhive.experiments.core")
+
+
+# Acceptable scalar score types. Mirrors the server-side evaluator contract
+# (see services/data_plane/dp_evaluation_service/app/services/metric_update_service.js
+# castResultToReturnType): scores must be bool | float | str so that
+# compareRunMetrics — which only diffs typeof === 'number' | 'boolean' — can
+# pair them across runs.
+ScalarScore = Union[bool, int, float, str]
+
+
+def _is_scalar_metric_value(value: Any) -> bool:
+    """Return True if `value` is safe to drop into `event.metrics` as-is.
+
+    The backend's metrics field is `Record<string, unknown>` (no validation),
+    but compareRunMetrics ignores everything that isn't bool/number, so
+    non-scalar values are silently lost during run comparison. We refuse to
+    write them.
+    """
+    if isinstance(value, bool):  # bool is a subclass of int — check first.
+        return True
+    if isinstance(value, (int, float, str)):
+        return True
+    return False
+
+
+@dataclass
+class EvaluatorMetricResult:
+    """One evaluator's verdict for one datapoint, normalized.
+
+    Score is the bare ``metrics[eval_name]`` value. ``explanation`` becomes
+    ``metrics[f"{eval_name}_explanation"]``. Each ``extras`` entry becomes
+    ``metrics[f"{eval_name}_{key}"]``.
+    """
+
+    eval_name: str
+    score: Optional[ScalarScore] = None
+    explanation: Optional[str] = None
+    extras: Dict[str, ScalarScore] = field(default_factory=dict)
+
+    def to_metric_attrs(self) -> Dict[str, Any]:
+        """Flatten into the dict shape expected by ``enrich_span(metrics=…)``."""
+        attrs: Dict[str, Any] = {}
+        if self.score is not None:
+            attrs[self.eval_name] = self.score
+        if self.explanation is not None:
+            attrs[f"{self.eval_name}_explanation"] = self.explanation
+        for key, value in self.extras.items():
+            attrs[f"{self.eval_name}_{key}"] = value
+        return attrs
+
+    @classmethod
+    def from_raw(cls, eval_name: str, raw: Any) -> "EvaluatorMetricResult":
+        """Parse an evaluator's raw return value into the canonical metrics shape.
+
+        Accepts:
+          * scalar (bool/int/float/str) → ``score``
+          * 1-element list/tuple → element coerced to scalar (legacy behavior)
+          * dict → ``score`` + optional ``explanation`` + scalar extras flattened
+          * None → score stays None (failed evaluator path)
+
+        Non-scalar score values are rejected with a warning; non-scalar
+        extras are dropped with a warning. Score-less dicts log a warning
+        but still surface their scalar entries as extras so the data
+        isn't lost outright.
+        """
+        # Legacy coercion: list/tuple of length 1 unwrapped to its element.
+        if isinstance(raw, (list, tuple)) and len(raw) == 1:
+            raw = raw[0]
+
+        if raw is None:
+            return cls(eval_name=eval_name)
+
+        if _is_scalar_metric_value(raw):
+            return cls(eval_name=eval_name, score=raw)
+
+        if isinstance(raw, dict):
+            return cls._from_dict(eval_name, raw)
+
+        # Unknown return shape — refuse to invent semantics.
+        logger.warning(
+            "Evaluator %s returned an unsupported value type %s; dropping "
+            "its metric for this datapoint.",
+            eval_name,
+            type(raw).__name__,
+        )
+        return cls(eval_name=eval_name)
+
+    @classmethod
+    def _from_dict(cls, eval_name: str, raw: Dict[str, Any]) -> "EvaluatorMetricResult":
+        """Dict-shape branch of ``from_raw``, split out to keep nesting shallow."""
+        score: Optional[ScalarScore] = None
+        explanation: Optional[str] = None
+        extras: Dict[str, ScalarScore] = {}
+
+        if "score" in raw:
+            raw_score = raw["score"]
+            if _is_scalar_metric_value(raw_score):
+                score = raw_score
+            else:
+                logger.warning(
+                    "Evaluator %s returned a non-scalar 'score' value (%s); "
+                    "dropping the score (compareRunMetrics only diffs scalar "
+                    "metrics, so a nested value would be silently lost "
+                    "during comparison).",
+                    eval_name,
+                    type(raw_score).__name__,
+                )
+        else:
+            logger.warning(
+                "Evaluator %s returned a dict missing 'score' key; the bare "
+                "metrics[%s] entry won't be written, but scalar dict "
+                "entries will surface as %s_<key> for diagnostics.",
+                eval_name,
+                eval_name,
+                eval_name,
+            )
+
+        if "explanation" in raw:
+            raw_expl = raw["explanation"]
+            if isinstance(raw_expl, str):
+                explanation = raw_expl
+            elif raw_expl is not None:
+                # Coerce non-string explanations to str rather than dropping —
+                # they're informational and the UI just renders the value.
+                explanation = str(raw_expl)
+
+        for key, value in raw.items():
+            if key in ("score", "explanation"):
+                continue
+            if _is_scalar_metric_value(value):
+                extras[key] = value
+            else:
+                logger.warning(
+                    "Evaluator %s returned a non-scalar extra '%s' (%s); "
+                    "dropping it from event.metrics.",
+                    eval_name,
+                    key,
+                    type(value).__name__,
+                )
+
+        return cls(
+            eval_name=eval_name,
+            score=score,
+            explanation=explanation,
+            extras=extras,
+        )
 
 
 class ExperimentContext:  # pylint: disable=too-few-public-methods
@@ -140,6 +291,7 @@ def run_experiment(
     max_workers: int = 10,
     verbose: bool = False,
     instrumentors: Optional[List[Callable[[], Any]]] = None,
+    evaluators: Optional[List[Callable]] = None,
 ) -> List[Dict[str, Any]]:
     """
     Run experiment with tracer multi-instance pattern.
@@ -170,6 +322,10 @@ def run_experiment(
             return a new instrumentor instance when called. This ensures each
             datapoint gets its own instrumentor instance for proper trace routing.
             Example: [lambda: OpenAIInstrumentor(), lambda: AnthropicInstrumentor()]
+        evaluators: Optional list of evaluator callables. When set, each
+            evaluator runs inline on the user function's outputs inside
+            the per-datapoint chain span; their normalized scores attach
+            to the chain span via ``enrich_span`` before the span closes.
 
     Returns:
         List of execution results (one per datapoint)
@@ -199,6 +355,8 @@ def run_experiment(
         ...     instrumentors=[lambda: OpenAIInstrumentor()]
         ... )
     """
+    is_async = asyncio.iscoroutinefunction(function)
+    user_fn_accepts_tracer = "tracer" in inspect.signature(function).parameters
 
     def process_datapoint(
         datapoint: Dict[str, Any], datapoint_id: str
@@ -222,7 +380,6 @@ def run_experiment(
         tracer_config = experiment_context.to_tracer_config(datapoint_id)
         tracer_config["inputs"] = inputs  # Set session inputs
 
-        # ✅ TASK 1: Use experiment run name for session name
         if experiment_context.run_name:
             tracer_config["session_name"] = experiment_context.run_name
 
@@ -274,46 +431,82 @@ def run_experiment(
                     experiment_context.run_id,
                 )
 
-            # ✅ TASK 2: Check if function accepts tracer parameter (signature detection)
-            sig = inspect.signature(function)
-            params = sig.parameters
+            # Wrap the user function so evaluators run before the chain span
+            # closes — their scores attach to the still-recording span via
+            # enrich_span(metrics=…) and ride out on the OTLP export.
+            #
+            # Sync and async user fns take separate paths so async evaluators
+            # under an async user fn can be awaited directly; spinning up a
+            # nested loop in the same thread that's already running one (via
+            # asyncio.run below) would raise.
 
-            # ✅ Automatically wrap the function with @trace decorator
-            # This creates a span for the user's function execution and
-            # captures inputs/outputs
+            def function_with_inline_evals(dp: Dict[str, Any]) -> Any:
+                fn_outputs = (
+                    function(dp, tracer=tracer)
+                    if user_fn_accepts_tracer
+                    else function(dp)
+                )
+                if evaluators:
+                    _apply_inline_evaluators(
+                        evaluators,
+                        inputs=dp.get("inputs", {}),
+                        outputs=fn_outputs,
+                        ground_truth=dp.get("ground_truth"),
+                        tracer=tracer,
+                        max_workers=max_workers,
+                        verbose=verbose,
+                    )
+                return fn_outputs
+
+            async def afunction_with_inline_evals(dp: Dict[str, Any]) -> Any:
+                fn_outputs = await (
+                    function(dp, tracer=tracer)
+                    if user_fn_accepts_tracer
+                    else function(dp)
+                )
+                if evaluators:
+                    await _aapply_inline_evaluators(
+                        evaluators,
+                        inputs=dp.get("inputs", {}),
+                        outputs=fn_outputs,
+                        ground_truth=dp.get("ground_truth"),
+                        tracer=tracer,
+                        verbose=verbose,
+                    )
+                return fn_outputs
+
+            wrapped_for_trace = (
+                afunction_with_inline_evals if is_async else function_with_inline_evals
+            )
+            functools.update_wrapper(wrapped_for_trace, function)
+            # Drop __wrapped__ so inspect.signature(..., follow_wrapped=True) —
+            # used by trace's input-capture path — stops at the closure's
+            # (dp,) signature instead of walking back to the user fn's
+            # (dp, tracer) and failing sig.bind(datapoint).
+            try:
+                del wrapped_for_trace.__wrapped__
+            except AttributeError:
+                pass
+
             traced_function = trace(
                 event_type="chain",
                 event_name=function.__name__,
                 tracer=tracer,
-            )(function)
+            )(wrapped_for_trace)
 
-            # Check if the function is async
-            is_async = asyncio.iscoroutinefunction(function)
-
-            if "tracer" in params:
-                # NEW v1.0 pattern: pass tracer for enrich_span/enrich_session support
-                if verbose:
-                    safe_log(
-                        tracer,
-                        "info",
-                        "Calling function with tracer parameter (v1.0 feature)",
-                    )
-                if is_async:
-                    outputs = asyncio.run(traced_function(datapoint, tracer=tracer))
-                else:
-                    outputs = traced_function(datapoint, tracer=tracer)
+            if verbose:
+                safe_log(
+                    tracer,
+                    "info",
+                    "Calling function (async=%s, accepts_tracer=%s, evaluators=%d)",
+                    is_async,
+                    user_fn_accepts_tracer,
+                    len(evaluators or []),
+                )
+            if is_async:
+                outputs = asyncio.run(traced_function(datapoint))
             else:
-                # MAIN BRANCH pattern: backward compatible
-                if verbose:
-                    safe_log(
-                        tracer,
-                        "info",
-                        "Calling function without tracer (main branch compatible)",
-                    )
-                if is_async:
-                    outputs = asyncio.run(traced_function(datapoint))
-                else:
-                    outputs = traced_function(datapoint)
+                outputs = traced_function(datapoint)
 
             # Capture session ID from tracer for linking to run
             # Outputs will be enriched later via UpdateEventRequest after tracer flush
@@ -461,11 +654,10 @@ def _update_run_with_results(  # pylint: disable=too-many-branches
     run_name: str,
     execution_results: List[Dict[str, Any]],
     external_dataset_id: str,
-    evaluator_metrics: Optional[Dict[str, Dict[str, Any]]],
     client: Any,
     verbose: bool,
 ) -> None:
-    """Update run with session IDs, status, and evaluator metrics."""
+    """Update run with session IDs and final status."""
     # Collect session IDs from execution results
     session_ids = []
     for result in execution_results:
@@ -501,9 +693,6 @@ def _update_run_with_results(  # pylint: disable=too-many-branches
         if external_dataset_id and external_dataset_id.startswith("EXT-"):
             update_metadata["offline_dataset_id"] = external_dataset_id
 
-        if evaluator_metrics:
-            update_metadata["evaluator_metrics"] = evaluator_metrics
-
         if update_metadata:
             update_data["metadata"] = update_metadata
 
@@ -522,14 +711,8 @@ def _update_run_with_results(  # pylint: disable=too-many-branches
         update_request = PutExperimentRunRequest(**update_data)
         client.experiments.update_run(run_id, update_request)
 
-        if verbose:
-            if session_ids:
-                logger.info("Linked %d sessions to run %s", len(session_ids), run_id)
-            if evaluator_metrics:
-                logger.info(
-                    "Sent evaluator metrics for %d datapoints to backend",
-                    len(evaluator_metrics),
-                )
+        if verbose and session_ids:
+            logger.info("Linked %d sessions to run %s", len(session_ids), run_id)
     except Exception as e:
         # Enhanced error logging for 400 errors
         error_msg = str(e)
@@ -579,7 +762,7 @@ def _update_run_with_results(  # pylint: disable=too-many-branches
             logger.warning(
                 "Failed to update run %s: %s (%s). Update data: status=%s, "
                 "name=%s, event_ids_count=%d, has_metadata=%s, "
-                "metadata_keys=%s, evaluator_metrics_count=%d. Response: %s",
+                "metadata_keys=%s. Response: %s",
                 run_id,
                 error_msg,
                 error_type,
@@ -588,7 +771,6 @@ def _update_run_with_results(  # pylint: disable=too-many-branches
                 len(update_data.get("event_ids", [])),
                 bool(update_data.get("metadata")),
                 list(update_metadata.keys()) if update_metadata else [],
-                len(evaluator_metrics) if evaluator_metrics else 0,
                 (
                     response_details
                     if response_details
@@ -617,197 +799,284 @@ def _update_run_with_results(  # pylint: disable=too-many-branches
 def _enrich_session_with_results(
     session_id: str,
     *,
-    datapoint_id: Optional[str],
     outputs: Any,
-    ground_truth: Any,  # ✅ TASK 3: Add ground_truth parameter
-    evaluator_metrics: Dict[str, Dict[str, Any]],
+    ground_truth: Any,
     client: Any,
     verbose: bool,
 ) -> None:
-    """Enrich a session with outputs, ground_truth, and evaluator metrics."""
+    """Enrich a session event with the user-function outputs and ground_truth."""
     try:
-        update_data = {}
+        update_data: Dict[str, Any] = {}
 
         if outputs is not None:
             update_data["outputs"] = outputs
 
-        # ✅ TASK 3: Add ground_truth to feedback field
         if ground_truth is not None:
             update_data["feedback"] = {"ground_truth": ground_truth}
 
-        if datapoint_id and datapoint_id in evaluator_metrics:
-            update_data["metrics"] = evaluator_metrics[datapoint_id]
-
         if update_data:
-            # Build update data dict with event_id and update params
             client.events.update(
                 data=UpdateEventRequest(
                     event_id=session_id,
                     feedback=update_data.get("feedback"),
-                    metrics=update_data.get("metrics"),
                     outputs=update_data.get("outputs"),
                 )
             )
 
             if verbose:
-                enriched_fields = list(update_data.keys())
-                logger.info("Enriched session %s with: %s", session_id, enriched_fields)
+                logger.info(
+                    "Enriched session %s with: %s",
+                    session_id,
+                    list(update_data.keys()),
+                )
     except Exception as e:
         logger.warning("Failed to enrich session %s: %s", session_id, str(e))
 
 
-def _run_evaluators(
+def _resolve_eval_name(eval_func: Callable) -> str:
+    """Resolve an evaluator's display name (handles ``@evaluator`` instances)."""
+    if isinstance(eval_func, evaluator_class):
+        return eval_func.name
+    return getattr(eval_func, "__name__", str(eval_func))
+
+
+def _eval_call_args(
+    inputs: Dict[str, Any], outputs: Any, ground_truth: Optional[Any]
+) -> Tuple[Any, ...]:
+    """Build positional args for an evaluator, dropping ``ground_truth`` when None.
+
+    Mirrors the legacy two-arg ``evaluator(outputs, inputs)`` signature so
+    evaluators that don't accept ``ground_truth`` still work on datapoints
+    without one.
+
+    Caveat: an evaluator declared as ``def f(outputs, inputs, ground_truth)``
+    (third arg required, no default) will raise ``TypeError`` on datapoints
+    where ``ground_truth`` is absent. Declare ``ground_truth=None`` if the
+    evaluator should run on unlabeled datapoints.
+    """
+    if ground_truth is not None:
+        return (outputs, inputs, ground_truth)
+    return (outputs, inputs)
+
+
+def _log_eval_failure(eval_name: str, exc: Exception, verbose: bool) -> None:
+    if verbose:
+        logger.warning("Evaluator %s failed: %s", eval_name, str(exc))
+
+
+def _run_single_evaluator(
+    eval_func: Callable,
+    inputs: Dict[str, Any],
+    outputs: Any,
+    ground_truth: Optional[Any],
+    *,
+    verbose: bool,
+) -> EvaluatorMetricResult:
+    """Run one evaluator synchronously and normalize the return.
+
+    Must be invoked from a thread with no running event loop — async
+    evaluators are dispatched via ``asyncio.run`` which would otherwise
+    raise. The async-user-function path uses
+    ``_arun_single_evaluator`` instead. Catches evaluator exceptions and
+    surfaces them as ``EvaluatorMetricResult(score=None)`` so aggregation
+    sees "ran but returned nothing" rather than dropping the evaluator.
+    """
+    eval_name = _resolve_eval_name(eval_func)
+    args = _eval_call_args(inputs, outputs, ground_truth)
+    try:
+        if asyncio.iscoroutinefunction(eval_func):
+            raw = asyncio.run(eval_func(*args))
+        else:
+            raw = eval_func(*args)
+        return EvaluatorMetricResult.from_raw(eval_name, raw)
+    except Exception as e:  # pylint: disable=broad-except
+        _log_eval_failure(eval_name, e, verbose)
+        return EvaluatorMetricResult(eval_name=eval_name)
+
+
+async def _arun_single_evaluator(
+    eval_func: Callable,
+    inputs: Dict[str, Any],
+    outputs: Any,
+    ground_truth: Optional[Any],
+    *,
+    verbose: bool,
+) -> EvaluatorMetricResult:
+    """Async sibling of ``_run_single_evaluator``.
+
+    Awaits async evaluators directly (so we never start a nested loop in
+    a thread that's already running one — the bug fixed by routing the
+    async-user-function path through here). Sync evaluators are
+    dispatched to a worker thread via ``asyncio.to_thread`` to avoid
+    blocking the loop on slow CPU-bound work.
+    """
+    eval_name = _resolve_eval_name(eval_func)
+    args = _eval_call_args(inputs, outputs, ground_truth)
+    try:
+        if asyncio.iscoroutinefunction(eval_func):
+            raw = await eval_func(*args)
+        else:
+            raw = await asyncio.to_thread(eval_func, *args)
+        return EvaluatorMetricResult.from_raw(eval_name, raw)
+    except Exception as e:  # pylint: disable=broad-except
+        _log_eval_failure(eval_name, e, verbose)
+        return EvaluatorMetricResult(eval_name=eval_name)
+
+
+def _run_evaluators_for_datapoint(
     evaluators: List[Callable],
-    execution_results: List[Dict[str, Any]],
+    inputs: Dict[str, Any],
+    outputs: Any,
+    ground_truth: Optional[Any],
+    *,
     max_workers: int = 10,
     verbose: bool = False,
-) -> Dict[str, Dict[str, Any]]:
+) -> List[EvaluatorMetricResult]:
+    """Run every evaluator on one datapoint's outputs in parallel.
+
+    Evaluator function signature::
+
+        evaluator(outputs, inputs, ground_truth) -> scalar | dict
+
+    See ``EvaluatorMetricResult.from_raw`` for accepted return shapes.
     """
-    Run evaluators against execution results.
+    if not evaluators:
+        return []
 
-    This function executes evaluators concurrently for each datapoint's
-    execution result, collecting metrics from each evaluator.
-
-    Evaluator Function Signature:
-        evaluator(outputs, inputs, ground_truth) -> float
-
-        - outputs: The result from running the function on the datapoint
-        - inputs: The original datapoint inputs
-        - ground_truth: The expected output (optional)
-
-    Args:
-        evaluators: List of evaluator callables
-        execution_results: List of execution results from run_experiment
-        max_workers: ThreadPool size for concurrent execution
-        verbose: Enable verbose logging
-
-    Returns:
-        Dictionary mapping datapoint_id to evaluator metrics
-
-    Example:
-        >>> def accuracy(outputs, inputs, ground_truth):
-        ...     return 1.0 if outputs == ground_truth else 0.0
-        >>>
-        >>> evaluators = [accuracy, relevance]
-        >>> results = [{"datapoint_id": "dp-1", "outputs": {...}, ...}]
-        >>> metrics = _run_evaluators(evaluators, results)
-        >>> metrics
-        {
-            "dp-1": {
-                "accuracy": 0.95,
-                "relevance": 0.87
-            }
-        }
-    """
-
-    def run_single_evaluator(
-        eval_func: Callable,
-        datapoint_id: str,
-        inputs: Dict[str, Any],
-        outputs: Any,
-        ground_truth: Optional[Any],
-    ) -> tuple[str, str, Any]:
-        """Run a single evaluator and return (datapoint_id, eval_name, score)."""
-        # Get evaluator name (before try block to avoid unbound variable)
-        if isinstance(eval_func, evaluator_class):
-            eval_name = eval_func.name
-        else:
-            eval_name = getattr(eval_func, "__name__", str(eval_func))
-
-        try:
-            # Execute evaluator
-            # Standard signature: evaluator(outputs, inputs, ground_truth)
-            # Outputs come first as they are the primary evaluation target
-            if asyncio.iscoroutinefunction(eval_func):
-                # Async evaluator
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                try:
-                    if ground_truth is not None:
-                        score = loop.run_until_complete(
-                            eval_func(outputs, inputs, ground_truth)
-                        )
-                    else:
-                        score = loop.run_until_complete(eval_func(outputs, inputs))
-                finally:
-                    loop.close()
-            else:
-                # Sync evaluator
-                if ground_truth is not None:
-                    score = eval_func(outputs, inputs, ground_truth)
-                else:
-                    score = eval_func(outputs, inputs)
-
-            # Ensure score is a scalar (not a list/tuple)
-            # Evaluators should return a single numeric value
-            if isinstance(score, (list, tuple)):
-                if len(score) == 1:
-                    score = score[0]
-                elif verbose:
-                    logger.warning(
-                        "Evaluator %s returned a list/tuple with %d values for "
-                        "datapoint %s. Using first value.",
-                        eval_name,
-                        len(score),
-                        datapoint_id,
-                    )
-                    score = score[0] if score else None
-
-            return datapoint_id, eval_name, score
-
-        except Exception as e:
-            if verbose:
-                logger.warning(
-                    "Evaluator %s failed for datapoint %s: %s",
-                    eval_name,
-                    datapoint_id,
-                    str(e),
-                )
-            return (
-                datapoint_id,
-                eval_name,
-                None,
+    if len(evaluators) == 1:
+        # Skip the thread-pool overhead for the common single-evaluator case.
+        return [
+            _run_single_evaluator(
+                evaluators[0], inputs, outputs, ground_truth, verbose=verbose
             )
+        ]
 
-    # Aggregate all metrics by datapoint
-    all_metrics: Dict[str, Dict[str, Any]] = {}
-
-    # Use ThreadPoolExecutor for concurrent evaluator execution
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        # Submit all evaluator tasks
-        futures = []
-        for result in execution_results:
-            datapoint_id = result["datapoint_id"]
-            inputs = result.get("inputs", {})
-            outputs = result.get("outputs")
-            ground_truth = result.get("ground_truth")
-
-            # Initialize metrics dict for this datapoint
-            if datapoint_id not in all_metrics:
-                all_metrics[datapoint_id] = {}
-
-            # Submit each evaluator for this datapoint
-            for eval_func in evaluators:
-                future = executor.submit(
-                    run_single_evaluator,
-                    eval_func,
-                    datapoint_id,
-                    inputs,
-                    outputs,
-                    ground_truth,
-                )
-                futures.append(future)
-
-        # Collect results
+    results: List[EvaluatorMetricResult] = []
+    with ThreadPoolExecutor(max_workers=min(max_workers, len(evaluators))) as executor:
+        futures = [
+            executor.submit(
+                _run_single_evaluator,
+                eval_func,
+                inputs,
+                outputs,
+                ground_truth,
+                verbose=verbose,
+            )
+            for eval_func in evaluators
+        ]
         for future in as_completed(futures):
             try:
-                datapoint_id, eval_name, score = future.result()
-                all_metrics[datapoint_id][eval_name] = score
-            except Exception as e:
+                results.append(future.result())
+            except Exception as e:  # pylint: disable=broad-except
                 if verbose:
                     logger.warning("Failed to collect evaluator result: %s", str(e))
+    return results
 
-    return all_metrics
+
+def _apply_inline_evaluators(
+    evaluators: List[Callable],
+    inputs: Dict[str, Any],
+    outputs: Any,
+    ground_truth: Optional[Any],
+    tracer: Any,
+    *,
+    max_workers: int,
+    verbose: bool,
+) -> List[EvaluatorMetricResult]:
+    """Run evaluators inline and attach their metrics to the active chain span.
+
+    Called from inside the user-function wrapper while the
+    ``@trace(event_type="chain", event_name=function.__name__)`` span is
+    still recording. The flattened metric dict is written via
+    ``enrich_span(metrics=…)`` — same path the docs document for
+    span-level metrics — so the metrics ride out with the span on its
+    OTLP export. No post-hoc lookup, no writer race.
+
+    Returns the rich results for callers that want to inspect them
+    (currently just tests).
+    """
+    results = _run_evaluators_for_datapoint(
+        evaluators,
+        inputs,
+        outputs,
+        ground_truth,
+        max_workers=max_workers,
+        verbose=verbose,
+    )
+    _attach_metrics_to_span(results, tracer)
+    return results
+
+
+async def _arun_evaluators_for_datapoint(
+    evaluators: List[Callable],
+    inputs: Dict[str, Any],
+    outputs: Any,
+    ground_truth: Optional[Any],
+    *,
+    verbose: bool = False,
+) -> List[EvaluatorMetricResult]:
+    """Async sibling of ``_run_evaluators_for_datapoint``.
+
+    Used when the user function is async — running on a thread that
+    already has a live event loop. ``asyncio.gather`` fans out the
+    evaluators concurrently; ``_arun_single_evaluator`` handles
+    sync-vs-async dispatch per evaluator.
+    """
+    if not evaluators:
+        return []
+    return list(
+        await asyncio.gather(
+            *(
+                _arun_single_evaluator(
+                    eval_func, inputs, outputs, ground_truth, verbose=verbose
+                )
+                for eval_func in evaluators
+            )
+        )
+    )
+
+
+async def _aapply_inline_evaluators(
+    evaluators: List[Callable],
+    inputs: Dict[str, Any],
+    outputs: Any,
+    ground_truth: Optional[Any],
+    tracer: Any,
+    *,
+    verbose: bool,
+) -> List[EvaluatorMetricResult]:
+    """Async sibling of ``_apply_inline_evaluators`` for async user functions.
+
+    Awaits each evaluator without spinning up a nested loop, then writes
+    the flattened metrics onto the still-recording chain span via
+    ``enrich_span``.
+    """
+    results = await _arun_evaluators_for_datapoint(
+        evaluators, inputs, outputs, ground_truth, verbose=verbose
+    )
+    _attach_metrics_to_span(results, tracer)
+    return results
+
+
+def _attach_metrics_to_span(results: List[EvaluatorMetricResult], tracer: Any) -> None:
+    """Best-effort write of flattened evaluator metrics onto the active span.
+
+    Inline enrichment must never fail the run — scores still propagate to
+    the session via the legacy enrichment path on the failure side.
+    """
+    # pylint: disable=import-outside-toplevel
+    # Lazy import to avoid a circular import on module load.
+    from honeyhive.tracer.instrumentation.enrichment import enrich_span
+
+    metrics: Dict[str, Any] = {}
+    for r in results:
+        metrics.update(r.to_metric_attrs())
+    if not metrics:
+        return
+    try:
+        enrich_span(metrics=metrics, tracer=tracer)
+    except Exception as e:  # pylint: disable=broad-except
+        logger.warning("Failed to attach evaluator metrics to chain span: %s", str(e))
 
 
 def evaluate(  # pylint: disable=too-many-locals,too-many-branches
@@ -979,25 +1248,49 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
             raise ValueError(f"Dataset not found: {dataset_id}")
         dataset_obj = ds_response.datasets[0]
 
-        # Dataset.datapoints is List[str] (IDs only), fetch each datapoint
+        # Dataset.datapoints is List[str] (IDs only), fetch each datapoint.
+        # get_datapoint returns a typed GetDatapointResponse Pydantic model
+        # whose `.datapoint` field is List[Datapoint] (also Pydantic).
+        #
+        # Catch ONLY the exception types that represent a fetch failure
+        # we can reasonably skip and keep going on (HTTP errors from the
+        # generated SDK + httpx transport-level errors). Anything else
+        # — AttributeError, TypeError, KeyError, etc. — indicates a real
+        # bug we want to surface immediately rather than silently produce
+        # an empty datapoint list.
         if dataset_obj.datapoints:
             for dp_id in dataset_obj.datapoints:
                 try:
-                    # get_datapoint returns dict: {"datapoint": [{...}]}
                     dp_response = client.datapoints.get_datapoint(dp_id)
-                    dp_list = dp_response.get("datapoint", [])
-                    if dp_list:
-                        dp = dp_list[0]
-                        dataset_list.append(
-                            {
-                                "inputs": dp.get("inputs") or {},
-                                "ground_truth": dp.get("ground_truth"),
-                                "id": dp.get("id") or dp_id,
-                            }
-                        )
-                        datapoint_ids.append(dp.get("id") or dp_id)
-                except Exception as e:
+                except (HTTPException, httpx.HTTPError) as e:
                     logger.warning("Failed to fetch datapoint %s: %s", dp_id, str(e))
+                    continue
+                dp_list = getattr(dp_response, "datapoint", []) or []
+                if dp_list:
+                    dp = dp_list[0]
+                    dataset_list.append(
+                        {
+                            "inputs": getattr(dp, "inputs", None) or {},
+                            "ground_truth": getattr(dp, "ground_truth", None),
+                            "id": getattr(dp, "id", None) or dp_id,
+                        }
+                    )
+                    datapoint_ids.append(getattr(dp, "id", None) or dp_id)
+
+            # Guard against the silent-data-loss shape that the narrow
+            # except above doesn't cover: every fetch logged + skipped
+            # (transient HTTP failure on every datapoint), or every
+            # response had an empty `.datapoint` list. In either case
+            # the dataset claimed N datapoints but we collected zero —
+            # better to fail loudly than to proceed with an empty
+            # dataset and report passed=0.
+            if not dataset_list:
+                raise ValueError(
+                    f"Dataset {dataset_id} listed "
+                    f"{len(dataset_obj.datapoints)} datapoint(s) but every "
+                    f"fetch returned no usable datapoint. Check warnings "
+                    f"above for per-datapoint errors."
+                )
 
         external_dataset_id = dataset_id
 
@@ -1068,7 +1361,7 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
         run_id=run_id,
         dataset_id=external_dataset_id or "",  # Type safety
         project=project,
-        run_name=run_name,  # ✅ TASK 1: Pass run name for session naming
+        run_name=run_name,
         source="evaluation",
     )
 
@@ -1090,52 +1383,28 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
         max_workers=max_workers,
         verbose=verbose,
         instrumentors=instrumentors,
+        evaluators=evaluators,
     )
 
-    # Step 5: Run evaluators (if provided)
-    evaluator_metrics = None
-    if evaluators:
-        if verbose:
-            logger.info("Running %d evaluators", len(evaluators))
-
-        # Run evaluators against execution results
-        evaluator_metrics = _run_evaluators(
-            evaluators=evaluators,
-            execution_results=execution_results,
-            max_workers=max_workers,
-            verbose=verbose,
-        )
-
-        if verbose:
-            logger.info(
-                "Evaluators complete: %d metrics collected", len(evaluator_metrics)
-            )
-
-    # Enrich sessions with outputs and evaluator metrics
-    # (always, not just when evaluators exist)
     if verbose:
-        logger.info("Enriching sessions with outputs and evaluator metrics")
+        logger.info("Enriching sessions with outputs and ground_truth")
 
     for result in execution_results:
         session_id = result.get("session_id")
         if session_id:
             _enrich_session_with_results(
                 session_id=session_id,
-                datapoint_id=result.get("datapoint_id"),
                 outputs=result.get("outputs"),
-                ground_truth=result.get("ground_truth"),  # ✅ TASK 3: Pass ground_truth
-                evaluator_metrics=evaluator_metrics or {},
+                ground_truth=result.get("ground_truth"),
                 client=client,
                 verbose=verbose,
             )
 
-    # Step 6: Update run with results
     _update_run_with_results(
         run_id=run_id,
         run_name=run_name,
         execution_results=execution_results,
         external_dataset_id=external_dataset_id,
-        evaluator_metrics=evaluator_metrics,
         client=client,
         verbose=verbose,
     )

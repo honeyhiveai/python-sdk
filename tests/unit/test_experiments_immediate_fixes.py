@@ -18,11 +18,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from honeyhive.experiments.core import (
-    ExperimentContext,
-    _enrich_session_with_results,
-    run_experiment,
-)
+from honeyhive.experiments.core import ExperimentContext, run_experiment
 from honeyhive.tracer.instrumentation.decorators import _capture_function_inputs
 
 
@@ -198,70 +194,6 @@ class TestTracerParameter:
         # Should complete successfully without tracer parameter
         assert len(results) == 1
         assert results[0]["status"] == "success"
-
-
-class TestGroundTruthsInFeedback:
-    """Test TASK 3: Ground truths in feedback."""
-
-    @pytest.mark.skip(
-        reason="HHAI-3939: test mocks update_event but implementation calls events.update(data=...)"
-    )
-    @patch("honeyhive.experiments.core.logger")
-    def test_ground_truth_added_to_feedback(self, _mock_logger: Mock) -> None:
-        """Test that ground_truth are added to feedback field."""
-        mock_client = Mock()
-        mock_update_event = Mock()
-        mock_client.events.update_event = mock_update_event
-
-        ground_truth_data = {"answer": "expected answer", "score": 0.95}
-
-        _enrich_session_with_results(
-            session_id="session-123",
-            datapoint_id="dp-1",
-            outputs={"result": "test"},
-            ground_truth=ground_truth_data,  # TASK 3: Pass ground_truth
-            evaluator_metrics={},
-            client=mock_client,
-            verbose=False,
-        )
-
-        # Verify update_event was called
-        assert mock_update_event.called
-        update_request = mock_update_event.call_args[0][0]
-
-        # Verify feedback contains ground_truth
-        assert hasattr(update_request, "feedback")
-        assert update_request.feedback is not None
-        assert "ground_truth" in update_request.feedback
-        assert update_request.feedback["ground_truth"] == ground_truth_data
-
-    @pytest.mark.skip(
-        reason="HHAI-3939: test mocks update_event but implementation calls events.update(data=...)"
-    )
-    @patch("honeyhive.experiments.core.logger")
-    def test_no_ground_truth_no_feedback(self, _mock_logger: Mock) -> None:
-        """Test that feedback is not added when ground_truth is None."""
-        mock_client = Mock()
-        mock_update_event = Mock()
-        mock_client.events.update_event = mock_update_event
-
-        _enrich_session_with_results(
-            session_id="session-123",
-            datapoint_id="dp-1",
-            outputs={"result": "test"},
-            ground_truth=None,  # No ground truths
-            evaluator_metrics={},
-            client=mock_client,
-            verbose=False,
-        )
-
-        # Verify update_event was called
-        assert mock_update_event.called
-        update_request = mock_update_event.call_args[0][0]
-
-        # Verify feedback is None when no ground_truth
-        feedback = getattr(update_request, "feedback", None)
-        assert feedback is None
 
 
 class TestAutoInputCapture:

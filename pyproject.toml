@@ -297,9 +297,6 @@ Documentation = "https://docs.honeyhive.ai"
 Repository = "https://github.com/honeyhiveai/python-sdk"
 "Bug Tracker" = "https://github.com/honeyhiveai/python-sdk/issues"
 
-[project.scripts]
-honeyhive = "honeyhive.cli.main:cli"
-
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
