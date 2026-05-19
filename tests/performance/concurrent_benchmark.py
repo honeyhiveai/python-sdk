@@ -444,7 +444,7 @@ def run_concurrent_benchmark_suite() -> Dict[str, Any]:
     print("   ------|---------|-------------|-------------|-------------")
     for i, result in enumerate(burst_results):
         print(
-            f"   {i+1:4d}  | {result.operations_per_second:7.1f} | "
+            f"   {i + 1:4d}  | {result.operations_per_second:7.1f} | "
             f"{result.average_latency * 1000:9.2f}ms | {result.p95_latency * 1000:9.2f}ms | "
             f"{result.success_rate:10.1f}%"
         )

@@ -10,7 +10,7 @@ __all__ = ["AddSessionTracesRequest"]
 class AddSessionTracesRequest(BaseModel):
     """
     AddSessionTracesRequest model
-        Request to add traces to a session
+        Request body for POST /session/{session_id}/traces (deprecated — use POST /v1/sessions/{session_id}/events/batch). Exactly one of `logs` (deprecated) or `events` must be present.
     """
 
     model_config = {
@@ -20,4 +20,10 @@ class AddSessionTracesRequest(BaseModel):
         "protected_namespaces": (),
     }
 
-    logs: List[LegacyEvent] = Field(validation_alias="logs")
+    logs: Optional[List[Optional[LegacyEvent]]] = Field(
+        validation_alias="logs", default=None
+    )
+
+    events: Optional[List[Optional[LegacyEvent]]] = Field(
+        validation_alias="events", default=None
+    )

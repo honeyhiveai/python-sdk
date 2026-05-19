@@ -334,16 +334,17 @@ class TestPerformanceCompatibility:
 
         # Initialize tracer
         tracer = HoneyHiveTracer(
-            api_key="hh_test_key_12345", test_mode=True  # Avoid actual API calls
+            api_key="hh_test_key_12345",
+            test_mode=True,  # Avoid actual API calls
         )
 
         end_time = time.time()
         initialization_time = end_time - start_time
 
         # Should initialize within reasonable time (< 1 second)
-        assert (
-            initialization_time < 1.0
-        ), f"Initialization took {initialization_time} seconds"
+        assert initialization_time < 1.0, (
+            f"Initialization took {initialization_time} seconds"
+        )
         assert tracer is not None
 
     def test_decorator_overhead(self):
@@ -365,7 +366,7 @@ class TestPerformanceCompatibility:
         execution_time = end_time - start_time
 
         # Should not add significant overhead
-        assert (
-            execution_time < 1.0
-        ), f"100 decorated calls took {execution_time} seconds"
+        assert execution_time < 1.0, (
+            f"100 decorated calls took {execution_time} seconds"
+        )
         assert result == "result"

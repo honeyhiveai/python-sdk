@@ -335,12 +335,12 @@ class TestTracerPerformance:
         overhead_ratio = traced_duration / plain_duration if plain_duration > 0 else 1
 
         # Async tracing should also have reasonable overhead
-        assert (
-            overhead_ratio < 3000.0
-        ), f"Async tracing overhead too high: {overhead_ratio:.2f}x"
-        assert (
-            traced_duration > plain_duration
-        ), "Traced async function should have some overhead"
+        assert overhead_ratio < 3000.0, (
+            f"Async tracing overhead too high: {overhead_ratio:.2f}x"
+        )
+        assert traced_duration > plain_duration, (
+            "Traced async function should have some overhead"
+        )
 
         print(
             f"✓ Async tracing overhead: {overhead_ratio:.2f}x "
@@ -388,9 +388,9 @@ class TestTracerPerformance:
         plain_duration = time.time() - start_time
 
         # Verify results are the same
-        assert (
-            results == plain_results
-        ), "Traced and untraced results should be identical"
+        assert results == plain_results, (
+            "Traced and untraced results should be identical"
+        )
 
         overhead_ratio = traced_duration / plain_duration if plain_duration > 0 else 1
 
@@ -462,9 +462,9 @@ class TestTracerPerformance:
         plain_duration = time.time() - start_time
 
         # Verify results are the same
-        assert (
-            traced_result == plain_result
-        ), "Traced and untraced results should be identical"
+        assert traced_result == plain_result, (
+            "Traced and untraced results should be identical"
+        )
 
         overhead_ratio = traced_duration / plain_duration if plain_duration > 0 else 1
 
@@ -610,18 +610,18 @@ class TestTracerPerformance:
             os.environ["HH_FLUSH_INTERVAL"] = str(test_flush_interval)
 
             # Verify environment variables are set correctly
-            assert os.environ.get("HH_BATCH_SIZE") == str(
-                test_batch_size
-            ), f"HH_BATCH_SIZE should be {test_batch_size}"
-            assert os.environ.get("HH_FLUSH_INTERVAL") == str(
-                test_flush_interval
-            ), f"HH_FLUSH_INTERVAL should be {test_flush_interval}"
+            assert os.environ.get("HH_BATCH_SIZE") == str(test_batch_size), (
+                f"HH_BATCH_SIZE should be {test_batch_size}"
+            )
+            assert os.environ.get("HH_FLUSH_INTERVAL") == str(test_flush_interval), (
+                f"HH_FLUSH_INTERVAL should be {test_flush_interval}"
+            )
 
             # Verify tracer can be initialized with these settings
             test_tracer = HoneyHiveTracer.init()
-            assert (
-                test_tracer is not None
-            ), "Tracer should initialize with custom batch config"
+            assert test_tracer is not None, (
+                "Tracer should initialize with custom batch config"
+            )
 
             # Test that tracing works with custom configuration
             @trace(tracer=test_tracer)  # type: ignore[misc]
@@ -629,9 +629,9 @@ class TestTracerPerformance:
                 return "batch_config_test"
 
             result = config_test_operation()
-            assert (
-                result == "batch_config_test"
-            ), "Tracing should work with custom batch configuration"
+            assert result == "batch_config_test", (
+                "Tracing should work with custom batch configuration"
+            )
 
             # Test multiple operations to verify batch processing works
             results = []
@@ -647,9 +647,9 @@ class TestTracerPerformance:
             # Verify all operations completed successfully
             assert len(results) == 10, "All batch operations should complete"
             for i, result in enumerate(results):
-                assert (
-                    result == f"batch_op_{i}"
-                ), f"Operation {i} should return expected result"
+                assert result == f"batch_op_{i}", (
+                    f"Operation {i} should return expected result"
+                )
 
             # Clean up
             test_tracer.force_flush()  # type: ignore[attr-defined]

@@ -769,9 +769,9 @@ class TestEndToEndVerification:
                 if func_event:
                     # Verify inputs were captured
                     inputs = func_event.inputs or {}
-                    assert (
-                        "input_text" in inputs or "args" in inputs
-                    ), f"Expected input_text in inputs. Got: {inputs}"
+                    assert "input_text" in inputs or "args" in inputs, (
+                        f"Expected input_text in inputs. Got: {inputs}"
+                    )
 
                     # Verify outputs were captured
                     outputs = func_event.outputs or {}
@@ -784,16 +784,16 @@ class TestEndToEndVerification:
                         or outputs.get("output")
                     )
                     if output_value:
-                        assert (
-                            output_value == expected_output
-                        ), f"Output mismatch: expected '{expected_output}', got '{output_value}'"
+                        assert output_value == expected_output, (
+                            f"Output mismatch: expected '{expected_output}', got '{output_value}'"
+                        )
                 else:
                     # Function event not found by name, check if any event has inputs/outputs
                     has_inputs = any(e.inputs for e in events)
                     has_outputs = any(e.outputs for e in events)
-                    assert (
-                        has_inputs or has_outputs
-                    ), "No events with inputs/outputs found"
+                    assert has_inputs or has_outputs, (
+                        "No events with inputs/outputs found"
+                    )
             else:
                 pytest.skip(f"Events not yet ingested for session {session_id}")
         except Exception as e:
@@ -1088,9 +1088,9 @@ class TestEndToEndVerification:
                     outputs = chain_event.outputs or {}
 
                     # Verify inputs were captured
-                    assert (
-                        len(inputs) > 0 or len(outputs) > 0
-                    ), "Expected chain inputs/outputs to be captured"
+                    assert len(inputs) > 0 or len(outputs) > 0, (
+                        "Expected chain inputs/outputs to be captured"
+                    )
 
                 else:
                     pytest.skip("No event with inputs/outputs found")

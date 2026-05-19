@@ -340,14 +340,12 @@ class TestRequiredFields:
             assert "api_key" in str(e).lower() or "required" in str(e).lower()
 
     def test_missing_project(self) -> None:
-        """Test missing project → uses default or errors."""
-        # Test with api_key but no project
+        """Test tracer initializes with api_key only (project is optional)."""
         tracer = HoneyHiveTracer(api_key="test-key", test_mode=True)
 
-        # Should either have a default project or handle gracefully
         assert tracer is not None
-        assert hasattr(tracer, "project")
-        # Project may be None, empty string, or a default value
+        assert tracer.project is None
+        assert tracer.project_name is None
         tracer.shutdown()
 
 

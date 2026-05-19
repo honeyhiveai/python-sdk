@@ -16,6 +16,8 @@ from honeyhive._generated.models import (
     BatchCreateDatapointsRequest,
     BatchCreateDatapointsResponse,
     ConfigurationItem,
+    CreateChartRequest,
+    CreateChartResponse,
     CreateConfigurationRequest,
     CreateConfigurationResponse,
     CreateDatapointRequest,
@@ -25,6 +27,7 @@ from honeyhive._generated.models import (
     CreateMetricRequest,
     CreateMetricResponse,
     DatapointMapping,
+    DeleteChartResponse,
     DeleteConfigurationResponse,
     DeleteDatapointParams,
     DeleteDatapointResponse,
@@ -34,6 +37,8 @@ from honeyhive._generated.models import (
     DeleteExperimentRunResponse,
     DeleteMetricResponse,
     Event,
+    GetChartResponse,
+    GetChartsResponse,
     GetConfigurationsQuery,
     GetConfigurationsResponse,
     GetDatapointParams,
@@ -47,7 +52,6 @@ from honeyhive._generated.models import (
     GetExperimentRunMetricsQuery,
     GetExperimentRunParams,
     GetExperimentRunResponse,
-    GetExperimentRunResultQuery,
     GetExperimentRunsQuery,
     GetExperimentRunsResponse,
     GetMetricsQuery,
@@ -58,6 +62,7 @@ from honeyhive._generated.models import (
     LegacyGetExperimentRunCompareEventsQuery,
     LegacyGetExperimentRunCompareParams,
     LegacyGetExperimentRunCompareQuery,
+    LegacyGetExperimentRunResultQuery,
     LegacyPostEventBatchRequest,
     LegacyPostEventRequest,
     LegacyRemoveDatapointFromDatasetParams,
@@ -80,6 +85,8 @@ from honeyhive._generated.models import (
     RunMetricRequest,
     RunMetricResponse,
     TODOSchema,
+    UpdateChartRequest,
+    UpdateChartResponse,
     UpdateConfigurationRequest,
     UpdateConfigurationResponse,
     UpdateDatapointParams,
@@ -162,6 +169,16 @@ class GetExperimentRunCompareEventsQuery(LegacyGetExperimentRunCompareEventsQuer
     pass
 
 
+# Public name kept pointing at the legacy summary query schema. The new
+# GetExperimentRunSummaryQuery generated model targets
+# /v1/runs/{run_id}/summary and adds `.strict()`, but the Python SDK still
+# calls the legacy /v1/runs/{run_id}/result endpoint (get_result /
+# get_result_async) so existing customer imports keep resolving to a model
+# matching the wire shape we send.
+class GetExperimentRunResultQuery(LegacyGetExperimentRunResultQuery):
+    pass
+
+
 # Public name kept pointing at the legacy event-create schema. The new
 # generated PostEventRequest targets POST /v1/events with a bare event-object
 # body and drops the deprecated `project` field. The Python SDK still calls
@@ -219,6 +236,8 @@ __all__ = [
     "BatchCreateDatapointsRequest",
     "BatchCreateDatapointsResponse",
     "ConfigurationItem",
+    "CreateChartRequest",
+    "CreateChartResponse",
     "CreateConfigurationRequest",
     "CreateConfigurationResponse",
     "CreateDatapointRequest",
@@ -228,6 +247,7 @@ __all__ = [
     "CreateMetricRequest",
     "CreateMetricResponse",
     "DatapointMapping",
+    "DeleteChartResponse",
     "DeleteConfigurationResponse",
     "DeleteDatapointParams",
     "DeleteDatapointResponse",
@@ -238,6 +258,8 @@ __all__ = [
     "DeleteExperimentRunResponse",
     "DeleteMetricResponse",
     "Event",
+    "GetChartResponse",
+    "GetChartsResponse",
     "GetConfigurationsQuery",
     "GetConfigurationsResponse",
     "GetDatapointParams",
@@ -281,6 +303,8 @@ __all__ = [
     "RunMetricResponse",
     "StartSessionRequest",
     "TODOSchema",
+    "UpdateChartRequest",
+    "UpdateChartResponse",
     "UpdateConfigurationRequest",
     "UpdateConfigurationResponse",
     "UpdateDatapointParams",

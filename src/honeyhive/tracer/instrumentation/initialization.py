@@ -826,7 +826,6 @@ def _create_otlp_exporter(tracer_instance: Any) -> Optional[Any]:
             endpoint=otlp_endpoint,
             headers={
                 "Authorization": f"Bearer {tracer_instance.config.api_key}",
-                "X-Project": tracer_instance.project_name,
                 "X-Source": tracer_instance.source_environment,
                 "hh-client-version": _get_sdk_version(),
                 "hh-client-language": "python",
@@ -1219,18 +1218,6 @@ def _validate_configuration_gracefully(tracer_instance: Any) -> None:
         # Set a placeholder to prevent further errors
         # No need to set api_key on tracer instance - config handles this
 
-    # Handle missing project with graceful degradation
-    if not tracer_instance.project_name:
-        # Consistent warning regardless of test_mode for debugging
-        safe_log(
-            tracer_instance,
-            "warning",
-            "Project missing. Using default project 'unknown'.",
-            honeyhive_data={"operation": "project_validation"},
-        )
-        degraded_mode = True
-        degradation_reasons.append("missing_project")
-
     # Store degradation state for runtime behavior
     tracer_instance._degraded_mode = degraded_mode
     tracer_instance._degradation_reasons = degradation_reasons
@@ -1476,7 +1463,6 @@ def _register_tracer_instance(tracer_instance: Any) -> None:
     :type tracer_instance: HoneyHiveTracer
     """
     try:
-
         tracer_instance._tracer_id = registry.register_tracer(tracer_instance)
 
         # Auto-set as default if this is the first tracer

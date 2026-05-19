@@ -109,7 +109,9 @@ class TestBackoffStrategy:
         mock_uniform.return_value = -0.2  # Large negative jitter
 
         strategy = BackoffStrategy(
-            initial_delay=0.1, multiplier=1.0, jitter=0.5  # Large jitter
+            initial_delay=0.1,
+            multiplier=1.0,
+            jitter=0.5,  # Large jitter
         )
 
         # Base delay: 0.1

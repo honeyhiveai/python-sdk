@@ -1372,7 +1372,7 @@ class HoneyHiveSpanProcessor(SpanProcessor):
             if self._batch_processor is not None:
                 self._safe_log(
                     "debug",
-                    "🔄 Force flushing internal BatchSpanProcessor " "(timeout=%dms)",
+                    "🔄 Force flushing internal BatchSpanProcessor (timeout=%dms)",
                     int(timeout_millis),
                 )
                 result = self._batch_processor.force_flush(

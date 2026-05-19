@@ -394,9 +394,9 @@ class TestHoneyHiveAttributesBackendIntegration:
             actual_value = getattr(event, attr_name)
             if attr_name == "project_id":
                 # Just check that project_id exists and is not None
-                assert (
-                    actual_value is not None
-                ), f"Attribute {attr_name} should not be None"
+                assert actual_value is not None, (
+                    f"Attribute {attr_name} should not be None"
+                )
             else:
                 assert actual_value == expected_value, (
                     f"Attribute {attr_name}: expected {expected_value}, "

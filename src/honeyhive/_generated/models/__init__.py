@@ -18,6 +18,9 @@ from .CreateAnnotationQueueRequestFilters import *
 from .CreateAnnotationQueueResponse import *
 from .CreateAnnotationQueueResponseQueue import *
 from .CreateAnnotationQueueResponseQueueFilters import *
+from .CreateChartRequest import *
+from .CreateChartResponse import *
+from .CreateChartResponseData import *
 from .CreateConfigurationRequest import *
 from .CreateConfigurationResponse import *
 from .CreateDatapointRequest import *
@@ -34,8 +37,8 @@ from .Datapoint import *
 from .DatapointMapping import *
 from .DatapointResult import *
 from .Dataset import *
-from .DateRange import *
 from .DeleteAnnotationQueueResponse import *
+from .DeleteChartResponse import *
 from .DeleteConfigurationResponse import *
 from .DeleteDatapointParams import *
 from .DeleteDatapointResponse import *
@@ -65,6 +68,10 @@ from .GetAnnotationQueuesQuery import *
 from .GetAnnotationQueuesResponse import *
 from .GetAnnotationQueuesResponseQueuesItem import *
 from .GetAnnotationQueuesResponseQueuesItemFilters import *
+from .GetChartResponse import *
+from .GetChartResponseData import *
+from .GetChartsResponse import *
+from .GetChartsResponseDataItem import *
 from .GetConfigurationsQuery import *
 from .GetConfigurationsResponse import *
 from .GetDatapointParams import *
@@ -86,10 +93,10 @@ from .GetExperimentRunMetricsQuery import *
 from .GetExperimentRunMetricsResponse import *
 from .GetExperimentRunParams import *
 from .GetExperimentRunResponse import *
-from .GetExperimentRunResultQuery import *
 from .GetExperimentRunResultResponse import *
 from .GetExperimentRunsQuery import *
 from .GetExperimentRunsResponse import *
+from .GetExperimentRunSummaryQuery import *
 from .GetMetricsQuery import *
 from .GetMetricsResponse import *
 from .GetProjectsResponse import *
@@ -108,6 +115,7 @@ from .LegacyGetEventsSchemaQuery import *
 from .LegacyGetExperimentRunCompareEventsQuery import *
 from .LegacyGetExperimentRunCompareParams import *
 from .LegacyGetExperimentRunCompareQuery import *
+from .LegacyGetExperimentRunResultQuery import *
 from .LegacyPostEventBatchRequest import *
 from .LegacyPostEventRequest import *
 from .LegacyPostEventRequestEvent import *
@@ -155,6 +163,7 @@ from .ProjectItem import *
 from .PutExperimentRunRequest import *
 from .PutExperimentRunResponse import *
 from .PutProjectRequest import *
+from .QueryFilter import *
 from .RelativeDateRange import *
 from .RemoveDatapointFromDatasetParams import *
 from .RemoveDatapointResponse import *
@@ -170,6 +179,7 @@ from .RunMetricResponse import *
 from .SearchEventsRequest import *
 from .SearchEventsRequestDateRange import *
 from .SelectedFunction import *
+from .SessionEventBatchRequest import *
 from .SessionProperties import *
 from .SessionTracesResponse import *
 from .SingleFilter import *
@@ -181,6 +191,9 @@ from .UpdateAnnotationQueueRequestFilters import *
 from .UpdateAnnotationQueueResponse import *
 from .UpdateAnnotationQueueResponseQueue import *
 from .UpdateAnnotationQueueResponseQueueFilters import *
+from .UpdateChartRequest import *
+from .UpdateChartResponse import *
+from .UpdateChartResponseData import *
 from .UpdateConfigurationRequest import *
 from .UpdateConfigurationResponse import *
 from .UpdateDatapointParams import *

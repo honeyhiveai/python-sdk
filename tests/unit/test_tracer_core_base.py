@@ -302,9 +302,9 @@ class TestHoneyHiveTracerBaseInitialization:
         tracer = HoneyHiveTracerBase(api_key="test")
 
         # Multi-instance architecture should NOT have direct logger attribute
-        assert not hasattr(
-            tracer, "logger"
-        ), "Multi-instance architecture should not have direct logger attribute"
+        assert not hasattr(tracer, "logger"), (
+            "Multi-instance architecture should not have direct logger attribute"
+        )
 
         # Reset mock to ignore initialization calls
         mock_safe_log.reset_mock()
@@ -827,22 +827,40 @@ class TestHoneyHiveTracerBaseAPIClients:
             if mock_unified_config.get(key) is not None:
                 assert key in api_params
 
+
+class TestExtractApiParameters:
+    """Test _extract_api_parameters_dynamically (api_key-only requirement)."""
+
     @patch("honeyhive.tracer.core.base.create_unified_config")
-    def test_extract_api_parameters_missing_required(self, mock_create: Mock) -> None:
-        """Test API parameter extraction with missing required params."""
-        # Create config missing required parameters
+    def test_missing_api_key_returns_none(self, mock_create: Mock) -> None:
+        """Missing api_key should prevent API client initialization."""
         incomplete_config = Mock()
         incomplete_config.get.side_effect = lambda key, default=None: {
-            "api_key": None,  # Missing
-            "project": None,  # Missing
+            "api_key": None,
+            "project": "test-project",
         }.get(key, default)
         mock_create.return_value = incomplete_config
 
         tracer = HoneyHiveTracerBase()
-
         api_params = tracer._extract_api_parameters_dynamically(incomplete_config)
 
         assert api_params is None
+
+    @patch("honeyhive.tracer.core.base.create_unified_config")
+    def test_api_key_without_project_succeeds(self, mock_create: Mock) -> None:
+        """api_key alone is sufficient; project is optional."""
+        api_key_only_config = Mock()
+        api_key_only_config.get.side_effect = lambda key, default=None: {
+            "api_key": "test-api-key",
+            "project": None,
+            "server_url": None,
+        }.get(key, default)
+        mock_create.return_value = api_key_only_config
+
+        tracer = HoneyHiveTracerBase()
+        api_params = tracer._extract_api_parameters_dynamically(api_key_only_config)
+
+        assert api_params == {"api_key": "test-api-key"}
 
 
 class TestHoneyHiveTracerBaseProperties:

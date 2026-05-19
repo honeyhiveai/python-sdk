@@ -99,9 +99,9 @@ class TestOpenAIAgentsIntegration:
             tracer.flush()
 
             events = fetch_events(session_id=session_id, project=project_name)
-            assert (
-                len(events) > 0
-            ), f"Expected exported events for session {session_id}, got none"
+            assert len(events) > 0, (
+                f"Expected exported events for session {session_id}, got none"
+            )
 
         finally:
             agents_instrumentor.uninstrument()
@@ -161,9 +161,9 @@ class TestOpenAIAgentsIntegration:
             tracer.flush()
 
             events = fetch_events(session_id=session_id, project=project_name)
-            assert (
-                len(events) > 0
-            ), f"Expected exported events for session {session_id}, got none"
+            assert len(events) > 0, (
+                f"Expected exported events for session {session_id}, got none"
+            )
 
             # Verify tool spans were exported
             tool_events = [
@@ -255,16 +255,16 @@ class TestOpenAIAgentsIntegration:
             assert result.final_output is not None
             # Verify the specialist's tool result ("shipped, ETA 2 days") reached the response
             output = str(result.final_output).lower()
-            assert (
-                "shipped" in output or "eta" in output or "2 days" in output
-            ), f"Expected order specialist response with status details, got: {result.final_output}"
+            assert "shipped" in output or "eta" in output or "2 days" in output, (
+                f"Expected order specialist response with status details, got: {result.final_output}"
+            )
 
             tracer.flush()
 
             events = fetch_events(session_id=session_id, project=project_name)
-            assert (
-                len(events) > 0
-            ), f"Expected exported events for session {session_id}, got none"
+            assert len(events) > 0, (
+                f"Expected exported events for session {session_id}, got none"
+            )
 
         finally:
             agents_instrumentor.uninstrument()
@@ -335,16 +335,16 @@ class TestOpenAIAgentsIntegration:
 
             assert result.final_output is not None
             # Verify the policy content from lookup_policy("refund") reached the response
-            assert "30" in str(
-                result.final_output
-            ), f"Expected '30 days' refund policy in response, got: {result.final_output}"
+            assert "30" in str(result.final_output), (
+                f"Expected '30 days' refund policy in response, got: {result.final_output}"
+            )
 
             tracer.flush()
 
             events = fetch_events(session_id=session_id, project=project_name)
-            assert (
-                len(events) > 0
-            ), f"Expected exported events for session {session_id}, got none"
+            assert len(events) > 0, (
+                f"Expected exported events for session {session_id}, got none"
+            )
 
         finally:
             agents_instrumentor.uninstrument()
@@ -401,9 +401,9 @@ class TestOpenAIAgentsIntegration:
             tracer.flush()
 
             events = fetch_events(session_id=session_id, project=project_name)
-            assert (
-                len(events) > 0
-            ), f"Expected exported events for session {session_id}, got none"
+            assert len(events) > 0, (
+                f"Expected exported events for session {session_id}, got none"
+            )
 
         finally:
             agents_instrumentor.uninstrument()

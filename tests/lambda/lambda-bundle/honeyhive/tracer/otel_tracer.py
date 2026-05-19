@@ -1089,13 +1089,13 @@ class HoneyHiveTracer:
                                 batch_results.append(result)
                                 if not self.test_mode:
                                     print(
-                                        f"✓ Batch processor {i+1} force_flush: {'success' if result else 'failed'}"
+                                        f"✓ Batch processor {i + 1} force_flush: {'success' if result else 'failed'}"
                                     )
                             except Exception as e:
                                 batch_results.append(False)
                                 if not self.test_mode:
                                     print(
-                                        f"❌ Batch processor {i+1} force_flush error: {e}"
+                                        f"❌ Batch processor {i + 1} force_flush error: {e}"
                                     )
 
                         flush_results.append(("batch_processors", all(batch_results)))

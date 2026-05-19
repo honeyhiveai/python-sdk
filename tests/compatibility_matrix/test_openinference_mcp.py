@@ -230,9 +230,9 @@ class TestMCPCompatibilityMatrix:
         print(f"  Overhead: {overhead:.4f}s ({overhead_percentage:.2f}%)")
 
         # Verify overhead is within acceptable limits (<5% or <100ms, whichever is more lenient)
-        assert (
-            overhead < 0.1 or overhead_percentage < 5.0
-        ), f"MCP instrumentor overhead too high: {overhead:.4f}s ({overhead_percentage:.2f}%)"
+        assert overhead < 0.1 or overhead_percentage < 5.0, (
+            f"MCP instrumentor overhead too high: {overhead:.4f}s ({overhead_percentage:.2f}%)"
+        )
 
     @pytest.mark.asyncio
     async def test_mcp_async_context_handling(self):

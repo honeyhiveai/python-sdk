@@ -76,7 +76,7 @@ make help
 Key commands:
 - `make check` - Run all comprehensive checks (format, lint, tests, validation)
 - `make test` - Run all tests
-- `make format` - Format code with Black and isort
+- `make format` - Format code with ruff
 - `make lint` - Run linting checks
 - `make generate-sdk` - Generate SDK from OpenAPI spec
 
@@ -88,8 +88,7 @@ make check
 ```
 
 This runs all quality checks:
-- ✅ Black formatting
-- ✅ Import sorting (isort)
+- ✅ Ruff formatting and import sorting
 - ✅ Static analysis (pylint + mypy)
 - ✅ Unit tests (fast, mocked)
 - ✅ Integration test validation

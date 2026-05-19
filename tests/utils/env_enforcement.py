@@ -171,7 +171,7 @@ The following environment variables are required:
 {env_file_info}
 
 For local development, add these to your .env file:
-{chr(10).join(f'{var}=your_{var.lower()}_here' for var in missing_vars)}
+{chr(10).join(f"{var}=your_{var.lower()}_here" for var in missing_vars)}
 
 For CI/production, set these environment variables directly.
 """

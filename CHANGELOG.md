@@ -1,5 +1,30 @@
 ## [Unreleased]
 
+## [1.1.0] - 2026-05-19
+
+### Added
+
+- **Charts API: `client.charts` CRUD surface**
+  - New `client.charts.create()`, `.list()`, `.get(chart_id)`, `.update(chart_id, request)`, and `.delete(chart_id)` methods (plus `*_async` variants) backed by `POST /v1/charts`, `GET /v1/charts`, `GET /v1/charts/{chart_id}`, `PUT /v1/charts/{chart_id}`, and `DELETE /v1/charts/{chart_id}`. Chart request and response models are exported from `honeyhive.models`.
+
+### Changed
+
+- **CrewAI integration example refreshed**
+  - The CrewAI example (`examples/integrations/crewai_integration.py`) has been rewritten with three realistic customer-support scenarios (single-agent with tool calls, sequential two-agent crew, and `@trace` escalation). Crews are now named for clearer span labels, and teardown properly flushes remaining spans.
+
+### Fixed
+
+- **Tracer init: `project` / `HH_PROJECT` no longer required**
+  - `HoneyHiveTracer.init()` previously required `project` and treated a missing value as degraded mode. Since the backend determines the project from the API key, only `api_key` is actually needed. Callers that followed the v1.0.1 deprecation guidance and removed `project` were silently running in degraded mode — this is now fixed. `project` and `HH_PROJECT` remain accepted for backwards compatibility (deprecated, to be removed in v2.0).
+
+- **Duplicate `model` spans in `evaluate()`**
+  - `evaluate()` could occasionally emit two `model` spans for a single LLM call when running multiple datapoints concurrently. The underlying race condition in instrumentation setup has been fixed.
+
+### Removed
+
+- **`cp_base_url=` parameter and `HH_CP_API_URL` env var removed**
+  - These options were vestigial configuration for an incomplete Control Plane integration that was never wired up or shipped. No customer code could have depended on them. They have been removed to clean up the public API surface. If you happen to pass `cp_base_url=` or set `HH_CP_API_URL`, simply remove them — `HH_API_URL` / `base_url=` is the only base-URL setting.
+
 ## [1.0.2] - 2026-05-11
 
 ### Fixed
@@ -9,7 +34,7 @@
   - The two legacy write paths have been removed now that the scores are correctly written to the chain span as the single source of truth.
 
 - **API Client: `event_id` typed as required on `POST /events` responses**
-  - `PostEventResponse.event_id` was incorrectly typed as `Optional[str]` in the OpenAPI spec; the backend always returns the field on a 2xx response. The spec was corrected and the generated SDK now reflects the runtime guarantee, removing the need for defensive `if event.event_id:` guards. No runtime behavior change, but strictly typed mypy codebases with `warn_unreachable = True` or pyright with `reportUnnecessaryComparison` enabled may produce "unnecessary comparison" or "redundant Optional guard" warnings, depending on exact usage patterns. 
+  - `PostEventResponse.event_id` was incorrectly typed as `Optional[str]` in the OpenAPI spec; the backend always returns the field on a 2xx response. The spec was corrected and the generated SDK now reflects the runtime guarantee, removing the need for defensive `if event.event_id:` guards. No runtime behavior change, but strictly typed mypy codebases with `warn_unreachable = True` or pyright with `reportUnnecessaryComparison` enabled may produce "unnecessary comparison" or "redundant Optional guard" warnings, depending on exact usage patterns.
 
 ### Added
 

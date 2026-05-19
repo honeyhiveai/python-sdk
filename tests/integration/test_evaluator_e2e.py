@@ -89,6 +89,7 @@ def _poll_for_metric_score(
 
 
 @pytest.mark.integration
+@pytest.mark.xdist_group("server_side_eval")
 class TestEvaluatorLlmE2E:
     """Server-side LLM evaluator pipeline via Python SDK (trace -> scores)."""
 
@@ -183,9 +184,9 @@ class TestEvaluatorLlmE2E:
             )
             metrics = _metrics_map(scored_event)
             raw_score = metrics[metric_name]
-            assert isinstance(
-                raw_score, (int, float)
-            ), f"metric score must be numeric, got {type(raw_score)}: {raw_score!r}"
+            assert isinstance(raw_score, (int, float)), (
+                f"metric score must be numeric, got {type(raw_score)}: {raw_score!r}"
+            )
             score = float(raw_score)
             assert 0.0 <= score <= 5.0, f"score out of range: {score}"
 
@@ -204,9 +205,9 @@ class TestEvaluatorLlmE2E:
                 if metric_name in m and isinstance(m[metric_name], (int, float)):
                     found_again = True
                     break
-            assert (
-                found_again
-            ), f"Expected metric score on repeat get_by_session_id export (session_id={session_id})"
+            assert found_again, (
+                f"Expected metric score on repeat get_by_session_id export (session_id={session_id})"
+            )
 
         finally:
             if metric_id:

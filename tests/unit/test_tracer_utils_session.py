@@ -449,9 +449,9 @@ class TestExtractFilenameFromPath:
         for path in invalid_paths:
             result = extract_filename_from_path(path)
             # Should return None for invalid session names
-            assert (
-                result is None
-            ), f"Should reject invalid session name from path: {path}"
+            assert result is None, (
+                f"Should reject invalid session name from path: {path}"
+            )
 
         # Special case: <stdin> gets cleaned to "stdin" which is valid
         result = extract_filename_from_path("/path/to/<stdin>.py")

@@ -81,12 +81,12 @@ class TestSimpleIntegration:
                     f"Created datapoint with test_id {test_id} not found in "
                     f"HoneyHive system"
                 )
-                assert (
-                    found_datapoint.inputs["query"] == test_query
-                ), "Stored query doesn't match created query"
-                assert (
-                    found_datapoint.ground_truth["response"] == test_response
-                ), "Stored ground truth doesn't match created ground truth"
+                assert found_datapoint.inputs["query"] == test_query, (
+                    "Stored query doesn't match created query"
+                )
+                assert found_datapoint.ground_truth["response"] == test_response, (
+                    "Stored ground truth doesn't match created ground truth"
+                )
 
                 print(f"✅ Successfully validated datapoint storage: {created_id}")
 
@@ -161,15 +161,15 @@ class TestSimpleIntegration:
                         break
 
                 # Verify the configuration was actually stored
-                assert (
-                    found_config is not None
-                ), f"Created configuration {config_name} not found in HoneyHive system"
-                assert (
-                    found_config.name == config_name
-                ), "Stored config name doesn't match created name"
-                assert (
-                    found_config.provider == "openai"
-                ), "Stored provider doesn't match created provider"
+                assert found_config is not None, (
+                    f"Created configuration {config_name} not found in HoneyHive system"
+                )
+                assert found_config.name == config_name, (
+                    "Stored config name doesn't match created name"
+                )
+                assert found_config.provider == "openai", (
+                    "Stored provider doesn't match created provider"
+                )
 
                 print(f"✅ Successfully validated configuration storage: {config_name}")
 
@@ -279,15 +279,15 @@ class TestSimpleIntegration:
                         found_event = event
                         break
 
-                assert (
-                    found_event is not None
-                ), f"Created event {event_id} not found in session {session_id}"
-                assert (
-                    found_event.session_id == session_id
-                ), "Event not properly linked to session"
-                assert (
-                    found_event.config["test_id"] == test_id
-                ), "Event data not properly stored"
+                assert found_event is not None, (
+                    f"Created event {event_id} not found in session {session_id}"
+                )
+                assert found_event.session_id == session_id, (
+                    "Event not properly linked to session"
+                )
+                assert found_event.config["test_id"] == test_id, (
+                    "Event data not properly stored"
+                )
 
                 print("✅ Successfully validated session-event workflow:")
                 print(f"   Session: {session_id}")

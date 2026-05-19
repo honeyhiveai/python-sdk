@@ -39,16 +39,16 @@ pip install -e .
 # Verify tools are working
 echo "🔍 Verifying development tools..."
 
-echo "  - Black formatting..."
-if ! black --check --quiet src tests 2>/dev/null; then
-    echo "    ⚠️  Code needs formatting. Running black..."
-    black src tests
+echo "  - Ruff formatting..."
+if ! ruff format --check --quiet src tests 2>/dev/null; then
+    echo "    ⚠️  Code needs formatting. Running ruff format..."
+    ruff format src tests
 fi
 
 echo "  - Import sorting..."
-if ! isort --check-only --quiet src tests 2>/dev/null; then
-    echo "    ⚠️  Imports need sorting. Running isort..."
-    isort src tests
+if ! ruff check --select I --quiet src tests 2>/dev/null; then
+    echo "    ⚠️  Imports need sorting. Running ruff isort fix..."
+    ruff check --select I --fix src tests
 fi
 
 echo "  - Linting..."

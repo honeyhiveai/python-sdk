@@ -66,7 +66,8 @@ except ImportError:
         """Cleanup test environment variables."""
 
     def create_openai_config_request(
-        _: str = "test-project", __: str = "test-config"  # project, name not used
+        _: str = "test-project",
+        __: str = "test-config",  # project, name not used
     ) -> Any:
         """Fallback implementation."""
         return None
@@ -107,7 +108,8 @@ except ImportError:
         return None
 
     def test_error_handling_common(
-        _: Any, __: str = "API Error"  # integration_client, test_name not used
+        _: Any,
+        __: str = "API Error",  # integration_client, test_name not used
     ) -> Any:
         """Fallback implementation."""
 

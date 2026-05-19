@@ -172,9 +172,9 @@ class TestExperimentsManualEnrichSpan:
         time.sleep(5)
 
         backend_run = integration_client.evaluations.get_run(result.run_id)
-        assert (
-            hasattr(backend_run, "evaluation") and backend_run.evaluation
-        ), "Backend response missing 'evaluation' field"
+        assert hasattr(backend_run, "evaluation") and backend_run.evaluation, (
+            "Backend response missing 'evaluation' field"
+        )
         run_data = backend_run.evaluation
         session_ids = getattr(run_data, "event_ids", []) or []
         assert session_ids, "Should have recorded session events"

@@ -15,14 +15,17 @@ tests/unit/test_evaluator_metric_normalization.py (TestRunSingleEvaluator,
 TestRunEvaluatorsForDatapoint, TestApplyInlineEvaluators).
 """
 
-from typing import Any, Dict
+import threading
+from typing import Any, Collection, Dict
 from unittest.mock import Mock, patch
 
 import httpx
 import pytest
+from opentelemetry.instrumentation.instrumentor import BaseInstrumentor
 
 from honeyhive._generated.api_config import HTTPException
 from honeyhive.experiments.core import ExperimentContext, evaluate, run_experiment
+from honeyhive.experiments.results import compare_runs, get_run_metrics, get_run_result
 
 # Tests updated to match current implementation (base_url instead of server_url)
 
@@ -45,12 +48,10 @@ class TestExperimentContext:
         context = ExperimentContext(
             run_id="run-123",
             dataset_id="ds-456",
-            project="test-project",
         )
 
         assert context.run_id == "run-123"
         assert context.dataset_id == "ds-456"
-        assert context.project == "test-project"
         assert context.source == "evaluation"  # Default value
         assert context.metadata == {}  # Default value
 
@@ -60,7 +61,6 @@ class TestExperimentContext:
         context = ExperimentContext(
             run_id="run-123",
             dataset_id="ds-456",
-            project="test-project",
             source="custom-source",
             metadata=metadata,
         )
@@ -73,14 +73,12 @@ class TestExperimentContext:
         context = ExperimentContext(
             run_id="run-123",
             dataset_id="EXT-abc",
-            project="test-project",
             source="evaluation",
         )
 
         config = context.to_tracer_config("dp-1")
 
         assert isinstance(config, dict)
-        assert config["project"] == "test-project"
         assert config["is_evaluation"] is True
         assert config["run_id"] == "run-123"
         assert config["dataset_id"] == "EXT-abc"
@@ -92,7 +90,6 @@ class TestExperimentContext:
         context = ExperimentContext(
             run_id="run-123",
             dataset_id="ds-456",
-            project="test-project",
         )
 
         config1 = context.to_tracer_config("dp-1")
@@ -109,7 +106,6 @@ class TestExperimentContext:
         context = ExperimentContext(
             run_id="run-123",
             dataset_id="ds-456",
-            project="test-project",
         )
 
         assert context.metadata == {}
@@ -136,7 +132,6 @@ class TestRunExperiment:
         return ExperimentContext(
             run_id="run-123",
             dataset_id="ds-456",
-            project="test-project",
         )
 
     @pytest.fixture
@@ -362,6 +357,98 @@ class TestRunExperiment:
             # Verify logger was called
             assert mock_logger.info.called
 
+    @patch("honeyhive.experiments.core.force_flush_tracer")
+    @patch("honeyhive.experiments.core.HoneyHiveTracer")
+    def test_instrumentor_lifecycle_runs_once_per_experiment(
+        self,
+        mock_tracer_class: Mock,
+        mock_flush: Mock,
+        experiment_context: ExperimentContext,
+        mock_tracer: Mock,
+    ) -> None:
+        """Regression: instrumentor.instrument()/uninstrument() must fire
+        exactly once per run_experiment(), not once per datapoint.
+
+        ``BaseInstrumentor`` is a process-wide singleton, and its
+        ``instrument()`` method is check-then-set without a lock. When
+        ``process_datapoint`` previously called ``instrument()`` inside
+        the ``ThreadPoolExecutor``, two datapoint threads could both pass
+        the "already instrumented?" check before either set the flag —
+        causing ``_instrument()`` to run twice. With wrapt-based
+        instrumentors (OpenInference / Traceloop), the wrappers stack and
+        every wrapped call emits a duplicate span nested inside the first.
+        Hoisting the lifecycle to whole-experiment scope makes that race
+        impossible by construction.
+        """
+        mock_tracer_class.return_value = mock_tracer
+
+        instrument_calls = 0
+        uninstrument_calls = 0
+
+        class _CountingInstrumentor(BaseInstrumentor):
+            # BaseInstrumentor stores its singleton + "already instrumented"
+            # flag as class attributes; redeclaring them on the subclass
+            # keeps this test from inheriting state from any other test.
+            _instance = None
+            _is_instrumented_by_opentelemetry = False
+
+            def instrumentation_dependencies(self) -> Collection[str]:
+                return []
+
+            def instrument(self, **kwargs: Any) -> Any:
+                nonlocal instrument_calls
+                instrument_calls += 1
+                return super().instrument(**kwargs)
+
+            def uninstrument(self, **kwargs: Any) -> Any:
+                nonlocal uninstrument_calls
+                uninstrument_calls += 1
+                return super().uninstrument(**kwargs)
+
+            def _instrument(self, **kwargs: Any) -> None:
+                pass
+
+            def _uninstrument(self, **kwargs: Any) -> None:
+                pass
+
+        dataset = [
+            {"inputs": {"i": 0}, "ground_truth": {}},
+            {"inputs": {"i": 1}, "ground_truth": {}},
+            {"inputs": {"i": 2}, "ground_truth": {}},
+        ]
+
+        # Block every worker inside process_datapoint until they're all
+        # there, so the first one's lock acquisition is contended and the
+        # singleton race is actually reachable from this test.
+        barrier = threading.Barrier(len(dataset))
+
+        def user_fn(dp: Dict[str, Any]) -> Dict[str, Any]:
+            barrier.wait(timeout=5.0)
+            return dp
+
+        results = run_experiment(
+            function=user_fn,
+            dataset=dataset,
+            datapoint_ids=["dp-0", "dp-1", "dp-2"],
+            experiment_context=experiment_context,
+            api_key="test-key",
+            max_workers=len(dataset),
+            instrumentors=[lambda: _CountingInstrumentor()],
+        )
+
+        assert len(results) == 3
+        assert all(r.get("status") == "success" for r in results), (
+            f"barrier deadlock — workers did not all enter process_datapoint: {results}"
+        )
+        assert instrument_calls == 1, (
+            f"expected instrument() to fire once for the whole experiment; "
+            f"got {instrument_calls} (per-datapoint instrumentation races "
+            f"BaseInstrumentor's check-then-set under ThreadPoolExecutor)"
+        )
+        assert uninstrument_calls == 1, (
+            f"expected uninstrument() to fire once for the whole experiment; got {uninstrument_calls}"
+        )
+
 
 # NOTE: per-datapoint evaluator orchestration is now exercised in
 # tests/unit/test_evaluator_metric_normalization.py
@@ -390,7 +477,6 @@ class TestEvaluate:
             evaluate(
                 function=simple_function,
                 api_key="test-key",
-                project="test-project",
             )
 
     def test_validation_both_dataset_and_dataset_id(self, simple_function: Any) -> None:
@@ -401,7 +487,6 @@ class TestEvaluate:
                 dataset=[{"inputs": {}}],
                 dataset_id="ds-123",
                 api_key="test-key",
-                project="test-project",
             )
 
     @patch.dict("os.environ", {}, clear=True)  # Clear all env vars
@@ -420,18 +505,24 @@ class TestEvaluate:
             evaluate(
                 function=simple_function,
                 dataset=[{"inputs": {}}],
-                project="test-project",
             )
 
-    def test_validation_no_project(self, simple_function: Any) -> None:
-        """Test that ValueError is raised when project is None."""
-        with pytest.raises(ValueError, match="Must provide 'project'"):
-            evaluate(
-                function=simple_function,
-                dataset=[{"inputs": {}}],
-                api_key="test-key",
-                project=None,
-            )
+    def test_project_argument_emits_deprecation_warning(
+        self, simple_function: Any
+    ) -> None:
+        """Test that passing project emits DeprecationWarning and does not require project."""
+        with pytest.warns(DeprecationWarning, match="project.*deprecated"):
+            with patch("honeyhive.experiments.core.HoneyHive") as mock_honeyhive_class:
+                mock_client = Mock()
+                mock_client.evaluations.create_run.side_effect = Exception("stop early")
+                mock_honeyhive_class.return_value = mock_client
+                with pytest.raises(Exception):
+                    evaluate(
+                        function=simple_function,
+                        dataset=[{"inputs": {}}],
+                        api_key="test-key",
+                        project="legacy-project",
+                    )
 
     @patch("honeyhive.experiments.core.get_run_result")
     @patch("honeyhive.experiments.core.run_experiment")
@@ -454,7 +545,6 @@ class TestEvaluate:
         mock_uuid.return_value = Mock(hex="abc123")
         mock_prepare_run.return_value = {
             "name": "test-experiment",
-            "project": "test-project",
             "dataset_id": "ds-123",
             "event_ids": [],
         }
@@ -502,7 +592,6 @@ class TestEvaluate:
             function=simple_function,
             dataset_id="ds-123",
             api_key="test-key",
-            project="test-project",
             max_workers=1,
             aggregate_function="median",
             verbose=True,
@@ -542,7 +631,6 @@ class TestEvaluate:
         mock_uuid.return_value = Mock(hex="abc123")
         mock_prepare_run.return_value = {
             "name": "test-experiment",
-            "project": "test-project",
             "event_ids": [],
         }
 
@@ -594,7 +682,6 @@ class TestEvaluate:
             function=simple_function,
             dataset_id="ds-123",
             api_key="test-key",
-            project="test-project",
         )
 
         # Verify - should continue with available datapoints
@@ -630,7 +717,6 @@ class TestEvaluate:
         mock_uuid.return_value = Mock(hex="abc123")
         mock_prepare_run.return_value = {
             "name": "test-experiment",
-            "project": "test-project",
             "event_ids": [],
         }
 
@@ -652,7 +738,6 @@ class TestEvaluate:
                 function=simple_function,
                 dataset_id="ds-123",
                 api_key="test-key",
-                project="test-project",
             )
 
     @patch("honeyhive.experiments.core.get_run_result")
@@ -679,7 +764,6 @@ class TestEvaluate:
         mock_uuid.return_value = Mock(hex="abc123")
         mock_prepare_run.return_value = {
             "name": "test-experiment",
-            "project": "test-project",
             "event_ids": [],
         }
 
@@ -718,7 +802,6 @@ class TestEvaluate:
             function=simple_function,
             dataset_id="ds-123",
             api_key="test-key",
-            project="test-project",
         )
         assert result == mock_result
         assert mock_client.datapoints.get_datapoint.call_count == 2
@@ -751,7 +834,6 @@ class TestEvaluate:
         mock_uuid.return_value = Mock(hex="abc123")
         mock_prepare_run.return_value = {
             "name": "test-experiment",
-            "project": "test-project",
             "event_ids": [],
         }
 
@@ -776,7 +858,6 @@ class TestEvaluate:
                 function=simple_function,
                 dataset_id="ds-123",
                 api_key="test-key",
-                project="test-project",
             )
         # Confirm we did try every datapoint before raising.
         assert mock_client.datapoints.get_datapoint.call_count == 3
@@ -805,7 +886,6 @@ class TestEvaluate:
         mock_prepare_external.return_value = ("EXT-ds-123", ["dp-1"])
         mock_prepare_run.return_value = {
             "name": "test",
-            "project": "test-project",
             "event_ids": [],
         }
 
@@ -836,7 +916,6 @@ class TestEvaluate:
             function=simple_function,
             dataset=[{"inputs": {"x": 1}}],
             api_key="test-key",
-            project="test-project",
         )
 
         # Verify - should still return result despite update failure
@@ -867,7 +946,6 @@ class TestEvaluate:
         mock_prepare_external.return_value = ("EXT-ds-123", ["dp-1"])
         mock_prepare_run.return_value = {
             "name": "test",
-            "project": "test-project",
             "event_ids": [],
         }
 
@@ -896,7 +974,6 @@ class TestEvaluate:
             function=simple_function,
             dataset=[{"inputs": {"x": 1}}],
             api_key="test-key",
-            project="test-project",
             evaluators=None,  # No evaluators
             verbose=False,
         )
@@ -929,7 +1006,6 @@ class TestEvaluate:
         mock_prepare_external.return_value = ("EXT-ds-123", ["dp-1"])
         mock_prepare_run.return_value = {
             "name": "test",
-            "project": "test-project",
             "event_ids": [],
         }
 
@@ -955,7 +1031,6 @@ class TestEvaluate:
             function=simple_function,
             dataset=[{"inputs": {"x": 1}}],
             # NO api_key parameter
-            project="test-project",
         )
 
         # Verify HoneyHive client was initialized with env var value
@@ -989,7 +1064,6 @@ class TestEvaluate:
         mock_prepare_external.return_value = ("EXT-ds-123", ["dp-1"])
         mock_prepare_run.return_value = {
             "name": "test",
-            "project": "test-project",
             "event_ids": [],
         }
 
@@ -1014,7 +1088,6 @@ class TestEvaluate:
         result = evaluate(
             function=simple_function,
             dataset=[{"inputs": {"x": 1}}],
-            project="test-project",
         )
 
         # Verify HoneyHive client was initialized with env var value
@@ -1050,7 +1123,6 @@ class TestEvaluate:
         mock_prepare_external.return_value = ("EXT-ds-123", ["dp-1"])
         mock_prepare_run.return_value = {
             "name": "test",
-            "project": "test-project",
             "event_ids": [],
         }
 
@@ -1075,7 +1147,6 @@ class TestEvaluate:
         result = evaluate(
             function=simple_function,
             dataset=[{"inputs": {"x": 1}}],
-            project="test-project",
         )
 
         # Verify HONEYHIVE_API_KEY was used (not HH_API_KEY)
@@ -1109,7 +1180,6 @@ class TestEvaluate:
         mock_prepare_external.return_value = ("EXT-ds-123", ["dp-1"])
         mock_prepare_run.return_value = {
             "name": "test",
-            "project": "test-project",
             "event_ids": [],
         }
 
@@ -1135,7 +1205,6 @@ class TestEvaluate:
             function=simple_function,
             dataset=[{"inputs": {"x": 1}}],
             api_key="test-key",
-            project="test-project",
         )
 
         # Verify HoneyHive client was initialized with env var value
@@ -1169,7 +1238,6 @@ class TestEvaluate:
         mock_prepare_external.return_value = ("EXT-ds-123", ["dp-1"])
         mock_prepare_run.return_value = {
             "name": "test",
-            "project": "test-project",
             "event_ids": [],
         }
 
@@ -1196,7 +1264,6 @@ class TestEvaluate:
             dataset=[{"inputs": {"x": 1}}],
             api_key="test-key",
             server_url="https://staging.honeyhive.com",  # NEW parameter
-            project="test-project",
         )
 
         # Verify HoneyHive client was initialized with explicit server_url
@@ -1226,7 +1293,6 @@ class TestAsyncFunctionSupport:
         return ExperimentContext(
             run_id="run-123",
             dataset_id="ds-456",
-            project="test-project",
         )
 
     @patch("honeyhive.experiments.core.force_flush_tracer")
@@ -1410,7 +1476,6 @@ class TestInstrumentorsSupport:
         return ExperimentContext(
             run_id="run-123",
             dataset_id="ds-456",
-            project="test-project",
         )
 
     @pytest.fixture
@@ -1496,7 +1561,7 @@ class TestInstrumentorsSupport:
 
     @patch("honeyhive.experiments.core.force_flush_tracer")
     @patch("honeyhive.experiments.core.HoneyHiveTracer")
-    def test_instrumentors_per_datapoint_isolation(
+    def test_instrumentor_factory_called_once_per_experiment(
         self,
         mock_tracer_class: Mock,
         mock_flush: Mock,
@@ -1504,7 +1569,17 @@ class TestInstrumentorsSupport:
         simple_function: Any,
         mock_tracer: Mock,
     ) -> None:
-        """Test that each datapoint gets its own instrumentor instance."""
+        """Each factory is invoked once per run_experiment(), not once per
+        datapoint.
+
+        The factory used to be called per datapoint so that each datapoint
+        could bind a fresh instrumentor to its own tracer provider. That
+        design raced against itself because BaseInstrumentor is a singleton
+        and its instrument() is non-atomic — see
+        ``test_instrumentor_lifecycle_runs_once_per_experiment`` for the
+        regression test. Now the factory fires exactly once for the whole
+        experiment, regardless of dataset size.
+        """
         mock_tracer_class.return_value = mock_tracer
 
         call_count = {"count": 0}
@@ -1530,7 +1605,7 @@ class TestInstrumentorsSupport:
             instrumentors=[instrumentor_factory],
         )
 
-        assert call_count["count"] == 3
+        assert call_count["count"] == 1
 
     @patch("honeyhive.experiments.core.force_flush_tracer")
     @patch("honeyhive.experiments.core.HoneyHiveTracer")
@@ -1620,3 +1695,72 @@ class TestInstrumentorsSupport:
 
         assert len(results) == 1
         assert results[0]["status"] == "success"
+
+
+class TestResultsBackwardCompatibility:
+    """Positional project_id must remain at its original index."""
+
+    def test_get_run_result_positional_project_and_aggregate(self) -> None:
+        """Legacy 4-arg positional call still routes aggregate_function correctly."""
+        mock_client = Mock()
+        mock_client.experiments.get_result.return_value = {
+            "status": "completed",
+            "success": True,
+            "passed": [],
+            "failed": [],
+            "metrics": {},
+            "datapoints": [],
+        }
+
+        with pytest.warns(DeprecationWarning, match="project_id.*deprecated"):
+            get_run_result(mock_client, "run-123", "my-project", "median")
+
+        mock_client.experiments.get_result.assert_called_once_with(
+            run_id="run-123", aggregate_function="median"
+        )
+
+    def test_get_run_result_three_arg_positional_project(self) -> None:
+        """Legacy 3-arg call passes project_id positionally, not aggregate_function."""
+        mock_client = Mock()
+        mock_client.experiments.get_result.return_value = {
+            "status": "completed",
+            "success": True,
+            "passed": [],
+            "failed": [],
+            "metrics": {},
+            "datapoints": [],
+        }
+
+        with pytest.warns(DeprecationWarning, match="project_id.*deprecated"):
+            get_run_result(mock_client, "run-123", "my-project")
+
+        mock_client.experiments.get_result.assert_called_once_with(
+            run_id="run-123", aggregate_function="average"
+        )
+
+    def test_compare_runs_positional_project_and_aggregate(self) -> None:
+        """Legacy positional compare_runs(project_id, aggregate_function) still works."""
+        mock_client = Mock()
+        mock_client.experiments.compare_runs.return_value = {
+            "commonDatapoints": [],
+            "metrics": [],
+        }
+
+        with pytest.warns(DeprecationWarning, match="project_id.*deprecated"):
+            compare_runs(mock_client, "run-new", "run-old", "my-project", "median")
+
+        mock_client.experiments.compare_runs.assert_called_once_with(
+            new_run_id="run-new",
+            old_run_id="run-old",
+            aggregate_function="median",
+        )
+
+    def test_get_run_metrics_positional_project(self) -> None:
+        """Legacy 3-arg get_run_metrics(client, run_id, project_id) still works."""
+        mock_client = Mock()
+        mock_client.experiments.get_result.return_value = {"metrics": {}}
+
+        with pytest.warns(DeprecationWarning, match="project_id.*deprecated"):
+            get_run_metrics(mock_client, "run-123", "my-project")
+
+        mock_client.experiments.get_result.assert_called_once_with(run_id="run-123")

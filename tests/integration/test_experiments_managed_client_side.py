@@ -127,9 +127,9 @@ class TestExperimentsManagedClientSide:
             assert result is not None and result.run_id
 
             backend_run = integration_client.evaluations.get_run(result.run_id)
-            assert (
-                hasattr(backend_run, "evaluation") and backend_run.evaluation
-            ), f"Backend response missing 'evaluation' field: {backend_run}"
+            assert hasattr(backend_run, "evaluation") and backend_run.evaluation, (
+                f"Backend response missing 'evaluation' field: {backend_run}"
+            )
             run_data = backend_run.evaluation
 
             assert str(getattr(run_data, "dataset_id", "")) == str(dataset_id), (
@@ -137,9 +137,9 @@ class TestExperimentsManagedClientSide:
                 f"!= created dataset_id {dataset_id!r}"
             )
             event_ids = getattr(run_data, "event_ids", []) or []
-            assert len(event_ids) == len(
-                datapoints
-            ), f"Expected {len(datapoints)} session events, got {len(event_ids)}"
+            assert len(event_ids) == len(datapoints), (
+                f"Expected {len(datapoints)} session events, got {len(event_ids)}"
+            )
 
         finally:
             safe_delete_dataset(integration_client, dataset_id)

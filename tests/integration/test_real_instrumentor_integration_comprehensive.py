@@ -47,9 +47,9 @@ class TestRealInstrumentorIntegration:
         # Verify we have a real TracerProvider, not ProxyTracerProvider
         provider_type = type(tracer.provider).__name__
         assert "TracerProvider" in provider_type
-        assert (
-            "Proxy" not in provider_type
-        ), f"Still using ProxyTracerProvider: {provider_type}"
+        assert "Proxy" not in provider_type, (
+            f"Still using ProxyTracerProvider: {provider_type}"
+        )
 
         # Verify span processor was added successfully
         assert tracer.span_processor is not None
@@ -86,7 +86,7 @@ class TestRealInstrumentorIntegration:
         # Create test script that runs in fresh environment
         test_script = f"""
 import sys
-sys.path.insert(0, "{Path(__file__).parent.parent.parent / 'src'}")
+sys.path.insert(0, "{Path(__file__).parent.parent.parent / "src"}")
 
 # Test the exact scenario that caused the bug
 from opentelemetry import trace
@@ -100,9 +100,9 @@ print(f"Initial provider: {{initial_type}}")
 from honeyhive.tracer import HoneyHiveTracer
 
 tracer = HoneyHiveTracer(
-    api_key="{real_api_credentials['api_key']}",
-    project="{real_api_credentials['project']}",
-    source="{real_api_credentials['source']}",
+    api_key="{real_api_credentials["api_key"]}",
+    project="{real_api_credentials["project"]}",
+    source="{real_api_credentials["source"]}",
     session_name="subprocess_test",
     test_mode=False,
     disable_http_tracing=True,
@@ -358,9 +358,9 @@ print("✅ Subprocess integration test passed")
 
         # Should start with ProxyTracerProvider or NoOpTracerProvider
         # in fresh environment
-        assert (
-            "Proxy" in initial_type or "NoOp" in initial_type
-        ), f"Expected ProxyTracerProvider or NoOpTracerProvider, got {initial_type}"
+        assert "Proxy" in initial_type or "NoOp" in initial_type, (
+            f"Expected ProxyTracerProvider or NoOpTracerProvider, got {initial_type}"
+        )
 
         # Initialize HoneyHive tracer (project derived from API key)
         tracer = tracer_factory("tracer")

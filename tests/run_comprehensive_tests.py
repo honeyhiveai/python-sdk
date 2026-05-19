@@ -15,10 +15,10 @@ from pathlib import Path
 
 def run_command(cmd, description):
     """Run a command and handle errors."""
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Running: {description}")
     print(f"Command: {' '.join(cmd)}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     start_time = time.time()
 

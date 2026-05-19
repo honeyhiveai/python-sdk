@@ -304,13 +304,12 @@ class TestPrepareRunRequestData:
         result = prepare_run_request_data(
             run_id="run-123",
             name="test-run",
-            project="test-project",
             dataset_id="ds-123",
         )
 
         assert result["run_id"] == "run-123"
         assert result["name"] == "test-run"
-        assert result["project"] == "test-project"
+        assert "project" not in result
         assert result["status"] == "pending"  # Default value
 
     def test_run_id_included_when_provided(self) -> None:
@@ -319,7 +318,6 @@ class TestPrepareRunRequestData:
         result = prepare_run_request_data(
             run_id=custom_id,
             name="test-run",
-            project="test-project",
             dataset_id="ds-123",
         )
 
@@ -330,7 +328,6 @@ class TestPrepareRunRequestData:
         data = {
             "run_id": "run-123",
             "name": "test-run",
-            "project": "test-project",
             "dataset_id": "regular-dataset-id",
         }
 
@@ -346,7 +343,6 @@ class TestPrepareRunRequestData:
         data = {
             "run_id": "run-123",
             "name": "test-run",
-            "project": "test-project",
             "dataset_id": "EXT-abc123def456",
         }
 
@@ -362,7 +358,6 @@ class TestPrepareRunRequestData:
         data = {
             "run_id": "run-123",
             "name": "test-run",
-            "project": "test-project",
             "dataset_id": "EXT-abc123",
             "metadata": {
                 "custom_field": "custom_value",
@@ -382,7 +377,6 @@ class TestPrepareRunRequestData:
         data = {
             "run_id": "run-123",
             "name": "test-run",
-            "project": "test-project",
             "dataset_id": None,
         }
 
@@ -396,7 +390,6 @@ class TestPrepareRunRequestData:
         data = {
             "run_id": "run-123",
             "name": "test-run",
-            "project": "test-project",
             "dataset_id": "ds-123",
             "event_ids": ["evt-1", "evt-2"],
             "configuration": {"param1": "value1"},
@@ -418,7 +411,6 @@ class TestPrepareRunRequestData:
         data = {
             "run_id": "run-123",
             "name": "test-run",
-            "project": "test-project",
             "dataset_id": "ds-123",
         }
 

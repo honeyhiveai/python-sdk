@@ -263,7 +263,7 @@ async def createEventBatch(
     )
 
 
-async def createModelEvent(
+async def createModelEventLegacy(
     api_config_override: Optional[APIConfig] = None, *, data: PostModelEventRequest
 ) -> PostEventResponse:
     api_config = api_config_override if api_config_override else APIConfig()
@@ -291,7 +291,7 @@ async def createModelEvent(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"createModelEvent failed with status code: {response.status_code}",
+            f"createModelEventLegacy failed with status code: {response.status_code}",
         )
     else:
         body = None if 200 == 204 else response.json()
@@ -339,7 +339,7 @@ async def createEventBatchLegacy(
     )
 
 
-async def createModelEventBatch(
+async def createModelEventBatchLegacy(
     api_config_override: Optional[APIConfig] = None, *, data: PostModelEventBatchRequest
 ) -> PostEventBatchResponse:
     api_config = api_config_override if api_config_override else APIConfig()
@@ -367,7 +367,7 @@ async def createModelEventBatch(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"createModelEventBatch failed with status code: {response.status_code}",
+            f"createModelEventBatchLegacy failed with status code: {response.status_code}",
         )
     else:
         body = None if 200 == 204 else response.json()

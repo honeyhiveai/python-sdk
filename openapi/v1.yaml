@@ -35,14 +35,15 @@ paths:
       x-honeyhive-plane: dp
   /session/{session_id}/traces:
     post:
-      summary: Add traces to a session
-      operationId: addSessionTraces
+      summary: Add traces to a session (deprecated)
+      operationId: addSessionTracesLegacy
       x-cli-exclude: true
       x-ts-sdk-exclude: true
+      deprecated: true
       tags:
         - Sessions
       description: |
-        Add trace events to an existing session. The field is named `logs` for legacy compatibility with the Go ingestion handler.
+        Deprecated. Use `POST /v1/sessions/{session_id}/events/batch` instead. This route accepts trace events under either `logs` (deprecated) or `events`. Exactly one of the two MUST be present in a request: neither → 400, both → 400.
       parameters:
         - name: session_id
           in: path
@@ -63,6 +64,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SessionTracesResponse'
+        '400':
+          description: |
+            Bad request — both `logs` and `events` supplied, or neither, or invalid event payload.
       x-honeyhive-plane: dp
   /v1/sessions:
     post:
@@ -125,6 +129,60 @@ paths:
                 $ref: '#/components/schemas/PostSessionStartResponse'
         '400':
           description: Bad request (invalid session data)
+      x-honeyhive-plane: dp
+  /v1/sessions/{session_id}/events/batch:
+    post:
+      tags:
+        - Sessions
+      operationId: createSessionEventBatch
+      x-cli-name: create-event-batch
+      x-ts-sdk-name: createEventBatch
+      summary: Add a batch of events to a session
+      description: |
+        AIP-233 nested batch create. Adds a batch of events to an existing
+        session. Each event in the batch is stored with `session_id` set from
+        the URL path, overriding any `session_id` in the event body.
+
+        **Required properties:**
+
+        - `events` (array of event objects) — Each event must include
+          `event_type` (one of `chain`, `model`, `tool`, `session`) and `inputs`.
+
+        Unknown top-level fields and unknown per-event fields are rejected at
+        the SDK boundary; the deprecated per-event `project` field is no
+        longer accepted.
+
+        Events are processed sequentially (not via the worker-pool batch path
+        used by `POST /v1/events/batch`) — semantics match the legacy
+        `POST /session/{session_id}/traces` route per the Normalize Routes
+        RFC.
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Session ID to add events to
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionEventBatchRequest'
+      responses:
+        '200':
+          description: Events added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionTracesResponse'
+              example:
+                success: true
+        '400':
+          description: Bad request (invalid event data or missing required fields)
+        '500':
+          description: Events partially added
       x-honeyhive-plane: dp
   /events:
     post:
@@ -418,12 +476,13 @@ paths:
     post:
       tags:
         - Events
-      operationId: createModelEvent
+      operationId: createModelEventLegacy
       x-cli-exclude: true
       x-ts-sdk-exclude: true
-      summary: Create a new model event
+      deprecated: true
+      summary: Create a new model event (deprecated)
       description: |
-        Create a model event. The event_type is automatically set to 'model'. Please refer to our instrumentation guide for detailed information.
+        Deprecated. Use `POST /v1/events` with `event_type="model"` instead. The `ModelEvent` schema carries 14 field-level deprecations covering the model-specific fields the generic event route now expresses (`model`, `messages`, `response`, `provider`, `usage`, `cost`, `hyperparameters`, `template`, `template_inputs`, `tools`, `tool_choice`, `response_format`, `duration`, `error`), plus `project` inherited from `LegacyEvent`. The legacy route continues to serve traffic and remaps these fields into `inputs.*` / `outputs.*` before storage.
       requestBody:
         required: true
         content:
@@ -478,12 +537,13 @@ paths:
     post:
       tags:
         - Events
-      operationId: createModelEventBatch
+      operationId: createModelEventBatchLegacy
       x-cli-exclude: true
       x-ts-sdk-exclude: true
-      summary: Create a batch of model events
+      deprecated: true
+      summary: Create a batch of model events (deprecated)
       description: |
-        Create multiple model events in a single request. The event_type is automatically set to 'model' for all events. When single_session is true, all events share the same session. Please refer to our instrumentation guide for detailed information.
+        Deprecated. Use `POST /v1/events/batch` with `event_type="model"` on each event instead. Migration notes: the top-level array `model_events` becomes `events`; each element must explicitly set `event_type: "model"` (the legacy route sets this server-side); the deprecated top-level aliases `is_single_session` and `session` are not accepted by the v1 route (`PostEventBatchRequest` is `.strict()`) — use `single_session` and `session_properties` instead. The legacy route continues to serve traffic and remaps the model-specific fields on each event (`model`, `messages`, `response`, `provider`, `usage`, `cost`, `hyperparameters`, `template`, `template_inputs`, `tools`, `tool_choice`, `response_format`, `duration`, `error`) into `inputs.*` / `outputs.*` before storage.
       requestBody:
         required: true
         content:
@@ -504,6 +564,121 @@ paths:
                 success: true
         '500':
           description: Model events partially created
+      x-honeyhive-plane: dp
+  /v1/charts:
+    get:
+      tags:
+        - Charts
+      operationId: getCharts
+      x-cli-name: list
+      x-ts-sdk-name: list
+      summary: List charts
+      description: Retrieve all charts in the current scope.
+      responses:
+        '200':
+          description: Charts retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetChartsResponse'
+      x-honeyhive-plane: dp
+    post:
+      tags:
+        - Charts
+      operationId: createChart
+      x-cli-name: create
+      x-ts-sdk-name: create
+      summary: Create a new chart
+      description: Add a new chart
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateChartRequest'
+      responses:
+        '200':
+          description: Chart created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateChartResponse'
+      x-honeyhive-plane: dp
+  /v1/charts/{chart_id}:
+    get:
+      tags:
+        - Charts
+      operationId: getChart
+      x-cli-name: get
+      x-ts-sdk-name: get
+      summary: Get a chart
+      description: Retrieve a single chart by id.
+      parameters:
+        - in: path
+          name: chart_id
+          required: true
+          schema:
+            type: string
+          description: The unique identifier of the chart to retrieve
+      responses:
+        '200':
+          description: Chart retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetChartResponse'
+      x-honeyhive-plane: dp
+    put:
+      tags:
+        - Charts
+      operationId: updateChart
+      x-cli-name: update
+      x-ts-sdk-name: update
+      summary: Update a chart
+      description: Update a chart's editable fields. Only fields included in the request body are modified.
+      parameters:
+        - in: path
+          name: chart_id
+          required: true
+          schema:
+            type: string
+          description: The unique identifier of the chart to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateChartRequest'
+      responses:
+        '200':
+          description: Chart updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateChartResponse'
+      x-honeyhive-plane: dp
+    delete:
+      tags:
+        - Charts
+      operationId: deleteChart
+      x-cli-name: delete
+      x-ts-sdk-name: delete
+      summary: Delete a chart
+      description: Remove a chart by id.
+      parameters:
+        - in: path
+          name: chart_id
+          required: true
+          schema:
+            type: string
+          description: The unique identifier of the chart to delete
+      responses:
+        '200':
+          description: Chart deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteChartResponse'
       x-honeyhive-plane: dp
   /v1/metrics:
     get:
@@ -1449,15 +1624,70 @@ paths:
         '400':
           description: Error fetching event metrics
       x-honeyhive-plane: dp
+  /v1/runs/{run_id}/summary:
+    get:
+      summary: Retrieve experiment summary
+      operationId: getExperimentSummary
+      x-cli-name: get-summary
+      x-ts-sdk-name: getSummary
+      tags:
+        - Experiments
+      description: 'Compute evaluation summary for an experiment run: pass/fail results, metric aggregations, per-datapoint results, event details, and the experiment run object.'
+      parameters:
+        - name: run_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Experiment run ID (UUIDv4)
+        - name: aggregate_function
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - average
+              - min
+              - max
+              - median
+              - p95
+              - p99
+              - p90
+              - sum
+              - count
+            default: average
+          description: Aggregation function to apply to metrics
+        - name: filters
+          in: query
+          required: false
+          schema:
+            oneOf:
+              - type: string
+              - type: array
+                items:
+                  type: object
+          description: Optional filters to apply (JSON string or array of filter objects)
+      responses:
+        '200':
+          description: Experiment summary retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetExperimentRunResultResponse'
+        '400':
+          description: Error processing experiment summary
+      x-honeyhive-plane: dp
   /v1/runs/{run_id}/result:
     get:
-      summary: Retrieve experiment result
-      operationId: getExperimentResult
+      summary: Retrieve experiment result (deprecated)
+      operationId: getExperimentResultLegacy
+      deprecated: true
       x-cli-exclude: true
       x-ts-sdk-exclude: true
       tags:
         - Experiments
-      description: 'Compute evaluation summary for an experiment run: pass/fail results, metric aggregations, per-datapoint results, event details, and the experiment run object.'
+      description: Deprecated. Use `GET /v1/runs/{run_id}/summary` instead.
       parameters:
         - name: run_id
           in: path
@@ -1763,8 +1993,8 @@ paths:
       tags:
         - Queues
       operationId: getQueues
-      x-cli-name: list
-      x-ts-sdk-name: list
+      x-ts-sdk-exclude: true
+      x-cli-exclude: true
       summary: List annotation queues
       description: |
         List annotation queues for the current project scope, optionally filtered by enabled status.
@@ -1787,8 +2017,8 @@ paths:
       tags:
         - Queues
       operationId: createQueue
-      x-cli-name: create
-      x-ts-sdk-name: create
+      x-ts-sdk-exclude: true
+      x-cli-exclude: true
       summary: Create an annotation queue
       description: |
         Create a new annotation queue with a name, optional description, filters, and an initial set of event IDs to add.
@@ -1813,8 +2043,8 @@ paths:
       tags:
         - Queues
       operationId: getQueue
-      x-cli-name: get
-      x-ts-sdk-name: get
+      x-ts-sdk-exclude: true
+      x-cli-exclude: true
       summary: Get an annotation queue
       description: Retrieve a single annotation queue by its unique identifier.
       parameters:
@@ -1838,8 +2068,8 @@ paths:
       tags:
         - Queues
       operationId: updateQueue
-      x-cli-name: update
-      x-ts-sdk-name: update
+      x-ts-sdk-exclude: true
+      x-cli-exclude: true
       summary: Update an annotation queue
       description: |
         Update fields on an existing annotation queue. Supports updating name, description, filters, enabled status, and adding/removing events.
@@ -1870,8 +2100,8 @@ paths:
       tags:
         - Queues
       operationId: deleteQueue
-      x-cli-name: delete
-      x-ts-sdk-name: delete
+      x-ts-sdk-exclude: true
+      x-cli-exclude: true
       summary: Delete an annotation queue
       description: Soft-delete an annotation queue by its unique identifier.
       parameters:
@@ -2008,6 +2238,181 @@ paths:
       x-honeyhive-plane: dp
 components:
   schemas:
+    CreateChartRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        metric:
+          type: string
+          minLength: 1
+        func:
+          type: string
+        groupBy:
+          type:
+            - string
+            - 'null'
+        bucketing:
+          type: string
+          enum:
+            - minute
+            - hour
+            - day
+            - week
+            - month
+          default: day
+        dateRange:
+          anyOf:
+            - $ref: '#/components/schemas/RelativeDateRange'
+            - $ref: '#/components/schemas/AbsoluteDateRange'
+        query:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueryFilter'
+        owner_id:
+          type: string
+          minLength: 1
+      required:
+        - name
+        - metric
+      additionalProperties: false
+    RelativeDateRange:
+      type: object
+      properties:
+        relative:
+          type: string
+      required:
+        - relative
+      additionalProperties: false
+    AbsoluteDateRange:
+      type: object
+      properties:
+        $gte:
+          anyOf:
+            - type: string
+            - type: number
+        $lte:
+          anyOf:
+            - type: string
+            - type: number
+      required:
+        - $gte
+        - $lte
+    QueryFilter:
+      type: object
+      properties:
+        field:
+          type: string
+        value:
+          type:
+            - string
+            - 'null'
+        type:
+          type: string
+        operator:
+          type: string
+      required:
+        - field
+        - value
+        - type
+        - operator
+      additionalProperties: false
+    CreateChartResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/CreateChartResponseData'
+      required:
+        - success
+        - data
+      additionalProperties: false
+    DeleteChartResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required:
+        - success
+        - message
+      additionalProperties: false
+    GetChartResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/GetChartResponseData'
+      required:
+        - success
+        - data
+      additionalProperties: false
+    GetChartsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/GetChartsResponseDataItem'
+      required:
+        - success
+        - data
+      additionalProperties: false
+    UpdateChartRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        metric:
+          type: string
+        func:
+          type: string
+        groupBy:
+          type:
+            - string
+            - 'null'
+        bucketing:
+          type: string
+          enum:
+            - minute
+            - hour
+            - day
+            - week
+            - month
+        dateRange:
+          anyOf:
+            - $ref: '#/components/schemas/RelativeDateRange'
+            - $ref: '#/components/schemas/AbsoluteDateRange'
+        query:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueryFilter'
+        owner_id:
+          type: string
+          minLength: 1
+      additionalProperties: false
+    UpdateChartResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/UpdateChartResponseData'
+      required:
+        - success
+        - data
+      additionalProperties: false
     SelectedFunction:
       type: object
       properties:
@@ -3418,7 +3823,10 @@ components:
       type: object
       properties:
         dateRange:
-          $ref: '#/components/schemas/DateRange'
+          anyOf:
+            - $ref: '#/components/schemas/RelativeDateRange'
+            - $ref: '#/components/schemas/AbsoluteDateRange'
+          description: Date range filter
         filters:
           $ref: '#/components/schemas/FiltersArray'
           description: Event filters to apply
@@ -3440,33 +3848,6 @@ components:
           type: string
           description: Filter by evaluation/experiment run ID
       description: Query parameters for GET /events
-    DateRange:
-      anyOf:
-        - $ref: '#/components/schemas/RelativeDateRange'
-        - $ref: '#/components/schemas/AbsoluteDateRange'
-      description: Date range filter
-    RelativeDateRange:
-      type: object
-      properties:
-        relative:
-          type: string
-      required:
-        - relative
-      additionalProperties: false
-    AbsoluteDateRange:
-      type: object
-      properties:
-        $gte:
-          anyOf:
-            - type: string
-            - type: number
-        $lte:
-          anyOf:
-            - type: string
-            - type: number
-      required:
-        - $gte
-        - $lte
     PostEventResponse:
       type: object
       properties:
@@ -3983,7 +4364,32 @@ components:
               items: {}
           description: Filters to apply to metrics
       description: Query parameters for GET /runs/{run_id}/metrics
-    GetExperimentRunResultQuery:
+    GetExperimentRunSummaryQuery:
+      type: object
+      properties:
+        aggregate_function:
+          type: string
+          enum:
+            - average
+            - min
+            - max
+            - median
+            - p95
+            - p99
+            - p90
+            - sum
+            - count
+          default: average
+          description: 'Aggregation function to apply (default: average)'
+        filters:
+          anyOf:
+            - type: string
+            - type: array
+              items: {}
+          description: Filters to apply to results
+      additionalProperties: false
+      description: Query parameters for GET /runs/{run_id}/summary
+    LegacyGetExperimentRunResultQuery:
       type: object
       properties:
         aggregate_function:
@@ -3996,7 +4402,8 @@ components:
             - type: array
               items: {}
           description: Filters to apply to results
-      description: Query parameters for GET /runs/{run_id}/result
+      description: Query parameters for GET /runs/{run_id}/result (deprecated — use GET /runs/{run_id}/summary)
+      deprecated: true
     GetExperimentRunCompareParams:
       type: object
       properties:
@@ -5258,9 +5665,27 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LegacyEvent'
+          description: 'Deprecated: use `events` instead. Traces to add as raw event objects.'
+          deprecated: true
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/LegacyEvent'
+          description: Traces to add as raw event objects. Replaces `logs`.
+      description: Request body for POST /session/{session_id}/traces (deprecated — use POST /v1/sessions/{session_id}/events/batch). Exactly one of `logs` (deprecated) or `events` must be present.
+      deprecated: true
+    SessionEventBatchRequest:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/PostEventRequest'
+          description: Events to add to the session
       required:
-        - logs
-      description: Request to add traces to a session
+        - events
+      additionalProperties: false
+      description: Request body for POST /v1/sessions/{session_id}/events/batch
     PostSessionStartResponse:
       type: object
       properties:
@@ -5342,6 +5767,298 @@ components:
       required:
         - message
       description: 'TODO: This is a placeholder schema. Proper Zod schemas need to be created in @hive-kube/iso-core-ts for: Sessions, Events, Projects, and Experiment comparison/result endpoints.'
+    CreateChartResponseData:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type:
+            - string
+            - 'null'
+        metric:
+          type: string
+        func:
+          type:
+            - string
+            - 'null'
+        groupBy:
+          type:
+            - string
+            - 'null'
+        bucketing:
+          type: string
+        dateRange:
+          type:
+            - object
+            - 'null'
+          additionalProperties: {}
+        query:
+          type:
+            - array
+            - 'null'
+          items:
+            $ref: '#/components/schemas/QueryFilter'
+        owner_id:
+          type:
+            - string
+            - 'null'
+          minLength: 1
+        owner_profile:
+          type:
+            - object
+            - 'null'
+          additionalProperties: {}
+        is_active:
+          type: boolean
+        created_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: string
+        updated_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: string
+            - type: 'null'
+      required:
+        - id
+        - name
+        - description
+        - metric
+        - func
+        - groupBy
+        - bucketing
+        - dateRange
+        - query
+        - owner_id
+        - is_active
+        - created_at
+        - updated_at
+    GetChartResponseData:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type:
+            - string
+            - 'null'
+        metric:
+          type: string
+        func:
+          type:
+            - string
+            - 'null'
+        groupBy:
+          type:
+            - string
+            - 'null'
+        bucketing:
+          type: string
+        dateRange:
+          type:
+            - object
+            - 'null'
+          additionalProperties: {}
+        query:
+          type:
+            - array
+            - 'null'
+          items:
+            $ref: '#/components/schemas/QueryFilter'
+        owner_id:
+          type:
+            - string
+            - 'null'
+          minLength: 1
+        owner_profile:
+          type:
+            - object
+            - 'null'
+          additionalProperties: {}
+        is_active:
+          type: boolean
+        created_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: string
+        updated_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: string
+            - type: 'null'
+      required:
+        - id
+        - name
+        - description
+        - metric
+        - func
+        - groupBy
+        - bucketing
+        - dateRange
+        - query
+        - owner_id
+        - is_active
+        - created_at
+        - updated_at
+    GetChartsResponseDataItem:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type:
+            - string
+            - 'null'
+        metric:
+          type: string
+        func:
+          type:
+            - string
+            - 'null'
+        groupBy:
+          type:
+            - string
+            - 'null'
+        bucketing:
+          type: string
+        dateRange:
+          type:
+            - object
+            - 'null'
+          additionalProperties: {}
+        query:
+          type:
+            - array
+            - 'null'
+          items:
+            $ref: '#/components/schemas/QueryFilter'
+        owner_id:
+          type:
+            - string
+            - 'null'
+          minLength: 1
+        owner_profile:
+          type:
+            - object
+            - 'null'
+          additionalProperties: {}
+        is_active:
+          type: boolean
+        created_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: string
+        updated_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: string
+            - type: 'null'
+      required:
+        - id
+        - name
+        - description
+        - metric
+        - func
+        - groupBy
+        - bucketing
+        - dateRange
+        - query
+        - owner_id
+        - is_active
+        - created_at
+        - updated_at
+    UpdateChartResponseData:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type:
+            - string
+            - 'null'
+        metric:
+          type: string
+        func:
+          type:
+            - string
+            - 'null'
+        groupBy:
+          type:
+            - string
+            - 'null'
+        bucketing:
+          type: string
+        dateRange:
+          type:
+            - object
+            - 'null'
+          additionalProperties: {}
+        query:
+          type:
+            - array
+            - 'null'
+          items:
+            $ref: '#/components/schemas/QueryFilter'
+        owner_id:
+          type:
+            - string
+            - 'null'
+          minLength: 1
+        owner_profile:
+          type:
+            - object
+            - 'null'
+          additionalProperties: {}
+        is_active:
+          type: boolean
+        created_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: string
+        updated_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: string
+            - type: 'null'
+      required:
+        - id
+        - name
+        - description
+        - metric
+        - func
+        - groupBy
+        - bucketing
+        - dateRange
+        - query
+        - owner_id
+        - is_active
+        - created_at
+        - updated_at
     CreateDatapointResponseResult:
       type: object
       properties:
@@ -6296,6 +7013,9 @@ components:
 security:
   - BearerAuth: []
 tags:
+  - name: Charts
+    description: |
+      Define and manage saved charts — visualizations that aggregate metrics over time with bucketing, filters, and groupings.
   - name: Configurations
     description: |
       Manage prompt configurations — model parameters, message templates, and response settings — that can be versioned and deployed without code changes.

@@ -570,9 +570,9 @@ class evaluator(metaclass=EvaluatorMeta):  # pylint: disable=invalid-name
         """Process checker result and optionally run assertions."""
 
         if final_settings.asserts:
-            assert (
-                checker_score
-            ), f"Assertion failed: score {eval_score} is not in range {final_settings.target}"
+            assert checker_score, (
+                f"Assertion failed: score {eval_score} is not in range {final_settings.target}"
+            )
 
         init_method = "checker: " + eval_result.init_method
 
@@ -665,9 +665,9 @@ class evaluator(metaclass=EvaluatorMeta):  # pylint: disable=invalid-name
             return wraps, {}
         elif isinstance(wraps, dict):
             # assert that there is a single key of type str
-            assert len(wraps) == 1 and isinstance(
-                list(wraps.keys())[0], str
-            ), "wraps must be a single key of type str"
+            assert len(wraps) == 1 and isinstance(list(wraps.keys())[0], str), (
+                "wraps must be a single key of type str"
+            )
 
             wrapped_eval_name = list(wraps.keys())[0]
             wrapped_eval_settings_kwargs = wraps[wrapped_eval_name]
@@ -742,9 +742,9 @@ class evaluator(metaclass=EvaluatorMeta):  # pylint: disable=invalid-name
         wrapped_eval_name, wrapped_eval_settings_kwargs = evaluator.parse_wraps(
             wrapper_settings.wraps
         )
-        assert isinstance(
-            wrapped_eval_name, str
-        ), f"wrapped evaluator name must be a string but got: {type(wrapped_eval_name)}"
+        assert isinstance(wrapped_eval_name, str), (
+            f"wrapped evaluator name must be a string but got: {type(wrapped_eval_name)}"
+        )
 
         wrapped_eval_settings, wrapped_eval_kwargs = (
             EvalSettings.extract_eval_settings_and_kwargs(wrapped_eval_settings_kwargs)
@@ -890,9 +890,10 @@ class evaluator(metaclass=EvaluatorMeta):  # pylint: disable=invalid-name
             )
 
             # transform
-            transformed_result, transformed_score = (
-                await self.async_apply_transformation(result, score, final_settings)
-            )
+            (
+                transformed_result,
+                transformed_score,
+            ) = await self.async_apply_transformation(result, score, final_settings)
 
             # check target on transform if aggregate not defined
             if not final_settings.aggregate:
@@ -1031,9 +1032,9 @@ class evaluator(metaclass=EvaluatorMeta):  # pylint: disable=invalid-name
 
         # RUN EVALUATOR
         results, scores = None, None
-        assert not asyncio.iscoroutinefunction(
-            self.func
-        ), "please use @aevaluator instead of @evaluator for this function"
+        assert not asyncio.iscoroutinefunction(self.func), (
+            "please use @aevaluator instead of @evaluator for this function"
+        )
         results, scores = self.sync_call(*args, **kwargs)
 
         return scores

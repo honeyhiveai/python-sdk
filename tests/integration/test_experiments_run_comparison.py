@@ -105,6 +105,7 @@ def _make_named_user_fn(function_name: str):
 
 @pytest.mark.integration
 @pytest.mark.real_api
+@pytest.mark.xdist_group("server_side_eval")
 @pytest.mark.skipif(
     os.environ.get("HH_SOURCE", "").startswith("github-actions"),
     reason="Requires write permissions not available in CI",
@@ -193,12 +194,12 @@ class TestExperimentsRunComparison:
             f"datapoints (content-hashed EXT- IDs); got "
             f"{comparison.common_datapoints}"
         )
-        assert (
-            comparison.new_only_datapoints == 0
-        ), f"Same external dataset must yield zero new-only datapoints; got {comparison.new_only_datapoints}"
-        assert (
-            comparison.old_only_datapoints == 0
-        ), f"Same external dataset must yield zero old-only datapoints; got {comparison.old_only_datapoints}"
+        assert comparison.new_only_datapoints == 0, (
+            f"Same external dataset must yield zero new-only datapoints; got {comparison.new_only_datapoints}"
+        )
+        assert comparison.old_only_datapoints == 0, (
+            f"Same external dataset must yield zero old-only datapoints; got {comparison.old_only_datapoints}"
+        )
 
     def test_compare_runs_datapoint_pairing_for_same_managed_dataset(
         self,
@@ -275,12 +276,12 @@ class TestExperimentsRunComparison:
                 f"{len(datapoints)} common datapoints; got "
                 f"{comparison.common_datapoints}"
             )
-            assert (
-                comparison.new_only_datapoints == 0
-            ), f"Same managed dataset must yield zero new-only datapoints; got {comparison.new_only_datapoints}"
-            assert (
-                comparison.old_only_datapoints == 0
-            ), f"Same managed dataset must yield zero old-only datapoints; got {comparison.old_only_datapoints}"
+            assert comparison.new_only_datapoints == 0, (
+                f"Same managed dataset must yield zero new-only datapoints; got {comparison.new_only_datapoints}"
+            )
+            assert comparison.old_only_datapoints == 0, (
+                f"Same managed dataset must yield zero old-only datapoints; got {comparison.old_only_datapoints}"
+            )
         finally:
             safe_delete_dataset(integration_client, dataset_id)
 
@@ -627,12 +628,17 @@ class TestExperimentsRunComparison:
             assert (
                 comparison.metric_deltas is not None
                 and len(comparison.metric_deltas) > 0
-            ), "managed × client-side run comparison must surface at least one metric delta"
+            ), (
+                "managed × client-side run comparison must surface at least one metric delta"
+            )
         finally:
             safe_delete_dataset(integration_client, dataset_id)
 
     # ----------- Matrix coverage: external × server-side ----------------
 
+    @pytest.mark.skip(
+        reason="HHAI-5345: enrich PUT races ingestion pipeline — un-skip when fixed"
+    )
     def test_compare_runs_with_server_side_metric_external_dataset(
         self,
         real_api_key: str,
@@ -710,7 +716,9 @@ class TestExperimentsRunComparison:
             assert (
                 comparison.metric_deltas is not None
                 and len(comparison.metric_deltas) > 0
-            ), f"external × server-side comparison must surface at least one metric delta; expected {metric_name!r}"
+            ), (
+                f"external × server-side comparison must surface at least one metric delta; expected {metric_name!r}"
+            )
         finally:
             if metric_id:
                 try:
@@ -720,6 +728,9 @@ class TestExperimentsRunComparison:
 
     # ----------- Matrix coverage: managed × server-side -----------------
 
+    @pytest.mark.skip(
+        reason="HHAI-5345: enrich PUT races ingestion pipeline — un-skip when fixed"
+    )
     def test_compare_runs_with_server_side_metric_managed_dataset(
         self,
         real_api_key: str,
@@ -795,7 +806,9 @@ class TestExperimentsRunComparison:
             assert (
                 comparison.metric_deltas is not None
                 and len(comparison.metric_deltas) > 0
-            ), f"managed × server-side comparison must surface at least one metric delta; expected {metric_name!r}"
+            ), (
+                f"managed × server-side comparison must surface at least one metric delta; expected {metric_name!r}"
+            )
         finally:
             if metric_id:
                 try:

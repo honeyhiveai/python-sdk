@@ -352,15 +352,13 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
         self, config: Dict[str, Any]
     ) -> Optional[Dict[str, Any]]:
         """Dynamically extract API parameters from configuration."""
-        # Required parameters for tracer (api_key for API client, project for tracer)
         api_key = config.get("api_key")
-        project = config.get("project")
 
-        # Both api_key and project are required for tracer functionality
-        if not api_key or not project:
+        if not api_key:
             return None
 
-        # Build API parameters (new HoneyHive client only accepts api_key and base_url)
+        # Build API parameters (HoneyHive client accepts api_key and base_url only;
+        # project scope is inferred from the API key by the backend)
         api_params = {"api_key": api_key}
 
         # Map server_url to base_url for the new client

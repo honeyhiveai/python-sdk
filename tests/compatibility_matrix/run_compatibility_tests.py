@@ -174,7 +174,7 @@ class CompatibilityTestRunner:
 
     def check_base_requirements(self) -> bool:
         """Check if base HoneyHive requirements are met."""
-        required_vars = ["HH_API_KEY", "HH_PROJECT"]
+        required_vars = ["HH_API_KEY"]
         missing = [var for var in required_vars if not os.getenv(var)]
 
         if missing:

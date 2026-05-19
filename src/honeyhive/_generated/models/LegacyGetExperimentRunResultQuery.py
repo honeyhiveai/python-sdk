@@ -2,13 +2,13 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
-__all__ = ["GetExperimentRunResultQuery"]
+__all__ = ["LegacyGetExperimentRunResultQuery"]
 
 
-class GetExperimentRunResultQuery(BaseModel):
+class LegacyGetExperimentRunResultQuery(BaseModel):
     """
-    GetExperimentRunResultQuery model
-        Query parameters for GET /runs/{run_id}/result
+    LegacyGetExperimentRunResultQuery model
+        Query parameters for GET /runs/{run_id}/result (deprecated — use GET /runs/{run_id}/summary)
     """
 
     model_config = {

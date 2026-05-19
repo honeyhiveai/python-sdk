@@ -141,7 +141,7 @@ def multi_tool_mcp_workflow(tasks: List[Dict[str, Any]]) -> Dict[str, Any]:
 
         for i, task in enumerate(tasks):
             print(
-                f"📝 Processing task {i+1}: {task.get('description', 'Unknown task')}"
+                f"📝 Processing task {i + 1}: {task.get('description', 'Unknown task')}"
             )
 
             task_results = {}
@@ -213,7 +213,7 @@ def mock_mcp_workflow(tasks: List[Dict[str, Any]]) -> Dict[str, Any]:
 
     for i, task in enumerate(tasks):
         print(
-            f"📝 Mock processing task {i+1}: {task.get('description', 'Unknown task')}"
+            f"📝 Mock processing task {i + 1}: {task.get('description', 'Unknown task')}"
         )
 
         tool_name = task.get("tool")

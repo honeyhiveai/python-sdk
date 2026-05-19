@@ -376,10 +376,10 @@ class TestExperimentConfig:
             mock_get_logger.return_value = mock_logger
 
             # Act
-            result: Optional[
-                Dict[str, Any]
-            ] = ExperimentConfig.validate_experiment_metadata(
-                invalid_metadata  # type: ignore[arg-type]
+            result: Optional[Dict[str, Any]] = (
+                ExperimentConfig.validate_experiment_metadata(
+                    invalid_metadata  # type: ignore[arg-type]
+                )
             )
 
             # Assert

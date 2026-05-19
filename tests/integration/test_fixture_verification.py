@@ -25,12 +25,12 @@ def test_fixture_verification(
     """Test that fixtures provide correct values and spans are exported."""
     # Verify we have a valid project name
     assert real_project is not None, "Project should not be None"
-    assert (
-        len(real_project.strip()) > 0
-    ), f"Project should not be empty: '{real_project}'"
-    assert (
-        integration_tracer.project == real_project
-    ), f"Tracer project mismatch: {integration_tracer.project} != {real_project}"
+    assert len(real_project.strip()) > 0, (
+        f"Project should not be empty: '{real_project}'"
+    )
+    assert integration_tracer.project == real_project, (
+        f"Tracer project mismatch: {integration_tracer.project} != {real_project}"
+    )
 
     # Create span and verify using NEW standardized pattern
 

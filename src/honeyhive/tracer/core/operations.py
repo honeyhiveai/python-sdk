@@ -814,10 +814,8 @@ class TracerOperationsMixin(TracerOperationsInterface):
 
         # Check baggage for session ID
         try:
-            baggage_session = (
-                self.get_baggage(  # pylint: disable=assignment-from-no-return
-                    "session_id"
-                )
+            baggage_session = self.get_baggage(  # pylint: disable=assignment-from-no-return
+                "session_id"
             )
             if baggage_session:
                 return str(baggage_session)

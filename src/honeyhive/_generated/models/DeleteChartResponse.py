@@ -2,13 +2,12 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
-__all__ = ["DateRange"]
+__all__ = ["DeleteChartResponse"]
 
 
-class DateRange(BaseModel):
+class DeleteChartResponse(BaseModel):
     """
-    DateRange model
-        Date range filter
+    DeleteChartResponse model
     """
 
     model_config = {
@@ -17,3 +16,7 @@ class DateRange(BaseModel):
         "extra": "allow",
         "protected_namespaces": (),
     }
+
+    success: bool = Field(validation_alias="success")
+
+    message: str = Field(validation_alias="message")

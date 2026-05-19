@@ -90,9 +90,9 @@ class TestEndToEndValidation:
                 found_datapoint, "field_id", None
             )
             print(f"✅ Datapoint created and validated with ID: {datapoint_id}")
-            assert getattr(
-                found_datapoint, "created_at", None
-            ), "Datapoint missing created_at field"
+            assert getattr(found_datapoint, "created_at", None), (
+                "Datapoint missing created_at field"
+            )
 
             # Note: v1 API may not return project_id for standalone datapoints
             # Validate project association if available
@@ -241,12 +241,12 @@ class TestEndToEndValidation:
             )
 
             # Validate typed GetEventsResponse
-            assert isinstance(
-                events_result, GetEventsResponse
-            ), f"Expected GetEventsResponse, got {type(events_result)}"
-            assert hasattr(
-                events_result, "events"
-            ), "Events result missing 'events' attribute"
+            assert isinstance(events_result, GetEventsResponse), (
+                f"Expected GetEventsResponse, got {type(events_result)}"
+            )
+            assert hasattr(events_result, "events"), (
+                "Events result missing 'events' attribute"
+            )
             retrieved_events = events_result.events
 
             # Validate all events are linked to session
@@ -259,15 +259,15 @@ class TestEndToEndValidation:
                         found_event = event
                         break
 
-                assert (
-                    found_event is not None
-                ), f"Event {event_id} not found in session {session_id}"
-                assert (
-                    found_event.session_id == session_id
-                ), f"Event {event_id} not properly linked to session"
-                assert (
-                    found_event.config["test_id"] == test_id
-                ), f"Event {event_id} test_id corrupted"
+                assert found_event is not None, (
+                    f"Event {event_id} not found in session {session_id}"
+                )
+                assert found_event.session_id == session_id, (
+                    f"Event {event_id} not properly linked to session"
+                )
+                assert found_event.config["test_id"] == test_id, (
+                    f"Event {event_id} test_id corrupted"
+                )
                 found_events.append(found_event)
 
             # Step 6: Validate event data integrity and ordering
@@ -276,16 +276,16 @@ class TestEndToEndValidation:
                 # Events are Event objects, use attribute access
                 expected_index = event.config["event_index"]
                 assert event.config["model"] == "gpt-4", f"Event {i} model corrupted"
-                assert (
-                    event.config["temperature"] == 0.7
-                ), f"Event {i} temperature corrupted"
+                assert event.config["temperature"] == 0.7, (
+                    f"Event {i} temperature corrupted"
+                )
                 assert (
                     event.inputs["prompt"]
                     == f"Test prompt {expected_index} for session {test_id}"
                 ), f"Event {i} input corrupted"
-                assert (
-                    event.outputs["response"] == f"Test response {expected_index}"
-                ), f"Event {i} output corrupted"
+                assert event.outputs["response"] == f"Test response {expected_index}", (
+                    f"Event {i} output corrupted"
+                )
 
             print("✅ RELATIONSHIP VALIDATION SUCCESSFUL:")
             print(f"   - Session ID: {session_id}")
@@ -340,18 +340,18 @@ class TestEndToEndValidation:
 
             config_response = integration_client.configurations.create(config_request)
             # Configuration API returns CreateConfigurationResponse with MongoDB format (camelCase)
-            assert hasattr(
-                config_response, "acknowledged"
-            ), "Configuration response missing acknowledged"
-            assert (
-                config_response.acknowledged is True
-            ), "Configuration creation not acknowledged"
-            assert hasattr(
-                config_response, "insertedId"
-            ), "Configuration response missing insertedId"
-            assert (
-                config_response.insertedId is not None
-            ), "Configuration insertedId is None"
+            assert hasattr(config_response, "acknowledged"), (
+                "Configuration response missing acknowledged"
+            )
+            assert config_response.acknowledged is True, (
+                "Configuration creation not acknowledged"
+            )
+            assert hasattr(config_response, "insertedId"), (
+                "Configuration response missing insertedId"
+            )
+            assert config_response.insertedId is not None, (
+                "Configuration insertedId is None"
+            )
             created_config_id = config_response.insertedId
             print(f"✅ Configuration created with ID: {created_config_id}")
 
@@ -373,9 +373,9 @@ class TestEndToEndValidation:
                     break
 
             # Step 4: Comprehensive validation
-            assert (
-                found_config is not None
-            ), f"Configuration {config_name} not found in HoneyHive system"
+            assert found_config is not None, (
+                f"Configuration {config_name} not found in HoneyHive system"
+            )
             assert found_config.name == config_name, "Configuration name corrupted"
             assert found_config.provider == "openai", "Configuration provider corrupted"
 

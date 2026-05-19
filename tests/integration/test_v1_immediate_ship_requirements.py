@@ -97,9 +97,9 @@ class TestV1ImmediateShipRequirements:
 
         # TASK 3: Ground truths in feedback
         feedback = session_event.feedback or {}
-        assert (
-            "ground_truth" in feedback
-        ), "TASK 3 FAILED: feedback should contain 'ground_truth'"
+        assert "ground_truth" in feedback, (
+            "TASK 3 FAILED: feedback should contain 'ground_truth'"
+        )
         print("✅ TASK 3: Ground truths in feedback")
         print(f"   ground_truth keys: {list(feedback['ground_truth'].keys())}")
 
@@ -133,9 +133,9 @@ class TestV1ImmediateShipRequirements:
         all_events = events_response.events
         child_events = [e for e in all_events if e.event_id != session_id_str]
 
-        assert (
-            len(child_events) > 0
-        ), "TASK 4 & 5 FAILED: Should have child events (nested @trace spans)"
+        assert len(child_events) > 0, (
+            "TASK 4 & 5 FAILED: Should have child events (nested @trace spans)"
+        )
         print(f"\n✅ TASK 4 & 5: Found {len(child_events)} child events")
 
         # Validate child events. evaluate() auto-wraps the user function in a
@@ -278,9 +278,9 @@ class TestV1ImmediateShipRequirements:
         # TASK 1: Use experiment name as session name
         run_name = f"v1-ship-requirements-{int(time.time())}"
 
-        print(f"\n{'='*70}")
+        print(f"\n{'=' * 70}")
         print("V1.0 IMMEDIATE SHIP REQUIREMENTS - END-TO-END TEST")
-        print(f"{'='*70}")
+        print(f"{'=' * 70}")
         print(f"Run name: {run_name}")
         print(f"Dataset: {len(dataset)} datapoints")
         print("Testing all 5 requirements simultaneously")
@@ -303,8 +303,7 @@ class TestV1ImmediateShipRequirements:
 
         # TASK 2 VALIDATION: Verify tracer was passed to function
         assert len(tracer_received) == len(dataset), (
-            f"Tracer should be passed {len(dataset)} times, "
-            f"got {len(tracer_received)}"
+            f"Tracer should be passed {len(dataset)} times, got {len(tracer_received)}"
         )
         print(f"✅ TASK 2: Tracer parameter passed {len(tracer_received)} times")
 
@@ -313,24 +312,24 @@ class TestV1ImmediateShipRequirements:
         time.sleep(5)
 
         # BACKEND VALIDATION
-        print(f"\n{'='*70}")
+        print(f"\n{'=' * 70}")
         print("BACKEND VALIDATION - ALL 5 TASKS")
-        print(f"{'='*70}")
+        print(f"{'=' * 70}")
 
         try:
             self._validate_backend_results(
                 integration_client, result, run_name, real_project
             )
 
-            print(f"\n{'='*70}")
+            print(f"\n{'=' * 70}")
             print("✅ ALL 5 TASKS VALIDATED SUCCESSFULLY")
-            print(f"{'='*70}")
+            print(f"{'=' * 70}")
             print("✅ TASK 1: Session naming with experiment name")
             print("✅ TASK 2: Tracer parameter passed to function")
             print("✅ TASK 3: Ground truths in feedback")
             print("✅ TASK 4: Auto-inputs on nested spans")
             print("✅ TASK 5: Session linking (run_id, parent-child)")
-            print(f"{'='*70}\n")
+            print(f"{'=' * 70}\n")
 
         except Exception as e:
             print(f"\n❌ Backend validation failed: {e}")
@@ -362,9 +361,9 @@ class TestV1ImmediateShipRequirements:
 
         run_name = f"backward-compat-{int(time.time())}"
 
-        print(f"\n{'='*70}")
+        print(f"\n{'=' * 70}")
         print("TESTING BACKWARD COMPATIBILITY (NO TRACER PARAMETER)")
-        print(f"{'='*70}")
+        print(f"{'=' * 70}")
 
         # Should work without errors
         result = evaluate(

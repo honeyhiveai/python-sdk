@@ -26,9 +26,9 @@ os.environ["HH_SOURCE"] = "development"
 
 def section_header(title: str) -> None:
     """Print a formatted section header."""
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"{title}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
 
 def demonstrate_verbose_constructor():

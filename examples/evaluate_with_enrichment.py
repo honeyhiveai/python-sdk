@@ -199,7 +199,7 @@ def main():
 
     # For demo, manually iterate
     for i, datapoint in enumerate(mock_dataset):
-        print(f"\n  Datapoint {i+1}/{len(mock_dataset)}:")
+        print(f"\n  Datapoint {i + 1}/{len(mock_dataset)}:")
         result = simple_llm_task(datapoint)
         print(f"    ✓ Output: {result['output'][:50]}...")
 
@@ -207,7 +207,7 @@ def main():
 
     print("\n  📝 Running complex task on mock dataset...")
     for i, datapoint in enumerate(mock_dataset):
-        print(f"\n  Datapoint {i+1}/{len(mock_dataset)}:")
+        print(f"\n  Datapoint {i + 1}/{len(mock_dataset)}:")
         result = complex_task_with_steps(datapoint)
         print(f"    ✓ Output: {result['output'][:50]}...")
 

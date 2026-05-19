@@ -53,16 +53,16 @@ class TestOTELOTLPExportIntegration:
         # Verify OTLP is enabled by default for integration tests
         # (simplified config interface)
         # With simplified config interface, OTLP settings are easily accessible
-        assert hasattr(
-            integration_tracer, "otlp_exporter"
-        ), "Tracer should have OTLP exporter"
-        assert (
-            integration_tracer.otlp_exporter is not None
-        ), "OTLP exporter should be configured"
+        assert hasattr(integration_tracer, "otlp_exporter"), (
+            "Tracer should have OTLP exporter"
+        )
+        assert integration_tracer.otlp_exporter is not None, (
+            "OTLP exporter should be configured"
+        )
         # OTLP should be enabled by default
-        assert (
-            integration_tracer.config.get("otlp_enabled", True) is True
-        ), "OTLP should be enabled"
+        assert integration_tracer.config.get("otlp_enabled", True) is True, (
+            "OTLP should be enabled"
+        )
 
         # Verify tracer has provider with span processors
         assert integration_tracer.provider is not None
@@ -76,9 +76,9 @@ class TestOTELOTLPExportIntegration:
         # that handles both span enrichment and OTLP export
         if hasattr(active_processor, "_span_processors"):
             processors = active_processor._span_processors
-            assert (
-                len(processors) >= 1
-            ), "Should have at least the HoneyHive span processor"
+            assert len(processors) >= 1, (
+                "Should have at least the HoneyHive span processor"
+            )
 
             # Look for our unified HoneyHiveSpanProcessor
             honeyhive_processors = [
@@ -91,24 +91,24 @@ class TestOTELOTLPExportIntegration:
 
         # Verify OTLP configuration through simplified config interface
         # With simplified config interface, OTLP settings are easily accessible
-        assert hasattr(
-            integration_tracer, "otlp_exporter"
-        ), "Tracer should have OTLP exporter"
-        assert (
-            integration_tracer.otlp_exporter is not None
-        ), "OTLP exporter should be configured"
+        assert hasattr(integration_tracer, "otlp_exporter"), (
+            "Tracer should have OTLP exporter"
+        )
+        assert integration_tracer.otlp_exporter is not None, (
+            "OTLP exporter should be configured"
+        )
         # OTLP endpoint configuration is handled internally by the exporter
-        assert (
-            integration_tracer.config.get("otlp_enabled", True) is True
-        ), "OTLP should be enabled"
+        assert integration_tracer.config.get("otlp_enabled", True) is True, (
+            "OTLP should be enabled"
+        )
 
         # Verify the tracer has the unified span processor
-        assert (
-            integration_tracer.span_processor is not None
-        ), "Tracer should have span processor"
-        assert isinstance(
-            integration_tracer.span_processor, HoneyHiveSpanProcessor
-        ), "Should be HoneyHiveSpanProcessor"
+        assert integration_tracer.span_processor is not None, (
+            "Tracer should have span processor"
+        )
+        assert isinstance(integration_tracer.span_processor, HoneyHiveSpanProcessor), (
+            "Should be HoneyHiveSpanProcessor"
+        )
 
         # Backend verification: Create a test span to verify OTLP export works
 
@@ -343,7 +343,7 @@ class TestOTELOTLPExportIntegration:
                         f"span_{i}_created",
                         {
                             "span.index": i,
-                            "span.batch_position": f"{i+1}/{span_count}",
+                            "span.batch_position": f"{i + 1}/{span_count}",
                         },
                     )
 
@@ -719,9 +719,9 @@ class TestOTELOTLPExportIntegration:
 
         # Verify span creation performance
         avg_span_creation_time = creation_time / span_count
-        assert (
-            avg_span_creation_time < 0.01
-        ), f"Span creation too slow: {avg_span_creation_time:.4f}s per span"
+        assert avg_span_creation_time < 0.01, (
+            f"Span creation too slow: {avg_span_creation_time:.4f}s per span"
+        )
 
         # Backend verification: Add unique identifier for verification
 

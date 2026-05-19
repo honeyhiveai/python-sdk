@@ -167,8 +167,7 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                             config.experiment_group
                         )
                         print(
-                            "   ✅ Added experiment group: "
-                            f"{config.experiment_group}"
+                            f"   ✅ Added experiment group: {config.experiment_group}"
                         )
 
                     if config.experiment_metadata:
@@ -257,9 +256,7 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                         )
 
                 except Exception as e:
-                    print(
-                        f"   ⚠️  Error adding experiment attributes (no session): {e}"
-                    )
+                    print(f"   ⚠️  Error adding experiment attributes (no session): {e}")
 
             print(f"   📝 Final attributes to set: {attributes_to_set}")
 

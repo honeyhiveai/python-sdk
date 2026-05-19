@@ -46,18 +46,18 @@ class TestBatchConfiguration:
 
             # Verify default values match our expectations (simplified config interface)
             # Note: Using the new simplified .config property for easy access
-            assert (
-                tracer.config.get("otlp", {}).get("batch_size", 100) == 100
-            ), "Default batch_size should be 100"
-            assert (
-                tracer.config.get("otlp", {}).get("flush_interval", 5.0) == 5.0
-            ), "Default flush_interval should be 5.0"
+            assert tracer.config.get("otlp", {}).get("batch_size", 100) == 100, (
+                "Default batch_size should be 100"
+            )
+            assert tracer.config.get("otlp", {}).get("flush_interval", 5.0) == 5.0, (
+                "Default flush_interval should be 5.0"
+            )
 
             # Verify tracer can be initialized with defaults
             init_tracer: HoneyHiveTracerBase = HoneyHiveTracer.init()
-            assert (
-                init_tracer is not None
-            ), "Tracer should initialize with default batch config"
+            assert init_tracer is not None, (
+                "Tracer should initialize with default batch config"
+            )
             cast(HoneyHiveTracer, init_tracer).force_flush()
 
         finally:
@@ -94,9 +94,9 @@ class TestBatchConfiguration:
 
             # Verify custom values are loaded from environment (simplified config interface)
             # Note: Environment variables should be picked up during tracer initialization
-            assert (
-                tracer.config.get("otlp", {}).get("batch_size") == test_batch_size
-            ), f"Expected batch_size={test_batch_size}"
+            assert tracer.config.get("otlp", {}).get("batch_size") == test_batch_size, (
+                f"Expected batch_size={test_batch_size}"
+            )
             assert (
                 tracer.config.get("otlp", {}).get("flush_interval")
                 == test_flush_interval
@@ -104,9 +104,9 @@ class TestBatchConfiguration:
 
             # Use standardized tracer factory instead of direct init
             tracer = tracer_factory("batch-config-test")
-            assert (
-                tracer is not None
-            ), "Tracer should initialize with custom batch config"
+            assert tracer is not None, (
+                "Tracer should initialize with custom batch config"
+            )
 
         finally:
             # Restore original environment state
@@ -179,9 +179,9 @@ class TestBatchConfiguration:
 
             # Force flush to ensure all spans are processed with our batch configuration
             flush_success = tracer.force_flush()
-            assert (
-                flush_success
-            ), "Force flush should succeed with custom batch configuration"
+            assert flush_success, (
+                "Force flush should succeed with custom batch configuration"
+            )
 
         finally:
             # Restore original environment state
@@ -247,12 +247,12 @@ class TestBatchConfiguration:
             slow_duration = time.time() - start_time
 
             # Both configurations should work (performance difference is secondary)
-            assert (
-                fast_duration > 0
-            ), "Fast batch configuration should complete successfully"
-            assert (
-                slow_duration > 0
-            ), "Slow batch configuration should complete successfully"
+            assert fast_duration > 0, (
+                "Fast batch configuration should complete successfully"
+            )
+            assert slow_duration > 0, (
+                "Slow batch configuration should complete successfully"
+            )
 
             # The main validation is that both configurations work without errors
             print(f"Fast batch config duration: {fast_duration:.4f}s")
@@ -292,18 +292,18 @@ class TestBatchConfiguration:
 
             # Verify performance optimized values (simplified config interface)
             # Note: Environment variables should be picked up during tracer initialization
-            assert (
-                tracer.config.get("otlp", {}).get("batch_size", 100) == 200
-            ), "Performance optimized batch size should be 200"
-            assert (
-                tracer.config.get("otlp", {}).get("flush_interval", 5.0) == 1.0
-            ), "Performance optimized flush interval should be 1.0"
+            assert tracer.config.get("otlp", {}).get("batch_size", 100) == 200, (
+                "Performance optimized batch size should be 200"
+            )
+            assert tracer.config.get("otlp", {}).get("flush_interval", 5.0) == 1.0, (
+                "Performance optimized flush interval should be 1.0"
+            )
 
             # Test real tracing with performance optimized settings
             perf_tracer = HoneyHiveTracer.init()
-            assert (
-                perf_tracer is not None
-            ), "Performance optimized tracer should initialize"
+            assert perf_tracer is not None, (
+                "Performance optimized tracer should initialize"
+            )
 
             @trace(tracer=perf_tracer)  # type: ignore[misc]
             def perf_test_operation() -> None:
@@ -324,18 +324,18 @@ class TestBatchConfiguration:
 
             # Verify memory optimized values (simplified config interface)
             # Note: Environment variables should be picked up during tracer initialization
-            assert (
-                tracer.config.get("otlp", {}).get("batch_size", 100) == 50
-            ), "Memory optimized batch size should be 50"
-            assert (
-                tracer.config.get("otlp", {}).get("flush_interval", 5.0) == 2.0
-            ), "Memory optimized flush interval should be 2.0"
+            assert tracer.config.get("otlp", {}).get("batch_size", 100) == 50, (
+                "Memory optimized batch size should be 50"
+            )
+            assert tracer.config.get("otlp", {}).get("flush_interval", 5.0) == 2.0, (
+                "Memory optimized flush interval should be 2.0"
+            )
 
             # Test real tracing with memory optimized settings
             memory_tracer = HoneyHiveTracer.init()
-            assert (
-                memory_tracer is not None
-            ), "Memory optimized tracer should initialize"
+            assert memory_tracer is not None, (
+                "Memory optimized tracer should initialize"
+            )
 
             @trace(tracer=memory_tracer)  # type: ignore[misc]
             def memory_test_operation() -> None:

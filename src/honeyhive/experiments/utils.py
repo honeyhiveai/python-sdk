@@ -121,10 +121,9 @@ def prepare_external_dataset(
     return dataset_id, datapoint_ids
 
 
-def prepare_run_request_data(  # pylint: disable=unused-argument
+def prepare_run_request_data(
     run_id: str,
     name: str,
-    project: str,
     *,
     dataset_id: Optional[str],
     event_ids: Optional[List[str]] = None,
@@ -155,7 +154,6 @@ def prepare_run_request_data(  # pylint: disable=unused-argument
     Args:
         run_id: Experiment run identifier
         name: Run name
-        project: Project identifier
         dataset_id: Dataset identifier (may have EXT- prefix)
         event_ids: List of event/session IDs (optional)
         configuration: Run configuration (optional)
@@ -172,7 +170,6 @@ def prepare_run_request_data(  # pylint: disable=unused-argument
         >>> data = prepare_run_request_data(
         ...     run_id="run-123",
         ...     name="My Experiment",
-        ...     project="proj-456",
         ...     dataset_id="EXT-abc123"
         ... )
         >>> data["dataset_id"]  # None (moved to metadata)
@@ -183,7 +180,6 @@ def prepare_run_request_data(  # pylint: disable=unused-argument
         >>> data = prepare_run_request_data(
         ...     run_id="run-123",
         ...     name="My Experiment",
-        ...     project="proj-456",
         ...     dataset_id="ds-789"
         ... )
         >>> data["dataset_id"]
@@ -191,7 +187,6 @@ def prepare_run_request_data(  # pylint: disable=unused-argument
     """
     # Initialize request data
     request_data: Dict[str, Any] = {
-        "project": project,
         "name": name,
         "run_id": run_id,
         "event_ids": event_ids or [],

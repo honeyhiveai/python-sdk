@@ -121,10 +121,10 @@ class TestOTLPScopeGroupingRegression:
         # Extract the scope names from the payload
         scope_names = {ss["scope"]["name"] for ss in scope_spans}
         assert "pydantic-ai" in scope_names, (
-            f"pydantic-ai scope missing from scopeSpans. " f"Found: {scope_names}"
+            f"pydantic-ai scope missing from scopeSpans. Found: {scope_names}"
         )
         assert "opentelemetry.instrumentation.httpx" in scope_names, (
-            f"httpx scope missing from scopeSpans. " f"Found: {scope_names}"
+            f"httpx scope missing from scopeSpans. Found: {scope_names}"
         )
 
     def test_chat_span_not_tagged_with_httpx_scope(self) -> None:
