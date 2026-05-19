@@ -235,9 +235,6 @@ def real_api_credentials() -> Dict[str, Any]:
             "server_url": os.environ.get(
                 "HH_API_URL", "https://api.testing-dp-1.honeyhive.ai"
             ),
-            "cp_server_url": os.environ.get(
-                "HH_CP_API_URL", "https://api.testing-cp-1.honeyhive.ai"
-            ),
             "project": os.environ.get("HH_PROJECT", "test-project"),
         }
 
@@ -264,8 +261,7 @@ def real_api_key(real_api_credentials: Dict[str, Any]) -> str:
 
 @pytest.fixture(scope="session")
 def real_project() -> str:
-    """Real project for integration tests - required field."""
-    # Project is a required field that must be provided
+    """Optional project name for integration tests that still pass project to the tracer."""
     return os.environ.get("HH_PROJECT", "test-project")
 
 
@@ -281,7 +277,6 @@ def integration_client(real_api_credentials: Dict[str, Any]) -> HoneyHive:
     return HoneyHive(
         api_key=real_api_credentials["api_key"],
         base_url=real_api_credentials["server_url"],
-        cp_base_url=real_api_credentials.get("cp_server_url"),
     )
 
 
@@ -570,12 +565,10 @@ def fetch_session_events(
     if not hh_api_key:
         raise ValueError("HH_API_KEY not set")
 
-    # Use HH_API_URL for both base_url and cp_base_url (DP only)
     dp_url = os.getenv("HH_API_URL", "https://api.dp1.us.honeyhive.ai")
     project = project or os.getenv("HH_PROJECT", "sdk-integration-tests")
 
-    # Use DP URL for both data plane and control plane operations
-    client = HoneyHive(api_key=hh_api_key, base_url=dp_url, cp_base_url=dp_url)
+    client = HoneyHive(api_key=hh_api_key, base_url=dp_url)
 
     for attempt in range(max_retries):
         try:
@@ -669,9 +662,9 @@ def verify_session_logged(
 
     # Verify event count if specified
     if expected_event_count is not None:
-        assert (
-            len(events) >= expected_event_count
-        ), f"Expected at least {expected_event_count} events, got {len(events)}"
+        assert len(events) >= expected_event_count, (
+            f"Expected at least {expected_event_count} events, got {len(events)}"
+        )
     else:
         # At minimum, we expect some events
         assert len(events) > 0, f"No events found for session {session_id}"
@@ -679,24 +672,24 @@ def verify_session_logged(
     # Verify metadata if specified
     if expected_metadata:
         for key, value in expected_metadata.items():
-            assert (
-                key in result["all_metadata"]
-            ), f"Expected metadata key '{key}' not found"
+            assert key in result["all_metadata"], (
+                f"Expected metadata key '{key}' not found"
+            )
             if value is not None:
-                assert (
-                    result["all_metadata"][key] == value
-                ), f"Metadata '{key}' expected {value}, got {result['all_metadata'][key]}"
+                assert result["all_metadata"][key] == value, (
+                    f"Metadata '{key}' expected {value}, got {result['all_metadata'][key]}"
+                )
 
     # Verify metrics if specified
     if expected_metrics:
         for key, value in expected_metrics.items():
-            assert (
-                key in result["all_metrics"]
-            ), f"Expected metric key '{key}' not found"
+            assert key in result["all_metrics"], (
+                f"Expected metric key '{key}' not found"
+            )
             if value is not None:
-                assert (
-                    result["all_metrics"][key] == value
-                ), f"Metric '{key}' expected {value}, got {result['all_metrics'][key]}"
+                assert result["all_metrics"][key] == value, (
+                    f"Metric '{key}' expected {value}, got {result['all_metrics'][key]}"
+                )
 
     # Verify inputs if specified
     if expected_inputs:
@@ -706,9 +699,9 @@ def verify_session_logged(
                 f"Available: {list(result['all_inputs'].keys())}"
             )
             if value is not None:
-                assert (
-                    result["all_inputs"][key] == value
-                ), f"Input '{key}' expected {value}, got {result['all_inputs'][key]}"
+                assert result["all_inputs"][key] == value, (
+                    f"Input '{key}' expected {value}, got {result['all_inputs'][key]}"
+                )
 
     # Verify outputs if specified
     if expected_outputs:
@@ -718,9 +711,9 @@ def verify_session_logged(
                 f"Available: {list(result['all_outputs'].keys())}"
             )
             if value is not None:
-                assert (
-                    result["all_outputs"][key] == value
-                ), f"Output '{key}' expected {value}, got {result['all_outputs'][key]}"
+                assert result["all_outputs"][key] == value, (
+                    f"Output '{key}' expected {value}, got {result['all_outputs'][key]}"
+                )
 
     result["verified"] = True
     return result

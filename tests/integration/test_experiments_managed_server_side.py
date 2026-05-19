@@ -74,6 +74,7 @@ def _build_llm_metric_request(
 
 @pytest.mark.integration
 @pytest.mark.real_api
+@pytest.mark.xdist_group("server_side_eval")
 @pytest.mark.skipif(
     os.environ.get("HH_SOURCE", "").startswith("github-actions"),
     reason="Requires write permissions not available in CI",
@@ -153,8 +154,7 @@ class TestExperimentsManagedServerSide:
             scored_metrics = event_metrics(scored_event)
             raw_score = scored_metrics[metric_name]
             assert isinstance(raw_score, (int, float)), (
-                f"server-side metric must be numeric; got "
-                f"{type(raw_score).__name__}={raw_score!r}"
+                f"server-side metric must be numeric; got {type(raw_score).__name__}={raw_score!r}"
             )
             score = float(raw_score)
             assert 0.0 <= score <= 5.0, f"score out of range: {score}"
@@ -174,12 +174,10 @@ class TestExperimentsManagedServerSide:
                 if isinstance(md, dict):
                     md_ds = str(md.get("dataset_id", ""))
                     assert md_ds == str(dataset_id), (
-                        f"chain {event_field(ev, 'event_id')} dataset_id "
-                        f"{md_ds!r} != managed dataset_id {dataset_id!r}"
+                        f"chain {event_field(ev, 'event_id')} dataset_id {md_ds!r} != managed dataset_id {dataset_id!r}"
                     )
                     assert not md_ds.startswith("EXT-"), (
-                        f"managed-server cell unexpectedly produced EXT- "
-                        f"dataset_id {md_ds!r}"
+                        f"managed-server cell unexpectedly produced EXT- dataset_id {md_ds!r}"
                     )
 
                 m = event_metrics(ev)

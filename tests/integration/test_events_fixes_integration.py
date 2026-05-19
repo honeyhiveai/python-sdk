@@ -30,12 +30,11 @@ pytestmark = pytest.mark.skipif(
 
 @pytest.fixture
 def api_client() -> HoneyHive:
-    """Create HoneyHive API client using HH_API_URL for both DP and CP."""
+    """Create HoneyHive API client using the data plane URL."""
     dp_url = os.getenv("HH_API_URL", "https://api.dp1.us.honeyhive.ai")
     return HoneyHive(
         api_key=os.getenv("HH_API_KEY"),
         base_url=dp_url,
-        cp_base_url=dp_url,
     )
 
 
@@ -125,9 +124,9 @@ class TestEventOrderingIntegration:
                 current_time = operation_events[i].start_time or 0
                 next_time = operation_events[i + 1].start_time or 0
                 if current_time and next_time:
-                    assert (
-                        current_time <= next_time
-                    ), f"Events not in chronological order: {event_names}"
+                    assert current_time <= next_time, (
+                        f"Events not in chronological order: {event_names}"
+                    )
 
 
 class TestProjectDeprecationIntegration:
@@ -279,9 +278,9 @@ class TestEnrichSpanEventIdIntegration:
                 # The enrichment should be present
                 assert metadata.get(
                     "enriched_key"
-                ) == unique_value or "enriched_key" in str(
-                    enriched_event
-                ), f"Enrichment metadata not found in event: {enriched_event}"
+                ) == unique_value or "enriched_key" in str(enriched_event), (
+                    f"Enrichment metadata not found in event: {enriched_event}"
+                )
 
     def test_enrich_span_without_event_id_enriches_current_span(
         self, tracer: HoneyHiveTracer

@@ -36,9 +36,9 @@ class TestSelectiveBaggagePropagation:
             tracer_id_from_baggage = baggage.get_baggage(
                 "honeyhive_tracer_id", current_ctx
             )
-            assert (
-                tracer_id_from_baggage == tracer._tracer_id
-            ), "honeyhive_tracer_id not propagated correctly"
+            assert tracer_id_from_baggage == tracer._tracer_id, (
+                "honeyhive_tracer_id not propagated correctly"
+            )
 
     def test_unsafe_keys_filtered(self) -> None:
         """Test that unsafe keys are filtered out."""

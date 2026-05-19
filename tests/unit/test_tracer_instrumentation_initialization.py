@@ -923,7 +923,10 @@ class TestTracerInitialization:
         call_args = mock_exporter.call_args
         assert call_args[1]["tracer_instance"] == self.mock_tracer
         assert call_args[1]["session_config"] == mock_config
-        assert "Authorization" in call_args[1]["headers"]
+        headers = call_args[1]["headers"]
+        assert "Authorization" in headers
+        assert "X-Source" in headers
+        assert "X-Project" not in headers
 
     @patch("honeyhive.tracer.instrumentation.initialization.safe_log")
     def test__create_otlp_exporter_disabled(self, mock_log: Any) -> None:
@@ -1438,22 +1441,18 @@ class TestTracerInitialization:
     def test__validate_configuration_gracefully_missing_project(
         self, mock_log: Any
     ) -> None:
-        """Test configuration validation with missing project."""
-        # Arrange
+        """Test configuration validation does not degrade when project is absent."""
         self.mock_tracer.config.api_key = "valid-api-key"
         self.mock_tracer.project_name = None
 
-        # Act
         initialization._validate_configuration_gracefully(self.mock_tracer)
 
-        # Assert
-        assert self.mock_tracer._degraded_mode is True
-        assert "missing_project" in self.mock_tracer._degradation_reasons
+        assert self.mock_tracer._degraded_mode is False
+        assert "missing_project" not in self.mock_tracer._degradation_reasons
 
     @patch("honeyhive.tracer.instrumentation.initialization.safe_log")
     def test__validate_configuration_gracefully_edge_cases(self, mock_log: Any) -> None:
         """Test configuration validation edge cases."""
-        # Test with empty string values
         self.mock_tracer.config.api_key = ""
         self.mock_tracer.project_name = ""
 
@@ -1461,7 +1460,7 @@ class TestTracerInitialization:
 
         assert self.mock_tracer._degraded_mode is True
         assert "missing_api_key" in self.mock_tracer._degradation_reasons
-        assert "missing_project" in self.mock_tracer._degradation_reasons
+        assert "missing_project" not in self.mock_tracer._degradation_reasons
 
     # ========================================================================
     # Tests for _validate_session_id
@@ -1737,9 +1736,9 @@ class TestTracerInitialization:
         )
         assert actual_session_name is not None
         # Positive assertion: should resolve to this test file's name
-        assert (
-            actual_session_name == "test_tracer_instrumentation_initialization"
-        ), f"Expected session_name to be this test file's name, got '{actual_session_name}'"
+        assert actual_session_name == "test_tracer_instrumentation_initialization", (
+            f"Expected session_name to be this test file's name, got '{actual_session_name}'"
+        )
 
     @patch("honeyhive.tracer.instrumentation.initialization.safe_log")
     def test__create_new_session_preserves_custom_session_name(

@@ -49,13 +49,13 @@ if not HH_API_KEY:
 
 def init_honeyhive_tracer(session_name: str):
     """Initialize HoneyHive tracer with verbose logging enabled."""
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
     print(f"INITIALIZING HONEYHIVE TRACER")
-    print(f"{'='*80}")
+    print(f"{'=' * 80}")
     print(f"Session: {session_name}")
     print(f"Server URL: {HH_SERVER_URL or 'default'}")
     print(f"Verbose: True")
-    print(f"{'='*80}\n")
+    print(f"{'=' * 80}\n")
 
     tracer = HoneyHiveTracer.init(
         api_key=HH_API_KEY,
@@ -70,11 +70,11 @@ def init_honeyhive_tracer(session_name: str):
 
 def instrument_openai(tracer):
     """Initialize OpenAI instrumentor with tracer provider."""
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
     print(f"INSTRUMENTING OPENAI")
-    print(f"{'='*80}")
+    print(f"{'=' * 80}")
     print(f"Using tracer provider: {tracer.provider}")
-    print(f"{'='*80}\n")
+    print(f"{'=' * 80}\n")
 
     instrumentor = OpenAIInstrumentor()
     instrumentor.instrument(tracer_provider=tracer.provider)
@@ -228,7 +228,7 @@ def test_multiple_sequential_calls(queries: list) -> list:
     results = []
 
     for i, query in enumerate(queries):
-        print(f"[TEST 4] Processing query {i+1}/{len(queries)}: {query}")
+        print(f"[TEST 4] Processing query {i + 1}/{len(queries)}: {query}")
 
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -242,9 +242,9 @@ def test_multiple_sequential_calls(queries: list) -> list:
         result = response.choices[0].message.content
         if result:
             results.append(result)
-            print(f"[TEST 4] Response {i+1}: {result}")
+            print(f"[TEST 4] Response {i + 1}: {result}")
         else:
-            print(f"[TEST 4] Response {i+1}: <empty>")
+            print(f"[TEST 4] Response {i + 1}: <empty>")
 
     # Enrich with aggregated metrics
     print(f"[TEST 4] Attempting enrich_span with aggregated metrics...")
@@ -262,9 +262,9 @@ def test_multiple_sequential_calls(queries: list) -> list:
 
 def main():
     """Run all debug tests."""
-    print(f"\n{'#'*80}")
+    print(f"\n{'#' * 80}")
     print(f"# OPENAI INSTRUMENTOR SPAN DEBUG SCRIPT")
-    print(f"{'#'*80}\n")
+    print(f"{'#' * 80}\n")
 
     # Initialize tracer
     tracer = init_honeyhive_tracer("Debug Session - OpenAI Instrumentor Spans")
@@ -285,23 +285,23 @@ def main():
         # Test 4: Multiple sequential calls
         test_multiple_sequential_calls(["What is AI?", "What is ML?", "What is DL?"])
 
-        print(f"\n{'='*80}")
+        print(f"\n{'=' * 80}")
         print(f"ALL TESTS COMPLETED")
-        print(f"{'='*80}\n")
+        print(f"{'=' * 80}\n")
 
     except Exception as e:
-        print(f"\n{'!'*80}")
+        print(f"\n{'!' * 80}")
         print(f"ERROR OCCURRED: {e}")
-        print(f"{'!'*80}\n")
+        print(f"{'!' * 80}\n")
         import traceback
 
         traceback.print_exc()
 
     finally:
         # Flush tracer to ensure all spans are sent
-        print(f"\n{'='*80}")
+        print(f"\n{'=' * 80}")
         print(f"FLUSHING TRACER")
-        print(f"{'='*80}\n")
+        print(f"{'=' * 80}\n")
         flush(tracer)
 
         # Uninstrument to clean up

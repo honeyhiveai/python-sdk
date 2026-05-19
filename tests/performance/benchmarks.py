@@ -337,9 +337,9 @@ class PerformanceBenchmarks:
 
         # Verify reasonable initialization time (<100ms per tracer)
         max_init_time = 0.1  # 100ms
-        assert (
-            per_init_time < max_init_time
-        ), f"Initialization too slow: {per_init_time:.4f}s per tracer (max: {max_init_time}s)"
+        assert per_init_time < max_init_time, (
+            f"Initialization too slow: {per_init_time:.4f}s per tracer (max: {max_init_time}s)"
+        )
 
         print(f"✅ Initialization benchmark: {per_init_time:.4f}s per tracer")
         return per_init_time

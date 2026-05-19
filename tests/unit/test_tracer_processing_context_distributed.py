@@ -58,7 +58,7 @@ class TestWithDistributedTraceContext:
 
         carrier = {
             "baggage": (
-                "session_id=test-session-123," "project=test-project,source=test-source"
+                "session_id=test-session-123,project=test-project,source=test-source"
             ),
             "traceparent": "00-123456789abcdef0-0123456789abcdef-01",
         }

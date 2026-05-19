@@ -638,7 +638,6 @@ def trace_class(
                 and not attr_name.startswith("_")
                 and attr_name not in ["__init__", "__new__"]
             ):
-
                 # Create a traced version of the method
                 if inspect.iscoroutinefunction(attr_value):
                     # Async method

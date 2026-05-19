@@ -23,16 +23,16 @@ from honeyhive.experiments import run_experiment as _run_experiment
 def _deprecation_warning(old_name: str, new_name: str) -> None:
     """Show deprecation warning for old evaluation module usage."""
     warnings.warn(
-        f"\n{'='*70}\n"
+        f"\n{'=' * 70}\n"
         f"DEPRECATION WARNING: honeyhive.evaluation.{old_name}\n"
-        f"{'='*70}\n"
+        f"{'=' * 70}\n"
         f"The 'honeyhive.evaluation' module is deprecated.\n"
         f"Please use 'honeyhive.experiments.{new_name}' instead.\n\n"
         f"Migration:\n"
         f"  OLD: from honeyhive.evaluation import {old_name}\n"
         f"  NEW: from honeyhive.experiments import {new_name}\n\n"
         f"The evaluation module will be removed in version 2.0.0.\n"
-        f"{'='*70}",
+        f"{'=' * 70}",
         DeprecationWarning,
         stacklevel=3,
     )

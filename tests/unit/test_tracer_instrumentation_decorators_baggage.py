@@ -60,9 +60,9 @@ class TestDecoratorBaggagePreservation:
             if len(call[0]) > 0 and call[0][0] == "session_id"
         ]
         # Should not set session_id since it already exists in baggage
-        assert not any(
-            "local-session-123" in str(call) for call in session_id_calls
-        ), "Local session_id should not overwrite distributed session_id"
+        assert not any("local-session-123" in str(call) for call in session_id_calls), (
+            "Local session_id should not overwrite distributed session_id"
+        )
 
     @patch("honeyhive.tracer.instrumentation.decorators.baggage.get_baggage")
     @patch("honeyhive.tracer.instrumentation.decorators.baggage.set_baggage")
@@ -98,9 +98,9 @@ class TestDecoratorBaggagePreservation:
             for call in mock_set_baggage.call_args_list
             if len(call[0]) > 0 and call[0][0] == "session_id"
         ]
-        assert any(
-            "local-session-123" in str(call) for call in session_id_calls
-        ), "Local session_id should be set when not in baggage"
+        assert any("local-session-123" in str(call) for call in session_id_calls), (
+            "Local session_id should be set when not in baggage"
+        )
 
     @patch("honeyhive.tracer.instrumentation.decorators.baggage.get_baggage")
     @patch("honeyhive.tracer.instrumentation.decorators.baggage.set_baggage")
@@ -139,12 +139,12 @@ class TestDecoratorBaggagePreservation:
 
         # Verify none of the distributed values were overwritten
         all_calls_str = str(mock_set_baggage.call_args_list)
-        assert (
-            "local-project" not in all_calls_str
-        ), "Local project should not overwrite distributed project"
-        assert (
-            "local-source" not in all_calls_str
-        ), "Local source should not overwrite distributed source"
+        assert "local-project" not in all_calls_str, (
+            "Local project should not overwrite distributed project"
+        )
+        assert "local-source" not in all_calls_str, (
+            "Local source should not overwrite distributed source"
+        )
 
     @patch("honeyhive.tracer.instrumentation.decorators.baggage.get_baggage")
     @patch("honeyhive.tracer.instrumentation.decorators.baggage.set_baggage")
@@ -199,12 +199,12 @@ class TestDecoratorBaggagePreservation:
             if len(call[0]) > 0 and call[0][0] == "source"
         ]
 
-        assert any(
-            "local-project" in str(call) for call in project_calls
-        ), "Local project should be set when not in baggage"
-        assert any(
-            "local-source" in str(call) for call in source_calls
-        ), "Local source should be set when not in baggage"
+        assert any("local-project" in str(call) for call in project_calls), (
+            "Local project should be set when not in baggage"
+        )
+        assert any("local-source" in str(call) for call in source_calls), (
+            "Local source should be set when not in baggage"
+        )
 
     @patch("honeyhive.tracer.instrumentation.decorators.baggage.get_baggage")
     @patch("honeyhive.tracer.instrumentation.decorators.baggage.set_baggage")

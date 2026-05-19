@@ -165,8 +165,7 @@ def run_pipeline_scenario() -> None:
     result = pipeline(
         order_id="ORD-1003",
         customer_question=(
-            "My order is delayed and I need it urgently. "
-            "Can I cancel and get a refund?"
+            "My order is delayed and I need it urgently. Can I cancel and get a refund?"
         ),
     )
     print(f"Resolution: {result.resolution}")
@@ -257,8 +256,7 @@ def run_trace_decorator_scenario() -> None:
         ),
     )
     print(
-        f"Ticket resolved: priority={ticket['priority']}, "
-        f"category={ticket['category']}"
+        f"Ticket resolved: priority={ticket['priority']}, category={ticket['category']}"
     )
     print(f"Resolution: {ticket['resolution']}")
 

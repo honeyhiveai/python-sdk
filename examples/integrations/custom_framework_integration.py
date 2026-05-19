@@ -122,7 +122,7 @@ class CustomAIFramework:
                     batch_results = []
                     for j, text in enumerate(batch):
                         with self.tracer.start_as_current_span(
-                            f"item_{j+1}"
+                            f"item_{j + 1}"
                         ) as item_span:
                             item_span.set_attribute("item.index", i + j)
                             item_span.set_attribute("item.text_length", len(text))

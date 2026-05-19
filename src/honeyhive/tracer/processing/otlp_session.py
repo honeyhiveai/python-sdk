@@ -91,9 +91,7 @@ class OTLPSessionConfig(BaseModel):
 
     @field_validator("pool_maxsize")
     @classmethod
-    def validate_pool_maxsize(
-        cls, v: int, info: Any
-    ) -> int:  # pylint: disable=duplicate-code
+    def validate_pool_maxsize(cls, v: int, info: Any) -> int:  # pylint: disable=duplicate-code
         """Ensure pool_maxsize is at least as large as pool_connections.
 
         Note: This validation logic is intentionally duplicated between

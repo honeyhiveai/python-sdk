@@ -144,7 +144,7 @@ def multi_deployment_azure_workflow(prompts: List[str]) -> Dict[str, Any]:
 
     try:
         for i, prompt in enumerate(prompts):
-            print(f"📝 Processing prompt {i+1}: {prompt[:50]}...")
+            print(f"📝 Processing prompt {i + 1}: {prompt[:50]}...")
 
             deployment_results = {}
 

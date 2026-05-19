@@ -875,9 +875,7 @@ def get_comprehensive_environment_analysis(
         # Check if tracer already has an environment detector
         if not hasattr(tracer_instance, "_environment_detector"):
             # Protected access required for multi-instance architecture
-            tracer_instance._environment_detector = EnvironmentDetector(
-                tracer_instance
-            )  # pylint: disable=protected-access
+            tracer_instance._environment_detector = EnvironmentDetector(tracer_instance)  # pylint: disable=protected-access
 
         return dict(
             tracer_instance._environment_detector.get_comprehensive_analysis()  # pylint: disable=protected-access

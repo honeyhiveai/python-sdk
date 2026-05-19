@@ -140,9 +140,9 @@ class TestEnvironmentUtilityFunctions:
         for value in invalid_json_values:
             with patch.dict(os.environ, {"TEST_JSON": value}):
                 result = _get_env_json("TEST_JSON", {"default": "value"})
-                assert result == {
-                    "default": "value"
-                }, f"Failed for invalid JSON: {value}"
+                assert result == {"default": "value"}, (
+                    f"Failed for invalid JSON: {value}"
+                )
 
     def test_get_env_json_non_dict_json(self) -> None:
         """Test _get_env_json returns default for valid JSON that's not a dict."""
@@ -157,9 +157,9 @@ class TestEnvironmentUtilityFunctions:
         for value in non_dict_values:
             with patch.dict(os.environ, {"TEST_JSON": value}):
                 result = _get_env_json("TEST_JSON", {"default": "value"})
-                assert result == {
-                    "default": "value"
-                }, f"Failed for non-dict JSON: {value}"
+                assert result == {"default": "value"}, (
+                    f"Failed for non-dict JSON: {value}"
+                )
 
     def test_get_env_json_missing_variable(self) -> None:
         """Test _get_env_json returns default when variable is missing."""

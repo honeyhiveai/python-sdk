@@ -54,9 +54,9 @@ class TestMultiInstanceSafety:
                         expected_key = "honeyhive.metadata.thread_id"
                         if expected_key in attrs:
                             actual_thread_id = attrs[expected_key]
-                            assert (
-                                actual_thread_id == thread_id
-                            ), f"Thread {thread_id} got wrong thread_id: {actual_thread_id}"
+                            assert actual_thread_id == thread_id, (
+                                f"Thread {thread_id} got wrong thread_id: {actual_thread_id}"
+                            )
 
                 results.append(
                     {

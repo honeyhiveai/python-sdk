@@ -88,6 +88,7 @@ def _build_llm_metric_request(
 
 @pytest.mark.integration
 @pytest.mark.real_api
+@pytest.mark.xdist_group("server_side_eval")
 @pytest.mark.skipif(
     os.environ.get("HH_SOURCE", "").startswith("github-actions"),
     reason="Requires write permissions not available in CI",
@@ -162,9 +163,9 @@ class TestExperimentsExternalServerSide:
                 max_workers=2,
                 verbose=False,
             )
-            assert (
-                result is not None and result.run_id
-            ), "evaluate() must return a run_id"
+            assert result is not None and result.run_id, (
+                "evaluate() must return a run_id"
+            )
 
             # Poll /events/export for chain spans tagged with our run_id
             # until every one has metrics[metric_name].
@@ -177,8 +178,7 @@ class TestExperimentsExternalServerSide:
             scored_metrics = event_metrics(scored_event)
             raw_score = scored_metrics[metric_name]
             assert isinstance(raw_score, (int, float)), (
-                f"server-side metric must be numeric; got "
-                f"{type(raw_score).__name__}={raw_score!r}"
+                f"server-side metric must be numeric; got {type(raw_score).__name__}={raw_score!r}"
             )
             score = float(raw_score)
             assert 0.0 <= score <= 5.0, f"score out of range: {score}"
@@ -190,21 +190,19 @@ class TestExperimentsExternalServerSide:
                 # metric_update_service.js shape). If absent, that's also
                 # OK — explanation is optional in the LLM eval pipeline.
                 assert isinstance(scored_metrics[explanation_key], str), (
-                    f"{explanation_key} should be str; got "
-                    f"{type(scored_metrics[explanation_key]).__name__}"
+                    f"{explanation_key} should be str; got {type(scored_metrics[explanation_key]).__name__}"
                 )
 
             # All chain spans (one per datapoint) ended up scored.
             events = export_events_for_run(integration_client, result.run_id)
             chains = chain_events_for_function(events, function_name)
-            assert len(chains) == len(
-                dataset
-            ), f"Expected {len(dataset)} chain spans, got {len(chains)}"
+            assert len(chains) == len(dataset), (
+                f"Expected {len(dataset)} chain spans, got {len(chains)}"
+            )
             for ev in chains:
                 m = event_metrics(ev)
                 assert metric_name in m and isinstance(m[metric_name], (int, float)), (
-                    f"server-side metric {metric_name!r} missing or non-numeric "
-                    f"on chain span; metrics={m}"
+                    f"server-side metric {metric_name!r} missing or non-numeric on chain span; metrics={m}"
                 )
 
             # Baggage IDs still propagate even when no client-side

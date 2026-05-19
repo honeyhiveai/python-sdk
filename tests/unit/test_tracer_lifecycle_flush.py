@@ -14,7 +14,6 @@ Based on thorough inspection of the actual implementation in:
 # requires protected access, pytest fixtures redefine outer names by design, comprehensive test
 # classes need many test methods, and mock patch decorators create unavoidable long lines.
 
-
 from contextlib import contextmanager
 from typing import Any, Iterator, List
 from unittest.mock import Mock, patch

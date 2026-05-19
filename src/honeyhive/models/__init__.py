@@ -207,6 +207,8 @@ from honeyhive.models.models import (
     BatchCreateDatapointsRequest,
     BatchCreateDatapointsResponse,
     ConfigurationItem,
+    CreateChartRequest,
+    CreateChartResponse,
     CreateConfigurationRequest,
     CreateConfigurationResponse,
     CreateDatapointRequest,
@@ -216,6 +218,7 @@ from honeyhive.models.models import (
     CreateMetricRequest,
     CreateMetricResponse,
     DatapointMapping,
+    DeleteChartResponse,
     DeleteConfigurationResponse,
     DeleteDatapointParams,
     DeleteDatapointResponse,
@@ -226,6 +229,8 @@ from honeyhive.models.models import (
     DeleteExperimentRunResponse,
     DeleteMetricResponse,
     Event,
+    GetChartResponse,
+    GetChartsResponse,
     GetConfigurationsQuery,
     GetConfigurationsResponse,
     GetDatapointParams,
@@ -268,6 +273,8 @@ from honeyhive.models.models import (
     RunMetricResponse,
     StartSessionRequest,
     TODOSchema,
+    UpdateChartRequest,
+    UpdateChartResponse,
     UpdateConfigurationRequest,
     UpdateConfigurationResponse,
     UpdateDatapointParams,
@@ -281,6 +288,14 @@ from honeyhive.models.models import (
 )
 
 __all__ = [
+    # Chart models
+    "CreateChartRequest",
+    "CreateChartResponse",
+    "DeleteChartResponse",
+    "GetChartResponse",
+    "GetChartsResponse",
+    "UpdateChartRequest",
+    "UpdateChartResponse",
     # Configuration models
     "ConfigurationItem",
     "CreateConfigurationRequest",

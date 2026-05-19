@@ -117,14 +117,14 @@ class TestExperimentsExternalClientSide:
 
         # Backend state — run name set, events recorded.
         backend_run = integration_client.evaluations.get_run(result.run_id)
-        assert (
-            hasattr(backend_run, "evaluation") and backend_run.evaluation
-        ), f"Backend response missing 'evaluation' field: {backend_run}"
+        assert hasattr(backend_run, "evaluation") and backend_run.evaluation, (
+            f"Backend response missing 'evaluation' field: {backend_run}"
+        )
         run_data = backend_run.evaluation
         assert getattr(run_data, "name", None), "Run name should not be empty"
-        assert (
-            len(getattr(run_data, "event_ids", []) or []) > 0
-        ), "Should have recorded events"
+        assert len(getattr(run_data, "event_ids", []) or []) > 0, (
+            "Should have recorded events"
+        )
 
     # ---------------------- inline attachment, sync ------------------------
 
@@ -352,8 +352,7 @@ class TestExperimentsExternalClientSide:
             for c in chain_events_for_function(events, "async_double_value_function")
         )
         assert scores == [0.0, 1.0], (
-            f"HHAI-5270 single-async-eval regression: expected [0.0, 1.0], "
-            f"got {scores}"
+            f"HHAI-5270 single-async-eval regression: expected [0.0, 1.0], got {scores}"
         )
 
     def test_inline_chain_span_attachment_mixed_sync_async_evaluators(
@@ -486,9 +485,9 @@ class TestExperimentsExternalClientSide:
         assert_metric_present_on_chain_spans(events, "user_function", "chain_eval")
         assert_metric_absent_on_chain_spans(events, "my_helper", "chain_eval")
         # Sanity: helper spans actually exist (negative-assertion safety net).
-        assert chain_events_for_function(
-            events, "my_helper"
-        ), "Expected at least one my_helper tool span"
+        assert chain_events_for_function(events, "my_helper"), (
+            "Expected at least one my_helper tool span"
+        )
 
     # ---------------------- failure-mode coverage --------------------------
 

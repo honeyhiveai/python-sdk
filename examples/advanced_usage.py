@@ -20,8 +20,12 @@ import os
 import time
 from typing import Any, Dict, Optional
 
-from honeyhive import enrich_span  # Legacy pattern for context manager demo
-from honeyhive import HoneyHiveTracer, trace, trace_class
+from honeyhive import (
+    HoneyHiveTracer,
+    enrich_span,  # Legacy pattern for context manager demo
+    trace,
+    trace_class,
+)
 from honeyhive.config.models import SessionConfig, TracerConfig
 from honeyhive.models import EventType
 

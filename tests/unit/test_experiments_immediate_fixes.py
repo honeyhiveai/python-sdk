@@ -43,7 +43,6 @@ class TestSessionNaming:
         context = ExperimentContext(
             run_id="run-123",
             dataset_id="ds-456",
-            project="test-project",
             run_name=run_name,  # TASK 1: Pass run_name
         )
 
@@ -81,7 +80,6 @@ class TestSessionNaming:
         context = ExperimentContext(
             run_id="run-123",
             dataset_id="ds-456",
-            project="test-project",
             # No run_name specified
         )
 
@@ -133,7 +131,6 @@ class TestTracerParameter:
         context = ExperimentContext(
             run_id="run-123",
             dataset_id="ds-456",
-            project="test-project",
         )
 
         dataset = [{"inputs": {"query": "test"}}]
@@ -176,7 +173,6 @@ class TestTracerParameter:
         context = ExperimentContext(
             run_id="run-123",
             dataset_id="ds-456",
-            project="test-project",
         )
 
         dataset = [{"inputs": {"query": "test"}}]
@@ -303,7 +299,6 @@ class TestSessionLinking:
         context = ExperimentContext(
             run_id="run-123",
             dataset_id="ds-456",
-            project="test-project",
         )
 
         dataset = [{"inputs": {"query": "test"}}]
@@ -341,7 +336,6 @@ class TestSessionLinking:
         context = ExperimentContext(
             run_id=run_id,
             dataset_id="ds-456",
-            project="test-project",
         )
 
         dataset = [{"inputs": {"query": "test"}}]

@@ -18,9 +18,13 @@ from .detection import (
 )
 
 # Error handling and resilience
-from .error_handling import ErrorHandler, IntegrationError
+from .error_handling import (
+    ErrorHandler,
+    IntegrationError,
+    ResilienceLevel,
+    with_error_handling,
+)
 from .error_handling import ProviderIncompatibleError as ErrorProviderIncompatibleError
-from .error_handling import ResilienceLevel, with_error_handling
 
 # HTTP instrumentation
 from .http import HTTPInstrumentation

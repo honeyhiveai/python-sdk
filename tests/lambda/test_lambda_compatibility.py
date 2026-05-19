@@ -160,9 +160,9 @@ class TestLambdaCompatibility:
         ) / len(execution_times)
 
         # SDK should add minimal overhead (< 50ms for basic operations)
-        assert (
-            avg_execution_time < 500
-        ), f"Average execution time too high: {avg_execution_time}ms"
+        assert avg_execution_time < 500, (
+            f"Average execution time too high: {avg_execution_time}ms"
+        )
 
         # Warm starts should be faster than cold start
         if len(execution_times) > 1:
@@ -181,9 +181,9 @@ class TestLambdaCompatibility:
             )
         # Only fail if warm starts are consistently much slower (more than 100% slower)
         # In CI environments, container overhead can make this highly variable
-        assert (
-            avg_warm_time < cold_start_time * 2.0
-        ), f"Warm starts ({avg_warm_time:.2f}ms) significantly slower than cold start ({cold_start_time:.2f}ms)"
+        assert avg_warm_time < cold_start_time * 2.0, (
+            f"Warm starts ({avg_warm_time:.2f}ms) significantly slower than cold start ({cold_start_time:.2f}ms)"
+        )
 
     def test_lambda_error_handling(self, lambda_container):
         """Test error handling in Lambda environment."""
@@ -252,9 +252,9 @@ class TestLambdaCompatibility:
                 print(f"❌ Invocation {result['iteration']}: {result['error']}")
 
         # All sequential invocations should succeed
-        assert (
-            success_count == 3
-        ), f"Only {success_count}/3 sequential invocations succeeded. Results: {results}"
+        assert success_count == 3, (
+            f"Only {success_count}/3 sequential invocations succeeded. Results: {results}"
+        )
 
         # Verify reasonable performance
         avg_time = (
@@ -441,9 +441,9 @@ class TestLambdaIntegration:
                         timeout=30,
                     )
 
-                    assert (
-                        response.status_code == 200
-                    ), f"Failed on Python {python_version}"
+                    assert response.status_code == 200, (
+                        f"Failed on Python {python_version}"
+                    )
 
                     result = response.json()
                     body = json.loads(result["body"])
@@ -524,15 +524,15 @@ class TestLambdaColdStarts:
         timings = body["timings"]
 
         # Verify performance targets (updated to realistic thresholds for bundle)
-        assert (
-            timings["sdk_import_ms"] < 200
-        ), f"SDK import too slow: {timings['sdk_import_ms']}ms"
-        assert (
-            timings["tracer_init_ms"] < 300
-        ), f"Tracer init too slow: {timings['tracer_init_ms']}ms"
-        assert (
-            timings["handler_total_ms"] < 3000
-        ), f"Total execution too slow: {timings['handler_total_ms']}ms"
+        assert timings["sdk_import_ms"] < 200, (
+            f"SDK import too slow: {timings['sdk_import_ms']}ms"
+        )
+        assert timings["tracer_init_ms"] < 300, (
+            f"Tracer init too slow: {timings['tracer_init_ms']}ms"
+        )
+        assert timings["handler_total_ms"] < 3000, (
+            f"Total execution too slow: {timings['handler_total_ms']}ms"
+        )
 
         # Log performance for documentation
         print(
@@ -555,9 +555,9 @@ class TestLambdaColdStarts:
 
         # Verify runtime overhead is reasonable
         runtime_overhead = performance_impact.get("runtime_overhead_ms", 0)
-        assert (
-            runtime_overhead < 1000
-        ), f"Runtime overhead too high: {runtime_overhead}ms"
+        assert runtime_overhead < 1000, (
+            f"Runtime overhead too high: {runtime_overhead}ms"
+        )
 
     def test_warm_start_optimization(self, cold_start_container):
         """Test warm start performance optimization."""
@@ -591,6 +591,6 @@ class TestLambdaColdStarts:
 
         # Allow some tolerance since first few warm calls can vary
         warm_start_threshold = cold_time + 50  # Allow 50ms tolerance
-        assert (
-            avg_warm_time < warm_start_threshold
-        ), f"Warm starts not optimized: {avg_warm_time}ms vs {cold_time}ms cold start"
+        assert avg_warm_time < warm_start_threshold, (
+            f"Warm starts not optimized: {avg_warm_time}ms vs {cold_time}ms cold start"
+        )

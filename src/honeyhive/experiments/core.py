@@ -11,7 +11,9 @@ import asyncio
 import functools
 import inspect
 import os
+import threading
 import uuid
+import warnings
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
@@ -40,6 +42,11 @@ from honeyhive.utils.logger import get_logger, safe_log
 
 # Module-level logger for orchestration code (no tracer instance yet)
 logger = get_logger("honeyhive.experiments.core")
+
+# Process-wide lock guarding the instrumentor lifecycle in run_experiment.
+# Serializes concurrent evaluate() calls in the same interpreter against
+# BaseInstrumentor's non-atomic check-then-set in instrument().
+_INSTRUMENTOR_LIFECYCLE_LOCK = threading.Lock()
 
 
 # Acceptable scalar score types. Mirrors the server-side evaluator contract
@@ -120,8 +127,7 @@ class EvaluatorMetricResult:
 
         # Unknown return shape — refuse to invent semantics.
         logger.warning(
-            "Evaluator %s returned an unsupported value type %s; dropping "
-            "its metric for this datapoint.",
+            "Evaluator %s returned an unsupported value type %s; dropping its metric for this datapoint.",
             eval_name,
             type(raw).__name__,
         )
@@ -173,8 +179,7 @@ class EvaluatorMetricResult:
                 extras[key] = value
             else:
                 logger.warning(
-                    "Evaluator %s returned a non-scalar extra '%s' (%s); "
-                    "dropping it from event.metrics.",
+                    "Evaluator %s returned a non-scalar extra '%s' (%s); dropping it from event.metrics.",
                     eval_name,
                     key,
                     type(value).__name__,
@@ -201,7 +206,6 @@ class ExperimentContext:  # pylint: disable=too-few-public-methods
     Attributes:
         run_id: Experiment run identifier
         dataset_id: Dataset identifier (may have EXT- prefix)
-        project: Project identifier
         source: Source identifier (default: "evaluation")
         metadata: Additional metadata dictionary
 
@@ -209,7 +213,6 @@ class ExperimentContext:  # pylint: disable=too-few-public-methods
         >>> context = ExperimentContext(
         ...     run_id="run-123",
         ...     dataset_id="EXT-abc",
-        ...     project="my-project"
         ... )
         >>> tracer_config = context.to_tracer_config("dp-1")
         >>> tracer_config["is_evaluation"]
@@ -220,7 +223,6 @@ class ExperimentContext:  # pylint: disable=too-few-public-methods
         self,
         run_id: str,
         dataset_id: str,
-        project: str,
         *,
         run_name: Optional[str] = None,
         source: str = "evaluation",
@@ -232,14 +234,12 @@ class ExperimentContext:  # pylint: disable=too-few-public-methods
         Args:
             run_id: Experiment run identifier
             dataset_id: Dataset identifier
-            project: Project identifier
             run_name: Experiment run name (used for session naming)
             source: Source identifier (default: "evaluation")
             metadata: Additional metadata
         """
         self.run_id = run_id
         self.dataset_id = dataset_id
-        self.project = project
         self.run_name = run_name
         self.source = source
         self.metadata = metadata or {}
@@ -262,7 +262,6 @@ class ExperimentContext:  # pylint: disable=too-few-public-methods
             >>> config = context.to_tracer_config("dp-1")
             >>> config
             {
-                'project': 'my-project',
                 'is_evaluation': True,
                 'run_id': 'run-123',
                 'dataset_id': 'EXT-abc',
@@ -271,7 +270,6 @@ class ExperimentContext:  # pylint: disable=too-few-public-methods
             }
         """
         return {
-            "project": self.project,
             "is_evaluation": True,
             "run_id": self.run_id,
             "dataset_id": self.dataset_id,
@@ -342,7 +340,6 @@ def run_experiment(
         >>> context = ExperimentContext(
         ...     run_id="run-123",
         ...     dataset_id="ds-456",
-        ...     project="my-project"
         ... )
         >>>
         >>> results = run_experiment(
@@ -357,6 +354,19 @@ def run_experiment(
     """
     is_async = asyncio.iscoroutinefunction(function)
     user_fn_accepts_tracer = "tracer" in inspect.signature(function).parameters
+
+    # Whole-experiment instrumentor lifecycle. The first datapoint into the
+    # pool acquires _INSTRUMENTOR_LIFECYCLE_LOCK, binds each instrumentor to
+    # its tracer.provider, and records that tracer in binding_tracer. Later
+    # datapoints find active_instrumentors populated and skip. Cleanup runs
+    # once after the pool drains.
+    #
+    # binding_tracer is the transport path for every wrapped call across the
+    # experiment — all such spans flow through its provider's
+    # BatchSpanProcessor, so it gets one more force_flush at teardown to
+    # catch anything emitted after its own datapoint's flush ran.
+    active_instrumentors: List[Any] = []
+    binding_tracer: List[Any] = []  # singleton container so the closure can mutate it
 
     def process_datapoint(
         datapoint: Dict[str, Any], datapoint_id: str
@@ -389,34 +399,33 @@ def run_experiment(
             api_key=api_key, server_url=server_url, verbose=verbose, **tracer_config
         )
 
-        # Create and initialize instrumentor instances for this datapoint
-        # Each datapoint gets its own instrumentor instances to ensure traces
-        # are routed correctly to the right session
-        active_instrumentors: List[Any] = []
+        # Instrument once for the whole experiment under the module lock.
+        # An instrumentor that raises here stays uninstrumented for the rest
+        # of the experiment — install failures are deterministic (missing
+        # dep, version mismatch), not transient.
         if instrumentors:
-            for instrumentor_factory in instrumentors:
-                try:
-                    # Create new instrumentor instance from factory
-                    instrumentor = instrumentor_factory()
-                    # Set the tracer provider on the instrumentor
-                    instrumentor.instrument(tracer_provider=tracer.provider)
-                    active_instrumentors.append(instrumentor)
-                    if verbose:
-                        safe_log(
-                            tracer,
-                            "info",
-                            "Initialized instrumentor %s for datapoint %s",
-                            type(instrumentor).__name__,
-                            datapoint_id,
-                        )
-                except Exception as e:
-                    safe_log(
-                        tracer,
-                        "warning",
-                        "Failed to initialize instrumentor for datapoint %s: %s",
-                        datapoint_id,
-                        str(e),
-                    )
+            with _INSTRUMENTOR_LIFECYCLE_LOCK:
+                if not active_instrumentors:
+                    binding_tracer.append(tracer)
+                    for instrumentor_factory in instrumentors:
+                        try:
+                            instrumentor = instrumentor_factory()
+                            instrumentor.instrument(tracer_provider=tracer.provider)
+                            active_instrumentors.append(instrumentor)
+                            if verbose:
+                                safe_log(
+                                    tracer,
+                                    "info",
+                                    "Initialized instrumentor %s for experiment",
+                                    type(instrumentor).__name__,
+                                )
+                        except Exception as e:
+                            safe_log(
+                                tracer,
+                                "warning",
+                                "Failed to initialize instrumentor: %s",
+                                str(e),
+                            )
 
         try:
             # Execute function with tracer active
@@ -546,29 +555,10 @@ def run_experiment(
             }
 
         finally:
-            # Uninstrument all instrumentors for this datapoint
-            for instrumentor in active_instrumentors:
-                try:
-                    instrumentor.uninstrument()
-                    if verbose:
-                        safe_log(
-                            tracer,
-                            "info",
-                            "Uninstrumented %s for datapoint %s",
-                            type(instrumentor).__name__,
-                            datapoint_id,
-                        )
-                except Exception as e:
-                    safe_log(
-                        tracer,
-                        "warning",
-                        "Failed to uninstrument %s for datapoint %s: %s",
-                        type(instrumentor).__name__,
-                        datapoint_id,
-                        str(e),
-                    )
-
-            # CRITICAL: Flush tracer to ensure all spans sent
+            # CRITICAL: Flush tracer to ensure all spans sent. Instrumentor
+            # teardown happens once after the pool drains (in run_experiment)
+            # so an early-finishing datapoint doesn't unwrap the client out
+            # from under a sibling that's still mid-call.
             try:
                 force_flush_tracer(tracer)
             except Exception as e:
@@ -584,8 +574,7 @@ def run_experiment(
     # Validate inputs
     if len(dataset) != len(datapoint_ids):
         raise ValueError(
-            f"Dataset length ({len(dataset)}) does not match "
-            f"datapoint_ids length ({len(datapoint_ids)})"
+            f"Dataset length ({len(dataset)}) does not match datapoint_ids length ({len(datapoint_ids)})"
         )
 
     if verbose:
@@ -632,6 +621,33 @@ def run_experiment(
                         "error": str(e),
                     }
                 )
+
+    # Flush the binding tracer. Every wrapped span across the experiment
+    # was emitted through its provider, and short scripts / container
+    # exits can race the BatchSpanProcessor's 5 s tick and atexit hook.
+    if binding_tracer:
+        try:
+            force_flush_tracer(binding_tracer[0])
+        except Exception as e:
+            logger.warning("Failed to flush binding tracer for experiment: %s", str(e))
+
+    # Uninstrument once every datapoint has finished — unwrapping the
+    # wrapped client while a sibling is still mid-call would silently drop
+    # its spans.
+    for instrumentor in active_instrumentors:
+        try:
+            instrumentor.uninstrument()
+            if verbose:
+                logger.info(
+                    "Uninstrumented %s for experiment",
+                    type(instrumentor).__name__,
+                )
+        except Exception as e:
+            logger.warning(
+                "Failed to uninstrument %s: %s",
+                type(instrumentor).__name__,
+                str(e),
+            )
 
     # Log summary
     success_count = sum(1 for r in results if r.get("status") == "success")
@@ -698,8 +714,7 @@ def _update_run_with_results(  # pylint: disable=too-many-branches
 
         if verbose:
             logger.info(
-                "Updating run %s with data: status=%s, name=%s, "
-                "event_ids=%d, metadata_keys=%s",
+                "Updating run %s with data: status=%s, name=%s, event_ids=%d, metadata_keys=%s",
                 run_id,
                 update_data.get("status"),
                 update_data.get("name"),
@@ -1088,7 +1103,7 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
     instrumentors: Optional[List[Callable[[], Any]]] = None,
     api_key: Optional[str] = None,
     server_url: Optional[str] = None,
-    project: str = "default",
+    project: Optional[str] = None,
     name: Optional[str] = None,
     run_id: Optional[str] = None,
     max_workers: int = 10,
@@ -1120,7 +1135,7 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
         api_key: HoneyHive API key (or set HONEYHIVE_API_KEY/HH_API_KEY env var)
         server_url: HoneyHive server URL (or set HONEYHIVE_SERVER_URL/
             HH_SERVER_URL/HH_API_URL env var)
-        project: HoneyHive project (or set HONEYHIVE_PROJECT env var)
+        project: Deprecated and ignored. Project scope is determined by the API key.
         name: Experiment run name (auto-generated if not provided)
         run_id: Experiment run ID to send to the backend (auto-generated UUID if not
             provided). The backend's returned run_id is always honored as the final ID.
@@ -1161,7 +1176,6 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
         ...     function=my_function,  # or my_async_function
         ...     dataset=dataset,
         ...     api_key="hh_...",
-        ...     project="my-project",
         ...     name="My Experiment"
         ... )
         >>>
@@ -1173,8 +1187,7 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
         >>> result = evaluate(
         ...     function=my_function,
         ...     dataset_id="ds-123",
-        ...     api_key="hh_...",
-        ...     project="my-project"
+        ...     api_key="hh_..."
         ... )
         >>>
         >>> # With instrumentors for automatic LLM tracing
@@ -1183,7 +1196,6 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
         ...     function=my_function,
         ...     dataset=dataset,
         ...     api_key="hh_...",
-        ...     project="my-project",
         ...     instrumentors=[lambda: OpenAIInstrumentor()]
         ... )
     """
@@ -1192,8 +1204,13 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
         raise ValueError("Must provide either 'dataset' or 'dataset_id'")
     if dataset is not None and dataset_id is not None:
         raise ValueError("Cannot provide both 'dataset' and 'dataset_id'")
-    if project is None:
-        raise ValueError("Must provide 'project' or set HONEYHIVE_PROJECT env var")
+    if project is not None:
+        warnings.warn(
+            "The 'project' argument to evaluate() is deprecated and ignored. "
+            "Project scope is determined by the API key.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
     # Load from environment variables if not provided
     # Support both HONEYHIVE_* and HH_* prefixes for convenience
@@ -1324,7 +1341,6 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
     run_data = prepare_run_request_data(
         run_id=run_id,
         name=run_name,
-        project=project,
         dataset_id=external_dataset_id,
         event_ids=[],  # Empty initially
         datapoint_ids=datapoint_ids,  # Link datapoints to run
@@ -1360,7 +1376,6 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
     context = ExperimentContext(
         run_id=run_id,
         dataset_id=external_dataset_id or "",  # Type safety
-        project=project,
         run_name=run_name,
         source="evaluation",
     )
@@ -1418,7 +1433,6 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
     result_summary = get_run_result(
         client=client,
         run_id=run_id,
-        project_id=project,
         aggregate_function=aggregate_function,
     )
 

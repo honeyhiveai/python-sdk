@@ -399,7 +399,8 @@ class TestUnifiedEnrichSpanIntegration:
         assert True
 
     def test_enrich_span_error_scenarios_integration(
-        self, integration_tracer: Any  # pylint: disable=unused-argument
+        self,
+        integration_tracer: Any,  # pylint: disable=unused-argument
     ) -> None:
         """Test enrich_span error handling in integration environment."""
 

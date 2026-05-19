@@ -47,8 +47,7 @@ dev = [
     "pytest-mock>=3.10.0",
     "pytest-xdist>=3.0.0",
     "tox>=4.0.0",
-    "black~=26.3",
-    "isort==5.13.2",
+    "ruff>=0.4.0",
     "flake8>=6.0.0",
     "mypy>=1.0.0",
     "typeguard>=4.0.0",
@@ -88,8 +87,7 @@ docs = [
     "mkdocs-section-index>=0.3",     # clickable section landing pages
     # mkdocstrings auto-detects black at runtime and uses it to pretty-print
     # function signatures (line-wrapping, trailing commas, etc). Without it,
-    # signatures render on a single line. Pinned to match the version in the
-    # `dev` extra so signatures format identically to the source.
+    # signatures render on a single line.
     "black~=26.3",
 ]
 
@@ -310,29 +308,16 @@ packages = ["src/honeyhive"]
 [tool.hatch.build.targets.sdist]
 exclude = ["openapi"]
 
-[tool.black]
+[tool.ruff]
+target-version = "py311"
 line-length = 88
-target-version = ['py311']
-include = '\.pyi?$'
-extend-exclude = '''
-/(
-  # directories
-  \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | build
-  | dist
-)/
-'''
 
-[tool.isort]
-profile = "black"
-multi_line_output = 3
-line_length = 88
-known_first_party = ["honeyhive"]
+[tool.ruff.lint]
+# Only isort rules — flake8/pylint/mypy handle the rest via tox (see tox.ini [testenv:lint]).
+select = ["I"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["honeyhive"]
 
 [tool.pylint.messages_control]
 disable = [

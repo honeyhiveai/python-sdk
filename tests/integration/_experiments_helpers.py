@@ -158,9 +158,9 @@ def assert_run_metadata_on_all_child_events(events: Iterable[Any], run_id: str) 
         md = event_metadata(ev)
         ev_id = event_field(ev, "event_id")
         ev_name = event_field(ev, "event_name")
-        assert (
-            md.get("run_id") == run_id
-        ), f"event {ev_id} ({ev_name}) missing run_id; metadata={md}"
+        assert md.get("run_id") == run_id, (
+            f"event {ev_id} ({ev_name}) missing run_id; metadata={md}"
+        )
         assert md.get("dataset_id"), f"event {ev_id} ({ev_name}) missing dataset_id"
         assert md.get("datapoint_id"), f"event {ev_id} ({ev_name}) missing datapoint_id"
 
@@ -184,12 +184,11 @@ def assert_metric_present_on_chain_spans(
         ev_id = event_field(ev, "event_id")
         if expected_value is None:
             assert metric_name in m and m[metric_name] is not None, (
-                f"chain span {ev_id} missing metric {metric_name!r}; " f"metrics={m}"
+                f"chain span {ev_id} missing metric {metric_name!r}; metrics={m}"
             )
         else:
             assert m.get(metric_name) == expected_value, (
-                f"chain span {ev_id} expected {metric_name}={expected_value!r}, "
-                f"got {m.get(metric_name)!r}; metrics={m}"
+                f"chain span {ev_id} expected {metric_name}={expected_value!r}, got {m.get(metric_name)!r}; metrics={m}"
             )
 
 
@@ -208,8 +207,7 @@ def assert_metric_absent_on_chain_spans(
     for ev in chains:
         m = event_metrics(ev)
         assert metric_name not in m, (
-            f"metric {metric_name!r} unexpectedly on chain span "
-            f"{event_field(ev, 'event_id')}; metrics={m}"
+            f"metric {metric_name!r} unexpectedly on chain span {event_field(ev, 'event_id')}; metrics={m}"
         )
 
 
@@ -238,8 +236,9 @@ def require_server_side_eval_creds() -> Tuple[str, str]:
             pytest.skip("HH_EVALUATOR_E2E_USE_OPENAI=1 but OPENAI_API_KEY is not set.")
         return "gpt-4o-mini", "openai"
 
-    # Model must exist in mock_provider_config.yaml under the openai provider.
-    return "gpt-5", "mock_llm"
+    # deterministic/default/default has no latency and error_rate=0, so
+    # evaluator calls are instant.  See mock_provider_config.yaml.
+    return "deterministic/default/default", "mock_llm"
 
 
 def poll_for_server_side_score_on_chain(
@@ -271,10 +270,7 @@ def poll_for_server_side_score_on_chain(
             scored = [c for c in chains if metric_name in event_metrics(c)]
             if scored and len(scored) == len(chains):
                 return scored[0]
-            last_state = (
-                f"{len(scored)}/{len(chains)} chain spans scored "
-                f"(waiting on {len(chains) - len(scored)})"
-            )
+            last_state = f"{len(scored)}/{len(chains)} chain spans scored (waiting on {len(chains) - len(scored)})"
         else:
             last_state = "no chain spans yet"
         time.sleep(poll_interval_sec)
@@ -445,8 +441,7 @@ def assert_standard_suite_attached_to_chain_spans(
     """
     chains = chain_events_for_function(events, function_name)
     assert len(chains) == expected_dataset_size, (
-        f"Expected {expected_dataset_size} chain spans named "
-        f"{function_name!r}, got {len(chains)}"
+        f"Expected {expected_dataset_size} chain spans named {function_name!r}, got {len(chains)}"
     )
 
     seen_chain_eval_values: List[Any] = []
@@ -455,15 +450,14 @@ def assert_standard_suite_attached_to_chain_spans(
         ev_id = event_field(ev, "event_id")
 
         assert metrics.get("is_positive") is True, (
-            f"is_positive (bool return) missing/wrong on event_id={ev_id}; "
-            f"metrics={metrics}"
+            f"is_positive (bool return) missing/wrong on event_id={ev_id}; metrics={metrics}"
         )
-        assert (
-            metrics.get("confidence_eval") == 0.75
-        ), f"confidence_eval (dict return) missing/wrong; metrics={metrics}"
-        assert (
-            metrics.get("confidence_eval_explanation") == "moderate confidence"
-        ), f"confidence_eval_explanation missing/wrong; metrics={metrics}"
+        assert metrics.get("confidence_eval") == 0.75, (
+            f"confidence_eval (dict return) missing/wrong; metrics={metrics}"
+        )
+        assert metrics.get("confidence_eval_explanation") == "moderate confidence", (
+            f"confidence_eval_explanation missing/wrong; metrics={metrics}"
+        )
 
         chain_score = metrics.get("chain_eval")
         assert chain_score in (
@@ -484,8 +478,7 @@ def assert_standard_suite_attached_to_chain_spans(
             f"bool; got {type(judge_passed).__name__} value={judge_passed!r}"
         )
         assert judge_passed == (chain_score == 1.0), (
-            f"judge_eval_passed inconsistent with chain_eval "
-            f"(chain={chain_score!r}, passed={judge_passed!r})"
+            f"judge_eval_passed inconsistent with chain_eval (chain={chain_score!r}, passed={judge_passed!r})"
         )
         if judge_passed:
             assert metrics.get("judge_eval_explanation") == "exact match"
@@ -496,7 +489,9 @@ def assert_standard_suite_attached_to_chain_spans(
 
     # Sanity: with the standard pass+fail dataset we exercise both branches.
     if expected_dataset_size == 2:
-        assert sorted(seen_chain_eval_values) == [0.0, 1.0], (
-            f"Expected one passing and one failing chain span; "
-            f"got chain_eval values={seen_chain_eval_values}"
+        assert sorted(seen_chain_eval_values) == [
+            0.0,
+            1.0,
+        ], (
+            f"Expected one passing and one failing chain span; got chain_eval values={seen_chain_eval_values}"
         )

@@ -1,10 +1,12 @@
+#!/usr/bin/env python3
 """
 HoneyHive + CrewAI integration example.
 
-Demonstrates two CrewAI patterns with HoneyHive tracing:
+Demonstrates three CrewAI patterns with HoneyHive tracing:
 
-1) Single support agent with explicit tool calls and session continuity
+1) Single support agent with tool calls across two turns
 2) Sequential multi-agent crew (investigator + response drafter)
+3) Escalation workflow using @trace for custom span grouping
 
 Install:
     uv pip install honeyhive crewai openinference-instrumentation-crewai openinference-instrumentation-openai
@@ -15,7 +17,8 @@ Run:
 Environment:
     HH_API_KEY
     OPENAI_API_KEY
-    HH_API_URL (optional, defaults to production)
+    HH_API_URL (optional, defaults to production; also read from env automatically)
+    HH_SOURCE (optional, defaults to "python_sdk_example")
 
 Known gap:
     Current OpenInference + CrewAI instrumentation surfaces custom tool usage
@@ -30,9 +33,19 @@ from crewai.tools import tool
 from openinference.instrumentation.crewai import CrewAIInstrumentor
 from openinference.instrumentation.openai import OpenAIInstrumentor
 
-from honeyhive import HoneyHiveTracer
+from honeyhive import HoneyHiveTracer, trace
 
 MODEL = "openai/gpt-4o-mini"
+
+# Module-level tracer so @trace decorators below can reference it at decoration time.
+tracer = HoneyHiveTracer.init(
+    api_key=os.getenv("HH_API_KEY"),
+    session_name="crewai_integration_example",
+    source=os.getenv("HH_SOURCE", "python_sdk_example"),
+)
+
+
+# -- Mock tools (customer support domain, shared across integration examples) --
 
 
 @tool("OrderStatusLookup")
@@ -75,18 +88,11 @@ def lookup_policy(topic: str) -> str:
     return "No policy found. Try: refund, cancellation, shipping."
 
 
-tracer = HoneyHiveTracer.init(
-    api_key=os.environ["HH_API_KEY"],
-    session_name="crewai-example",
-    server_url=os.environ.get("HH_API_URL"),
-)
-
-CrewAIInstrumentor().instrument(tracer_provider=tracer.provider)
-OpenAIInstrumentor().instrument(tracer_provider=tracer.provider)
+# -- Scenario 1: single agent with tool calls --
 
 
 def run_single_agent_support_scenario() -> None:
-    """Run a single support agent across two turns with direct tool usage."""
+    """Single support agent handling two turns with direct tool usage."""
     support_generalist = Agent(
         role="Support Generalist",
         goal="Resolve order and policy questions using the available tools",
@@ -110,7 +116,6 @@ def run_single_agent_support_scenario() -> None:
         ),
     ]
 
-    print("--- Pattern 1: Single support agent with tool calls ---")
     for turn_number, prompt in enumerate(prompts, start=1):
         task = Task(
             description=prompt,
@@ -121,18 +126,20 @@ def run_single_agent_support_scenario() -> None:
             agent=support_generalist,
         )
         crew = Crew(
+            name=f"single_agent_support_turn_{turn_number}",
             agents=[support_generalist],
             tasks=[task],
             process=Process.sequential,
             verbose=False,
         )
-        print(f"Turn {turn_number}: {prompt}")
-        print(crew.kickoff())
-        print()
+        crew.kickoff()
+
+
+# -- Scenario 2: sequential multi-agent crew --
 
 
 def run_sequential_support_crew() -> None:
-    """Run a two-agent crew that investigates then drafts the response."""
+    """Two-agent crew that investigates then drafts the customer response."""
     order_investigator = Agent(
         role="Order Investigator",
         goal="Investigate order and policy details with the support tools",
@@ -180,17 +187,92 @@ def run_sequential_support_crew() -> None:
     )
 
     support_crew = Crew(
+        name="sequential_support_crew",
         agents=[order_investigator, response_drafter],
         tasks=[investigation_task, response_task],
         process=Process.sequential,
         verbose=False,
     )
 
-    print("--- Pattern 2: Sequential multi-agent support crew ---")
-    print(support_crew.kickoff())
+    support_crew.kickoff()
+
+
+# -- Scenario 3: escalation workflow with @trace --
+
+
+@trace(event_type="chain", event_name="escalation_workflow", tracer=tracer)
+def run_escalation_workflow() -> None:
+    """Escalation workflow: @trace groups the full decision into one parent chain span.
+
+    @trace creates a parent span that wraps pre-processing, agent execution, and
+    post-processing as a single logical unit in HoneyHive — useful when you want
+    to group related steps across multiple operations into one trace node.
+    """
+    # Pre-processing: identify orders flagged for escalation review
+    flagged_orders = {"ORD-1003": "delayed beyond 7-day threshold"}
+    order_id = "ORD-1003"
+    flag_reason = flagged_orders[order_id]
+
+    escalation_specialist = Agent(
+        role="Escalation Specialist",
+        goal="Review flagged orders and provide a clear escalation recommendation",
+        backstory=(
+            "You are a senior support specialist. Use tools to gather full context "
+            "on order status and applicable policies before recommending escalation."
+        ),
+        tools=[lookup_order_status, lookup_policy],
+        llm=MODEL,
+        verbose=False,
+    )
+
+    escalation_task = Task(
+        description=(
+            f"Review order {order_id} (flagged reason: {flag_reason}). "
+            "Check its current status and the cancellation and refund policies. "
+            "Decide whether this should be escalated to a human agent. "
+            "Respond with ESCALATE or NO_ESCALATE followed by a one-sentence rationale."
+        ),
+        expected_output="ESCALATE or NO_ESCALATE followed by a one-sentence rationale.",
+        agent=escalation_specialist,
+    )
+
+    crew = Crew(
+        name="escalation_crew",
+        agents=[escalation_specialist],
+        tasks=[escalation_task],
+        process=Process.sequential,
+        verbose=False,
+    )
+
+    result_text = str(crew.kickoff())
+
+    # Post-processing: parse decision for downstream routing
+    decision = (
+        "escalate"
+        if result_text.strip().upper().startswith("ESCALATE")
+        else "no_escalate"
+    )
+    print(f"escalation decision for {order_id}: {decision}")
+
+
+# -- Main --
+
+
+def main() -> None:
+    crewai_instrumentor = CrewAIInstrumentor()
+    openai_instrumentor = OpenAIInstrumentor()
+    crewai_instrumentor.instrument(tracer_provider=tracer.provider)
+    openai_instrumentor.instrument(tracer_provider=tracer.provider)
+
+    try:
+        run_single_agent_support_scenario()
+        run_sequential_support_crew()
+        run_escalation_workflow()
+    finally:
+        tracer.force_flush()
+        crewai_instrumentor.uninstrument()
+        openai_instrumentor.uninstrument()
 
 
 if __name__ == "__main__":
-    run_single_agent_support_scenario()
-    run_sequential_support_crew()
-    tracer.force_flush()
+    main()

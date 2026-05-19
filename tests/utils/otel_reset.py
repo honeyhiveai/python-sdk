@@ -251,9 +251,7 @@ def _shutdown_honeyhive_processors(active_processor: Any) -> None:
     """Shutdown HoneyHive span processors."""
     if not hasattr(active_processor, "_span_processors"):
         return
-    for (
-        processor
-    ) in active_processor._span_processors:  # pylint: disable=protected-access
+    for processor in active_processor._span_processors:  # pylint: disable=protected-access
         # Check if this is a HoneyHive span processor
         if (
             hasattr(processor, "shutdown")
@@ -295,7 +293,6 @@ def _shutdown_active_honeyhive_tracers() -> None:
 def _clear_otel_context_and_baggage() -> None:
     """Clear OpenTelemetry context and baggage between tests."""
     try:
-
         # Clear baggage items that might persist between tests
         baggage_keys = [
             "event_id",

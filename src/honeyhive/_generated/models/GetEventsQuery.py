@@ -2,8 +2,9 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
-from .DateRange import DateRange
+from .AbsoluteDateRange import AbsoluteDateRange
 from .FiltersArray import FiltersArray
+from .RelativeDateRange import RelativeDateRange
 
 __all__ = ["GetEventsQuery"]
 
@@ -21,7 +22,9 @@ class GetEventsQuery(BaseModel):
         "protected_namespaces": (),
     }
 
-    dateRange: Optional[DateRange] = Field(validation_alias="dateRange", default=None)
+    dateRange: Optional[Union[RelativeDateRange, AbsoluteDateRange]] = Field(
+        validation_alias="dateRange", default=None
+    )
 
     filters: Optional[FiltersArray] = Field(validation_alias="filters", default=None)
 

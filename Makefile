@@ -1,7 +1,7 @@
 .PHONY: help install install-dev test test-all test-unit test-integration check-integration lint format check check-format check-lint typecheck check-tracer-patterns check-no-mocks generate generate-sdk compare-sdk docs-serve docs-build clean clean-all build publish
 
 # Use uv run to automatically resolve the workspace venv and dependencies.
-# --extra dev ensures SDK dev optional-dependencies (black, isort, tox, etc.) are installed.
+# --extra dev ensures SDK dev optional-dependencies (ruff, tox, etc.) are installed.
 # Override with: UV_RUN="python3" make build
 UV_RUN ?= uv run --extra dev
 PYTHON ?= $(UV_RUN) python
@@ -23,7 +23,7 @@ help:
 	@echo "  make test-integration - Run integration tests only (requires .env)"
 	@echo ""
 	@echo "Code Quality:"
-	@echo "  make format          - Format code with black and isort"
+	@echo "  make format          - Format code with ruff"
 	@echo "  make lint            - Run linting checks"
 	@echo "  make typecheck       - Run mypy type checking"
 	@echo "  make check           - Run ALL checks"
@@ -84,8 +84,8 @@ check-integration:
 
 # Code Quality
 format:
-	$(UV_RUN) black src tests examples scripts
-	$(UV_RUN) isort src tests examples scripts
+	$(UV_RUN) ruff format src tests examples scripts
+	$(UV_RUN) ruff check --select I --fix src tests examples scripts
 
 lint:
 	$(UV_RUN) tox -e lint

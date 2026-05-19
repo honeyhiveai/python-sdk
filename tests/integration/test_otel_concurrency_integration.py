@@ -322,9 +322,9 @@ class TestOTELConcurrencyIntegration:
                     completed_results.append({"status": "failed", "error": str(e)})
 
         # Verify all workers completed
-        assert (
-            len(completed_results) == num_workers
-        ), f"Expected {num_workers} results, got {len(completed_results)}"
+        assert len(completed_results) == num_workers, (
+            f"Expected {num_workers} results, got {len(completed_results)}"
+        )
 
         successful_workers = [
             r for r in completed_results if r.get("status") == "completed"
@@ -350,7 +350,6 @@ class TestOTELConcurrencyIntegration:
                 expected_unique_id = f"{test_unique_id}_worker_{worker_id}"
 
                 try:
-
                     target_event = verify_backend_event(
                         client=integration_client,
                         project=real_project,
@@ -386,9 +385,9 @@ class TestOTELConcurrencyIntegration:
                         f"got inputs={event_inputs.get('test.concurrency_type')}, "
                         f"metadata={event_metadata.get('test.concurrency_type')}"
                     )
-                    assert (
-                        project_match
-                    ), "Project not set: project_id should be populated from honeyhive.project"
+                    assert project_match, (
+                        "Project not set: project_id should be populated from honeyhive.project"
+                    )
 
                     verified_spans += 1
                 except AssertionError:
@@ -401,9 +400,9 @@ class TestOTELConcurrencyIntegration:
             logger.info(f"   Verified spans in backend: {verified_spans}")
 
             # Ensure we verified at least some spans (allowing for timing issues)
-            assert verified_spans >= max(
-                1, len(successful_workers) // 2
-            ), f"Expected to verify at least {max(1, len(successful_workers) // 2)} spans, got {verified_spans}"
+            assert verified_spans >= max(1, len(successful_workers) // 2), (
+                f"Expected to verify at least {max(1, len(successful_workers) // 2)} spans, got {verified_spans}"
+            )
 
         except Exception as e:
             pytest.fail(f"Concurrent span creation verification failed: {e}")
@@ -561,9 +560,9 @@ class TestOTELConcurrencyIntegration:
         )
 
         # Validate parent event attributes (stored in metadata for OTLP)
-        assert (
-            parent_event.metadata is not None
-        ), "Parent event metadata should not be None"
+        assert parent_event.metadata is not None, (
+            "Parent event metadata should not be None"
+        )
         assert parent_event.metadata.get("test.async_type") == "parent"
         assert (
             parent_event.metadata.get("test.concurrency_pattern") == "async_concurrent"
@@ -578,9 +577,9 @@ class TestOTELConcurrencyIntegration:
                 unique_identifier=f"{test_unique_id}_child_0",
                 expected_event_name=f"{test_operation_name}_async_child",
             )
-            assert (
-                child_event.metadata is not None
-            ), "Child event metadata should not be None"
+            assert child_event.metadata is not None, (
+                "Child event metadata should not be None"
+            )
             assert child_event.metadata.get("test.async_type") == "child"
             assert child_event.metadata.get("test.child_index") == 0
             logger.info(f"✅ Child async span verified: {child_event.event_id}")
@@ -593,9 +592,9 @@ class TestOTELConcurrencyIntegration:
                 unique_identifier=f"{test_unique_id}_child_1",
                 expected_event_name=f"{test_operation_name}_async_child",
             )
-            assert (
-                child_event.metadata is not None
-            ), "Child event metadata should not be None"
+            assert child_event.metadata is not None, (
+                "Child event metadata should not be None"
+            )
             assert child_event.metadata.get("test.async_type") == "child"
             assert child_event.metadata.get("test.child_index") == 1
             logger.info(
@@ -729,9 +728,9 @@ class TestOTELConcurrencyIntegration:
                         completed_results.append({"status": "failed", "error": str(e)})
 
             # Verify all tracers completed
-            assert len(completed_results) == len(
-                tracers
-            ), f"Expected {len(tracers)} results, got {len(completed_results)}"
+            assert len(completed_results) == len(tracers), (
+                f"Expected {len(tracers)} results, got {len(completed_results)}"
+            )
 
             successful_tracers = [
                 r for r in completed_results if r.get("status") == "completed"
@@ -754,7 +753,6 @@ class TestOTELConcurrencyIntegration:
                 tracer_session_id = tracer_result["session_id"]
 
                 try:
-
                     target_event = verify_backend_event(
                         client=integration_client,
                         project=real_project,
@@ -788,12 +786,12 @@ class TestOTELConcurrencyIntegration:
                         == "multi_tracer"
                     )
 
-                    assert (
-                        tracer_index_match
-                    ), f"Tracer index mismatch for tracer {tracer_index}: expected {tracer_index}, got inputs={target_inputs.get('test.tracer_index')}, metadata={target_metadata.get('test.tracer_index')}"
-                    assert (
-                        concurrency_type_match
-                    ), f"Concurrency type mismatch for tracer {tracer_index}: expected 'multi_tracer', got inputs={target_inputs.get('test.concurrency_type')}, metadata={target_metadata.get('test.concurrency_type')}"
+                    assert tracer_index_match, (
+                        f"Tracer index mismatch for tracer {tracer_index}: expected {tracer_index}, got inputs={target_inputs.get('test.tracer_index')}, metadata={target_metadata.get('test.tracer_index')}"
+                    )
+                    assert concurrency_type_match, (
+                        f"Concurrency type mismatch for tracer {tracer_index}: expected 'multi_tracer', got inputs={target_inputs.get('test.concurrency_type')}, metadata={target_metadata.get('test.concurrency_type')}"
+                    )
                     verified_tracers += 1
                 except AssertionError:
                     # Skip this tracer if verification fails (timing issues)
@@ -810,9 +808,9 @@ class TestOTELConcurrencyIntegration:
                 if len(successful_tracers) > 0
                 else 0
             )
-            assert (
-                verified_tracers >= min_expected
-            ), f"Expected to verify at least {min_expected} tracers, got {verified_tracers} (successful: {len(successful_tracers)})"
+            assert verified_tracers >= min_expected, (
+                f"Expected to verify at least {min_expected} tracers, got {verified_tracers} (successful: {len(successful_tracers)})"
+            )
 
         finally:
             # Cleanup handled by tracer_factory fixture
@@ -934,7 +932,7 @@ class TestOTELConcurrencyIntegration:
         print(f"   Target spans: {num_spans}")
         print(f"   Successful spans: {total_successful}")
         print(f"   Creation time: {creation_time:.2f}s")
-        print(f"   Rate: {total_successful/creation_time:.1f} spans/sec")
+        print(f"   Rate: {total_successful / creation_time:.1f} spans/sec")
 
         # 2. Force flush to ensure spans are exported
         integration_tracer.force_flush()
@@ -981,17 +979,17 @@ class TestOTELConcurrencyIntegration:
             print("✅ High-frequency stress test verification successful:")
             print(f"   Spans created: {total_successful}")
             print(f"   Sample verified: {verified_spans}/{sample_size}")
-            print(f"   Creation rate: {total_successful/creation_time:.1f} spans/sec")
+            print(f"   Creation rate: {total_successful / creation_time:.1f} spans/sec")
 
             # Ensure we created a reasonable number of spans
-            assert (
-                total_successful >= num_spans * 0.5
-            ), f"Expected at least {num_spans * 0.5} successful spans, got {total_successful}"
+            assert total_successful >= num_spans * 0.5, (
+                f"Expected at least {num_spans * 0.5} successful spans, got {total_successful}"
+            )
 
             # Ensure we verified some spans in the backend
-            assert verified_spans >= max(
-                1, sample_size // 2
-            ), f"Expected to verify at least {max(1, sample_size // 2)} spans, got {verified_spans}"
+            assert verified_spans >= max(1, sample_size // 2), (
+                f"Expected to verify at least {max(1, sample_size // 2)} spans, got {verified_spans}"
+            )
 
         except Exception as e:
             pytest.fail(f"High-frequency stress test verification failed: {e}")

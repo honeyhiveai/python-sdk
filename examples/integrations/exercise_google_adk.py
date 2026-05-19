@@ -938,9 +938,7 @@ async def exercise_callbacks(tracer, session_service, app_name, user_id):
                     "note": "Callback should have blocked this",
                 }
             )
-            print(
-                f"      ⚠️  Request processed (expected block): {str(response)[:100]}"
-            )
+            print(f"      ⚠️  Request processed (expected block): {str(response)[:100]}")
         except Exception as e:
             tests.append(
                 {
@@ -1194,9 +1192,9 @@ async def main():
         # Run exercise suite with error resilience
         for iteration in range(args.iterations):
             if args.iterations > 1:
-                print(f"\n{'='*60}")
+                print(f"\n{'=' * 60}")
                 print(f"🔄 Iteration {iteration + 1}/{args.iterations}")
-                print(f"{'='*60}")
+                print(f"{'=' * 60}")
 
             results = {}
 

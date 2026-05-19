@@ -325,7 +325,7 @@ class TracerConfigInterface:
             # API Configuration (matches original main branch behavior)
             "api_key": None,  # Required - fallback to HH_API_KEY env var
             "server_url": "https://api.dp1.us.honeyhive.ai",  # Original DEFAULT_API_URL
-            "project": None,  # Required - fallback to HH_PROJECT env var
+            "project": None,  # Deprecated - optional fallback to HH_PROJECT env var
             "source": "dev",  # Original: os.getenv("HH_SOURCE", "dev")
             # "session_name" removed - should use dynamic inference
             # (ID/name pattern → None)

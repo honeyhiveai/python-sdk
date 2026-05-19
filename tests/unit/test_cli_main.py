@@ -219,7 +219,6 @@ class TestConfigCommands:
             patch("honeyhive.cli.main.sys") as mock_sys,
             patch("honeyhive.cli.main.HoneyHiveTracer") as mock_tracer_class,
         ):
-
             mock_tracer = Mock()
             mock_tracer.config = {
                 "api_key": "test",

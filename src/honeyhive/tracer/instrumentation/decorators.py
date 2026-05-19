@@ -832,8 +832,7 @@ def _setup_decorator_baggage_context(tracer: Any, span: Any) -> None:
 
         # Add tracer_id if available
         if (
-            hasattr(tracer, "_tracer_id")
-            and tracer._tracer_id  # pylint: disable=protected-access
+            hasattr(tracer, "_tracer_id") and tracer._tracer_id  # pylint: disable=protected-access
         ):
             baggage_items["honeyhive_tracer_id"] = str(
                 tracer._tracer_id  # pylint: disable=protected-access

@@ -789,7 +789,6 @@ class TestBaggageContextSetup:
                 "honeyhive.tracer.instrumentation.decorators.context"
             ) as mock_context,
         ):
-
             mock_context.get_current.return_value = Mock()
             mock_baggage.set_baggage.return_value = Mock()
 
@@ -813,7 +812,6 @@ class TestBaggageContextSetup:
             patch("opentelemetry.baggage") as mock_baggage,
             patch("opentelemetry.context") as mock_context,
         ):
-
             mock_context.get_current.return_value = Mock()
 
             # Should not raise exception

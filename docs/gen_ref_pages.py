@@ -179,8 +179,7 @@ for path in sorted((SRC_ROOT / PACKAGE).rglob("*.py"), key=_sort_key):
     identifier = ".".join(parts)
     with mkdocs_gen_files.open(full_doc_path, "w") as fd:
         fd.write(
-            f"---\ntitle: {identifier}\n---\n\n"
-            f"# `{identifier}`\n\n::: {identifier}\n"
+            f"---\ntitle: {identifier}\n---\n\n# `{identifier}`\n\n::: {identifier}\n"
         )
 
 # Write the literate-nav summary so the nav tree mirrors the package layout.

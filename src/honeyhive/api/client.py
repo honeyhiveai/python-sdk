@@ -33,6 +33,7 @@ from honeyhive._generated.api_config import APIConfig
 
 # Import async services
 # Import sync services
+from honeyhive._generated.services import Charts_service as charts_svc
 from honeyhive._generated.services import Configurations_service as configs_svc
 from honeyhive._generated.services import Datapoints_service as datapoints_svc
 from honeyhive._generated.services import Datasets_service as datasets_svc
@@ -40,6 +41,7 @@ from honeyhive._generated.services import Events_service as events_svc
 from honeyhive._generated.services import Experiments_service as experiments_svc
 from honeyhive._generated.services import Metrics_service as metrics_svc
 from honeyhive._generated.services import Sessions_service as sessions_svc
+from honeyhive._generated.services import async_Charts_service as charts_svc_async
 from honeyhive._generated.services import (
     async_Configurations_service as configs_svc_async,
 )
@@ -59,6 +61,8 @@ from honeyhive.models import (
     AddDatapointsResponse,
     AddDatapointsToDatasetRequest,
     ConfigurationItem,
+    CreateChartRequest,
+    CreateChartResponse,
     CreateConfigurationRequest,
     CreateConfigurationResponse,
     CreateDatapointRequest,
@@ -67,6 +71,7 @@ from honeyhive.models import (
     CreateDatasetResponse,
     CreateMetricRequest,
     CreateMetricResponse,
+    DeleteChartResponse,
     DeleteConfigurationResponse,
     DeleteDatapointResponse,
     DeleteDatasetResponse,
@@ -74,6 +79,8 @@ from honeyhive.models import (
     DeleteMetricResponse,
     EventExportResponse,
     EventFilter,
+    GetChartResponse,
+    GetChartsResponse,
     GetDatapointResponse,
     GetDatapointsResponse,
     GetDatasetsResponse,
@@ -95,6 +102,8 @@ from honeyhive.models import (
     PutExperimentRunResponse,
     RemoveDatapointResponse,
     StartSessionRequest,
+    UpdateChartRequest,
+    UpdateChartResponse,
     UpdateConfigurationRequest,
     UpdateConfigurationResponse,
     UpdateDatapointRequest,
@@ -145,8 +154,7 @@ def _build_export_timeout() -> httpx.Timeout:
                 )
         except (ValueError, TypeError):
             logger.warning(
-                "HH_EXPORT_TIMEOUT_SECONDS is not a valid number: %r; "
-                "using default %s",
+                "HH_EXPORT_TIMEOUT_SECONDS is not a valid number: %r; using default %s",
                 env_val,
                 _DEFAULT_EXPORT_READ_TIMEOUT,
             )
@@ -162,6 +170,54 @@ T = TypeVar("T")
 def _chunk_list(items: List[T], size: int) -> List[List[T]]:
     """Split a list into chunks of the given size."""
     return [items[i : i + size] for i in range(0, len(items), size)]
+
+
+class ChartsAPI(BaseAPI):
+    """Charts API."""
+
+    def list(self) -> GetChartsResponse:
+        """List charts in the current scope."""
+        return charts_svc.getCharts(self._api_config)
+
+    def get(self, chart_id: str) -> GetChartResponse:
+        """Get a chart by ID."""
+        return charts_svc.getChart(self._api_config, chart_id=chart_id)
+
+    def create(self, request: CreateChartRequest) -> CreateChartResponse:
+        """Create a chart."""
+        return charts_svc.createChart(self._api_config, data=request)
+
+    def update(self, chart_id: str, request: UpdateChartRequest) -> UpdateChartResponse:
+        """Update a chart."""
+        return charts_svc.updateChart(self._api_config, chart_id=chart_id, data=request)
+
+    def delete(self, chart_id: str) -> DeleteChartResponse:
+        """Delete a chart."""
+        return charts_svc.deleteChart(self._api_config, chart_id=chart_id)
+
+    async def list_async(self) -> GetChartsResponse:
+        """List charts in the current scope asynchronously."""
+        return await charts_svc_async.getCharts(self._api_config)
+
+    async def get_async(self, chart_id: str) -> GetChartResponse:
+        """Get a chart by ID asynchronously."""
+        return await charts_svc_async.getChart(self._api_config, chart_id=chart_id)
+
+    async def create_async(self, request: CreateChartRequest) -> CreateChartResponse:
+        """Create a chart asynchronously."""
+        return await charts_svc_async.createChart(self._api_config, data=request)
+
+    async def update_async(
+        self, chart_id: str, request: UpdateChartRequest
+    ) -> UpdateChartResponse:
+        """Update a chart asynchronously."""
+        return await charts_svc_async.updateChart(
+            self._api_config, chart_id=chart_id, data=request
+        )
+
+    async def delete_async(self, chart_id: str) -> DeleteChartResponse:
+        """Delete a chart asynchronously."""
+        return await charts_svc_async.deleteChart(self._api_config, chart_id=chart_id)
 
 
 class ConfigurationsAPI(BaseAPI):
@@ -1600,7 +1656,7 @@ class ExperimentsAPI(BaseAPI):
             aggregate_function: Aggregation function to apply.
             filters: Optional filters to apply.
         """
-        result = experiments_svc.getExperimentResult(
+        result = experiments_svc.getExperimentResultLegacy(
             self._api_config,
             run_id=run_id,
             aggregate_function=aggregate_function,
@@ -1647,7 +1703,7 @@ class ExperimentsAPI(BaseAPI):
             aggregate_function: Aggregation function to apply.
             filters: Optional filters to apply.
         """
-        result = await experiments_svc_async.getExperimentResult(
+        result = await experiments_svc_async.getExperimentResultLegacy(
             self._api_config,
             run_id=run_id,
             aggregate_function=aggregate_function,
@@ -1920,12 +1976,12 @@ class HoneyHive:
         # raising TypeError. The argument is otherwise ignored.
         project: Optional[str] = None,
         *,
-        # Primary URL parameters
+        # Primary URL parameter
         base_url: Optional[str] = None,
-        cp_base_url: Optional[str] = None,
         # Backwards compatible alias for base_url
         server_url: Optional[str] = None,
         # Backwards compatible parameters (accepted but not used in new client)
+        cp_base_url: Optional[str] = None,
         timeout: Optional[float] = None,
         retry_config: Optional[Any] = None,
         rate_limit_calls: Optional[int] = None,
@@ -1944,11 +2000,11 @@ class HoneyHive:
             project: Deprecated. Accepted for backwards compatibility only;
                 the backend infers project context from the API key and session.
                 Ignored when constructing the client.
-            base_url: API base URL for Data Plane/ingestion.
+            base_url: API base URL for HoneyHive.
                       Falls back to HH_API_URL env var, then https://api.dp1.us.honeyhive.ai.
-            cp_base_url: Control Plane API URL for query endpoints.
-                         Falls back to HH_CP_API_URL, then HH_API_URL env var.
             server_url: Deprecated alias for base_url (for backwards compatibility).
+            cp_base_url: Deprecated. Accepted for backwards compatibility but ignored;
+                the SDK now uses a single base_url for all operations.
             timeout: Request timeout in seconds (accepted for backwards compat, not used).
             retry_config: Retry configuration (accepted for backwards compat, not used).
             rate_limit_calls: Max calls per time window (accepted for backwards compat).
@@ -1969,6 +2025,14 @@ class HoneyHive:
                 stacklevel=2,
             )
 
+        if cp_base_url is not None:
+            warnings.warn(
+                "The 'cp_base_url' parameter is no longer used and will be removed "
+                "in v2.0. The SDK now uses a single base_url for all operations.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
         # Resolve API key from parameter or environment
         self._api_key = api_key or os.environ.get("HH_API_KEY", "")
 
@@ -1980,14 +2044,6 @@ class HoneyHive:
             or "https://api.dp1.us.honeyhive.ai"
         )
 
-        # Resolve CP base URL: cp_base_url > HH_CP_API_URL > HH_API_URL > base_url
-        resolved_cp_base_url = (
-            cp_base_url
-            or os.environ.get("HH_CP_API_URL")
-            or os.environ.get("HH_API_URL")
-            or resolved_base_url
-        )
-
         # Store backwards compat params (silently accepted)
         self._timeout = timeout
         self._test_mode = test_mode if test_mode is not None else False
@@ -1997,11 +2053,11 @@ class HoneyHive:
         # Create API config
         self._api_config = APIConfig(
             base_path=resolved_base_url,
-            cp_base_path=resolved_cp_base_url,
             access_token=self._api_key,
         )
 
         # Initialize API namespaces
+        self.charts = ChartsAPI(self._api_config)
         self.configurations = ConfigurationsAPI(self._api_config)
         self.datapoints = DatapointsAPI(self._api_config)
         self.datasets = DatasetsAPI(self._api_config)

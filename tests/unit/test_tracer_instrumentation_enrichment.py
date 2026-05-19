@@ -596,7 +596,9 @@ class TestEnrichSpanContextManager:
 
     @patch("honeyhive.tracer.instrumentation.enrichment.enrich_span_core")
     def test_context_manager_success(
-        self, mock_core: Any, honeyhive_tracer: Any  # pylint: disable=unused-argument
+        self,
+        mock_core: Any,
+        honeyhive_tracer: Any,  # pylint: disable=unused-argument
     ) -> None:
         """Test successful context manager execution."""
         mock_span = Mock()

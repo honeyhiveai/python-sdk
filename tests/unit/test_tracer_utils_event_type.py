@@ -202,9 +202,9 @@ class TestEventTypeDetection:
 
         for span_name, attributes in test_cases:
             result = detect_event_type_from_patterns(span_name, attributes)
-            assert (
-                result == "tool"
-            ), f"Failed for span_name: {span_name}, attributes: {attributes}"
+            assert result == "tool", (
+                f"Failed for span_name: {span_name}, attributes: {attributes}"
+            )
 
     def test_detect_event_type_from_patterns_case_insensitive(self) -> None:
         """Test event type detection is case insensitive."""

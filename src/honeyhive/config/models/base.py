@@ -155,7 +155,7 @@ class BaseHoneyHiveConfig(BaseSettings):
 
     Common Fields:
         - api_key: HoneyHive API key for authentication
-        - project: Project name (required by backend API)
+        - project: Deprecated project name (optional; backend infers scope from API key)
         - test_mode: Enable test mode (no data sent to backend)
         - verbose: Enable verbose logging
 

@@ -122,15 +122,15 @@ class TestLambdaPerformance:
         }
 
         # Performance assertions - Updated for realistic CI/dev environment expectations
-        assert (
-            metrics["sdk_import_ms"] < 500
-        ), f"SDK import too slow: {metrics['sdk_import_ms']}ms (expected <500ms)"
-        assert (
-            metrics["tracer_init_ms"] < 800
-        ), f"Tracer init too slow: {metrics['tracer_init_ms']}ms (expected <800ms for CI environment)"
-        assert (
-            metrics["total_time_ms"] < 5000
-        ), f"Total time too slow: {metrics['total_time_ms']}ms (expected <5000ms)"
+        assert metrics["sdk_import_ms"] < 500, (
+            f"SDK import too slow: {metrics['sdk_import_ms']}ms (expected <500ms)"
+        )
+        assert metrics["tracer_init_ms"] < 800, (
+            f"Tracer init too slow: {metrics['tracer_init_ms']}ms (expected <800ms for CI environment)"
+        )
+        assert metrics["total_time_ms"] < 5000, (
+            f"Total time too slow: {metrics['total_time_ms']}ms (expected <5000ms)"
+        )
 
         return metrics
 
@@ -172,15 +172,15 @@ class TestLambdaPerformance:
         p95_total = statistics.quantiles(total_times, n=20)[18]  # 95th percentile
 
         # Performance assertions - Updated for realistic expectations
-        assert (
-            avg_total < 2000
-        ), f"Average warm start too slow: {avg_total}ms (expected <2000ms)"
-        assert (
-            avg_handler < 1000
-        ), f"Average handler time too slow: {avg_handler}ms (expected <1000ms)"
-        assert (
-            p95_total < 3000
-        ), f"P95 warm start too slow: {p95_total}ms (expected <3000ms)"
+        assert avg_total < 2000, (
+            f"Average warm start too slow: {avg_total}ms (expected <2000ms)"
+        )
+        assert avg_handler < 1000, (
+            f"Average handler time too slow: {avg_handler}ms (expected <1000ms)"
+        )
+        assert p95_total < 3000, (
+            f"P95 warm start too slow: {p95_total}ms (expected <3000ms)"
+        )
 
         return {
             "avg_total_ms": avg_total,
@@ -230,14 +230,14 @@ class TestLambdaPerformance:
         avg_response_time = statistics.mean(response_times) if response_times else 0
 
         # Performance assertions
-        assert (
-            success_rate >= 0.8
-        ), f"Success rate too low: {success_rate * 100}% (expected >=80%)"
+        assert success_rate >= 0.8, (
+            f"Success rate too low: {success_rate * 100}% (expected >=80%)"
+        )
 
         if response_times:
-            assert (
-                avg_response_time < 3000
-            ), f"Average response time too slow: {avg_response_time}ms"
+            assert avg_response_time < 3000, (
+                f"Average response time too slow: {avg_response_time}ms"
+            )
 
         return {
             "success_rate": success_rate,
@@ -303,15 +303,15 @@ class TestLambdaPerformance:
 
         # Memory efficiency assertions
         for result in memory_results:
-            assert result[
-                "flush_success"
-            ], f"Flush failed for {result['payload_size']} payload"
+            assert result["flush_success"], (
+                f"Flush failed for {result['payload_size']} payload"
+            )
 
             # Execution time should scale reasonably with payload size
             if result["payload_size"] == "large":
-                assert (
-                    result["execution_time_ms"] < 3000
-                ), "Large payload processing too slow"
+                assert result["execution_time_ms"] < 3000, (
+                    "Large payload processing too slow"
+                )
 
         return memory_results
 
@@ -369,17 +369,17 @@ class TestLambdaPerformance:
         )
 
         # Overhead assertions - Fixed to be meaningful
-        assert (
-            cold_start_overhead < 1000
-        ), f"Cold start overhead too high: {cold_start_overhead}ms (expected <1000ms for SDK import + init in CI)"
+        assert cold_start_overhead < 1000, (
+            f"Cold start overhead too high: {cold_start_overhead}ms (expected <1000ms for SDK import + init in CI)"
+        )
 
-        assert (
-            runtime_overhead < 50
-        ), f"Runtime overhead too high: {runtime_overhead}ms (expected <50ms per request)"
+        assert runtime_overhead < 50, (
+            f"Runtime overhead too high: {runtime_overhead}ms (expected <50ms per request)"
+        )
 
-        assert (
-            runtime_overhead_percentage < 10
-        ), f"Runtime overhead percentage too high: {runtime_overhead_percentage:.1f}% (expected <10% of work time)"
+        assert runtime_overhead_percentage < 10, (
+            f"Runtime overhead percentage too high: {runtime_overhead_percentage:.1f}% (expected <10% of work time)"
+        )
 
         return {
             "cold_start_overhead_ms": cold_start_overhead,
@@ -458,9 +458,9 @@ class TestLambdaPerformance:
                 timeout=60,
             )
 
-            assert (
-                baseline_response.status_code == 200
-            ), f"Baseline request failed: {baseline_response.text}"
+            assert baseline_response.status_code == 200, (
+                f"Baseline request failed: {baseline_response.text}"
+            )
             baseline_result = json.loads(baseline_response.json()["body"])
             baseline_results = baseline_result["results"]
 
@@ -475,9 +475,9 @@ class TestLambdaPerformance:
                 timeout=60,
             )
 
-            assert (
-                sdk_response.status_code == 200
-            ), f"SDK request failed: {sdk_response.text}"
+            assert sdk_response.status_code == 200, (
+                f"SDK request failed: {sdk_response.text}"
+            )
             sdk_result = json.loads(sdk_response.json()["body"])
             sdk_results = sdk_result["results"]
 
@@ -745,12 +745,12 @@ class TestLambdaStressTests:
             )
 
             # Cold starts should be reasonably consistent (allowing for container startup variance)
-            assert (
-                std_dev < avg_cold_start * 0.5
-            ), f"Cold start times too variable: {std_dev}ms std dev (avg: {avg_cold_start:.1f}ms)"
-            assert (
-                avg_cold_start < 3000
-            ), f"Average cold start too slow: {avg_cold_start}ms"
+            assert std_dev < avg_cold_start * 0.5, (
+                f"Cold start times too variable: {std_dev}ms std dev (avg: {avg_cold_start:.1f}ms)"
+            )
+            assert avg_cold_start < 3000, (
+                f"Average cold start too slow: {avg_cold_start}ms"
+            )
 
     def test_lambda_timeout_handling(self):
         """Test SDK behavior near Lambda timeout limits."""
@@ -811,18 +811,18 @@ class TestLambdaStressTests:
 
                     time.sleep(1 + attempt)  # 1s, 2s, 3s
 
-            assert (
-                response.status_code == 200
-            ), f"Should complete before timeout, got {response.status_code}"
-            assert (
-                execution_time < 8.0
-            ), f"Execution took too long: {execution_time}s (expected <8s)"
+            assert response.status_code == 200, (
+                f"Should complete before timeout, got {response.status_code}"
+            )
+            assert execution_time < 8.0, (
+                f"Execution took too long: {execution_time}s (expected <8s)"
+            )
 
             result = response.json()
             body = json.loads(result["body"])
-            assert body.get(
-                "flush_success", False
-            ), "Should successfully flush before timeout"
+            assert body.get("flush_success", False), (
+                "Should successfully flush before timeout"
+            )
 
         finally:
             container.stop()

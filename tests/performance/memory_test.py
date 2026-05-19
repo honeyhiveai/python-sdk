@@ -142,9 +142,9 @@ def test_memory_usage_single_framework() -> Dict[str, Any]:
     analysis = profiler.stop_profiling()
 
     # Verify memory usage is reasonable
-    assert (
-        analysis["peak_overhead_percent"] < 10.0
-    ), f"Memory overhead too high: {analysis['peak_overhead_percent']:.1f}%"
+    assert analysis["peak_overhead_percent"] < 10.0, (
+        f"Memory overhead too high: {analysis['peak_overhead_percent']:.1f}%"
+    )
 
     return analysis
 
@@ -190,9 +190,9 @@ def test_memory_usage_multiple_frameworks() -> Dict[str, Any]:
     analysis = profiler.stop_profiling()
 
     # Verify memory usage scales reasonably
-    assert (
-        analysis["peak_overhead_percent"] < 15.0
-    ), f"Memory overhead too high for multiple frameworks: {analysis['peak_overhead_percent']:.1f}%"
+    assert analysis["peak_overhead_percent"] < 15.0, (
+        f"Memory overhead too high for multiple frameworks: {analysis['peak_overhead_percent']:.1f}%"
+    )
 
     return analysis
 
@@ -244,9 +244,9 @@ def test_memory_leak_detection() -> Dict[str, Any]:
         print(f"   Growth: {memory_growth:.2f} MB ({growth_percent:.1f}%)")
 
         # Verify no significant memory leaks (allow 2% growth for normal variance)
-        assert (
-            growth_percent < 2.0
-        ), f"Potential memory leak detected: {growth_percent:.1f}% growth over cycles"
+        assert growth_percent < 2.0, (
+            f"Potential memory leak detected: {growth_percent:.1f}% growth over cycles"
+        )
 
     return analysis
 
@@ -298,9 +298,9 @@ def test_concurrent_memory_usage() -> Dict[str, Any]:
     analysis = profiler.stop_profiling()
 
     # Verify concurrent memory usage is reasonable
-    assert (
-        analysis["peak_overhead_percent"] < 20.0
-    ), f"Concurrent memory overhead too high: {analysis['peak_overhead_percent']:.1f}%"
+    assert analysis["peak_overhead_percent"] < 20.0, (
+        f"Concurrent memory overhead too high: {analysis['peak_overhead_percent']:.1f}%"
+    )
 
     return analysis
 

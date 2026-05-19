@@ -71,16 +71,16 @@ class TestExperimentsResultModels:
         assert isinstance(result.success, bool)
 
         # AggregatedMetrics shape — no `Any`, every detail is a MetricDetail.
-        assert isinstance(
-            result.metrics, AggregatedMetrics
-        ), f"metrics should be AggregatedMetrics, got {type(result.metrics)}"
+        assert isinstance(result.metrics, AggregatedMetrics), (
+            f"metrics should be AggregatedMetrics, got {type(result.metrics)}"
+        )
         # pylint: disable=no-member  # pydantic field access
         details = result.metrics.details
         if details:
             for detail in details:
-                assert isinstance(
-                    detail, MetricDetail
-                ), f"detail should be MetricDetail, got {type(detail)}"
+                assert isinstance(detail, MetricDetail), (
+                    f"detail should be MetricDetail, got {type(detail)}"
+                )
                 assert isinstance(detail.metric_name, str)
                 if detail.aggregate is not None:
                     assert isinstance(detail.aggregate, (float, int, bool))
@@ -97,9 +97,9 @@ class TestExperimentsResultModels:
         # DatapointResult shape — explicit nullability per field.
         # pylint: disable=not-an-iterable
         for dp in result.datapoints or []:
-            assert isinstance(
-                dp, DatapointResult
-            ), f"datapoint should be DatapointResult, got {type(dp)}"
+            assert isinstance(dp, DatapointResult), (
+                f"datapoint should be DatapointResult, got {type(dp)}"
+            )
             if dp.datapoint_id is not None:
                 assert isinstance(dp.datapoint_id, str)
             if dp.session_id is not None:

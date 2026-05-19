@@ -156,7 +156,8 @@ def main():
 
     # Initialize API client
     client = HoneyHive(
-        api_key="your-api-key-here", test_mode=True  # Use test mode for examples
+        api_key="your-api-key-here",
+        test_mode=True,  # Use test mode for examples
     )
     print("✓ API client initialized")
     print("✓ Ready for API operations (events, datasets, etc.)")

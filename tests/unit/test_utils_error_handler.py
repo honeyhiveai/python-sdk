@@ -992,7 +992,8 @@ class TestErrorHandler:  # pylint: disable=too-many-public-methods
         handler = ErrorHandler()
 
         error_response = ErrorResponse(
-            error_type="APIError", context=None  # No context
+            error_type="APIError",
+            context=None,  # No context
         )
         exception = Exception("API failed")
 

@@ -336,7 +336,51 @@ def getExperimentRunMetrics(
     )
 
 
-def getExperimentResult(
+def getExperimentSummary(
+    api_config_override: Optional[APIConfig] = None,
+    *,
+    run_id: str,
+    aggregate_function: Optional[str] = None,
+    filters: Optional[Union[str, List[Dict[str, Any]]]] = None,
+) -> GetExperimentRunResultResponse:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/v1/runs/{run_id}/summary"
+    headers = api_config.get_default_headers()
+    query_params: Dict[str, Any] = {
+        "aggregate_function": aggregate_function,
+        "filters": filters,
+    }
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+        response = client.request(
+            "get",
+            httpx.URL(path),
+            headers=headers,
+            params=_serialize_query_params(query_params),
+        )
+
+    if response.status_code != 200:
+        raise HTTPException(
+            response.status_code,
+            f"getExperimentSummary failed with status code: {response.status_code}",
+        )
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return (
+        GetExperimentRunResultResponse(**body)
+        if body is not None
+        else GetExperimentRunResultResponse()
+    )
+
+
+def getExperimentResultLegacy(
     api_config_override: Optional[APIConfig] = None,
     *,
     run_id: str,
@@ -368,7 +412,7 @@ def getExperimentResult(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"getExperimentResult failed with status code: {response.status_code}",
+            f"getExperimentResultLegacy failed with status code: {response.status_code}",
         )
     else:
         body = None if 200 == 204 else response.json()

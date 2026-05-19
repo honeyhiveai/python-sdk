@@ -194,7 +194,7 @@ def troubleshoot_missing_spans():
 
         for i in range(3):
             result = framework.do_work(f"test_span_{i}")
-            print(f"   Span {i+1}: {result['status']}")
+            print(f"   Span {i + 1}: {result['status']}")
 
         print("   ✅ Test spans created successfully")
 

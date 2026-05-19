@@ -59,7 +59,8 @@ class TestSanitizeCarrier:
         """Test carrier sanitization with None carrier."""
         with patch("honeyhive.tracer.utils.propagation.safe_log") as mock_log:
             result = sanitize_carrier(
-                None, tracer_instance=honeyhive_tracer  # type: ignore[arg-type]
+                None,
+                tracer_instance=honeyhive_tracer,  # type: ignore[arg-type]
             )
 
         assert not result
@@ -568,7 +569,9 @@ class TestLogSanitizationResultsDynamically:
 
     @patch("honeyhive.tracer.utils.propagation.safe_log")
     def test_log_sanitization_results_none_carriers(
-        self, mock_log: Any, honeyhive_tracer: Any  # pylint: disable=unused-argument
+        self,
+        mock_log: Any,
+        honeyhive_tracer: Any,  # pylint: disable=unused-argument
     ) -> None:
         """Test sanitization results logging with None carriers."""
         # The function handles None carriers by checking "if original_carrier else []"
@@ -576,7 +579,9 @@ class TestLogSanitizationResultsDynamically:
         # so this should raise
         with pytest.raises(TypeError):
             _log_sanitization_results_dynamically(
-                None, None, honeyhive_tracer  # type: ignore[arg-type]
+                None,
+                None,
+                honeyhive_tracer,  # type: ignore[arg-type]
             )
 
     @patch("honeyhive.tracer.utils.propagation.safe_log")
