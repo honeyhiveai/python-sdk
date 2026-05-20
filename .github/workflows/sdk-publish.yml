@@ -233,57 +233,6 @@ jobs:
           echo "changelog_file=/tmp/changelog_content.txt" >> $GITHUB_OUTPUT
           echo "✅ Changelog extracted"
 
-      - name: Get PRs merged since latest RC
-        if: steps.check_pypi.outputs.exists == 'false'
-        id: merged_prs
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "🔍 Finding PRs merged since latest RC release..."
-
-          # Find the latest RC tag (excluding current version if it's an RC)
-          VERSION="${{ steps.get_version.outputs.version }}"
-          latest_rc_tag=$(git tag -l 'v*rc*' --sort=-v:refname | grep -v "v$VERSION" | head -1)
-
-          if [ -z "$latest_rc_tag" ]; then
-            echo "⚠️ No previous RC tag found, using last 20 merged PRs"
-            # Get recent merged PRs if no RC tag exists
-            pr_list=$(gh pr list --state merged --limit 20 --json number,title \
-              --jq '.[] | "- #\(.number): \(.title)"' 2>/dev/null || echo "")
-          else
-            echo "📌 Latest RC tag: $latest_rc_tag"
-
-            # Get the date of the latest RC tag
-            rc_date=$(git log -1 --format=%ci "$latest_rc_tag" 2>/dev/null || echo "")
-
-            if [ -n "$rc_date" ]; then
-              echo "📅 RC tag date: $rc_date"
-              # Get PRs merged after the RC tag date
-              pr_list=$(gh pr list --state merged --search "merged:>=${rc_date%% *}" \
-                --json number,title --jq '.[] | "- #\(.number): \(.title)"' 2>/dev/null || echo "")
-            else
-              # Fallback: get commits between RC tag and HEAD, extract PR numbers
-              pr_numbers=$(git log "$latest_rc_tag"..HEAD --oneline --grep="Merge pull request" \
-                | sed -n 's/.*#\([0-9]*\).*/\1/p' | sort -u)
-
-              pr_list=""
-              for pr_num in $pr_numbers; do
-                pr_title=$(gh pr view "$pr_num" --json title --jq '.title' 2>/dev/null || echo "")
-                if [ -n "$pr_title" ]; then
-                  pr_list="$pr_list- #$pr_num: $pr_title"$'\n'
-                fi
-              done
-            fi
-          fi
-
-          # Write to file for multiline output
-          if [ -z "$pr_list" ]; then
-            pr_list="No PRs found since last RC release."
-          fi
-          echo "$pr_list" > /tmp/merged_prs.txt
-          echo "pr_file=/tmp/merged_prs.txt" >> $GITHUB_OUTPUT
-          echo "✅ PR list generated"
-
       - name: Generate release body
         if: steps.check_pypi.outputs.exists == 'false'
         id: release_body
@@ -303,23 +252,12 @@ jobs:
           except FileNotFoundError:
               changelog_content = "No changelog entry found for this version."
 
-          # Read PR list
-          try:
-              with open('/tmp/merged_prs.txt', 'r') as f:
-                  pr_list = f.read().strip()
-          except FileNotFoundError:
-              pr_list = "No PRs found since last RC release."
-
           # Generate release body with changelog at top
           release_body = f"""# HoneyHive Python SDK v{version}
 
           ## What's Changed
 
           {changelog_content}
-
-          ## Pull Requests
-
-          {pr_list}
 
           ## Installation
 
