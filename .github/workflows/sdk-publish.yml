@@ -345,17 +345,24 @@ jobs:
           owner: honeyhiveai
           repositories: hive-kube
 
-      # Fires the unified clients-changelog sync workflow in hive-kube. No
-      # payload — the unified workflow regenerates clients.mdx from the
-      # current state of the three CHANGELOG.md files in hive-kube. A
-      # failure here (typically 403 if the Propolis app isn't granted
+      # Fires the unified clients-changelog sync workflow in hive-kube. The
+      # workflow regenerates clients.mdx from the current state of the three
+      # CHANGELOG.md files in hive-kube; the client_payload only labels the
+      # resulting docs PR so reviewers can tell which publish triggered it.
+      # A failure here (typically 403 if the Propolis app isn't granted
       # actions:write on hive-kube) fails the workflow so the missing docs
       # PR isn't silent.
       - name: Trigger clients changelog sync on hive-kube
         if: steps.check_pypi.outputs.exists == 'false'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          UPSTREAM_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set -euo pipefail
-          gh api repos/honeyhiveai/hive-kube/actions/dispatches \
-            -f event_type=clients-changelog-sync
+          jq -n --arg url "$UPSTREAM_RUN_URL" '{
+            event_type: "clients-changelog-sync",
+            client_payload: {
+              source: "python-sdk",
+              upstream_run_url: $url
+            }
+          }' | gh api repos/honeyhiveai/hive-kube/actions/dispatches --input -
