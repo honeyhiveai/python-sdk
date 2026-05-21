@@ -331,14 +331,31 @@ jobs:
           echo "- ✅ Published to PyPI" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ GitHub release created" >> $GITHUB_STEP_SUMMARY
 
-      - name: Trigger docs changelog sync
+      # Mint a Propolis-app token scoped to hive-kube so we can POST to
+      # repos/honeyhiveai/hive-kube/actions/dispatches. The default
+      # GITHUB_TOKEN is scoped only to this repo and can't dispatch
+      # cross-repo.
+      - name: Generate Propolis token for hive-kube dispatch
         if: steps.check_pypi.outputs.exists == 'false'
-        continue-on-error: true
+        id: app-token
+        uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3.1.1
+        with:
+          app-id: ${{ vars.PROPOLIS_APP_ID }}
+          private-key: ${{ secrets.PROPOLIS_PRIVATE_KEY }}
+          owner: honeyhiveai
+          repositories: hive-kube
+
+      # Fires the unified clients-changelog sync workflow in hive-kube. No
+      # payload — the unified workflow regenerates clients.mdx from the
+      # current state of the three CHANGELOG.md files in hive-kube. A
+      # failure here (typically 403 if the Propolis app isn't granted
+      # actions:write on hive-kube) fails the workflow so the missing docs
+      # PR isn't silent.
+      - name: Trigger clients changelog sync on hive-kube
+        if: steps.check_pypi.outputs.exists == 'false'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SYNC_REF: ${{ github.event.inputs.branch || github.ref_name }}
-          VERSION: v${{ steps.get_version.outputs.version }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          echo "🚀 Dispatching docs changelog sync for $VERSION on $SYNC_REF..."
-          gh workflow run sync-changelog-to-docs.yml --ref "$SYNC_REF" -f version="$VERSION"
-          echo "✅ Docs changelog sync dispatched"
+          set -euo pipefail
+          gh api repos/honeyhiveai/hive-kube/actions/dispatches \
+            -f event_type=clients-changelog-sync
