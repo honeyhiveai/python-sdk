@@ -18,6 +18,8 @@ from typing import Any, Dict
 
 import pytest
 
+from tests.integration._mock_llm_helpers import MOCK_LLM_MODEL, mock_openai_client
+
 # Skip entire module if key not present
 pytestmark = [
     pytest.mark.skipif(not os.getenv("HH_API_KEY"), reason="HH_API_KEY not set"),
@@ -817,13 +819,7 @@ class TestEndToEndVerification:
         """
         import time
 
-        # Skip if OpenAI not available
-        openai_key = os.getenv("OPENAI_API_KEY")
-        if not openai_key:
-            pytest.skip("OPENAI_API_KEY not set")
-
         try:
-            import openai
             from openinference.instrumentation.openai import OpenAIInstrumentor
         except ImportError:
             pytest.skip("openai or openinference not installed")
@@ -842,11 +838,11 @@ class TestEndToEndVerification:
         instrumentor.instrument(tracer_provider=tracer.provider)
 
         try:
-            client = openai.OpenAI()
+            client = mock_openai_client()
 
             # Use a unique prompt we can verify was captured
             test_prompt = "Say exactly: 'integration test verification'"
-            test_model = "gpt-3.5-turbo"
+            test_model = MOCK_LLM_MODEL
 
             response = client.chat.completions.create(
                 model=test_model,

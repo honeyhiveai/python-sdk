@@ -12,7 +12,6 @@ Requirements:
 Environment Variables:
     HH_API_KEY: HoneyHive API key
     HH_PROJECT: HoneyHive project name
-    OPENAI_API_KEY: OpenAI API key
 
 LKGV (last known good versions) for this path are pinned in pyproject.toml.
 """
@@ -22,13 +21,14 @@ from typing import Any, Dict
 
 import pytest
 
-# Skip entire module if keys not present
+from tests.integration._mock_llm_helpers import (
+    MOCK_LLM_MODEL,
+    MOCK_RESPONSE,
+    mock_openai_client,
+)
+
 pytestmark = [
     pytest.mark.skipif(not os.getenv("HH_API_KEY"), reason="HH_API_KEY not set"),
-    pytest.mark.skipif(
-        not os.getenv("OPENAI_API_KEY"), reason="OPENAI_API_KEY not set"
-    ),
-    pytest.mark.openai,
     pytest.mark.slow,
 ]
 
@@ -44,7 +44,6 @@ class TestOpenInferenceOpenAI:
 
     def test_basic_chat_completion(self):
         """Test basic chat completion is traced correctly."""
-        import openai
         from openinference.instrumentation.openai import OpenAIInstrumentor
 
         from honeyhive import HoneyHiveTracer
@@ -62,9 +61,9 @@ class TestOpenInferenceOpenAI:
 
         try:
             # Make OpenAI call
-            client = openai.OpenAI()
+            client = mock_openai_client()
             response = client.chat.completions.create(
-                model="gpt-4o-mini",
+                model=MOCK_LLM_MODEL,
                 messages=[{"role": "user", "content": "Say 'test' and nothing else."}],
                 max_tokens=10,
             )
@@ -83,7 +82,6 @@ class TestOpenInferenceOpenAI:
 
     def test_chat_completion_with_enrichment(self):
         """Test that enrich_span works within OpenAI traced calls."""
-        import openai
         from openinference.instrumentation.openai import OpenAIInstrumentor
 
         from honeyhive import HoneyHiveTracer, enrich_span, trace
@@ -104,9 +102,9 @@ class TestOpenInferenceOpenAI:
                 """Process a prompt with OpenAI and enrich the span."""
                 enrich_span(metadata={"prompt_length": len(prompt)})
 
-                client = openai.OpenAI()
+                client = mock_openai_client()
                 response = client.chat.completions.create(
-                    model="gpt-4o-mini",
+                    model=MOCK_LLM_MODEL,
                     messages=[{"role": "user", "content": prompt}],
                     max_tokens=20,
                 )
@@ -129,7 +127,6 @@ class TestOpenInferenceOpenAI:
 
     def test_streaming_completion(self):
         """Test streaming chat completion is traced."""
-        import openai
         from openinference.instrumentation.openai import OpenAIInstrumentor
 
         from honeyhive import HoneyHiveTracer
@@ -144,9 +141,9 @@ class TestOpenInferenceOpenAI:
         instrumentor.instrument(tracer_provider=tracer.provider)
 
         try:
-            client = openai.OpenAI()
+            client = mock_openai_client()
             stream = client.chat.completions.create(
-                model="gpt-4o-mini",
+                model=MOCK_LLM_MODEL,
                 messages=[{"role": "user", "content": "Count from 1 to 5."}],
                 max_tokens=50,
                 stream=True,
@@ -157,9 +154,13 @@ class TestOpenInferenceOpenAI:
                 if chunk.choices[0].delta.content:
                     chunks.append(chunk.choices[0].delta.content)
 
+            # Verify the stream actually chunked rather than buffering the full
+            # response into one delta, AND that concatenating deltas exactly
+            # reconstructs MOCK_RESPONSE. The exact-match assertion catches
+            # both "stream collapsed into one delta" and content corruption.
             full_response = "".join(chunks)
-            assert len(full_response) > 0
-            assert any(str(i) in full_response for i in range(1, 6))
+            assert len(chunks) > 1
+            assert full_response == MOCK_RESPONSE
 
             tracer.flush()
 
@@ -178,7 +179,6 @@ class TestTraceloopOpenAI:
 
     def test_basic_chat_completion_traceloop(self):
         """Test basic chat completion with Traceloop instrumentor."""
-        import openai
         from opentelemetry.instrumentation.openai import OpenAIInstrumentor
 
         from honeyhive import HoneyHiveTracer
@@ -193,9 +193,9 @@ class TestTraceloopOpenAI:
         instrumentor.instrument(tracer_provider=tracer.provider)
 
         try:
-            client = openai.OpenAI()
+            client = mock_openai_client()
             response = client.chat.completions.create(
-                model="gpt-4o-mini",
+                model=MOCK_LLM_MODEL,
                 messages=[
                     {
                         "role": "user",
@@ -215,7 +215,6 @@ class TestTraceloopOpenAI:
 
     def test_nested_traces_with_openai(self):
         """Test nested @trace decorators with OpenAI calls."""
-        import openai
         from opentelemetry.instrumentation.openai import OpenAIInstrumentor
 
         from honeyhive import HoneyHiveTracer, trace
@@ -240,9 +239,9 @@ class TestTraceloopOpenAI:
             @trace(event_type="tool")
             def inner_function(text: str) -> str:
                 """Inner traced function that calls OpenAI."""
-                client = openai.OpenAI()
+                client = mock_openai_client()
                 response = client.chat.completions.create(
-                    model="gpt-4o-mini",
+                    model=MOCK_LLM_MODEL,
                     messages=[{"role": "user", "content": f"Summarize: {text}"}],
                     max_tokens=30,
                 )

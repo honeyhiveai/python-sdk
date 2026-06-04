@@ -18,6 +18,7 @@ import pytest
 
 from honeyhive import HoneyHiveTracer, enrich_span, trace
 from honeyhive.tracer.registry import set_default_tracer
+from tests.integration._mock_llm_helpers import MOCK_LLM_MODEL, mock_openai_client
 
 # Skip all tests if no API key
 pytestmark = pytest.mark.skipif(
@@ -158,11 +159,6 @@ class TestOpenAIIntegration:
         """Test OpenAI call with span enrichment."""
         pytest.importorskip("openai")
 
-        from openai import (  # pylint: disable=import-outside-toplevel,import-error
-            OpenAI,
-        )
-
-        # Optional dependency with skip marker
         # Initialize tracer
         tracer = HoneyHiveTracer.init(
             api_key=os.environ["HH_API_KEY"],
@@ -170,25 +166,25 @@ class TestOpenAIIntegration:
             session_name="e2e-test-openai",
         )
 
-        # Initialize OpenAI client
-        client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY", "sk-test"))
+        # Initialize OpenAI client wired to mock-llm
+        client = mock_openai_client()
 
         @trace(event_type="model")
         def call_openai(prompt: str) -> str:
             """Call OpenAI and enrich span."""
             try:
                 response = client.chat.completions.create(
-                    model="gpt-3.5-turbo",
+                    model=MOCK_LLM_MODEL,
                     messages=[{"role": "user", "content": prompt}],
                     max_tokens=10,
                 )
 
                 result = response.choices[0].message.content or ""
 
-                # Enrich with OpenAI metadata
+                # Enrich with model metadata
                 tracer.enrich_span(
                     metadata={
-                        "model": "gpt-3.5-turbo",
+                        "model": MOCK_LLM_MODEL,
                         "prompt": prompt,
                         "response": result,
                     },
@@ -199,13 +195,11 @@ class TestOpenAIIntegration:
 
                 return result
             except Exception as e:
-                tracer.enrich_span(metadata={"error": str(e), "model": "gpt-3.5-turbo"})
+                tracer.enrich_span(metadata={"error": str(e), "model": MOCK_LLM_MODEL})
                 raise
 
-        # Execute (will skip if no OPENAI_API_KEY)
-        if os.environ.get("OPENAI_API_KEY"):
-            result = call_openai("Say 'test'")
-            assert isinstance(result, str)
+        result = call_openai("Say 'test'")
+        assert isinstance(result, str)
 
 
 @pytest.mark.integration

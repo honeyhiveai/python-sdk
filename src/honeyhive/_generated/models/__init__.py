@@ -33,6 +33,9 @@ from .CreateMetricRequestCategoriesItem import *
 from .CreateMetricRequestChildMetricsItem import *
 from .CreateMetricRequestFilters import *
 from .CreateMetricResponse import *
+from .CreateMetricVersionParams import *
+from .CreateMetricVersionRequest import *
+from .CreateMetricVersionResponse import *
 from .Datapoint import *
 from .DatapointMapping import *
 from .DatapointResult import *
@@ -49,6 +52,8 @@ from .DeleteExperimentRunResponse import *
 from .DeleteMetricParams import *
 from .DeleteMetricResponse import *
 from .DeleteResult import *
+from .DeployMetricVersionParams import *
+from .DeployMetricVersionResponse import *
 from .Event import *
 from .EventComparisonDetail import *
 from .EventDetail import *
@@ -99,6 +104,8 @@ from .GetExperimentRunsResponse import *
 from .GetExperimentRunSummaryQuery import *
 from .GetMetricsQuery import *
 from .GetMetricsResponse import *
+from .GetMetricVersionsParams import *
+from .GetMetricVersionsResponse import *
 from .GetProjectsResponse import *
 from .GetRunSchemaDateRangeOneOf1 import *
 from .GetRunSchemaQuery import *
@@ -143,6 +150,15 @@ from .MetricItemCategoriesItem import *
 from .MetricItemChildMetricsItem import *
 from .MetricItemFilters import *
 from .MetricsAggregation import *
+from .MetricVersion import *
+from .MetricVersionContent import *
+from .MetricVersionContentCategoriesItem import *
+from .MetricVersionContentChildMetricsItem import *
+from .MetricVersionContentFilters import *
+from .MetricVersionContentRequest import *
+from .MetricVersionContentRequestCategoriesItem import *
+from .MetricVersionContentRequestChildMetricsItem import *
+from .MetricVersionContentRequestFilters import *
 from .ModelEvent import *
 from .Pagination import *
 from .PassingRange import *
