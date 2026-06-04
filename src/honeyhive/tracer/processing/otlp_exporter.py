@@ -98,7 +98,10 @@ class OTLPJSONExporter(SpanExporter):
         if isinstance(value, bool):
             return {"boolValue": value}
         if isinstance(value, int):
-            return {"intValue": value}
+            # protobuf JSON mapping: int64 must be a JSON string so values above
+            # 2^53 survive the server's float64 decode path without precision loss.
+            # Matches native opentelemetry-exporter-otlp-proto-http behavior.
+            return {"intValue": str(value)}
         if isinstance(value, float):
             # NaN/Inf are not valid JSON — Python's json.dumps emits them as
             # `NaN`/`Infinity` tokens, which Go's encoding/json rejects and
@@ -113,6 +116,9 @@ class OTLPJSONExporter(SpanExporter):
             return {
                 "arrayValue": {"values": [cls._to_otlp_any_value(v) for v in value]}
             }
+        # TODO: serialize JSON to kvlist_value here so it doesnt fall through
+        # to stringValue:
+        # https://opentelemetry.io/docs/specs/otel/common/attribute-type-mapping/#associative-arrays-with-unique-keys
         return {"stringValue": str(value)}
 
     @classmethod
@@ -154,8 +160,8 @@ class OTLPJSONExporter(SpanExporter):
                 event_attrs = self._to_otlp_key_values(event.attributes)
                 events.append(
                     {
-                        # uint64 - nanoseconds since Unix epoch
-                        "timeUnixNano": event.timestamp,
+                        # uint64 - protobuf JSON mapping requires string for uint64
+                        "timeUnixNano": str(event.timestamp),
                         "name": event.name,
                         "attributes": event_attrs,
                     }
@@ -185,9 +191,9 @@ class OTLPJSONExporter(SpanExporter):
             "parentSpanId": parent_span_id,
             "name": span.name,
             "kind": span_kind,
-            # uint64 - nanoseconds since Unix epoch
-            "startTimeUnixNano": span.start_time,
-            "endTimeUnixNano": span.end_time,
+            # uint64 - protobuf JSON mapping requires string for uint64
+            "startTimeUnixNano": str(span.start_time),
+            "endTimeUnixNano": str(span.end_time),
             "attributes": attributes,
             "events": events,
             "status": status,

@@ -72,7 +72,8 @@ class TestOTELContextPropagationIntegration:
             assert parts[0] == "00"  # version
             assert len(parts[1]) == 32  # trace_id (128-bit hex)
             assert len(parts[2]) == 16  # span_id (64-bit hex)
-            assert parts[3] in ["00", "01"]  # trace_flags
+            assert len(parts[3]) == 2  # trace_flags (2-char hex per W3C spec)
+            int(parts[3], 16)  # must be valid hex
 
             # Extract trace context from carrier (simulates incoming HTTP request)
             extracted_context = propagator.extract(carrier)

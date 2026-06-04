@@ -1,4 +1,27 @@
+# Python SDK Changelog
+
 ## [Unreleased]
+
+## [1.2.0] - 2026-06-04
+
+### Added
+
+- **Metric versions API: `client.metric_versions`**
+  - New `client.metric_versions.list(metric_id)`, `.create(metric_id, request)`, and `.deploy(metric_id, version_name)` methods (plus `*_async` variants) for managing a metric's immutable version history, backed by `/v1/metrics/{metric_id}/versions`. Each metric keeps a history of versions with one deployed at a time; pass `deploy_immediately=True` on create to atomically deploy the new version. Version request/response models are exported from `honeyhive.models`.
+
+### Fixed
+
+- **OTLP JSON exporter: serialize numeric fields as JSON strings**
+  - Integer span attributes (`intValue`) and uint64 timestamp fields
+    (`startTimeUnixNano`, `endTimeUnixNano`, `timeUnixNano`) were emitted as
+    raw JSON numbers. The protobuf JSON mapping spec requires these to be JSON
+    strings; values above 2^53 could otherwise lose precision silently through
+    float64 rounding. Now matches native `opentelemetry-exporter-otlp-proto-http`
+    behavior.
+- **Decorator input capture: remove truncation of serialized list/dict values**
+  - List and dict span attributes are serialized to strings and
+    previously were truncated to 1000 characters in length. The arbitrary limit
+    of 1000 characters has been removed.
 
 ## [1.1.0] - 2026-05-19
 
@@ -49,7 +72,7 @@
 ### Removed
 
 - **`honeyhive` Python CLI entry point removed from `pyproject.toml`**
-  - The shipped Python `honeyhive` console script was non-functional (dead code) and shadowed the official TypeScript CLI on `$PATH`. CLI functionality is now provided by the official [`honeyhive` TypeScript CLI](https://docs.honeyhive.ai/v2/sdk-reference/cli); removing the Python script entry point lets `honeyhive` resolve correctly when both packages are installed globally.
+  - The shipped Python `honeyhive` console script was non-functional (dead code) and shadowed the official TypeScript CLI on `$PATH`. CLI functionality is now provided by the official [`honeyhive` TypeScript CLI](https://docs.honeyhive.ai/v2/cli-reference/getting-started); removing the Python script entry point lets `honeyhive` resolve correctly when both packages are installed globally.
 
 ## [1.0.1] - 2026-05-05
 
@@ -81,6 +104,8 @@ The changes below are relative to `1.0.0rc22`. For the full picture of what ship
 
 - **`DeleteMetricQuery` removed from `honeyhive.models`**
   - Internal query-params type that was exported but unused — no public method accepted or returned it. The public `client.metrics.delete(id=...)` signature is unchanged.
+
+<!-- changelog:legacy-below -->
 
 ## [1.0.0rc22] - 2026-05-01
 

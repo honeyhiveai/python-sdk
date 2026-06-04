@@ -213,16 +213,14 @@ def _capture_function_inputs(
                     span.set_attribute(f"honeyhive_inputs.{param_name}", param_value)
                 elif isinstance(param_value, (dict, list)):
                     # Complex types: JSON serialize
+                    # TODO: support threading through JSON structures here so we
+                    # can serialize to OTLP kvlist_value:
+                    # https://opentelemetry.io/docs/specs/otel/common/attribute-type-mapping/#associative-arrays-with-unique-keys
                     serialized = json.dumps(param_value)
-                    # Truncate if too long (prevent huge spans)
-                    if len(serialized) > 1000:
-                        serialized = serialized[:1000] + "... (truncated)"
                     span.set_attribute(f"honeyhive_inputs.{param_name}", serialized)
                 else:
                     # Other types: use str() representation
                     str_value = str(param_value)
-                    if len(str_value) > 500:
-                        str_value = str_value[:500] + "... (truncated)"
                     span.set_attribute(f"honeyhive_inputs.{param_name}", str_value)
             except Exception:
                 # Skip non-serializable values silently

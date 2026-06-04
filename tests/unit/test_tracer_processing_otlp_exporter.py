@@ -1008,15 +1008,36 @@ class TestOTLPJSONExporterAnyValueMapping:
     def test_string_attribute_preserved_as_string(self) -> None:
         assert OTLPJSONExporter._to_otlp_any_value("hello") == {"stringValue": "hello"}
 
-    def test_int_attribute_preserved_as_int(self) -> None:
-        # Integers must serialize as intValue (not stringified) so the backend
-        # stores them as numbers — this is the primary bug from HHAI-4935.
-        assert OTLPJSONExporter._to_otlp_any_value(42) == {"intValue": 42}
+    def test_int_attribute_serialized_as_string(self) -> None:
+        # Integers must serialize as intValue JSON strings per protobuf JSON
+        # mapping spec. Raw JSON numbers lose precision above 2^53 through the
+        # server's float64 decode path (HHAI-5004).
+        assert OTLPJSONExporter._to_otlp_any_value(42) == {"intValue": "42"}
 
-    def test_large_int_preserved_as_int(self) -> None:
+    def test_large_int_preserved_exactly_as_string(self) -> None:
+        # int64 max — must round-trip exactly; a raw JSON number would be fine
+        # here but values just above 2^53 would not.
         assert OTLPJSONExporter._to_otlp_any_value(9223372036854775807) == {
-            "intValue": 9223372036854775807
+            "intValue": "9223372036854775807"
         }
+
+    def test_int_above_float64_precision_round_trips_exactly(self) -> None:
+        # 2^53 + 1 = 9007199254740993 cannot be represented exactly as float64.
+        # Emitting it as a JSON string ensures the server recovers the exact value.
+        import json as _json
+
+        large = 2**53 + 1  # 9007199254740993
+        result = OTLPJSONExporter._to_otlp_any_value(large)
+        assert result == {"intValue": "9007199254740993"}
+        # Prove the wire JSON encodes the value as a quoted string, not a bare
+        # number. json.loads returns str for JSON strings and int for JSON numbers,
+        # so this assertion fails if str() is ever dropped from the helper.
+        wire = _json.dumps(result)
+        recovered = _json.loads(wire)
+        assert isinstance(recovered["intValue"], str), (
+            "intValue must be a JSON string on the wire, not a number"
+        )
+        assert int(recovered["intValue"]) == large
 
     def test_float_attribute_preserved_as_double(self) -> None:
         assert OTLPJSONExporter._to_otlp_any_value(3.14) == {"doubleValue": 3.14}
@@ -1058,9 +1079,9 @@ class TestOTLPJSONExporterAnyValueMapping:
         assert OTLPJSONExporter._to_otlp_any_value([1, 2, 3]) == {
             "arrayValue": {
                 "values": [
-                    {"intValue": 1},
-                    {"intValue": 2},
-                    {"intValue": 3},
+                    {"intValue": "1"},
+                    {"intValue": "2"},
+                    {"intValue": "3"},
                 ]
             }
         }
@@ -1094,7 +1115,7 @@ class TestOTLPJSONExporterAnyValueMapping:
         )
         by_key = {kv["key"]: kv["value"] for kv in result}
         assert by_key == {
-            "count": {"intValue": 42},
+            "count": {"intValue": "42"},
             "name": {"stringValue": "foo"},
             "ok": {"boolValue": True},
             "ratio": {"doubleValue": 0.5},
@@ -1155,18 +1176,71 @@ class TestOTLPJSONExporterAnyValueMapping:
         }
         assert resource_attrs == {
             "service.name": {"stringValue": "svc"},
-            "replicas": {"intValue": 3},
+            "replicas": {"intValue": "3"},
         }
 
         # Span attributes preserve native types (the HHAI-4935 regression).
         span_payload = resource_span["scopeSpans"][0]["spans"][0]
         span_attrs = {kv["key"]: kv["value"] for kv in span_payload["attributes"]}
         assert span_attrs == {
-            "attr.int": {"intValue": 42},
+            "attr.int": {"intValue": "42"},
             "attr.float": {"doubleValue": 3.14},
             "attr.bool": {"boolValue": True},
             "attr.string": {"stringValue": "hello"},
         }
+
+
+class TestOTLPJSONExporterTimestamps:
+    """Verify uint64 timestamp fields are serialized as JSON strings (HHAI-5004)."""
+
+    @patch("honeyhive.tracer.processing.otlp_exporter.requests.Session")
+    def test_span_timestamps_are_strings(
+        self, mock_session_class: Mock, mock_tracer: Mock
+    ) -> None:
+        mock_session = Mock()
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.text = ""
+        mock_session.post.return_value = mock_response
+        mock_session_class.return_value = mock_session
+
+        span = Mock(spec=ReadableSpan)
+        span.name = "ts_test"
+        span.context = Mock()
+        span.context.trace_id = 0x1234567890ABCDEF1234567890ABCDEF
+        span.context.span_id = 0x1234567890ABCDEF
+        span.parent = None
+        span.kind = Mock()
+        span.kind.name = "INTERNAL"
+        span.start_time = 1_000_000_000
+        span.end_time = 2_000_000_000
+        span.status = Mock()
+        span.status.status_code = Mock()
+        span.status.status_code.name = "UNSET"
+        span.status.description = None
+        span.attributes = {}
+        span.resource = Mock()
+        span.resource.attributes = {}
+        span.instrumentation_scope = None
+
+        event = Mock()
+        event.timestamp = 1_500_000_000
+        event.name = "evt"
+        event.attributes = {}
+        span.events = [event]
+
+        exporter = OTLPJSONExporter(TEST_OTLP_ENDPOINT, tracer_instance=mock_tracer)
+        exporter.export([span])
+
+        import json as _json
+
+        payload = _json.loads(mock_session.post.call_args[1]["data"])
+        span_json = payload["resourceSpans"][0]["scopeSpans"][0]["spans"][0]
+
+        # protobuf JSON mapping requires uint64 fields to be JSON strings
+        assert span_json["startTimeUnixNano"] == "1000000000"
+        assert span_json["endTimeUnixNano"] == "2000000000"
+        assert span_json["events"][0]["timeUnixNano"] == "1500000000"
 
 
 class TestHoneyHiveOTLPExporterProtocol:

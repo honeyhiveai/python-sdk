@@ -39,6 +39,7 @@ from honeyhive._generated.services import Datapoints_service as datapoints_svc
 from honeyhive._generated.services import Datasets_service as datasets_svc
 from honeyhive._generated.services import Events_service as events_svc
 from honeyhive._generated.services import Experiments_service as experiments_svc
+from honeyhive._generated.services import Metric_Versions_service as metric_versions_svc
 from honeyhive._generated.services import Metrics_service as metrics_svc
 from honeyhive._generated.services import Sessions_service as sessions_svc
 from honeyhive._generated.services import async_Charts_service as charts_svc_async
@@ -52,6 +53,9 @@ from honeyhive._generated.services import async_Datasets_service as datasets_svc
 from honeyhive._generated.services import async_Events_service as events_svc_async
 from honeyhive._generated.services import (
     async_Experiments_service as experiments_svc_async,
+)
+from honeyhive._generated.services import (
+    async_Metric_Versions_service as metric_versions_svc_async,
 )
 from honeyhive._generated.services import async_Metrics_service as metrics_svc_async
 from honeyhive._generated.services import async_Sessions_service as sessions_svc_async
@@ -71,12 +75,15 @@ from honeyhive.models import (
     CreateDatasetResponse,
     CreateMetricRequest,
     CreateMetricResponse,
+    CreateMetricVersionRequest,
+    CreateMetricVersionResponse,
     DeleteChartResponse,
     DeleteConfigurationResponse,
     DeleteDatapointResponse,
     DeleteDatasetResponse,
     DeleteExperimentRunResponse,
     DeleteMetricResponse,
+    DeployMetricVersionResponse,
     EventExportResponse,
     EventFilter,
     GetChartResponse,
@@ -89,6 +96,7 @@ from honeyhive.models import (
     GetEventsSchemaResponse,
     GetExperimentRunResponse,
     GetExperimentRunsResponse,
+    GetMetricVersionsResponse,
     MetricItem,
     Pagination,
     PostEventBatchRequest,
@@ -1881,6 +1889,63 @@ class MetricsAPI(BaseAPI):
         return self.list(project=project, name=name, type=type)
 
 
+class MetricVersionsAPI(BaseAPI):
+    """Metric Versions API.
+
+    Each metric has an immutable history of versions; one version at a time is
+    marked as deployed (used by evaluations). Versions are nested under the
+    parent metric at ``/v1/metrics/{metric_id}/versions``.
+    """
+
+    # Sync methods
+    def list(self, metric_id: str) -> GetMetricVersionsResponse:
+        """List all versions for a metric, oldest-first."""
+        return metric_versions_svc.getMetricVersions(
+            self._api_config, metric_id=metric_id
+        )
+
+    def create(
+        self, metric_id: str, request: CreateMetricVersionRequest
+    ) -> CreateMetricVersionResponse:
+        """Create a new version of a metric.
+
+        Set ``request.deploy_immediately = True`` to atomically mark the new
+        version as deployed in the same transaction.
+        """
+        return metric_versions_svc.createMetricVersion(
+            self._api_config, metric_id=metric_id, data=request
+        )
+
+    def deploy(self, metric_id: str, version_name: str) -> DeployMetricVersionResponse:
+        """Deploy an existing version of a metric, replacing the live version."""
+        return metric_versions_svc.deployMetricVersion(
+            self._api_config, metric_id=metric_id, version_name=version_name
+        )
+
+    # Async methods
+    async def list_async(self, metric_id: str) -> GetMetricVersionsResponse:
+        """List all versions for a metric asynchronously."""
+        return await metric_versions_svc_async.getMetricVersions(
+            self._api_config, metric_id=metric_id
+        )
+
+    async def create_async(
+        self, metric_id: str, request: CreateMetricVersionRequest
+    ) -> CreateMetricVersionResponse:
+        """Create a new version of a metric asynchronously."""
+        return await metric_versions_svc_async.createMetricVersion(
+            self._api_config, metric_id=metric_id, data=request
+        )
+
+    async def deploy_async(
+        self, metric_id: str, version_name: str
+    ) -> DeployMetricVersionResponse:
+        """Deploy an existing version of a metric asynchronously."""
+        return await metric_versions_svc_async.deployMetricVersion(
+            self._api_config, metric_id=metric_id, version_name=version_name
+        )
+
+
 class SessionsAPI(BaseAPI):
     """Sessions API."""
 
@@ -2064,6 +2129,7 @@ class HoneyHive:
         self.events = EventsAPI(self._api_config)
         self.experiments = ExperimentsAPI(self._api_config)
         self.metrics = MetricsAPI(self._api_config)
+        self.metric_versions = MetricVersionsAPI(self._api_config)
         self.sessions = SessionsAPI(self._api_config)
 
         # Alias for backwards compatibility

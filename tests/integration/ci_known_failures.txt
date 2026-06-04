@@ -12,22 +12,12 @@
 # are now purely navigational — the real source of truth is per-entry.
 #
 # Remaining buckets:
-#   * OTLPJSONExporter int64 precision (HHAI-5004) — raw JSON number
-#     overflows float64 for |v| > 2^53, backend rejects the batch
 #   * enrich_span attribute loss on error-raising spans — attrs set via
 #     `enrich_span({...})` inside a function that raises never make it
 #     onto the exported span (test.unique_id lookup fails)
 #   * Session-id override routing — honeyhive.session_id attribute
 #     override routes events to a different session than the one the
 #     test queries under
-#   * Experiment comparison / semantic assertions
-
-# OTLPJSONExporter int64 precision bug (HHAI-5004) — the test sends
-# attr.large_int=9223372036854775807; the exporter now emits it as a raw
-# JSON number, but the Go backend decodes through float64, rounds up to
-# 9223372036854776000, and rejects the payload with HTTP 500 (int64
-# overflow). Blocks the entire batch, so the event never ingests.
-tests/integration/test_otel_backend_verification_integration.py::TestOTELBackendVerificationIntegration::test_high_cardinality_attributes_backend_verification
 
 # enrich_span attribute loss on error-raising spans — OTLP export
 # succeeds with HTTP 200, but attributes set via `enrich_span({...})`
@@ -44,13 +34,3 @@ tests/integration/test_otel_backend_verification_integration.py::TestOTELBackend
 # stringification issue.
 tests/integration/test_otel_otlp_export_integration.py::TestOTELOTLPExportIntegration::test_otlp_export_with_backend_verification
 
-# _enrich_session_with_results race against OTLP→writer pipeline — the
-# session event is exported via OTLP at the end of evaluate(), then
-# _enrich_session_with_results immediately PUTs ground_truth feedback
-# onto it via events.update(). On the local CI stack the writer hasn't
-# materialized the session row yet, so the PUT 404s
-# ("updateEventLegacy failed with status code: 404") and feedback stays
-# empty, tripping the TASK 3 assertion. Passes against testing-dp-1
-# where the writer keeps up. Fix is SDK-side: retry the enrich PUT with
-# a short backoff, separate change.
-tests/integration/test_v1_immediate_ship_requirements.py::TestV1ImmediateShipRequirements::test_all_five_requirements_end_to_end
