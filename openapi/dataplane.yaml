@@ -1,12 +1,43 @@
 openapi: 3.1.0
 info:
-  title: HoneyHive API
-  version: 1.1.0
+  title: HoneyHive Data Plane API
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
+  version: 1.1.0
 servers:
   - url: https://api.honeyhive.ai
+tags:
+  - name: Charts
+    description: |
+      Define and manage saved charts. Charts are visualizations that aggregate metrics over time with bucketing, filters, and groupings.
+  - name: Configurations
+    description: |
+      Manage prompt configurations, i.e. model parameters, message templates, and response settings that can be versioned and deployed without code changes.
+  - name: Datapoints
+    description: |
+      Manage individual records inside datasets, including batch creation and mapping to source events.
+  - name: Datasets
+    description: |
+      Curate collections of datapoints used as test sets for evaluations and experiments.
+  - name: Events
+    description: |
+      Read and write trace events. Events are the spans that capture every step of an AI application's execution.
+  - name: Experiments
+    description: |
+      Run, retrieve, and compare evaluation runs to measure how prompt or configuration changes affect agent performance.
+  - name: Metric Versions
+    description: |
+      Snapshot, list, and deploy versions of a metric's definition so changes can be reviewed and rolled back without losing history.
+  - name: Metrics
+    description: |
+      Define and run evaluators, i.e. automated quality checks that score traces against criteria like accuracy, safety, or correctness.
+  - name: Queues
+    description: |
+      Manage annotation queues for human review of traces, turning expert feedback into labeled datasets.
+  - name: Sessions
+    description: |
+      Group related trace events into sessions, the top-level container for a multi-step or multi-service AI interaction.
 paths:
   /session/start:
     post:
@@ -32,7 +63,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PostSessionStartResponse'
-      x-honeyhive-plane: dp
   /session/{session_id}/traces:
     post:
       summary: Add traces to a session (deprecated)
@@ -67,7 +97,6 @@ paths:
         '400':
           description: |
             Bad request: both `logs` and `events` supplied, or neither, or invalid event payload.
-      x-honeyhive-plane: dp
   /v1/sessions:
     post:
       tags:
@@ -129,7 +158,6 @@ paths:
                 $ref: '#/components/schemas/PostSessionStartResponse'
         '400':
           description: Bad request (invalid session data)
-      x-honeyhive-plane: dp
   /v1/sessions/{session_id}/events/batch:
     post:
       tags:
@@ -175,7 +203,6 @@ paths:
           description: Bad request (invalid event data or missing required fields)
         '500':
           description: Events partially added
-      x-honeyhive-plane: dp
   /events:
     post:
       tags:
@@ -205,7 +232,6 @@ paths:
                 success: true
         '400':
           description: Bad request (invalid event data or missing required fields)
-      x-honeyhive-plane: dp
     put:
       tags:
         - Events
@@ -248,7 +274,6 @@ paths:
           description: Event updated
         '400':
           description: Bad request
-      x-honeyhive-plane: dp
   /v1/events:
     post:
       tags:
@@ -309,7 +334,6 @@ paths:
                 success: true
         '400':
           description: Bad request (invalid event data or missing required fields)
-      x-honeyhive-plane: dp
   /v1/events/{event_id}:
     put:
       tags:
@@ -361,7 +385,6 @@ paths:
           description: Event updated
         '400':
           description: Bad request
-      x-honeyhive-plane: dp
   /v1/events/export:
     post:
       tags:
@@ -386,7 +409,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ExportEventsResponse'
-      x-honeyhive-plane: dp
   /v1/events/search:
     post:
       tags:
@@ -410,7 +432,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ExportEventsResponse'
-      x-honeyhive-plane: dp
   /v1/events/batch:
     post:
       tags:
@@ -463,7 +484,6 @@ paths:
           description: Bad request (invalid event data or missing required fields)
         '500':
           description: Events partially created
-      x-honeyhive-plane: dp
   /events/model:
     post:
       tags:
@@ -491,7 +511,6 @@ paths:
               example:
                 event_id: 7f22137a-6911-4ed3-bc36-110f1dde6b66
                 success: true
-      x-honeyhive-plane: dp
   /events/batch:
     post:
       tags:
@@ -524,7 +543,6 @@ paths:
                 success: true
         '500':
           description: Events partially created
-      x-honeyhive-plane: dp
   /events/model/batch:
     post:
       tags:
@@ -556,7 +574,6 @@ paths:
                 success: true
         '500':
           description: Model events partially created
-      x-honeyhive-plane: dp
   /v1/charts:
     get:
       tags:
@@ -573,7 +590,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GetChartsResponse'
-      x-honeyhive-plane: dp
     post:
       tags:
         - Charts
@@ -594,7 +610,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CreateChartResponse'
-      x-honeyhive-plane: dp
   /v1/charts/{chart_id}:
     get:
       tags:
@@ -618,7 +633,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GetChartResponse'
-      x-honeyhive-plane: dp
     put:
       tags:
         - Charts
@@ -647,7 +661,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UpdateChartResponse'
-      x-honeyhive-plane: dp
     delete:
       tags:
         - Charts
@@ -669,7 +682,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DeleteChartResponse'
-      x-honeyhive-plane: dp
   /v1/metrics:
     get:
       tags:
@@ -698,7 +710,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GetMetricsResponse'
-      x-honeyhive-plane: dp
     post:
       tags:
         - Metrics
@@ -719,7 +730,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CreateMetricResponse'
-      x-honeyhive-plane: dp
     put:
       tags:
         - Metrics
@@ -742,7 +752,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UpdateMetricResponse'
-      x-honeyhive-plane: dp
     delete:
       tags:
         - Metrics
@@ -766,7 +775,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DeleteMetricResponse'
-      x-honeyhive-plane: dp
   /v1/metrics/{metric_id}:
     put:
       tags:
@@ -796,7 +804,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UpdateMetricResponse'
-      x-honeyhive-plane: dp
     delete:
       tags:
         - Metrics
@@ -818,7 +825,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DeleteMetricResponse'
-      x-honeyhive-plane: dp
   /v1/metrics/{metric_id}/versions:
     get:
       tags:
@@ -844,7 +850,6 @@ paths:
                 $ref: '#/components/schemas/GetMetricVersionsResponse'
         '404':
           description: No metric with the given `metric_id` exists in the caller's scope.
-      x-honeyhive-plane: dp
     post:
       tags:
         - Metric Versions
@@ -877,7 +882,6 @@ paths:
           description: Invalid `content` payload. Fails cross-field validation (e.g. an `LLM` metric without `model_provider`/`model_name`, or a `COMPOSITE` metric without `child_metrics`).
         '404':
           description: No metric with the given `metric_id` exists in the caller's scope.
-      x-honeyhive-plane: dp
   /v1/metrics/{metric_id}/versions/{version_name}/deploy:
     post:
       tags:
@@ -909,7 +913,6 @@ paths:
                 $ref: '#/components/schemas/DeployMetricVersionResponse'
         '404':
           description: No metric with the given `metric_id` exists in the caller's scope, or no version with the given `version_name` exists for that metric.
-      x-honeyhive-plane: dp
   /v1/metrics/run:
     post:
       tags:
@@ -932,7 +935,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RunMetricResponse'
-      x-honeyhive-plane: dp
   /v1/metrics/run_metric:
     post:
       tags:
@@ -956,7 +958,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RunMetricResponse'
-      x-honeyhive-plane: dp
   /v1/datapoints:
     get:
       summary: Retrieve a list of datapoints
@@ -989,7 +990,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GetDatapointsResponse'
-      x-honeyhive-plane: dp
     post:
       summary: Create a new datapoint
       operationId: createDatapoint
@@ -1011,7 +1011,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CreateDatapointResponse'
-      x-honeyhive-plane: dp
   /v1/datapoints/batch:
     post:
       summary: Create multiple datapoints in batch
@@ -1034,7 +1033,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BatchCreateDatapointsResponse'
-      x-honeyhive-plane: dp
   /v1/datapoints/{datapoint_id}:
     get:
       summary: Retrieve a specific datapoint
@@ -1058,7 +1056,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/GetDatapointResponse'
           description: Successful response
-      x-honeyhive-plane: dp
     put:
       summary: Update a specific datapoint
       description: Update fields on an existing datapoint. Only the provided fields are modified.
@@ -1089,7 +1086,6 @@ paths:
                 $ref: '#/components/schemas/UpdateDatapointResponse'
         '400':
           description: Error updating datapoint
-      x-honeyhive-plane: dp
     delete:
       summary: Delete a specific datapoint
       operationId: deleteDatapoint
@@ -1112,7 +1108,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DeleteDatapointResponse'
-      x-honeyhive-plane: dp
   /v1/datasets:
     get:
       tags:
@@ -1142,7 +1137,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GetDatasetsResponse'
-      x-honeyhive-plane: dp
     post:
       tags:
         - Datasets
@@ -1164,7 +1158,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CreateDatasetResponse'
-      x-honeyhive-plane: dp
     put:
       tags:
         - Datasets
@@ -1187,7 +1180,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UpdateDatasetResponse'
-      x-honeyhive-plane: dp
     delete:
       tags:
         - Datasets
@@ -1211,7 +1203,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DeleteDatasetResponse'
-      x-honeyhive-plane: dp
   /v1/datasets/{dataset_id}:
     put:
       tags:
@@ -1241,7 +1232,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UpdateDatasetResponse'
-      x-honeyhive-plane: dp
     delete:
       tags:
         - Datasets
@@ -1264,7 +1254,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DeleteDatasetResponse'
-      x-honeyhive-plane: dp
   /v1/datasets/{dataset_id}/datapoints:
     post:
       tags:
@@ -1295,7 +1284,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AddDatapointsResponse'
-      x-honeyhive-plane: dp
   /v1/datasets/{dataset_id}/datapoints/{datapoint_id}:
     delete:
       tags:
@@ -1325,7 +1313,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RemoveDatapointResponse'
-      x-honeyhive-plane: dp
   /v1/datasets/{dataset_id}/{datapoint_id}:
     delete:
       tags:
@@ -1356,7 +1343,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RemoveDatapointResponse'
-      x-honeyhive-plane: dp
   /v1/events/schema:
     get:
       summary: Get events schema (deprecated)
@@ -1389,7 +1375,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GetEventsSchemaResponse'
-      x-honeyhive-plane: dp
   /v1/runs:
     post:
       summary: Create a new evaluation run
@@ -1414,7 +1399,6 @@ paths:
                 $ref: '#/components/schemas/PostExperimentRunResponse'
         '400':
           description: Invalid input
-      x-honeyhive-plane: dp
     get:
       summary: Get a list of evaluation runs
       operationId: getRuns
@@ -1513,7 +1497,6 @@ paths:
                 $ref: '#/components/schemas/GetExperimentRunsResponse'
         '400':
           description: Error fetching evaluations
-      x-honeyhive-plane: dp
   /v1/runs/schema:
     get:
       summary: Get events schema across all experiment runs in a project
@@ -1541,7 +1524,6 @@ paths:
                 $ref: '#/components/schemas/GetEventsSchemaResponse'
         '400':
           description: Error fetching events schema
-      x-honeyhive-plane: dp
   /v1/runs/{run_id}:
     get:
       summary: Get details of an evaluation run
@@ -1567,7 +1549,6 @@ paths:
                 $ref: '#/components/schemas/GetExperimentRunResponse'
         '400':
           description: Error fetching evaluation
-      x-honeyhive-plane: dp
     put:
       summary: Update an evaluation run
       operationId: updateRun
@@ -1598,7 +1579,6 @@ paths:
                 $ref: '#/components/schemas/PutExperimentRunResponse'
         '400':
           description: Invalid input
-      x-honeyhive-plane: dp
     delete:
       summary: Delete an evaluation run
       operationId: deleteRun
@@ -1623,7 +1603,6 @@ paths:
                 $ref: '#/components/schemas/DeleteExperimentRunResponse'
         '400':
           description: Error deleting evaluation
-      x-honeyhive-plane: dp
   /v1/runs/{run_id}/schema:
     get:
       summary: Get events schema for a single experiment run
@@ -1658,7 +1637,6 @@ paths:
                 $ref: '#/components/schemas/GetEventsSchemaResponse'
         '400':
           description: Error fetching events schema
-      x-honeyhive-plane: dp
   /v1/runs/{run_id}/metrics:
     get:
       summary: Get event metrics for an experiment run
@@ -1701,7 +1679,6 @@ paths:
                 $ref: '#/components/schemas/GetExperimentRunMetricsResponse'
         '400':
           description: Error fetching event metrics
-      x-honeyhive-plane: dp
   /v1/runs/{run_id}/summary:
     get:
       summary: Retrieve experiment summary
@@ -1755,7 +1732,6 @@ paths:
                 $ref: '#/components/schemas/GetExperimentRunResultResponse'
         '400':
           description: Error processing experiment summary
-      x-honeyhive-plane: dp
   /v1/runs/{run_id}/result:
     get:
       summary: Retrieve experiment result (deprecated)
@@ -1810,7 +1786,6 @@ paths:
                 $ref: '#/components/schemas/GetExperimentRunResultResponse'
         '400':
           description: Error processing experiment result
-      x-honeyhive-plane: dp
   /v1/runs/{new_run_id}/compare/{old_run_id}:
     get:
       summary: Retrieve experiment comparison
@@ -1871,7 +1846,6 @@ paths:
                 $ref: '#/components/schemas/GetExperimentRunCompareResponse'
         '400':
           description: Error processing experiment comparison
-      x-honeyhive-plane: dp
   /v1/runs/{new_run_id}/compare-with/{old_run_id}:
     get:
       summary: Retrieve experiment comparison (deprecated)
@@ -1922,7 +1896,6 @@ paths:
                 $ref: '#/components/schemas/GetExperimentRunCompareResponse'
         '400':
           description: Error processing experiment comparison
-      x-honeyhive-plane: dp
   /v1/runs/{new_run_id}/compare/{old_run_id}/events:
     get:
       summary: Compare events between two experiment runs
@@ -1993,7 +1966,6 @@ paths:
                 $ref: '#/components/schemas/GetExperimentCompareEventsResponse'
         '400':
           description: Error fetching event comparison
-      x-honeyhive-plane: dp
   /v1/runs/compare/events:
     get:
       summary: Compare events between two experiment runs (deprecated)
@@ -2065,7 +2037,6 @@ paths:
                 $ref: '#/components/schemas/GetExperimentCompareEventsResponse'
         '400':
           description: Error fetching event comparison
-      x-honeyhive-plane: dp
   /v1/queues:
     get:
       tags:
@@ -2090,7 +2061,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GetAnnotationQueuesResponse'
-      x-honeyhive-plane: dp
     post:
       tags:
         - Queues
@@ -2115,7 +2085,6 @@ paths:
                 $ref: '#/components/schemas/CreateAnnotationQueueResponse'
         '400':
           description: Bad request (invalid queue data or missing required fields)
-      x-honeyhive-plane: dp
   /v1/queues/{queue_id}:
     get:
       tags:
@@ -2141,7 +2110,6 @@ paths:
                 $ref: '#/components/schemas/GetAnnotationQueueByIdResponse'
         '404':
           description: Queue not found
-      x-honeyhive-plane: dp
     put:
       tags:
         - Queues
@@ -2173,7 +2141,6 @@ paths:
                 $ref: '#/components/schemas/UpdateAnnotationQueueResponse'
         '404':
           description: Queue not found
-      x-honeyhive-plane: dp
     delete:
       tags:
         - Queues
@@ -2198,7 +2165,6 @@ paths:
                 $ref: '#/components/schemas/DeleteAnnotationQueueResponse'
         '404':
           description: Queue not found
-      x-honeyhive-plane: dp
   /v1/configurations:
     get:
       summary: Retrieve a list of configurations
@@ -2235,7 +2201,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GetConfigurationsResponse'
-      x-honeyhive-plane: dp
     post:
       summary: Create a new configuration
       operationId: createConfiguration
@@ -2258,7 +2223,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CreateConfigurationResponse'
-      x-honeyhive-plane: dp
   /v1/configurations/{configId}:
     put:
       summary: Update an existing configuration
@@ -2289,7 +2253,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UpdateConfigurationResponse'
-      x-honeyhive-plane: dp
     delete:
       summary: Delete a configuration
       operationId: deleteConfiguration
@@ -2313,8 +2276,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DeleteConfigurationResponse'
-      x-honeyhive-plane: dp
 components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
   schemas:
     CreateChartRequest:
       type: object
@@ -3175,22 +3141,6 @@ components:
         - data
         - mapping
       description: Request body for POST /datasets/{dataset_id}/datapoints
-    RemoveDatapointFromDatasetParams:
-      type: object
-      properties:
-        dataset_id:
-          type: string
-          minLength: 1
-          description: Unique identifier of the dataset
-        datapoint_id:
-          type: string
-          minLength: 1
-          description: Unique identifier of the datapoint to remove
-      required:
-        - dataset_id
-        - datapoint_id
-      additionalProperties: false
-      description: Path parameters for DELETE /datasets/{dataset_id}/datapoints/{datapoint_id}
     LegacyRemoveDatapointFromDatasetParams:
       type: object
       properties:
@@ -4464,31 +4414,6 @@ components:
               items: {}
           description: Filters to apply to metrics
       description: Query parameters for GET /runs/{run_id}/metrics
-    GetExperimentRunSummaryQuery:
-      type: object
-      properties:
-        aggregate_function:
-          type: string
-          enum:
-            - average
-            - min
-            - max
-            - median
-            - p95
-            - p99
-            - p90
-            - sum
-            - count
-          default: average
-          description: 'Aggregation function to apply (default: average)'
-        filters:
-          anyOf:
-            - type: string
-            - type: array
-              items: {}
-          description: Filters to apply to results
-      additionalProperties: false
-      description: Query parameters for GET /runs/{run_id}/summary
     LegacyGetExperimentRunResultQuery:
       type: object
       properties:
@@ -4504,45 +4429,6 @@ components:
           description: Filters to apply to results
       description: Query parameters for GET /runs/{run_id}/result (deprecated — use GET /runs/{run_id}/summary)
       deprecated: true
-    GetExperimentRunCompareParams:
-      type: object
-      properties:
-        new_run_id:
-          type: string
-          description: The new run ID to compare
-        old_run_id:
-          type: string
-          description: The old run ID to compare against
-      required:
-        - new_run_id
-        - old_run_id
-      additionalProperties: false
-      description: Path parameters for GET /runs/{new_run_id}/compare/{old_run_id}
-    GetExperimentRunCompareQuery:
-      type: object
-      properties:
-        aggregate_function:
-          type: string
-          enum:
-            - average
-            - min
-            - max
-            - median
-            - p95
-            - p99
-            - p90
-            - sum
-            - count
-          default: average
-          description: 'Aggregation function to apply (default: average)'
-        filters:
-          anyOf:
-            - type: string
-            - type: array
-              items: {}
-          description: Filters to apply to comparison
-      additionalProperties: false
-      description: Query parameters for GET /runs/{new_run_id}/compare/{old_run_id}
     LegacyGetExperimentRunCompareParams:
       type: object
       properties:
@@ -4572,48 +4458,6 @@ components:
           description: Filters to apply to comparison
       description: Query parameters for GET /runs/{new_run_id}/compare-with/{old_run_id} (deprecated — use GET /runs/{new_run_id}/compare/{old_run_id})
       deprecated: true
-    GetExperimentRunCompareEventsParams:
-      type: object
-      properties:
-        new_run_id:
-          type: string
-          description: The new run ID to compare
-        old_run_id:
-          type: string
-          description: The old run ID to compare against
-      required:
-        - new_run_id
-        - old_run_id
-      additionalProperties: false
-      description: Path parameters for GET /runs/{new_run_id}/compare/{old_run_id}/events
-    GetExperimentRunCompareEventsQuery:
-      type: object
-      properties:
-        event_name:
-          type: string
-          description: Filter by event name
-        event_type:
-          type: string
-          description: Filter by event type
-        filter:
-          anyOf:
-            - type: string
-            - type: object
-              additionalProperties: {}
-          description: Additional filter criteria
-        limit:
-          type: integer
-          exclusiveMinimum: 0
-          maximum: 1000
-          default: 1000
-          description: Maximum number of results (max 1000)
-        page:
-          type: integer
-          exclusiveMinimum: 0
-          default: 1
-          description: Page number for pagination
-      additionalProperties: false
-      description: Query parameters for GET /runs/{new_run_id}/compare/{old_run_id}/events
     LegacyGetExperimentRunCompareEventsQuery:
       type: object
       properties:
@@ -4672,26 +4516,6 @@ components:
           description: Filter by evaluation/run ID
       description: Query parameters for GET /events/schema (deprecated — use GET /runs/{run_id}/schema or GET /runs/schema)
       deprecated: true
-    GetRunSchemaQuery:
-      type: object
-      properties:
-        dateRange:
-          anyOf:
-            - type: string
-            - $ref: '#/components/schemas/AbsoluteDateRange'
-          description: Date range to filter schema by
-      additionalProperties: false
-      description: Query parameters for GET /runs/{run_id}/schema
-    GetRunsSchemaQuery:
-      type: object
-      properties:
-        dateRange:
-          anyOf:
-            - type: string
-            - $ref: '#/components/schemas/AbsoluteDateRange'
-          description: Date range to filter schema by
-      additionalProperties: false
-      description: Query parameters for GET /runs/schema
     PostExperimentRunResponse:
       type: object
       properties:
@@ -5131,17 +4955,6 @@ components:
           $ref: '#/components/schemas/UpdateMetricRequestFilters'
       additionalProperties: false
       description: Request body for PUT /metrics/{metric_id}
-    UpdateMetricParams:
-      type: object
-      properties:
-        metric_id:
-          type: string
-          minLength: 1
-          description: Unique identifier of the metric to update
-      required:
-        - metric_id
-      additionalProperties: false
-      description: Path parameters for PUT /metrics/{metric_id}
     LegacyUpdateMetricRequest:
       type: object
       properties:
@@ -5245,28 +5058,6 @@ components:
           minLength: 1
           description: Filter by metric ID
       description: Query parameters for GET /metrics
-    DeleteMetricParams:
-      type: object
-      properties:
-        metric_id:
-          type: string
-          minLength: 1
-          description: Unique identifier of the metric to delete
-      required:
-        - metric_id
-      additionalProperties: false
-      description: Path parameters for DELETE /metrics/{metric_id}
-    LegacyDeleteMetricQuery:
-      type: object
-      properties:
-        metric_id:
-          type: string
-          minLength: 1
-          description: Unique identifier of the metric to delete
-      required:
-        - metric_id
-      description: Query parameters for DELETE /metrics (deprecated — use DELETE /metrics/{metric_id})
-      deprecated: true
     RunMetricRequest:
       type: object
       properties:
@@ -5579,36 +5370,6 @@ components:
         - content
       additionalProperties: false
       description: A versioned snapshot of a metric definition.
-    GetMetricVersionsParams:
-      type: object
-      properties:
-        metric_id:
-          type: string
-      required:
-        - metric_id
-      additionalProperties: false
-      description: Path parameters for GET /v1/metrics/{metric_id}/versions
-    CreateMetricVersionParams:
-      type: object
-      properties:
-        metric_id:
-          type: string
-      required:
-        - metric_id
-      additionalProperties: false
-      description: Path parameters for POST /v1/metrics/{metric_id}/versions
-    DeployMetricVersionParams:
-      type: object
-      properties:
-        metric_id:
-          type: string
-        version_name:
-          type: string
-      required:
-        - metric_id
-        - version_name
-      additionalProperties: false
-      description: Path parameters for POST /v1/metrics/{metric_id}/versions/{version_name}/deploy
     CreateMetricVersionRequest:
       type: object
       properties:
@@ -5667,186 +5428,6 @@ components:
         - data
       additionalProperties: false
       description: Response for POST /v1/metrics/{metric_id}/versions/{version_name}/deploy
-    ProjectItem:
-      type: object
-      properties:
-        id:
-          type: string
-          minLength: 1
-        name:
-          type: string
-          minLength: 1
-          description: Project name
-        description:
-          type: string
-          description: Project description
-        type:
-          type: string
-          enum:
-            - evaluation
-            - completion
-          description: Project type
-        org_id:
-          type: string
-          description: Organization ID
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-      required:
-        - id
-        - name
-        - org_id
-      additionalProperties: {}
-      description: Project object
-    PostProjectRequest:
-      type: object
-      properties:
-        name:
-          type: string
-          minLength: 1
-          description: Project name
-        description:
-          type: string
-          description: Project description
-        type:
-          type: string
-          enum:
-            - evaluation
-            - completion
-          description: Project type
-      required:
-        - name
-      description: Request body for creating a project
-    PutProjectRequest:
-      type: object
-      properties:
-        name:
-          type: string
-          minLength: 1
-          description: Project name to identify the project
-        new_name:
-          type: string
-          description: New project name
-        description:
-          type: string
-          description: New project description
-        type:
-          type: string
-          enum:
-            - evaluation
-            - completion
-          description: New project type
-      required:
-        - name
-      description: Request body for updating a project
-    GetProjectsResponse:
-      type: array
-      items:
-        $ref: '#/components/schemas/ProjectItem'
-      description: Array of projects
-    PostProjectResponse:
-      type: object
-      properties:
-        id:
-          type: string
-          minLength: 1
-        name:
-          type: string
-          minLength: 1
-          description: Project name
-        description:
-          type: string
-          description: Project description
-        type:
-          type: string
-          enum:
-            - evaluation
-            - completion
-          description: Project type
-        org_id:
-          type: string
-          description: Organization ID
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-      required:
-        - id
-        - name
-        - org_id
-      additionalProperties: {}
-      description: Created project
-    AnnotationQueue:
-      type: object
-      properties:
-        name:
-          type: string
-          maxLength: 200
-        description:
-          type: string
-          maxLength: 1000
-        filters:
-          $ref: '#/components/schemas/AnnotationQueueFilters'
-        enabled:
-          type: boolean
-        id:
-          type: string
-          minLength: 1
-        scope_id:
-          type: string
-        scope_type:
-          type: string
-          enum:
-            - system
-            - controlplane
-            - dataplane
-            - org
-            - workspace
-            - project
-        is_active:
-          type: boolean
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type:
-            - string
-            - 'null'
-          format: date-time
-      required:
-        - name
-        - description
-        - filters
-        - enabled
-        - id
-        - scope_id
-        - scope_type
-        - is_active
-        - created_at
-        - updated_at
-    BaseAnnotationQueue:
-      type: object
-      properties:
-        name:
-          type: string
-          maxLength: 200
-        description:
-          type: string
-          maxLength: 1000
-        filters:
-          $ref: '#/components/schemas/BaseAnnotationQueueFilters'
-        enabled:
-          type: boolean
-      required:
-        - name
-        - description
-        - filters
-        - enabled
     CreateAnnotationQueueRequest:
       type: object
       properties:
@@ -5895,13 +5476,6 @@ components:
             type: string
       required:
         - id
-    GetAnnotationQueuesQuery:
-      type: object
-      properties:
-        enabled:
-          type:
-            - boolean
-            - 'null'
     CreateAnnotationQueueResponse:
       type: object
       properties:
@@ -7199,22 +6773,6 @@ components:
         - filterArray
       additionalProperties: false
       description: 'ETL filter narrowing which events this metric applies to. Defaults to `{ filterArray: [] }` (no filtering).'
-    AnnotationQueueFilters:
-      type: object
-      properties:
-        filterArray:
-          $ref: '#/components/schemas/FiltersArray'
-      required:
-        - filterArray
-      additionalProperties: false
-    BaseAnnotationQueueFilters:
-      type: object
-      properties:
-        filterArray:
-          $ref: '#/components/schemas/FiltersArray'
-      required:
-        - filterArray
-      additionalProperties: false
     CreateAnnotationQueueRequestFilters:
       type: object
       properties:
@@ -7507,41 +7065,5 @@ components:
           oneOf:
             - type: string
             - type: number
-  parameters: {}
-  securitySchemes:
-    BearerAuth:
-      type: http
-      scheme: bearer
 security:
   - BearerAuth: []
-tags:
-  - name: Charts
-    description: |
-      Define and manage saved charts. Charts are visualizations that aggregate metrics over time with bucketing, filters, and groupings.
-  - name: Configurations
-    description: |
-      Manage prompt configurations, i.e. model parameters, message templates, and response settings that can be versioned and deployed without code changes.
-  - name: Datapoints
-    description: |
-      Manage individual records inside datasets, including batch creation and mapping to source events.
-  - name: Datasets
-    description: |
-      Curate collections of datapoints used as test sets for evaluations and experiments.
-  - name: Events
-    description: |
-      Read and write trace events. Events are the spans that capture every step of an AI application's execution.
-  - name: Experiments
-    description: |
-      Run, retrieve, and compare evaluation runs to measure how prompt or configuration changes affect agent performance.
-  - name: Metric Versions
-    description: |
-      Snapshot, list, and deploy versions of a metric's definition so changes can be reviewed and rolled back without losing history.
-  - name: Metrics
-    description: |
-      Define and run evaluators, i.e. automated quality checks that score traces against criteria like accuracy, safety, or correctness.
-  - name: Queues
-    description: |
-      Manage annotation queues for human review of traces, turning expert feedback into labeled datasets.
-  - name: Sessions
-    description: |
-      Group related trace events into sessions, the top-level container for a multi-step or multi-service AI interaction.

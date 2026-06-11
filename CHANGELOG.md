@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-06-11
+
+No customer-facing changes. Internal OpenAPI generator and generated-model cleanup only.
+
 ## [1.2.0] - 2026-06-04
 
 ### Added
