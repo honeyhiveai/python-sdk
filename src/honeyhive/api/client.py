@@ -172,6 +172,38 @@ def _build_export_timeout() -> httpx.Timeout:
 EXPORT_TIMEOUT = _build_export_timeout()
 
 
+def _resolve_api_timeout(explicit: Optional[float]) -> Optional[float]:
+    """Resolve the general request timeout for the API client.
+
+    Precedence: explicit ``timeout`` argument > ``HH_API_TIMEOUT`` env var.
+    Returns ``None`` when nothing is configured, signalling the caller to leave
+    the ``APIConfig`` default (5.0s) untouched. An invalid or non-positive value
+    warns and falls back to ``None`` (i.e. the default) — httpx treats
+    ``timeout=0`` as "time out immediately", which would break every request.
+    """
+    if explicit is not None:
+        if explicit <= 0:
+            logger.warning("timeout must be positive, got %r; using default", explicit)
+            return None
+        return explicit
+    env_val = os.environ.get("HH_API_TIMEOUT")
+    if env_val is None:
+        return None
+    try:
+        parsed = float(env_val)
+    except (ValueError, TypeError):
+        logger.warning(
+            "HH_API_TIMEOUT is not a valid number: %r; using default", env_val
+        )
+        return None
+    if parsed <= 0:
+        logger.warning(
+            "HH_API_TIMEOUT must be positive, got %r; using default", env_val
+        )
+        return None
+    return parsed
+
+
 T = TypeVar("T")
 
 
@@ -2070,7 +2102,9 @@ class HoneyHive:
             server_url: Deprecated alias for base_url (for backwards compatibility).
             cp_base_url: Deprecated. Accepted for backwards compatibility but ignored;
                 the SDK now uses a single base_url for all operations.
-            timeout: Request timeout in seconds (accepted for backwards compat, not used).
+            timeout: Request timeout in seconds. Falls back to the HH_API_TIMEOUT
+                env var, then to the SDK default of 5s. Pass a larger value when
+                fetching large payloads (e.g. datasets.list for many datasets).
             retry_config: Retry configuration (accepted for backwards compat, not used).
             rate_limit_calls: Max calls per time window (accepted for backwards compat).
             rate_limit_window: Time window in seconds (accepted for backwards compat).
@@ -2115,11 +2149,19 @@ class HoneyHive:
         self._verbose = verbose if verbose is not None else False
         self._tracer_instance = tracer_instance
 
-        # Create API config
-        self._api_config = APIConfig(
-            base_path=resolved_base_url,
-            access_token=self._api_key,
-        )
+        # Create API config. The request timeout is resolved from the explicit
+        # arg > HH_API_TIMEOUT env var; when neither is set we omit the key so
+        # the APIConfig default (5.0s) is preserved. Note: passing timeout=None
+        # to HoneyHive() keeps the default (None means "unset" here), whereas
+        # APIConfig(timeout=None) disables timeouts at the low level.
+        api_config_kwargs: Dict[str, Any] = {
+            "base_path": resolved_base_url,
+            "access_token": self._api_key,
+        }
+        resolved_timeout = _resolve_api_timeout(timeout)
+        if resolved_timeout is not None:
+            api_config_kwargs["timeout"] = resolved_timeout
+        self._api_config = APIConfig(**api_config_kwargs)
 
         # Initialize API namespaces
         self.charts = ChartsAPI(self._api_config)

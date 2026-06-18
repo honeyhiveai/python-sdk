@@ -4,8 +4,6 @@ import time
 import uuid
 from typing import Any
 
-import pytest
-
 from honeyhive.models import PostExperimentRunRequest
 
 
@@ -62,37 +60,38 @@ class TestExperimentsAPI:
         if run_name_attr:
             assert run_name_attr == run_name
 
-    @pytest.mark.skip(
-        reason="Backend: list_runs() without filters returns empty; needs investigation into project-scoping and pagination defaults"
-    )
     def test_list_runs(
         self, integration_client: Any, integration_project_name: str
     ) -> None:
-        """Test run listing, filter by project, pagination."""
+        """Test run listing returns created runs with pagination metadata."""
         test_id = str(uuid.uuid4())[:8]
 
-        for i in range(2):
-            run_request = PostExperimentRunRequest(
-                name=f"test_list_run_{test_id}_{i}",
-                configuration={"model": "gpt-4"},
+        created_run_ids = []
+        try:
+            for i in range(2):
+                run_request = PostExperimentRunRequest(
+                    name=f"test_list_run_{test_id}_{i}",
+                    configuration={"model": "gpt-4"},
+                )
+                response = integration_client.experiments.create_run(run_request)
+                created_run_ids.append(response.run_id)
+
+            time.sleep(2)
+
+            # GetExperimentRunsResponse exposes runs as `evaluations`
+            # plus a `pagination` envelope.
+            runs_response = integration_client.experiments.list_runs(
+                name=f"test_list_run_{test_id}"
             )
-            integration_client.experiments.create_run(run_request)
 
-        time.sleep(2)
-
-        runs_response = integration_client.experiments.list_runs()
-
-        assert runs_response is not None
-        runs = runs_response.runs if hasattr(runs_response, "runs") else []
-        assert isinstance(runs, list)
-        assert len(runs) >= 2
-
-    @pytest.mark.skip(reason="ExperimentsAPI.run_experiment() requires complex setup")
-    def test_run_experiment(
-        self, integration_client: Any, integration_project_name: str
-    ) -> None:
-        """Test async experiment execution, verify completion status."""
-        pytest.skip(
-            "ExperimentsAPI.run_experiment() requires complex setup "
-            "with dataset and metrics"
-        )
+            assert runs_response is not None
+            assert isinstance(runs_response.evaluations, list)
+            listed_names = {run.name for run in runs_response.evaluations}
+            assert listed_names == {
+                f"test_list_run_{test_id}_0",
+                f"test_list_run_{test_id}_1",
+            }
+            assert runs_response.pagination.total >= 2
+        finally:
+            for run_id in created_run_ids:
+                integration_client.experiments.delete_run(run_id)

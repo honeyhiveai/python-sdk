@@ -4,8 +4,6 @@ import time
 import uuid
 from typing import Any
 
-import pytest
-
 from honeyhive.models import (
     CreateDatapointRequest,
     CreateDatapointResponse,
@@ -174,9 +172,3 @@ class TestDatapointsAPI:
         assert isinstance(response, DeleteDatapointResponse)
         # Assert response.deleted is True or response.deletedCount >= 1
         assert response.deleted is True or getattr(response, "deletedCount", 0) >= 1
-
-    def test_bulk_operations(
-        self, integration_client: Any, integration_project_name: str
-    ) -> None:
-        """Test bulk create/update/delete, verify all operations."""
-        pytest.skip("DatapointsAPI bulk operations may not be implemented yet")

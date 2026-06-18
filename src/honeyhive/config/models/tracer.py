@@ -26,7 +26,14 @@ import logging
 import uuid
 from typing import Any, Dict, List, Literal, Optional
 
-from pydantic import AliasChoices, BaseModel, Field, field_validator
+import requests
+from pydantic import (
+    AliasChoices,
+    BaseModel,
+    Field,
+    field_serializer,
+    field_validator,
+)
 from pydantic_settings import SettingsConfigDict
 
 from .base import BaseHoneyHiveConfig, _safe_validate_string, _safe_validate_url
@@ -105,6 +112,8 @@ class TracerConfig(BaseHoneyHiveConfig):
         - server_url: Custom HoneyHive server URL (from HH_API_URL env var)
         - disable_http_tracing: Disable HTTP request tracing (disabled by default)
         - disable_batch: Disable batch processing of spans
+        - requests_session: Custom requests.Session for OTLP span export
+          (caller-owned; not closed by the SDK on shutdown)
 
     Example:
         >>> config = TracerConfig(
@@ -257,6 +266,17 @@ class TracerConfig(BaseHoneyHiveConfig):
         examples=[60.0, 120.0, 300.0],
     )
 
+    # HTTP session configuration
+    requests_session: Optional[requests.Session] = Field(  # type: ignore[call-overload]
+        None,
+        description=(
+            "Custom requests.Session for OTLP span export HTTP connections, "
+            "e.g. with custom proxies, retries, or TLS settings. The caller "
+            "owns the session; the SDK will not close it on shutdown. When "
+            "unset, the SDK creates its own connection-pooled session."
+        ),
+    )
+
     # Session-related fields (for hybrid approach)
     session_id: Optional[str] = Field(  # type: ignore[call-overload]
         None,
@@ -302,6 +322,24 @@ class TracerConfig(BaseHoneyHiveConfig):
         extra="forbid",
         case_sensitive=False,
     )
+
+    @field_serializer("requests_session", when_used="json")
+    def _serialize_requests_session(
+        self, value: Optional[requests.Session]
+    ) -> Optional[str]:
+        """Serialize the session as a placeholder in JSON mode.
+
+        Session objects aren't JSON-serializable and would otherwise raise
+        PydanticSerializationError. Python-mode model_dump() is unaffected —
+        config merging relies on it to pass the session through by reference.
+
+        Args:
+            value: The configured session, if any
+
+        Returns:
+            A placeholder string when a session is set, otherwise None
+        """
+        return "<requests.Session>" if value is not None else None
 
     @field_validator("server_url", mode="before")
     @classmethod

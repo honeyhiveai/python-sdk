@@ -26,6 +26,7 @@ from typing import Any, Dict, Optional, cast
 from unittest.mock import MagicMock, Mock, call, mock_open, patch
 
 import pytest
+import requests
 
 from honeyhive.tracer.core import HoneyHiveTracer
 
@@ -48,6 +49,9 @@ class MockHoneyHiveTracer:
         self.config.skip_backend_session_creation = False
         self.config.session = Mock()
         self.config.session.inputs = {}
+        # Mirror the real TracerConfig default (Mock would auto-create a
+        # truthy attribute otherwise, which no real config ever produces)
+        self.config.requests_session = None
         # Span limit configuration
         self.config.max_attributes = 1024
         self.config.max_events = 1024
@@ -927,6 +931,57 @@ class TestTracerInitialization:
         assert "Authorization" in headers
         assert "X-Source" in headers
         assert "X-Project" not in headers
+
+    @patch("honeyhive.tracer.instrumentation.initialization.HoneyHiveOTLPExporter")
+    @patch(
+        "honeyhive.tracer.instrumentation.initialization._get_optimal_session_config"
+    )
+    @patch("honeyhive.tracer.instrumentation.initialization.safe_log")
+    @patch.dict("os.environ", {"HH_OTLP_ENABLED": "true"})
+    def test__create_otlp_exporter_default_omits_session_kwarg(
+        self, mock_log: Any, mock_session_config: Any, mock_exporter: Any
+    ) -> None:
+        """Without a custom requests_session, no session kwarg is passed.
+
+        Passing session=None would make HoneyHiveOTLPExporter skip its
+        optimized connection-pooled session (it gates on "session" in kwargs).
+        """
+        # Arrange
+        mock_session_config.return_value = Mock()
+        self.mock_tracer.config.otlp_enabled = True
+        self.mock_tracer.config.requests_session = None
+        self.mock_tracer.test_mode = False
+
+        # Act
+        initialization._create_otlp_exporter(self.mock_tracer)
+
+        # Assert
+        mock_exporter.assert_called_once()
+        assert "session" not in mock_exporter.call_args[1]
+
+    @patch("honeyhive.tracer.instrumentation.initialization.HoneyHiveOTLPExporter")
+    @patch(
+        "honeyhive.tracer.instrumentation.initialization._get_optimal_session_config"
+    )
+    @patch("honeyhive.tracer.instrumentation.initialization.safe_log")
+    @patch.dict("os.environ", {"HH_OTLP_ENABLED": "true"})
+    def test__create_otlp_exporter_passes_custom_requests_session(
+        self, mock_log: Any, mock_session_config: Any, mock_exporter: Any
+    ) -> None:
+        """A custom requests_session from config reaches the exporter."""
+        # Arrange
+        mock_session_config.return_value = Mock()
+        custom_session = Mock(spec=requests.Session)
+        self.mock_tracer.config.otlp_enabled = True
+        self.mock_tracer.config.requests_session = custom_session
+        self.mock_tracer.test_mode = False
+
+        # Act
+        initialization._create_otlp_exporter(self.mock_tracer)
+
+        # Assert
+        mock_exporter.assert_called_once()
+        assert mock_exporter.call_args[1]["session"] is custom_session
 
     @patch("honeyhive.tracer.instrumentation.initialization.safe_log")
     def test__create_otlp_exporter_disabled(self, mock_log: Any) -> None:

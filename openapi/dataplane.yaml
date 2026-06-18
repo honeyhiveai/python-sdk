@@ -4,7 +4,7 @@ info:
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
-  version: 1.1.0
+  version: 1.2.1
 servers:
   - url: https://api.honeyhive.ai
 tags:
@@ -335,6 +335,35 @@ paths:
         '400':
           description: Bad request (invalid event data or missing required fields)
   /v1/events/{event_id}:
+    get:
+      tags:
+        - Events
+      operationId: getEvent
+      x-cli-name: get
+      x-ts-sdk-name: get
+      summary: Get an event by ID
+      description: |
+        Retrieve a single event by its unique identifier. The event is fetched
+        directly from S3/MinIO storage.
+      parameters:
+        - in: path
+          name: event_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the event to retrieve
+      responses:
+        '200':
+          description: Event retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetEventResponse'
+        '400':
+          description: Bad request (invalid event_id)
+        '404':
+          description: Event not found
     put:
       tags:
         - Events
@@ -2282,6 +2311,72 @@ components:
       type: http
       scheme: bearer
   schemas:
+    SingleFilter:
+      type: object
+      properties:
+        field:
+          type: string
+        operator:
+          type: string
+          enum:
+            - exists
+            - not exists
+            - is
+            - is not
+            - contains
+            - not contains
+            - greater than
+            - less than
+            - after
+            - before
+        value:
+          anyOf:
+            - type: string
+            - type: number
+            - type: boolean
+            - type: 'null'
+        type:
+          type: string
+          enum:
+            - string
+            - number
+            - boolean
+            - datetime
+      required:
+        - field
+        - operator
+        - value
+        - type
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+        limit:
+          type: integer
+          minimum: 1
+        total:
+          type: integer
+          minimum: 0
+        total_unfiltered:
+          type: integer
+          minimum: 0
+        total_pages:
+          type: integer
+          minimum: 0
+        has_next:
+          type: boolean
+        has_prev:
+          type: boolean
+      required:
+        - page
+        - limit
+        - total
+        - total_unfiltered
+        - total_pages
+        - has_next
+        - has_prev
     CreateChartRequest:
       type: object
       properties:
@@ -3235,42 +3330,6 @@ components:
         - dereferenced
         - message
       description: Response for DELETE /datasets/{dataset_id}/datapoints/{datapoint_id}
-    SingleFilter:
-      type: object
-      properties:
-        field:
-          type: string
-        operator:
-          type: string
-          enum:
-            - exists
-            - not exists
-            - is
-            - is not
-            - contains
-            - not contains
-            - greater than
-            - less than
-            - after
-            - before
-        value:
-          anyOf:
-            - type: string
-            - type: number
-            - type: boolean
-            - type: 'null'
-        type:
-          type: string
-          enum:
-            - string
-            - number
-            - boolean
-            - datetime
-      required:
-        - field
-        - operator
-        - value
-        - type
     FiltersArray:
       type: array
       items:
@@ -3921,6 +3980,14 @@ components:
         - events
         - totalEvents
       description: Response for GET /events
+    GetEventResponse:
+      type: object
+      properties:
+        event:
+          $ref: '#/components/schemas/GetEventResponseEvent'
+      required:
+        - event
+      description: Response for GET /events/:event_id — single event payload
     ExportEventsResponse:
       type: object
       properties:
@@ -3949,36 +4016,6 @@ components:
         - event_ids
         - success
       description: Response for POST /events/batch
-    Pagination:
-      type: object
-      properties:
-        page:
-          type: integer
-          minimum: 1
-        limit:
-          type: integer
-          minimum: 1
-        total:
-          type: integer
-          minimum: 0
-        total_unfiltered:
-          type: integer
-          minimum: 0
-        total_pages:
-          type: integer
-          minimum: 0
-        has_next:
-          type: boolean
-        has_prev:
-          type: boolean
-      required:
-        - page
-        - limit
-        - total
-        - total_unfiltered
-        - total_pages
-        - has_next
-        - has_prev
     PassingRange:
       type: object
       properties:
@@ -6179,6 +6216,89 @@ components:
       required:
         - $gte
         - $lte
+    GetEventResponseEvent:
+      type: object
+      properties:
+        project:
+          type: string
+          deprecated: true
+          description: Project name (ignored by server — project is determined from API key scope)
+        project_id:
+          type: string
+          description: Project ID
+        source:
+          type: string
+          description: Source of the event (e.g., sdk-python)
+        event_name:
+          type: string
+          description: Name of the event
+        event_type:
+          type: string
+          enum:
+            - model
+            - tool
+            - chain
+            - session
+          description: Type of event (model, tool, chain, or session)
+        event_id:
+          type: string
+        session_id:
+          type: string
+          description: Session this event belongs to
+        parent_id:
+          type: string
+          description: Parent event ID in the trace hierarchy
+        children_ids:
+          type: array
+          items:
+            type: string
+          description: Child event IDs in the trace hierarchy
+        config:
+          type: object
+          additionalProperties: {}
+          description: Configuration used for this event
+        inputs:
+          type: object
+          additionalProperties: {}
+          description: Input data for the event
+        outputs:
+          type: object
+          additionalProperties: {}
+          description: Output data from the event
+        error:
+          type:
+            - string
+            - 'null'
+          description: Error message if the event failed
+        start_time:
+          type: number
+          description: Event start time as Unix milliseconds
+        end_time:
+          type: number
+          description: Event end time as Unix milliseconds
+        duration:
+          type: number
+          description: Event duration in milliseconds
+        metadata:
+          type: object
+          additionalProperties: {}
+          description: Arbitrary metadata for the event
+        feedback:
+          type: object
+          additionalProperties: {}
+          description: Feedback data associated with the event
+        metrics:
+          type: object
+          additionalProperties: {}
+          description: Metric values computed for the event
+        user_properties:
+          type: object
+          additionalProperties: {}
+          description: User properties associated with the event
+      required:
+        - event_id
+      additionalProperties: {}
+      description: Full event object for legacy event creation endpoints
     EventMetricDataMetadata:
       type: object
       properties:

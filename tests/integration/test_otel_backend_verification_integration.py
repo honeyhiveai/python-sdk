@@ -279,7 +279,7 @@ class TestOTELBackendVerificationIntegration:
     def test_error_spans_backend_verification(
         self,
         tracer_factory: Any,
-        integration_client: Any,
+        fetch_events: Any,
         real_project: Any,
         real_source: Any,
     ) -> None:
@@ -317,19 +317,25 @@ class TestOTELBackendVerificationIntegration:
         with pytest.raises(ValueError, match="Intentional test error"):
             operation_that_fails()
 
-        # Allow time for export and processing
-        time.sleep(5.0)
-
         try:
-            # Verify error event using centralized backend verification
-
-            error_event = verify_span_export(
-                client=integration_client,
-                project=real_project,
+            # Retrieve the decorator's _error span by exact event name.
+            # Lookup by the enriched test.unique_id is not possible here:
+            # attributes set via enrich_span inside a raising function never
+            # reach the exported span (HHAI-5661).
+            events = fetch_events(
                 session_id=test_tracer.session_id,
-                unique_identifier=unique_id,
-                expected_event_name=error_event_name,
-                debug_content=True,  # Enable verbose debugging to see what's in backend
+                project=real_project,
+                retry_delay=3.0,
+                predicate=lambda evs: any(
+                    e.event_name == error_event_name for e in evs
+                ),
+            )
+            error_event = next(
+                (e for e in events if e.event_name == error_event_name), None
+            )
+            assert error_event is not None, (
+                f"Error event '{error_event_name}' not found in backend; "
+                f"got events: {[e.event_name for e in events]}"
             )
 
             # Verify basic event properties

@@ -24,7 +24,7 @@ async def getMetrics(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "get",
@@ -59,7 +59,7 @@ async def createMetric(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "post",
@@ -95,7 +95,7 @@ async def updateMetricLegacy(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "put",
@@ -131,7 +131,7 @@ async def deleteMetricLegacy(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "delete",
@@ -169,7 +169,7 @@ async def updateMetric(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "put",
@@ -205,7 +205,7 @@ async def deleteMetric(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "delete",
@@ -240,7 +240,7 @@ async def runMetric(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "post",
@@ -276,7 +276,7 @@ async def runMetricLegacy(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "post",

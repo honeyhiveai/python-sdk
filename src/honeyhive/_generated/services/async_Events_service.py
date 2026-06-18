@@ -21,7 +21,7 @@ async def createEventLegacy(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "post",
@@ -57,7 +57,7 @@ async def updateEventLegacy(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "put",
@@ -93,7 +93,7 @@ async def createEvent(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "post",
@@ -114,6 +114,41 @@ async def createEvent(
     return PostEventResponse(**body) if body is not None else PostEventResponse()
 
 
+async def getEvent(
+    api_config_override: Optional[APIConfig] = None, *, event_id: str
+) -> GetEventResponse:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/v1/events/{event_id}"
+    headers = api_config.get_default_headers()
+    query_params: Dict[str, Any] = {}
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    async with httpx.AsyncClient(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
+        response = await client.request(
+            "get",
+            httpx.URL(path),
+            headers=headers,
+            params=_serialize_query_params(query_params),
+        )
+
+    if response.status_code != 200:
+        raise HTTPException(
+            response.status_code,
+            f"getEvent failed with status code: {response.status_code}",
+        )
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return GetEventResponse(**body) if body is not None else GetEventResponse()
+
+
 async def updateEvent(
     api_config_override: Optional[APIConfig] = None,
     *,
@@ -132,7 +167,7 @@ async def updateEvent(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "put",
@@ -168,7 +203,7 @@ async def exportEventsLegacy(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "post",
@@ -204,7 +239,7 @@ async def searchEvents(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "post",
@@ -240,7 +275,7 @@ async def createEventBatch(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "post",
@@ -278,7 +313,7 @@ async def createModelEventLegacy(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "post",
@@ -316,7 +351,7 @@ async def createEventBatchLegacy(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "post",
@@ -354,7 +389,7 @@ async def createModelEventBatchLegacy(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "post",
@@ -398,7 +433,7 @@ async def getEventsSchemaLegacy(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "get",

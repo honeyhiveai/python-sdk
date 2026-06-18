@@ -21,7 +21,7 @@ async def getQueues(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "get",
@@ -62,7 +62,7 @@ async def createQueue(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "post",
@@ -102,7 +102,7 @@ async def getQueue(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "get",
@@ -144,7 +144,7 @@ async def updateQueue(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "put",
@@ -184,7 +184,7 @@ async def deleteQueue(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "delete",

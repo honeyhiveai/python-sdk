@@ -255,12 +255,14 @@ class TestOTELOTLPExportIntegration:
         # ✅ STANDARD PATTERN: Use verify_tracer_span for span creation
         # + backend verification
         # Override session_id with API-created session to test attribute
-        # override capability
+        # override capability. The backend routes the event to the overridden
+        # session, so verification must query under test_session_id — not the
+        # tracer's own session.
         target_event = verify_tracer_span(
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
-            session_id=integration_tracer.session_id,
+            session_id=test_session_id,
             span_name=test_operation_name,
             unique_identifier=unique_id,
             span_attributes={

@@ -41,7 +41,7 @@ async def getRuns(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "get",
@@ -80,7 +80,7 @@ async def createRun(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "post",
@@ -122,7 +122,7 @@ async def getRunsSchema(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "get",
@@ -161,7 +161,7 @@ async def getRun(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "get",
@@ -203,7 +203,7 @@ async def updateRun(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "put",
@@ -243,7 +243,7 @@ async def deleteRun(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "delete",
@@ -285,7 +285,7 @@ async def getRunSchema(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "get",
@@ -328,7 +328,7 @@ async def getExperimentRunMetrics(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "get",
@@ -374,7 +374,7 @@ async def getExperimentSummary(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "get",
@@ -420,7 +420,7 @@ async def getExperimentResultLegacy(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "get",
@@ -467,7 +467,7 @@ async def getExperimentComparison(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "get",
@@ -514,7 +514,7 @@ async def getExperimentComparisonLegacy(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "get",
@@ -567,7 +567,7 @@ async def getExperimentCompareEvents(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "get",
@@ -622,7 +622,7 @@ async def getExperimentCompareEventsLegacy(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "get",

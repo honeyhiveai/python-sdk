@@ -21,6 +21,7 @@ import threading
 import warnings
 from typing import Any, Dict, Optional, Self, Union
 
+import requests
 from opentelemetry.trace import INVALID_SPAN_CONTEXT, SpanKind
 
 from ...api.client import HoneyHive
@@ -150,6 +151,7 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
         datapoint_id: Union[Optional[str], _ExplicitType] = _EXPLICIT,
         link_carrier: Union[Optional[Dict[str, Any]], _ExplicitType] = _EXPLICIT,
         test_mode: Union[bool, _ExplicitType] = _EXPLICIT,
+        requests_session: Union[Optional[requests.Session], _ExplicitType] = _EXPLICIT,
         **kwargs: Any,
     ) -> None:
         """Initialize the HoneyHive tracer using dynamic configuration merging.
@@ -170,6 +172,10 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
         :type session_config: Optional[SessionConfig]
         :param evaluation_config: Evaluation-specific configuration
         :type evaluation_config: Optional[EvaluationConfig]
+        :param requests_session: Custom requests.Session for OTLP span export
+            HTTP connections (e.g. custom proxies, retries, or TLS). The caller
+            owns the session; the SDK will not close it on shutdown.
+        :type requests_session: Optional[requests.Session]
         """
         # Multi-instance architecture uses safe_log() for all logging
         # No direct logger assignment needed - safe_log handles per-instance logging
@@ -196,6 +202,7 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
             "datapoint_id": datapoint_id,
             "link_carrier": link_carrier,
             "test_mode": test_mode,
+            "requests_session": requests_session,
         }
 
         # Only include explicitly provided parameters (not sentinel values)
@@ -536,7 +543,9 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
             config: Pydantic tracer configuration
             session_config: Session-specific configuration
             evaluation_config: Evaluation-specific configuration
-            **kwargs: Backward-compatible parameters
+            **kwargs: Backward-compatible parameters (e.g. api_key, project,
+                requests_session — a caller-owned requests.Session used for
+                OTLP span export and never closed by the SDK)
 
         Returns:
             Initialized HoneyHive tracer instance

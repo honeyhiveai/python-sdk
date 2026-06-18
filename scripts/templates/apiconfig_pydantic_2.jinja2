@@ -10,6 +10,8 @@
   - Removed env_token_name conditional branches (hardcoded to the non-env-token path)
   - Added _serialize_query_params() helper so List-typed query params are sent as
     bracket notation (ids[]=a&ids[]=b) instead of bare repeated keys (ids=a&ids=b)
+  - Added a configurable `timeout` field (defaults to 5.0s, matching httpx's own
+    default) plumbed through to the httpx clients
 #}
 import os
 from typing import Any, Dict, Optional, Union
@@ -31,6 +33,10 @@ class APIConfig(BaseModel):
     base_path: str = DEFAULT_BASE_URL
     verify: Union[bool, str] = True
     access_token: Optional[str] = None
+    # Request timeout in seconds passed to the underlying httpx client. Defaults
+    # to 5.0 to match httpx's own default (so behaviour is unchanged unless set).
+    # Set to None to disable timeouts entirely.
+    timeout: Optional[float] = 5.0
 
     @classmethod
     def from_env(
