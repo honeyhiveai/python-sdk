@@ -15,6 +15,10 @@ class APIConfig(BaseModel):
     base_path: str = DEFAULT_BASE_URL
     verify: Union[bool, str] = True
     access_token: Optional[str] = None
+    # Request timeout in seconds passed to the underlying httpx client. Defaults
+    # to 5.0 to match httpx's own default (so behaviour is unchanged unless set).
+    # Set to None to disable timeouts entirely.
+    timeout: Optional[float] = 5.0
 
     @classmethod
     def from_env(

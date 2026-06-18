@@ -5,7 +5,7 @@ HoneyHive Python SDK - LLM Observability and Evaluation Platform
 # Version must be defined BEFORE imports to avoid circular import issues
 # Version must be semver or semver followed by "a" (alpha), "b" (beta), or "rc"
 # (release candidate) + a number
-__version__ = "1.2.1"
+__version__ = "1.3.0"
 
 # Main API client
 from .api import HoneyHive

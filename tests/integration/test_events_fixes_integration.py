@@ -62,9 +62,6 @@ def tracer(project_name: str) -> HoneyHiveTracer:
 class TestEventOrderingIntegration:
     """Integration tests for event ordering in get_by_session_id."""
 
-    @pytest.mark.skip(
-        reason="Known CI failure: not all child events ingested in time (HHAI-4320)"
-    )
     def test_get_by_session_id_returns_chronological_order(
         self,
         api_client: HoneyHive,
@@ -100,33 +97,39 @@ class TestEventOrderingIntegration:
         if hasattr(tracer, "flush"):
             tracer.flush()
 
-        # Fetch events using helper with retry logic
+        # Fetch events using helper with retry logic. Wait for all four
+        # events (session start + 3 operations) — the session event lands
+        # first, so a bare existence check would race child ingestion.
         events = fetch_events(
             session_id=session_id,
             project=project_name,
             max_retries=10,
             retry_delay=3.0,
+            min_events=4,
         )
 
         # Verify we got events
-        assert len(events) >= 3, f"Expected at least 3 events, got {len(events)}"
+        assert len(events) >= 4, f"Expected at least 4 events, got {len(events)}"
 
         # Filter to our operation events. `events` is List[LegacyEvent].
         operation_events = [
             e for e in events if (e.event_name or "").endswith("_operation")
         ]
+        event_names = [e.event_name or "" for e in operation_events]
+        assert len(operation_events) == 3, (
+            f"Expected 3 operation events, got {len(operation_events)}: {event_names}"
+        )
 
-        if len(operation_events) >= 3:
-            # Verify they are in chronological order (first should come before second, etc.)
-            event_names = [e.event_name or "" for e in operation_events]
-            # Check that events with earlier timestamps come first
-            for i in range(len(operation_events) - 1):
-                current_time = operation_events[i].start_time or 0
-                next_time = operation_events[i + 1].start_time or 0
-                if current_time and next_time:
-                    assert current_time <= next_time, (
-                        f"Events not in chronological order: {event_names}"
-                    )
+        # Verify they are returned in chronological order
+        for i in range(len(operation_events) - 1):
+            current_time = operation_events[i].start_time or 0
+            next_time = operation_events[i + 1].start_time or 0
+            assert current_time and next_time, (
+                f"Operation events missing start_time: {event_names}"
+            )
+            assert current_time <= next_time, (
+                f"Events not in chronological order: {event_names}"
+            )
 
 
 class TestProjectDeprecationIntegration:

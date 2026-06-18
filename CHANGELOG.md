@@ -2,6 +2,22 @@
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-06-18
+
+### Added
+
+- **Configurable API request timeout**
+  - `HoneyHive(timeout=...)` now sets the per-request timeout, in seconds, for standard API client calls. You can also set `HH_API_TIMEOUT`; the explicit `timeout=` argument takes precedence. The default remains 5 seconds, so existing clients keep the same timeout unless you opt in.
+- **Event lookup by ID**
+  - The generated sync and async event services now include `GET /v1/events/{event_id}` as `getEvent(..., event_id=...)`, returning `GetEventResponse` / `GetEventResponseEvent` models exported from `honeyhive.models`.
+- **Custom tracer export HTTP sessions**
+  - `HoneyHiveTracer.init(requests_session=...)` and `TracerConfig(requests_session=...)` now accept a caller-owned `requests.Session` for OTLP span export. Use this when you need custom proxies, retries, TLS settings, or connection pooling. The SDK does not close a session that you provide.
+
+### Compatibility
+
+- **Self-host: `GET /v1/events/{event_id}` requires backend v1.3.0+**
+  - Self-hosted deployments must run a HoneyHive backend on version 1.3.0 or greater before calling `GET /v1/events/{event_id}`. Older self-host backends do not expose this route, so event-by-id calls will fail until the backend is upgraded. HoneyHive Cloud users are unaffected.
+
 ## [1.2.1] - 2026-06-11
 
 No customer-facing changes. Internal OpenAPI generator and generated-model cleanup only.

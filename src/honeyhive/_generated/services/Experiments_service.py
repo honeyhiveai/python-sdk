@@ -40,7 +40,9 @@ def getRuns(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
         response = client.request(
             "get",
             httpx.URL(path),
@@ -77,7 +79,9 @@ def createRun(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
         response = client.request(
             "post",
             httpx.URL(path),
@@ -117,7 +121,9 @@ def getRunsSchema(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
         response = client.request(
             "get",
             httpx.URL(path),
@@ -154,7 +160,9 @@ def getRun(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
         response = client.request(
             "get",
             httpx.URL(path),
@@ -194,7 +202,9 @@ def updateRun(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
         response = client.request(
             "put",
             httpx.URL(path),
@@ -232,7 +242,9 @@ def deleteRun(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
         response = client.request(
             "delete",
             httpx.URL(path),
@@ -272,7 +284,9 @@ def getRunSchema(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
         response = client.request(
             "get",
             httpx.URL(path),
@@ -313,7 +327,9 @@ def getExperimentRunMetrics(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
         response = client.request(
             "get",
             httpx.URL(path),
@@ -357,7 +373,9 @@ def getExperimentSummary(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
         response = client.request(
             "get",
             httpx.URL(path),
@@ -401,7 +419,9 @@ def getExperimentResultLegacy(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
         response = client.request(
             "get",
             httpx.URL(path),
@@ -446,7 +466,9 @@ def getExperimentComparison(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
         response = client.request(
             "get",
             httpx.URL(path),
@@ -491,7 +513,9 @@ def getExperimentComparisonLegacy(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
         response = client.request(
             "get",
             httpx.URL(path),
@@ -542,7 +566,9 @@ def getExperimentCompareEvents(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
         response = client.request(
             "get",
             httpx.URL(path),
@@ -595,7 +621,9 @@ def getExperimentCompareEventsLegacy(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
         response = client.request(
             "get",
             httpx.URL(path),

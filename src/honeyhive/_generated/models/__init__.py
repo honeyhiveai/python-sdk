@@ -76,6 +76,8 @@ from .GetDatapointResponse import *
 from .GetDatapointsQuery import *
 from .GetDatapointsResponse import *
 from .GetDatasetsResponse import *
+from .GetEventResponse import *
+from .GetEventResponseEvent import *
 from .GetEventsQuery import *
 from .GetEventsResponse import *
 from .GetEventsSchemaLegacyDateRangeOneOf1 import *

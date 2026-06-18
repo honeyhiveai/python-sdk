@@ -24,7 +24,7 @@ async def getDatasets(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "get",
@@ -59,7 +59,7 @@ async def createDataset(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "post",
@@ -97,7 +97,7 @@ async def updateDatasetLegacy(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "put",
@@ -135,7 +135,7 @@ async def deleteDatasetLegacy(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "delete",
@@ -175,7 +175,7 @@ async def updateDataset(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "put",
@@ -213,7 +213,7 @@ async def deleteDataset(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "delete",
@@ -253,7 +253,7 @@ async def addDatapoints(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "post",
@@ -294,7 +294,7 @@ async def removeDatapoint(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "delete",
@@ -336,7 +336,7 @@ async def removeDatapointLegacy(
     }
 
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
     ) as client:
         response = await client.request(
             "delete",

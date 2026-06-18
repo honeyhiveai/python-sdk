@@ -18,7 +18,9 @@ def getCharts(api_config_override: Optional[APIConfig] = None) -> GetChartsRespo
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
         response = client.request(
             "get",
             httpx.URL(path),
@@ -51,7 +53,9 @@ def createChart(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
         response = client.request(
             "post",
             httpx.URL(path),
@@ -85,7 +89,9 @@ def getChart(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
         response = client.request(
             "get",
             httpx.URL(path),
@@ -121,7 +127,9 @@ def updateChart(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
         response = client.request(
             "put",
             httpx.URL(path),
@@ -155,7 +163,9 @@ def deleteChart(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
         response = client.request(
             "delete",
             httpx.URL(path),

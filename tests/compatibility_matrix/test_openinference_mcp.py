@@ -432,32 +432,6 @@ class TestMCPCompatibilityMatrix:
                 assert minor >= 3  # Minimum version 1.3.0
 
 
-@pytest.mark.integration
-class TestMCPRealAPIIntegration:
-    """Real API integration tests for MCP instrumentor (requires MCP server setup)."""
-
-    @pytest.fixture(autouse=True)
-    def check_mcp_server_available(self):
-        """Check if MCP server is available for real integration testing."""
-        # This would check for actual MCP server availability
-        # For now, we'll skip unless explicitly enabled
-        if not os.getenv("MCP_INTEGRATION_TEST_ENABLED"):
-            pytest.skip(
-                "Real MCP integration tests disabled. Set MCP_INTEGRATION_TEST_ENABLED=1 to enable."
-            )
-
-    def test_real_mcp_client_server_tracing(self):
-        """Test real MCP client-server communication tracing."""
-        # This test would require actual MCP client/server setup
-        # Implementation would depend on specific MCP server being tested
-        pytest.skip("Real MCP integration test requires MCP server setup")
-
-    def test_mcp_tool_execution_tracing(self):
-        """Test tracing of actual MCP tool executions."""
-        # This test would trace real MCP tool calls
-        pytest.skip("Real MCP tool execution test requires MCP server setup")
-
-
 class TestMCPInstrumentorDocumentation:
     """Test that MCP instrumentor integration meets documentation requirements."""
 

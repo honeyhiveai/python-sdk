@@ -65,6 +65,8 @@ class OTLPJSONExporter(SpanExporter):
         self.endpoint = endpoint.rstrip("/")
         # Copy headers to avoid modifying the original dict
         self.headers = dict(headers) if headers else {}
+        # Only close sessions we created; provided sessions stay caller-owned
+        self._owns_session = session is None
         self.session = session or requests.Session()
         self.timeout = timeout
         self.tracer_instance = tracer_instance
@@ -351,7 +353,7 @@ class OTLPJSONExporter(SpanExporter):
         if self._is_shutdown:
             return
         self._is_shutdown = True
-        if self.session:
+        if self.session and self._owns_session:
             self.session.close()
 
 
@@ -394,6 +396,8 @@ class HoneyHiveOTLPExporter(SpanExporter):
         self.use_optimized_session = use_optimized_session
         self.protocol = protocol.lower()
         self._session: Optional[requests.Session] = None
+        # Only close sessions we created; provided sessions stay caller-owned
+        self._owns_session = False
         self._is_shutdown = False
         self._use_json = self.protocol == "http/json"
         self._otlp_exporter: Union[OTLPSpanExporter, OTLPJSONExporter]
@@ -404,6 +408,7 @@ class HoneyHiveOTLPExporter(SpanExporter):
                 self._session = create_optimized_otlp_session(
                     config=self.session_config, tracer_instance=tracer_instance
                 )
+                self._owns_session = True
                 kwargs["session"] = self._session
 
                 safe_log(
@@ -585,6 +590,10 @@ class HoneyHiveOTLPExporter(SpanExporter):
 
         self._is_shutdown = True
         self._otlp_exporter.shutdown()
+        # The inner exporter only closes sessions it created itself, so the
+        # optimized session created above must be closed here
+        if self._session and self._owns_session:
+            self._session.close()
         safe_log(
             self.tracer_instance, "debug", "HoneyHiveOTLPExporter shutdown completed"
         )

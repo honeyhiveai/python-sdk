@@ -636,8 +636,13 @@ class TestExperimentsRunComparison:
 
     # ----------- Matrix coverage: external × server-side ----------------
 
-    @pytest.mark.skip(
-        reason="HHAI-5345: enrich PUT races ingestion pipeline — un-skip when fixed"
+    @pytest.mark.xfail(
+        strict=False,
+        reason=(
+            "HHAI-5662: metric_deltas can come back empty when the evaluation "
+            "pipeline is cold — scores land on chain spans but aren't yet "
+            "visible to compare_runs"
+        ),
     )
     def test_compare_runs_with_server_side_metric_external_dataset(
         self,
@@ -728,8 +733,13 @@ class TestExperimentsRunComparison:
 
     # ----------- Matrix coverage: managed × server-side -----------------
 
-    @pytest.mark.skip(
-        reason="HHAI-5345: enrich PUT races ingestion pipeline — un-skip when fixed"
+    @pytest.mark.xfail(
+        strict=False,
+        reason=(
+            "HHAI-5662: metric_deltas can come back empty when the evaluation "
+            "pipeline is cold — scores land on chain spans but aren't yet "
+            "visible to compare_runs"
+        ),
     )
     def test_compare_runs_with_server_side_metric_managed_dataset(
         self,

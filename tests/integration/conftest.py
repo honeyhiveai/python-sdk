@@ -13,8 +13,7 @@ import gc
 import os
 import sys
 import time
-from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any, Callable, Dict, List, Optional
 
 import pytest
 from opentelemetry import context, trace
@@ -99,34 +98,6 @@ def pytest_collection_modifyitems(config: Any, items: Any) -> None:
             for item in items:
                 if "real_api" in item.keywords:
                     item.add_marker(skip_no_api_key)
-
-    # Optionally skip known failing integration tests in CI while we
-    # progressively restore them.
-    skip_known_failures = os.getenv("HH_INTEGRATION_SKIP_KNOWN_FAILURES", "").lower()
-    if skip_known_failures in {"1", "true", "yes", "on"}:
-        default_skiplist = Path(__file__).resolve().parent / "ci_known_failures.txt"
-        skiplist_path = Path(
-            os.getenv("HH_INTEGRATION_KNOWN_FAILURES_FILE", str(default_skiplist))
-        )
-        if not skiplist_path.is_absolute():
-            skiplist_path = Path(__file__).resolve().parents[2] / skiplist_path
-
-        if skiplist_path.exists():
-            known_failures: Set[str] = {
-                line.strip()
-                for line in skiplist_path.read_text(encoding="utf-8").splitlines()
-                if line.strip() and not line.startswith("#")
-            }
-            if known_failures:
-                skip_known_failure = pytest.mark.skip(
-                    reason=(
-                        "Temporarily skipped known failing integration test in CI; "
-                        "see tests/integration/ci_known_failures.txt"
-                    )
-                )
-                for item in items:
-                    if item.nodeid in known_failures:
-                        item.add_marker(skip_known_failure)
 
 
 @pytest.fixture(scope="session")
@@ -534,6 +505,8 @@ def fetch_session_events(
     project: Optional[str] = None,
     max_retries: int = 10,
     retry_delay: float = 5.0,
+    min_events: int = 1,
+    predicate: Optional[Callable[[List[LegacyEvent]], bool]] = None,
 ) -> List[LegacyEvent]:
     """Fetch events for a session from HoneyHive API (Data Plane only).
 
@@ -547,6 +520,14 @@ def fetch_session_events(
         project: Project name (defaults to HH_PROJECT env var).
         max_retries: Number of times to retry if no events found.
         retry_delay: Seconds to wait between retries.
+        min_events: Keep retrying until at least this many events are
+            ingested. The session-start event lands before child spans,
+            so callers asserting on child events must wait for more than
+            the default of 1 or they race the ingestion pipeline. If the
+            count is never reached, the last (partial) fetch is returned.
+        predicate: Optional extra wait condition on the fetched events
+            (e.g. "an event with this exact name exists"). Combined with
+            min_events; on timeout the last (partial) fetch is returned.
 
     Returns:
         List of ``LegacyEvent`` Pydantic models from
@@ -570,6 +551,7 @@ def fetch_session_events(
 
     client = HoneyHive(api_key=hh_api_key, base_url=dp_url)
 
+    last_events: List[LegacyEvent] = []
     for attempt in range(max_retries):
         try:
             response = client.events.get_by_session_id(
@@ -578,8 +560,11 @@ def fetch_session_events(
                 limit=100,
             )
 
-            if response.events and len(response.events) > 0:
-                return response.events
+            last_events = response.events or []
+            if len(last_events) >= min_events and (
+                predicate is None or predicate(last_events)
+            ):
+                return last_events
 
         except Exception:
             if attempt == max_retries - 1:
@@ -588,7 +573,9 @@ def fetch_session_events(
         # Wait before retry (events may not be ingested yet)
         time.sleep(retry_delay)
 
-    return []
+    # min_events never reached — return what did ingest so callers'
+    # assertion messages reflect the partial state instead of 0.
+    return last_events
 
 
 def verify_session_logged(
@@ -820,7 +807,8 @@ def fetch_events() -> Callable[..., List[LegacyEvent]]:
     """Fixture providing the :func:`fetch_session_events` helper.
 
     Returns a callable with signature
-    ``(session_id, project=None, max_retries=10, retry_delay=5.0) -> List[LegacyEvent]``.
+    ``(session_id, project=None, max_retries=10, retry_delay=5.0,
+    min_events=1, predicate=None) -> List[LegacyEvent]``.
     """
     return fetch_session_events
 

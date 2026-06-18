@@ -818,6 +818,15 @@ def _create_otlp_exporter(tracer_instance: Any) -> Optional[Any]:
 
         # Use custom exporter with optimized connection pooling
         # Default protocol is http/json (JSON exporter) per SDK configuration
+
+        # Only forward a user-provided session: passing session=None would
+        # make HoneyHiveOTLPExporter skip its optimized pooled session
+        # (it gates on the presence of the "session" kwarg)
+        custom_session = getattr(tracer_instance.config, "requests_session", None)
+        session_kwargs: Dict[str, Any] = (
+            {"session": custom_session} if custom_session is not None else {}
+        )
+
         otlp_exporter = HoneyHiveOTLPExporter(
             tracer_instance=tracer_instance,
             session_config=session_config,
@@ -832,6 +841,7 @@ def _create_otlp_exporter(tracer_instance: Any) -> Optional[Any]:
                 "hh-client-package": "honeyhive",
             },
             timeout=30.0,  # 30 second timeout for exports
+            **session_kwargs,
         )
 
         safe_log(tracer_instance, "info", "OTLP exporter created successfully")

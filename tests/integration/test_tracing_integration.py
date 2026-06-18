@@ -542,8 +542,6 @@ class TestEndToEndVerification:
         - Fetch events from API
         - Assert events exist for session (or log if ingestion delayed)
         """
-        import time
-
         from honeyhive import HoneyHiveTracer, trace
 
         tracer = HoneyHiveTracer.init(
@@ -563,32 +561,22 @@ class TestEndToEndVerification:
         assert result == 10
 
         # Force flush with explicit wait
-        flush_result = tracer.flush()
+        tracer.flush()
 
-        # Wait for ingestion
-        time.sleep(5)
+        # Fetch events - this verifies the full pipeline. Wait for both the
+        # session event and the traced function's event.
+        events = fetch_events(
+            session_id=session_id,
+            project=os.getenv("HH_PROJECT", "tracing-integration-test"),
+            max_retries=10,
+            retry_delay=3.0,
+            min_events=2,
+        )
 
-        # Try to fetch events - this verifies the full pipeline
-        try:
-            events = fetch_events(
-                session_id=session_id,
-                project=os.getenv("HH_PROJECT", "tracing-integration-test"),
-                max_retries=3,
-                retry_delay=3.0,
-            )
-
-            if len(events) > 0:
-                # Full e2e verification passed
-                assert True, f"Found {len(events)} events for session"
-            else:
-                # Events not yet ingested - this is expected in some CI environments
-                pytest.skip(
-                    f"Events not yet ingested for session {session_id}. "
-                    "This may be due to ingestion delay - verify manually."
-                )
-        except Exception as e:
-            # API call failed - skip with info
-            pytest.skip(f"Could not fetch events: {e}")
+        assert len(events) >= 2, (
+            f"Expected session + traced function events for session "
+            f"{session_id}, got {len(events)}"
+        )
 
     def test_enrichment_export_verification(self, fetch_events):
         """Verify enriched spans are exported with correct metadata.
@@ -600,8 +588,6 @@ class TestEndToEndVerification:
         - Fetch events from API
         - Assert metadata/metrics match what was logged
         """
-        import time
-
         from honeyhive import HoneyHiveTracer, enrich_span, trace
 
         tracer = HoneyHiveTracer.init(
@@ -624,40 +610,32 @@ class TestEndToEndVerification:
         assert result == "HELLO WORLD"
 
         tracer.flush()
-        time.sleep(5)
 
-        try:
-            events = fetch_events(
-                session_id=session_id,
-                project=os.getenv("HH_PROJECT", "tracing-integration-test"),
-            )
+        # Wait for the session event and the enriched function's event.
+        events = fetch_events(
+            session_id=session_id,
+            project=os.getenv("HH_PROJECT", "tracing-integration-test"),
+            min_events=2,
+        )
 
-            if len(events) > 0:
-                # Check if metadata was exported. events is List[LegacyEvent].
-                all_metadata = {}
-                for event in events:
-                    if event.metadata:
-                        all_metadata.update(event.metadata)
+        # Check the enrichment metadata was exported. events is List[LegacyEvent].
+        all_metadata = {}
+        for event in events:
+            if event.metadata:
+                all_metadata.update(event.metadata)
 
-                if "test_key" in all_metadata:
-                    assert all_metadata["test_key"] == "test_value"
-                else:
-                    # Metadata not in expected format, but events exist
-                    pass
-            else:
-                pytest.skip(f"Events not yet ingested for session {session_id}")
-        except Exception as e:
-            pytest.skip(f"Could not fetch events: {e}")
+        assert all_metadata.get("test_key") == "test_value", (
+            f"Enriched metadata not exported; merged metadata keys: "
+            f"{sorted(all_metadata.keys())}"
+        )
 
-    def test_session_can_be_retrieved(self):
+    def test_session_can_be_retrieved(self, fetch_events):
         """Verify session can be retrieved via API after creation.
 
         This is a simpler e2e test that just verifies the session
         exists in the system, without checking individual events.
         """
-        import time
-
-        from honeyhive import HoneyHive, HoneyHiveTracer
+        from honeyhive import HoneyHiveTracer
 
         tracer = HoneyHiveTracer.init(
             project=os.getenv("HH_PROJECT", "tracing-integration-test"),
@@ -669,19 +647,13 @@ class TestEndToEndVerification:
         assert session_id is not None
 
         tracer.flush()
-        time.sleep(3)
 
-        # Try to get the session via the event query surface
-        try:
-            client = HoneyHive(api_key=os.getenv("HH_API_KEY"))
-            session = client.events.get_by_session_id(session_id, limit=10)
-
-            # If we got here, the session exists
-            assert session is not None
-            assert session.events is not None
-        except Exception as e:
-            # Session events might not be accessible yet
-            pytest.skip(f"Could not retrieve session: {e}")
+        # The session-start event must become queryable.
+        events = fetch_events(
+            session_id=session_id,
+            project=os.getenv("HH_PROJECT", "tracing-integration-test"),
+        )
+        assert len(events) >= 1, f"Session {session_id} not retrievable"
 
     def test_api_client_events_export(self):
         """Verify events.export() API works correctly.
@@ -722,8 +694,6 @@ class TestEndToEndVerification:
         - Fetch events from API
         - Assert inputs and outputs in logged events match function args/return
         """
-        import time
-
         from honeyhive import HoneyHiveTracer, trace
 
         tracer = HoneyHiveTracer.init(
@@ -751,55 +721,43 @@ class TestEndToEndVerification:
         assert result == expected_output
 
         tracer.flush()
-        time.sleep(5)
 
-        try:
-            events = fetch_events(
-                session_id=session_id,
-                project=os.getenv("HH_PROJECT"),
-            )
+        # Wait for the session event and the traced function's event.
+        events = fetch_events(
+            session_id=session_id,
+            project=os.getenv("HH_PROJECT"),
+            min_events=2,
+        )
 
-            if len(events) > 0:
-                # `events` is List[LegacyEvent] from fetch_events.
-                # Find the event for our traced function
-                func_event = None
-                for event in events:
-                    if event.event_name == "process_data":
-                        func_event = event
-                        break
+        # `events` is List[LegacyEvent] from fetch_events.
+        # Find the event for our traced function (event names from bare
+        # @trace are module-qualified, so match on the suffix).
+        event_names = [e.event_name or "" for e in events]
+        func_event = next(
+            (e for e in events if (e.event_name or "").endswith("process_data")),
+            None,
+        )
+        assert func_event is not None, (
+            f"process_data event not found; got events: {event_names}"
+        )
 
-                if func_event:
-                    # Verify inputs were captured
-                    inputs = func_event.inputs or {}
-                    assert "input_text" in inputs or "args" in inputs, (
-                        f"Expected input_text in inputs. Got: {inputs}"
-                    )
+        # Verify inputs were captured
+        inputs = func_event.inputs or {}
+        assert "input_text" in inputs or "args" in inputs, (
+            f"Expected input_text in inputs. Got: {inputs}"
+        )
 
-                    # Verify outputs were captured
-                    outputs = func_event.outputs or {}
-                    assert outputs is not None, "Outputs should not be None"
-
-                    # Check output value matches
-                    output_value = (
-                        outputs.get("result")
-                        or outputs.get("return_value")
-                        or outputs.get("output")
-                    )
-                    if output_value:
-                        assert output_value == expected_output, (
-                            f"Output mismatch: expected '{expected_output}', got '{output_value}'"
-                        )
-                else:
-                    # Function event not found by name, check if any event has inputs/outputs
-                    has_inputs = any(e.inputs for e in events)
-                    has_outputs = any(e.outputs for e in events)
-                    assert has_inputs or has_outputs, (
-                        "No events with inputs/outputs found"
-                    )
-            else:
-                pytest.skip(f"Events not yet ingested for session {session_id}")
-        except Exception as e:
-            pytest.skip(f"Could not verify inputs/outputs: {e}")
+        # Verify the output value matches
+        outputs = func_event.outputs or {}
+        output_value = (
+            outputs.get("result")
+            or outputs.get("return_value")
+            or outputs.get("output")
+        )
+        assert output_value == expected_output, (
+            f"Output mismatch: expected '{expected_output}', got "
+            f"'{output_value}' (outputs: {outputs})"
+        )
 
     def test_openai_inputs_outputs_verification(self, fetch_events):
         """Verify OpenAI call inputs/outputs are logged correctly via instrumentor.
@@ -817,8 +775,6 @@ class TestEndToEndVerification:
         - choices or llm.output_messages
         - usage (token counts)
         """
-        import time
-
         try:
             from openinference.instrumentation.openai import OpenAIInstrumentor
         except ImportError:
@@ -850,72 +806,62 @@ class TestEndToEndVerification:
                 max_tokens=20,
             )
 
-            actual_output = response.choices[0].message.content
-
             tracer.flush()
-            time.sleep(5)
 
+            # Wait for the session event and the instrumented LLM event.
             events = fetch_events(
                 session_id=session_id,
                 project=os.getenv("HH_PROJECT"),
+                min_events=2,
             )
 
-            if len(events) > 0:
-                # `events` is List[LegacyEvent] from fetch_events.
-                # Find the LLM event (should have model-related data with actual inputs)
-                llm_event = None
-                for event in events:
-                    event_type = event.event_type or ""
-                    event_name = event.event_name or ""
-                    inputs = event.inputs or {}
+            # `events` is List[LegacyEvent] from fetch_events.
+            # Find the LLM event (should have model-related data with actual inputs)
+            llm_event = None
+            for event in events:
+                event_type = event.event_type or ""
+                event_name = event.event_name or ""
+                inputs = event.inputs or {}
 
-                    # Must have non-empty inputs to be the actual LLM call
-                    if not inputs:
-                        continue
+                # Must have non-empty inputs to be the actual LLM call
+                if not inputs:
+                    continue
 
-                    # Look for OpenAI/LLM events with actual data
-                    if (
-                        "model" in event_type.lower()
-                        or "chatcompletion" in event_name.lower()
-                        or "chat_history" in inputs
-                        or "messages" in inputs
-                    ):
-                        llm_event = event
-                        break
+                # Look for OpenAI/LLM events with actual data
+                if (
+                    "model" in event_type.lower()
+                    or "chatcompletion" in event_name.lower()
+                    or "chat_history" in inputs
+                    or "messages" in inputs
+                ):
+                    llm_event = event
+                    break
 
-                if llm_event:
-                    inputs = llm_event.inputs or {}
-                    outputs = llm_event.outputs or {}
+            assert llm_event is not None, (
+                f"No LLM event with inputs found; got events: "
+                f"{[(e.event_name, e.event_type) for e in events]}"
+            )
 
-                    # Verify inputs captured the prompt
-                    # OpenInference uses chat_history, messages, or similar
-                    input_str = str(inputs).lower()
-                    assert (
-                        test_prompt.lower() in input_str
-                        or "integration test" in input_str
-                        or "chat_history" in inputs
-                        or "messages" in inputs
-                        or len(inputs) > 0
-                    ), f"Expected prompt in inputs. Got: {list(inputs.keys())}"
+            inputs = llm_event.inputs or {}
+            outputs = llm_event.outputs or {}
 
-                    # Verify outputs captured the response
-                    output_str = str(outputs).lower()
-                    assert (
-                        "choices" in outputs
-                        or "content" in output_str
-                        or "message" in output_str
-                        or len(outputs) > 0
-                    ), f"Expected response in outputs. Got: {list(outputs.keys())}"
+            # Verify inputs captured the prompt
+            # OpenInference uses chat_history, messages, or similar
+            input_str = str(inputs).lower()
+            assert (
+                test_prompt.lower() in input_str
+                or "integration test" in input_str
+                or "chat_history" in inputs
+                or "messages" in inputs
+            ), f"Expected prompt in inputs. Got: {list(inputs.keys())}"
 
-                else:
-                    # No specific LLM event found, but check any event has data
-                    has_data = any(e.inputs or e.outputs for e in events)
-                    if has_data:
-                        pass  # Some data was captured
-                    else:
-                        pytest.skip("No LLM event with inputs/outputs found")
-            else:
-                pytest.skip(f"Events not yet ingested for session {session_id}")
+            # Verify outputs captured the response
+            output_str = str(outputs).lower()
+            assert (
+                "choices" in outputs
+                or "content" in output_str
+                or "message" in output_str
+            ), f"Expected response in outputs. Got: {list(outputs.keys())}"
 
         finally:
             instrumentor.uninstrument()
@@ -928,8 +874,6 @@ class TestEndToEndVerification:
         - The completion/response content is captured in outputs
         - Model name is captured
         """
-        import time
-
         # Skip if Anthropic not available
         anthropic_key = os.getenv("ANTHROPIC_API_KEY")
         if not anthropic_key:
@@ -966,47 +910,39 @@ class TestEndToEndVerification:
                 messages=[{"role": "user", "content": test_prompt}],
             )
 
-            actual_output = response.content[0].text
-
             tracer.flush()
-            time.sleep(5)
 
+            # Wait for the session event and the instrumented LLM event.
             events = fetch_events(
                 session_id=session_id,
                 project=os.getenv("HH_PROJECT"),
+                min_events=2,
             )
 
-            if len(events) > 0:
-                # `events` is List[LegacyEvent] from fetch_events.
-                # Find event with Anthropic/LLM data
-                llm_event = None
-                for event in events:
-                    inputs = event.inputs or {}
-                    outputs = event.outputs or {}
-                    if inputs or outputs:
-                        llm_event = event
-                        break
+            # `events` is List[LegacyEvent] from fetch_events.
+            # Find event with Anthropic/LLM data
+            llm_event = next(
+                (e for e in events if (e.inputs or {}) or (e.outputs or {})),
+                None,
+            )
+            assert llm_event is not None, (
+                f"No event with inputs/outputs found; got events: "
+                f"{[(e.event_name, e.event_type) for e in events]}"
+            )
 
-                if llm_event:
-                    inputs = llm_event.inputs or {}
-                    outputs = llm_event.outputs or {}
+            inputs = llm_event.inputs or {}
+            outputs = llm_event.outputs or {}
 
-                    # Verify inputs captured the prompt
-                    input_str = str(inputs).lower()
-                    assert (
-                        "anthropic" in input_str
-                        or "integration test" in input_str
-                        or "messages" in inputs
-                        or len(inputs) > 0
-                    ), f"Expected prompt in inputs. Got: {list(inputs.keys())}"
+            # Verify inputs captured the prompt
+            input_str = str(inputs).lower()
+            assert (
+                "anthropic" in input_str
+                or "integration test" in input_str
+                or "messages" in inputs
+            ), f"Expected prompt in inputs. Got: {list(inputs.keys())}"
 
-                    # Verify outputs captured the response
-                    assert len(outputs) > 0, f"Expected outputs. Got empty."
-
-                else:
-                    pytest.skip("No event with inputs/outputs found")
-            else:
-                pytest.skip(f"Events not yet ingested for session {session_id}")
+            # Verify outputs captured the response
+            assert len(outputs) > 0, "Expected outputs. Got empty."
 
         finally:
             instrumentor.uninstrument()
@@ -1019,8 +955,6 @@ class TestEndToEndVerification:
         - Chain outputs are captured
         - LLM calls within the chain are traced
         """
-        import time
-
         # Skip if OpenAI not available (LangChain uses OpenAI)
         openai_key = os.getenv("OPENAI_API_KEY")
         if not openai_key:
@@ -1058,40 +992,25 @@ class TestEndToEndVerification:
             test_input = "langchain verification"
             response = chain.invoke({"word": test_input})
 
-            actual_output = response.content
-
             tracer.flush()
-            time.sleep(5)
 
+            # Wait for the session event and the instrumented chain events.
             events = fetch_events(
                 session_id=session_id,
                 project=os.getenv("HH_PROJECT"),
+                min_events=2,
             )
 
-            if len(events) > 0:
-                # `events` is List[LegacyEvent] from fetch_events.
-                # Find event with chain/LLM data
-                chain_event = None
-                for event in events:
-                    inputs = event.inputs or {}
-                    outputs = event.outputs or {}
-                    if inputs or outputs:
-                        chain_event = event
-                        break
-
-                if chain_event:
-                    inputs = chain_event.inputs or {}
-                    outputs = chain_event.outputs or {}
-
-                    # Verify inputs were captured
-                    assert len(inputs) > 0 or len(outputs) > 0, (
-                        "Expected chain inputs/outputs to be captured"
-                    )
-
-                else:
-                    pytest.skip("No event with inputs/outputs found")
-            else:
-                pytest.skip(f"Events not yet ingested for session {session_id}")
+            # `events` is List[LegacyEvent] from fetch_events.
+            # Find event with chain/LLM data
+            chain_event = next(
+                (e for e in events if (e.inputs or {}) or (e.outputs or {})),
+                None,
+            )
+            assert chain_event is not None, (
+                f"No event with chain inputs/outputs found; got events: "
+                f"{[(e.event_name, e.event_type) for e in events]}"
+            )
 
         finally:
             instrumentor.uninstrument()

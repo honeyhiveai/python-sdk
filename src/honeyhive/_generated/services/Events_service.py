@@ -20,7 +20,9 @@ def createEventLegacy(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
         response = client.request(
             "post",
             httpx.URL(path),
@@ -54,7 +56,9 @@ def updateEventLegacy(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
         response = client.request(
             "put",
             httpx.URL(path),
@@ -88,7 +92,9 @@ def createEvent(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
         response = client.request(
             "post",
             httpx.URL(path),
@@ -108,6 +114,41 @@ def createEvent(
     return PostEventResponse(**body) if body is not None else PostEventResponse()
 
 
+def getEvent(
+    api_config_override: Optional[APIConfig] = None, *, event_id: str
+) -> GetEventResponse:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/v1/events/{event_id}"
+    headers = api_config.get_default_headers()
+    query_params: Dict[str, Any] = {}
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
+        response = client.request(
+            "get",
+            httpx.URL(path),
+            headers=headers,
+            params=_serialize_query_params(query_params),
+        )
+
+    if response.status_code != 200:
+        raise HTTPException(
+            response.status_code,
+            f"getEvent failed with status code: {response.status_code}",
+        )
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return GetEventResponse(**body) if body is not None else GetEventResponse()
+
+
 def updateEvent(
     api_config_override: Optional[APIConfig] = None,
     *,
@@ -125,7 +166,9 @@ def updateEvent(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
         response = client.request(
             "put",
             httpx.URL(path),
@@ -159,7 +202,9 @@ def exportEventsLegacy(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
         response = client.request(
             "post",
             httpx.URL(path),
@@ -193,7 +238,9 @@ def searchEvents(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
         response = client.request(
             "post",
             httpx.URL(path),
@@ -227,7 +274,9 @@ def createEventBatch(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
         response = client.request(
             "post",
             httpx.URL(path),
@@ -263,7 +312,9 @@ def createModelEventLegacy(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
         response = client.request(
             "post",
             httpx.URL(path),
@@ -299,7 +350,9 @@ def createEventBatchLegacy(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
         response = client.request(
             "post",
             httpx.URL(path),
@@ -335,7 +388,9 @@ def createModelEventBatchLegacy(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
         response = client.request(
             "post",
             httpx.URL(path),
@@ -377,7 +432,9 @@ def getEventsSchemaLegacy(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
         response = client.request(
             "get",
             httpx.URL(path),

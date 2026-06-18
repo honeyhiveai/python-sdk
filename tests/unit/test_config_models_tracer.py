@@ -14,9 +14,11 @@ their field validation logic.
 # pylint: disable=protected-access
 # Justification: Unit tests need to verify private method behavior
 
+import json
 from unittest.mock import Mock, patch
 
 import pytest
+import requests
 from pydantic import ValidationError
 
 from honeyhive.config.models.tracer import EvaluationConfig, SessionConfig, TracerConfig
@@ -58,6 +60,42 @@ class TestTracerConfig:
             assert config.max_links == 128
             assert config.max_span_size == 10 * 1024 * 1024  # 10MB
             assert config.preserve_core_attributes is True  # Default enabled
+            assert config.requests_session is None
+
+    def test_requests_session_accepts_session_instance(self) -> None:
+        """Test TracerConfig accepts a custom requests.Session instance."""
+        session = requests.Session()
+        config = TracerConfig(requests_session=session)
+
+        assert config.requests_session is session
+
+    def test_requests_session_python_dump_preserves_instance(self) -> None:
+        """Test python-mode model_dump passes the Session through by reference.
+
+        The tracer's config merging relies on model_dump() to carry the
+        session into the unified config, so it must not be masked there.
+        """
+        session = requests.Session()
+        config = TracerConfig(requests_session=session)
+
+        assert config.model_dump()["requests_session"] is session
+
+    def test_requests_session_json_dump_uses_placeholder(self) -> None:
+        """Test JSON-mode serialization emits a placeholder instead of raising."""
+        config = TracerConfig(requests_session=requests.Session())
+
+        payload = json.loads(config.model_dump_json())
+
+        assert payload["requests_session"] == "<requests.Session>"
+
+    def test_requests_session_json_dump_none_when_unset(self) -> None:
+        """Test JSON-mode serialization of the default emits null."""
+        with patch.dict("os.environ", {}, clear=True):
+            config = TracerConfig()
+
+        payload = json.loads(config.model_dump_json())
+
+        assert payload["requests_session"] is None
 
     def test_initialization_with_values(self) -> None:
         """Test TracerConfig initialization with provided values."""

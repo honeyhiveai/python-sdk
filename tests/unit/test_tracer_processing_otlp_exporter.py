@@ -770,6 +770,67 @@ class TestHoneyHiveOTLPExporterShutdown:
                 mock_tracer, "debug", "HoneyHiveOTLPExporter shutdown completed"
             )
 
+    @patch("honeyhive.tracer.processing.otlp_exporter.safe_log")
+    def test_shutdown_does_not_close_user_provided_session(
+        self, mock_safe_log: Mock, mock_requests_session: Mock
+    ) -> None:
+        """Test shutdown leaves a user-provided session open.
+
+        Users may share the session with the rest of their application, so
+        the SDK must only close sessions it created itself. Uses the real
+        OTLPJSONExporter to exercise the full shutdown path.
+
+        Args:
+            mock_safe_log: Mock for safe_log function
+            mock_requests_session: Mock requests session
+        """
+        # Arrange
+        exporter = HoneyHiveOTLPExporter(
+            session=mock_requests_session,
+            endpoint=TEST_OTLP_ENDPOINT,
+        )
+
+        # Act
+        exporter.shutdown()
+
+        # Assert
+        assert exporter._is_shutdown is True
+        mock_requests_session.close.assert_not_called()
+
+    @patch("honeyhive.tracer.processing.otlp_exporter.OTLPJSONExporter")
+    @patch("honeyhive.tracer.processing.otlp_exporter.create_optimized_otlp_session")
+    @patch("honeyhive.tracer.processing.otlp_exporter.safe_log")
+    def test_shutdown_closes_owned_optimized_session(
+        self,
+        mock_safe_log: Mock,
+        mock_create_session: Mock,
+        mock_json_exporter: Mock,
+        mock_requests_session: Mock,
+    ) -> None:
+        """Test shutdown closes the optimized session the exporter created.
+
+        Args:
+            mock_safe_log: Mock for safe_log function
+            mock_create_session: Mock for create_optimized_otlp_session
+            mock_json_exporter: Mock for OTLPJSONExporter class
+            mock_requests_session: Mock requests session
+        """
+        # Arrange
+        mock_create_session.return_value = mock_requests_session
+        mock_json_exporter.return_value = Mock()
+
+        exporter = HoneyHiveOTLPExporter(
+            use_optimized_session=True,
+            endpoint=TEST_OTLP_ENDPOINT,
+        )
+        assert exporter._session is mock_requests_session
+
+        # Act
+        exporter.shutdown()
+
+        # Assert
+        mock_requests_session.close.assert_called_once()
+
 
 class TestHoneyHiveOTLPExporterEdgeCases:
     """Test edge cases and comprehensive coverage scenarios."""
@@ -917,6 +978,43 @@ class TestOTLPJSONExporter:
         assert exporter.headers["Authorization"] == "Bearer test"
         assert exporter.timeout == 30.0
         assert exporter._is_shutdown is False
+
+    @patch("honeyhive.tracer.processing.otlp_exporter.safe_log")
+    def test_json_exporter_shutdown_closes_owned_session(
+        self, mock_safe_log: Mock
+    ) -> None:
+        """Test shutdown closes the session the exporter created itself.
+
+        Args:
+            mock_safe_log: Mock for safe_log function
+        """
+        # Arrange
+        exporter = OTLPJSONExporter(TEST_OTLP_ENDPOINT)
+
+        # Act / Assert
+        with patch.object(exporter.session, "close") as mock_close:
+            exporter.shutdown()
+            mock_close.assert_called_once()
+
+    @patch("honeyhive.tracer.processing.otlp_exporter.safe_log")
+    def test_json_exporter_shutdown_does_not_close_provided_session(
+        self, mock_safe_log: Mock, mock_requests_session: Mock
+    ) -> None:
+        """Test shutdown leaves an externally provided session open.
+
+        Args:
+            mock_safe_log: Mock for safe_log function
+            mock_requests_session: Mock requests session
+        """
+        # Arrange
+        exporter = OTLPJSONExporter(TEST_OTLP_ENDPOINT, session=mock_requests_session)
+
+        # Act
+        exporter.shutdown()
+
+        # Assert
+        assert exporter._is_shutdown is True
+        mock_requests_session.close.assert_not_called()
 
     @patch("honeyhive.tracer.processing.otlp_exporter.requests.Session")
     def test_json_exporter_export_success(
