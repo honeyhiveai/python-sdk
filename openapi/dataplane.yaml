@@ -3649,7 +3649,11 @@ components:
           additionalProperties: {}
           description: Metric values to merge into the event
         outputs:
-          description: Output data to replace on the event (accepts objects, strings, arrays, or scalars)
+          type:
+            - object
+            - 'null'
+          additionalProperties: {}
+          description: Output object to replace on the event. Must be an object or null; null preserves the existing outputs. Non-object values (strings, arrays, scalars) are rejected.
         config:
           type: object
           additionalProperties: {}
@@ -3689,7 +3693,11 @@ components:
           additionalProperties: {}
           description: Metric values to merge into the event
         outputs:
-          description: Output data to replace on the event (accepts objects, strings, arrays, or scalars)
+          type:
+            - object
+            - 'null'
+          additionalProperties: {}
+          description: Output object to replace on the event. Must be an object or null; null preserves the existing outputs. Non-object values (strings, arrays, scalars) are rejected.
         config:
           type: object
           additionalProperties: {}
@@ -4183,6 +4191,10 @@ components:
         scope_id:
           type: string
         dataset_id:
+          type:
+            - string
+            - 'null'
+        dataset_name:
           type:
             - string
             - 'null'

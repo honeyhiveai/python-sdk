@@ -1,9 +1,11 @@
 """Test utilities for HoneyHive SDK."""
 
 import os
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
+from dotenv import load_dotenv
 
 
 def create_openai_config_request(project="test-project", name="test-config"):
@@ -68,17 +70,17 @@ def setup_test_environment():
     os.environ["HH_DISABLE_HTTP_TRACING"] = "true"
     os.environ["HH_OTLP_ENABLED"] = "false"
 
-    # Patch the config module to use test values
-    try:
-        from honeyhive.utils.config import (  # pylint: disable=import-outside-toplevel
-            config,
-        )
+    # load .env files if they exist
+    project_root = Path(__file__).parent.parent
 
-        # Reset the config to use default values
-        config.api_url = "https://api.dp1.us.honeyhive.ai"
-    except ImportError:
-        # Config module doesn't exist or has changed - this is expected
-        pass
+    # Try to load .env files in priority order
+    for env_file in [
+        project_root / ".env.integration",  # Integration-specific
+        project_root / ".env",  # General project_root
+    ]:
+        if env_file.exists():
+            load_dotenv(env_file, override=True)
+            print(f"✅ Loaded environment from: {env_file}")
 
 
 def cleanup_test_environment():

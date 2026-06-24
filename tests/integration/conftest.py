@@ -24,18 +24,9 @@ from honeyhive.tracer import HoneyHiveTracer
 
 # Import OTEL reset utilities
 from tests.utils import (  # pylint: disable=no-name-in-module
-    enforce_local_env_file,
     ensure_clean_otel_state,
     reset_otel_to_provider,
 )
-
-# Enforce .env file loading for local development
-try:
-    enforce_local_env_file()
-except Exception as e:
-    # In CI environments, this is expected to fail - environment variables
-    # should be set directly in CI
-    pass
 
 
 def pytest_addoption(parser: Any) -> None:
@@ -188,46 +179,12 @@ def integration_test_config() -> Dict[str, Any]:
 
 # Real API credentials and related fixtures
 @pytest.fixture(scope="session")
-def real_api_credentials() -> Dict[str, Any]:
-    """Get real API credentials for integration tests."""
-    from tests.utils import (  # pylint: disable=no-name-in-module
-        enforce_integration_credentials,
-        get_llm_credentials,
-    )
-
-    try:
-        # Validate environment credentials
-        core_credentials = enforce_integration_credentials()
-        llm_credentials = get_llm_credentials()
-
-        credentials = {
-            "api_key": core_credentials["HH_API_KEY"],
-            "source": os.environ.get("HH_SOURCE", "pytest-integration"),
-            "server_url": os.environ.get(
-                "HH_API_URL", "https://api.testing-dp-1.honeyhive.ai"
-            ),
-            "project": os.environ.get("HH_PROJECT", "test-project"),
-        }
-
-        # Add LLM credentials for instrumentor tests - filter out None values
-        filtered_llm_credentials = {
-            k: v for k, v in llm_credentials.items() if v is not None
-        }
-        credentials.update(filtered_llm_credentials)
-
-        return credentials
-
-    except Exception as e:
-        pytest.fail(
-            f"Real API credentials enforcement failed: {e}\n"
-            "Tests must not skip - use real credentials."
-        )
-
-
-@pytest.fixture(scope="session")
-def real_api_key(real_api_credentials: Dict[str, Any]) -> str:
-    """Real API key for integration tests."""
-    return str(real_api_credentials["api_key"])
+def real_api_key() -> str:
+    """Real API key for integration tests from environment."""
+    api_key = os.getenv("HH_API_KEY")
+    if not api_key:
+        pytest.fail("HH_API_KEY environment variable is required for integration tests")
+    return api_key
 
 
 @pytest.fixture(scope="session")
@@ -237,17 +194,36 @@ def real_project() -> str:
 
 
 @pytest.fixture(scope="session")
-def real_source(real_api_credentials: Dict[str, Any]) -> str:
-    """Real source for integration tests."""
-    return str(real_api_credentials["source"])
+def real_source() -> str:
+    """Real source for integration tests from environment."""
+    return os.environ.get("HH_SOURCE", "pytest-integration")
+
+
+@pytest.fixture(scope="session")
+def real_api_credentials(
+    real_api_key: str, real_project: str, real_source: str
+) -> Dict[str, str]:
+    """Combined credentials dictionary for integration tests.
+
+    Provides a dictionary with all necessary credentials for creating
+    HoneyHive clients and tracers in integration tests.
+
+    Returns:
+        Dict with keys: api_key, project, source
+    """
+    return {
+        "api_key": real_api_key,
+        "project": real_project,
+        "source": real_source,
+    }
 
 
 @pytest.fixture
-def integration_client(real_api_credentials: Dict[str, Any]) -> HoneyHive:
+def integration_client(real_api_key: str) -> HoneyHive:
     """HoneyHive client for integration tests with real API credentials."""
     return HoneyHive(
-        api_key=real_api_credentials["api_key"],
-        base_url=real_api_credentials["server_url"],
+        api_key=real_api_key,
+        base_url=os.environ.get("HH_API_URL", "https://api.testing-dp-1.honeyhive.ai"),
     )
 
 
@@ -337,11 +313,11 @@ def config_reloader() -> Any:
 
 
 @pytest.fixture
-def real_honeyhive_tracer(real_api_credentials: Dict[str, Any]) -> Any:
+def real_honeyhive_tracer(real_api_key: str, real_source: str) -> Any:
     """Create a real HoneyHive tracer with NO MOCKING."""
     tracer = HoneyHiveTracer(
-        api_key=real_api_credentials["api_key"],
-        source=real_api_credentials["source"],
+        api_key=real_api_key,
+        source=real_source,
         test_mode=False,  # Real API mode
         disable_http_tracing=True,  # Avoid HTTP conflicts in tests
     )
@@ -357,7 +333,7 @@ def real_honeyhive_tracer(real_api_credentials: Dict[str, Any]) -> Any:
 
 
 @pytest.fixture
-def fresh_tracer_environment(real_api_credentials: Dict[str, Any]) -> Any:
+def fresh_tracer_environment(real_api_key: str, real_source: str) -> Any:
     """Create a completely fresh tracer environment for each test."""
     # Reset OpenTelemetry global state
     try:
@@ -370,8 +346,8 @@ def fresh_tracer_environment(real_api_credentials: Dict[str, Any]) -> Any:
 
     # Create fresh tracer
     tracer = HoneyHiveTracer(
-        api_key=real_api_credentials["api_key"],
-        source=f"{real_api_credentials['source']}-fresh",
+        api_key=real_api_key,
+        source=f"{real_source}-fresh",
         test_mode=False,
         disable_http_tracing=True,
     )

@@ -30,7 +30,7 @@ class LegacyUpdateEventRequest(BaseModel):
 
     metrics: Optional[Dict[str, Any]] = Field(validation_alias="metrics", default=None)
 
-    outputs: Optional[Any] = Field(validation_alias="outputs", default=None)
+    outputs: Optional[Dict[str, Any]] = Field(validation_alias="outputs", default=None)
 
     config: Optional[Dict[str, Any]] = Field(validation_alias="config", default=None)
 
