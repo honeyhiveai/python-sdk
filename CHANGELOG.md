@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-06-24
+
+### Added
+
+- **Copilot Studio trace forwarding adapter**
+  - New `honeyhive.adapters.copilot_studio.copilot_studio_records_to_spans()` converts Azure Application Insights diagnostic-export records from a Copilot Studio agent into OpenTelemetry spans you can forward to HoneyHive via OTLP. Maps user/agent messages, tool calls, and errors using GenAI semantic conventions, preserves parent/child trace correlation, and groups a conversation into a single HoneyHive session. Set `COPILOT_STUDIO_ADAPTER_KEEP_TOPIC_SPANS=1` to retain internal orchestration spans (dropped by default) and `COPILOT_STUDIO_ADAPTER_DEBUG=1` to attach the raw source record for debugging.
+- **`dataset_name` on experiment runs**
+  - `ExperimentRunObject` now includes a `dataset_name` field alongside `dataset_id`, so the linked dataset's name is available when listing or fetching experiment runs. The field is optional and resolves to `None` for offline (`EXT-*`), deleted, or unset datasets.
+
+### Changed
+
+- **Event update: `outputs` must be an object**
+  - `UpdateEventRequest.outputs` and `LegacyUpdateEventRequest.outputs` are now typed as `Dict[str, Any]` instead of `Any`. Update calls accept only normalized (object-shaped) outputs; previously an array could slip through and corrupt the stored event. If you were passing a list when updating an event, wrap it as `{"value": [...]}`. Event creation and OTEL ingestion continue to normalize arrays automatically.
+
 ## [1.3.0] - 2026-06-18
 
 ### Added

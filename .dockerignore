@@ -1,0 +1,6 @@
+.env
+.env.*
+.turbo
+.venv
+.corepack
+.ruff_cache

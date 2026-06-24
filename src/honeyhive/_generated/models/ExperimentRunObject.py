@@ -50,3 +50,5 @@ class ExperimentRunObject(BaseModel):
     scope_id: str = Field(validation_alias="scope_id")
 
     dataset_id: Optional[str] = Field(validation_alias="dataset_id", default=None)
+
+    dataset_name: Optional[str] = Field(validation_alias="dataset_name", default=None)
