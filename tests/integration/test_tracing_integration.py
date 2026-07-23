@@ -673,7 +673,7 @@ class TestEndToEndVerification:
                 EventFilter(
                     field="session_id",
                     operator="is",
-                    value="nonexistent-session-id-12345",
+                    value="00000000-0000-0000-0000-000000000000",
                     type="string",
                 )
             ],

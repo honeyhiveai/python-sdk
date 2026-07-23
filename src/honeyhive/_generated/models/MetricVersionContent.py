@@ -50,8 +50,4 @@ class MetricVersionContent(BaseModel):
 
     categories: Optional[List[Any]] = Field(validation_alias="categories", default=None)
 
-    child_metrics: Optional[List[Any]] = Field(
-        validation_alias="child_metrics", default=None
-    )
-
     filters: MetricVersionContentFilters = Field(validation_alias="filters")

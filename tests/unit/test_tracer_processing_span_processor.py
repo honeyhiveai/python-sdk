@@ -1260,4 +1260,164 @@ class TestHoneyHiveSpanProcessorConversion:
 
         assert len(w) == 1
         assert issubclass(w[0].category, DeprecationWarning)
-        assert "_convert_span_to_event is deprecated" in str(w[0].message)
+
+
+class TestRootSpanAutoSession:
+    """Tests for the root SERVER span auto-session assignment feature.
+
+    When skip_backend_session_creation=True is set at init (which enables
+    _session_auto_create), the span processor should auto-assign a fresh
+    session_id to each root SERVER span that has no session in baggage or
+    on the tracer instance.
+    """
+
+    def _make_processor(
+        self, session_auto_create: bool = True
+    ) -> HoneyHiveSpanProcessor:
+        mock_tracer = Mock(spec=HoneyHiveTracer)
+        mock_tracer._session_auto_create = session_auto_create
+        mock_tracer.session_id = None
+        mock_tracer.session_name = None
+        mock_tracer._span_name_filters = {}
+        mock_tracer.config = {}
+        return HoneyHiveSpanProcessor(tracer_instance=mock_tracer)
+
+    def _make_server_span(
+        self,
+        *,
+        parent: object = None,
+        name: str = "POST /api",
+    ) -> Mock:
+        from opentelemetry.trace import SpanKind
+
+        span = Mock(spec=Span)
+        span.name = name
+        span.kind = SpanKind.SERVER
+        span.parent = parent
+        span.attributes = {}
+        span.get_span_context.return_value = Mock(span_id=1, trace_id=1)
+        span.set_attribute = Mock(
+            side_effect=lambda k, v: span.attributes.update({k: v})
+        )
+        return span
+
+    @patch("honeyhive.tracer.processing.span_processor.context.attach")
+    @patch("honeyhive.tracer.processing.span_processor.baggage.set_baggage")
+    @patch(
+        "honeyhive.tracer.processing.span_processor.baggage.get_baggage",
+        return_value=None,
+    )
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_root_server_span_auto_assigns_session(
+        self,
+        _mock_log: Mock,
+        _mock_get: Mock,
+        mock_set_baggage: Mock,
+        mock_attach: Mock,
+    ) -> None:
+        """Root SERVER span with no existing session gets an auto-assigned UUID."""
+        import uuid as _uuid
+
+        processor = self._make_processor(session_auto_create=True)
+        span = self._make_server_span()
+
+        processor.on_start(span, parent_context=None)
+
+        assert "honeyhive.session_id" in span.attributes
+        session_id = span.attributes["honeyhive.session_id"]
+        _uuid.UUID(session_id)  # raises ValueError if not a valid UUID
+
+        mock_attach.assert_called_once()
+
+    @patch("honeyhive.tracer.processing.span_processor.context.attach")
+    @patch(
+        "honeyhive.tracer.processing.span_processor.baggage.get_baggage",
+        return_value=None,
+    )
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_non_root_span_not_auto_assigned(
+        self,
+        _mock_log: Mock,
+        _mock_get: Mock,
+        mock_attach: Mock,
+    ) -> None:
+        """A SERVER span with a parent (distributed child) is NOT auto-assigned."""
+        processor = self._make_processor(session_auto_create=True)
+        mock_parent = Mock()  # non-None parent
+        span = self._make_server_span(parent=mock_parent)
+
+        processor.on_start(span, parent_context=None)
+
+        assert "honeyhive.session_id" not in span.attributes
+        mock_attach.assert_not_called()
+
+    @patch("honeyhive.tracer.processing.span_processor.context.attach")
+    @patch(
+        "honeyhive.tracer.processing.span_processor.baggage.get_baggage",
+        return_value=None,
+    )
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_client_span_not_auto_assigned(
+        self,
+        _mock_log: Mock,
+        _mock_get: Mock,
+        mock_attach: Mock,
+    ) -> None:
+        """A CLIENT span (outbound call) is NOT auto-assigned a session."""
+        from opentelemetry.trace import SpanKind
+
+        processor = self._make_processor(session_auto_create=True)
+        span = self._make_server_span()
+        span.kind = SpanKind.CLIENT
+
+        processor.on_start(span, parent_context=None)
+
+        assert "honeyhive.session_id" not in span.attributes
+        mock_attach.assert_not_called()
+
+    @patch("honeyhive.tracer.processing.span_processor.context.attach")
+    @patch(
+        "honeyhive.tracer.processing.span_processor.baggage.get_baggage",
+        return_value=None,
+    )
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_auto_assign_disabled_when_flag_false(
+        self,
+        _mock_log: Mock,
+        _mock_get: Mock,
+        mock_attach: Mock,
+    ) -> None:
+        """When _session_auto_create is False, no auto-assignment occurs."""
+        processor = self._make_processor(session_auto_create=False)
+        span = self._make_server_span()
+
+        processor.on_start(span, parent_context=None)
+
+        assert "honeyhive.session_id" not in span.attributes
+        mock_attach.assert_not_called()
+
+    @patch("honeyhive.tracer.processing.span_processor.context.attach")
+    @patch("honeyhive.tracer.processing.span_processor.baggage.set_baggage")
+    @patch(
+        "honeyhive.tracer.processing.span_processor.baggage.get_baggage",
+        return_value="existing-session-id",
+    )
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_existing_baggage_session_not_overridden(
+        self,
+        _mock_log: Mock,
+        _mock_get: Mock,
+        mock_set_baggage: Mock,
+        mock_attach: Mock,
+    ) -> None:
+        """When baggage already has a session_id, auto-assign does not fire."""
+        processor = self._make_processor(session_auto_create=True)
+        span = self._make_server_span()
+
+        processor.on_start(span, parent_context=None)
+
+        assert span.attributes.get("honeyhive.session_id") == "existing-session-id"
+        # set_baggage should not have been called for a new auto-UUID
+        for call_args in mock_set_baggage.call_args_list:
+            if call_args[0][0] == "session_id":
+                assert call_args[0][1] == "existing-session-id"

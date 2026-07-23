@@ -247,6 +247,7 @@ def poll_for_server_side_score_on_chain(
     function_name: str,
     metric_name: str,
     *,
+    expected_chain_span_count: Optional[int] = None,
     poll_interval_sec: float = 3.0,
     max_wait_sec: float = 180.0,
 ) -> Any:
@@ -258,6 +259,16 @@ def poll_for_server_side_score_on_chain(
     /events/export filtered by run_id until we see the metric on every
     chain span (or time out).
 
+    ``expected_chain_span_count`` guards against a subtle early-return
+    race: OTLP ingest is async and per-datapoint chain spans materialize
+    independently, so at any poll only a subset may be visible. Without
+    an expected count the "all visible chains are scored" condition is
+    trivially satisfied the instant the *first* chain span lands scored,
+    and a caller that then re-fetches events sees fewer chains than
+    datapoints (the ``assert 1 == 2`` flake). When set, we require both
+    that all ``expected_chain_span_count`` chain spans are present *and*
+    that every one is scored before returning.
+
     Returns the first chain event with the metric attached (so the caller
     can read additional fields like ``{metric}_explanation``).
     """
@@ -268,9 +279,22 @@ def poll_for_server_side_score_on_chain(
         chains = chain_events_for_function(events, function_name)
         if chains:
             scored = [c for c in chains if metric_name in event_metrics(c)]
-            if scored and len(scored) == len(chains):
+            count_ready = (
+                expected_chain_span_count is None
+                or len(chains) >= expected_chain_span_count
+            )
+            all_scored = bool(scored) and len(scored) == len(chains)
+            if count_ready and all_scored:
                 return scored[0]
-            last_state = f"{len(scored)}/{len(chains)} chain spans scored (waiting on {len(chains) - len(scored)})"
+            waiting = (
+                f"; need {expected_chain_span_count} chain spans"
+                if expected_chain_span_count is not None
+                else ""
+            )
+            last_state = (
+                f"{len(scored)}/{len(chains)} chain spans scored "
+                f"(waiting on {len(chains) - len(scored)}){waiting}"
+            )
         else:
             last_state = "no chain spans yet"
         time.sleep(poll_interval_sec)

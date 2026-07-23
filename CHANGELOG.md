@@ -2,6 +2,26 @@
 
 ## [Unreleased]
 
+## [1.5.1] - 2026-07-21
+
+No customer-facing changes. Internal release tooling only.
+
+## [1.5.0] - 2026-07-20
+
+### Fixed
+
+- **Tracing: root SERVER spans get an automatic `session_id`**
+  - When `HoneyHiveTracer` is initialized with `skip_backend_session_creation=True` and no `session_id`, the SDK now generates a `session_id` for each root SERVER span (`SpanKind.SERVER`, no parent) and propagates it via baggage. Previously these root spans were dropped and their children appeared orphaned in the Sessions tab — common with `FastAPIInstrumentor`, where the root span is created before any middleware runs. Existing single-session and client-span behavior is unchanged.
+
+- **Experiments: `evaluate()` normalizes run names**
+  - `evaluate(name=...)` now trims surrounding whitespace, and a blank or whitespace-only name falls back to the default `experiment-<id>` name instead of being submitted as-is. The backend also now rejects empty run names.
+
+### Removed
+
+- **Composite metrics removed from the metric API surface**
+  - The `child_metrics` field and the generated `*ChildMetricsItem` models have been removed from the metric request/response models in `honeyhive.models`, completing the composite-metrics deprecation. Composite metrics are no longer part of the product, so any remaining code referencing them can be safely cleaned up and removed.
+  - Existing code that passes `child_metrics=...` keeps working — metric models accept unknown fields (`extra="allow"`), so the value is still accepted without error. The API already ignored and dropped `child_metrics`, so this change aligns the client with the backend behavior. The only difference: `child_metrics` is no longer a declared field, so reading `metric.child_metrics` off a response now raises `AttributeError` instead of returning `None`.
+
 ## [1.4.0] - 2026-06-24
 
 ### Added

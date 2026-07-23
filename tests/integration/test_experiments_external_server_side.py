@@ -38,7 +38,7 @@ from tests.integration._experiments_helpers import (
     assert_run_metadata_on_all_child_events,
     chain_events_for_function,
     event_metrics,
-    export_events_for_run,
+    export_events_for_run_polling,
     poll_for_server_side_score_on_chain,
     require_server_side_eval_creds,
 )
@@ -168,12 +168,15 @@ class TestExperimentsExternalServerSide:
             )
 
             # Poll /events/export for chain spans tagged with our run_id
-            # until every one has metrics[metric_name].
+            # until all datapoints' chain spans are present AND every one
+            # has metrics[metric_name]. The explicit count guards against
+            # returning as soon as the first-landed chain span is scored.
             scored_event = poll_for_server_side_score_on_chain(
                 integration_client,
                 result.run_id,
                 function_name,
                 metric_name,
+                expected_chain_span_count=len(dataset),
             )
             scored_metrics = event_metrics(scored_event)
             raw_score = scored_metrics[metric_name]
@@ -193,8 +196,15 @@ class TestExperimentsExternalServerSide:
                     f"{explanation_key} should be str; got {type(scored_metrics[explanation_key]).__name__}"
                 )
 
-            # All chain spans (one per datapoint) ended up scored.
-            events = export_events_for_run(integration_client, result.run_id)
+            # All chain spans (one per datapoint) ended up scored. Poll for
+            # the full set so async OTLP ingest of the last chain span can't
+            # race the assertion.
+            events = export_events_for_run_polling(
+                integration_client,
+                result.run_id,
+                function_name=function_name,
+                expected_chain_span_count=len(dataset),
+            )
             chains = chain_events_for_function(events, function_name)
             assert len(chains) == len(dataset), (
                 f"Expected {len(dataset)} chain spans, got {len(chains)}"

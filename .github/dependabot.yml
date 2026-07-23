@@ -2,64 +2,37 @@
 # Dependabot configuration for HoneyHive Python SDK
 # See https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/
 # configuration-options-for-the-dependabot.yml-file
+#
+# open-pull-requests-limit: 0 disables routine version-bump PRs while leaving
+# Dependabot security alerts and security updates active. This repo receives
+# security notifications only; dependency versions are managed at the source.
 
 version: 2
 updates:
-  # Python dependencies
+  # Python dependencies — security updates only.
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
       time: "09:00"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0
     reviewers:
       - "honeyhiveai/core-team"
     labels:
       - "dependencies"
       - "python"
-    commit-message:
-      prefix: "deps"
-      include: "scope"
-    # Group minor and patch updates together
-    groups:
-      minor-and-patch:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
 
-  # GitHub Actions dependencies
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-    open-pull-requests-limit: 3
-    reviewers:
-      - "honeyhiveai/core-team"
-    labels:
-      - "dependencies"
-      - "github-actions"
-    commit-message:
-      prefix: "ci"
-      include: "scope"
-
-  # Docker dependencies (if any Dockerfiles exist)
+  # Docker dependencies — security updates only.
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
       time: "09:00"
-    open-pull-requests-limit: 2
+    open-pull-requests-limit: 0
     reviewers:
       - "honeyhiveai/core-team"
     labels:
       - "dependencies"
       - "docker"
-    commit-message:
-      prefix: "docker"
-      include: "scope"

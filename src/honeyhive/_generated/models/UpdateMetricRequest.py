@@ -3,7 +3,6 @@ from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel, Field
 
 from .UpdateMetricRequestCategoriesItem import UpdateMetricRequestCategoriesItem
-from .UpdateMetricRequestChildMetricsItem import UpdateMetricRequestChildMetricsItem
 from .UpdateMetricRequestFilters import UpdateMetricRequestFilters
 from .UpdateMetricRequestThreshold import UpdateMetricRequestThreshold
 
@@ -59,10 +58,6 @@ class UpdateMetricRequest(BaseModel):
 
     categories: Optional[List[Optional[UpdateMetricRequestCategoriesItem]]] = Field(
         validation_alias="categories", default=None
-    )
-
-    child_metrics: Optional[List[Optional[UpdateMetricRequestChildMetricsItem]]] = (
-        Field(validation_alias="child_metrics", default=None)
     )
 
     filters: Optional[UpdateMetricRequestFilters] = Field(

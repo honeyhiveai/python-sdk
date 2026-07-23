@@ -26,7 +26,6 @@ from .CreateDatasetRequest import *
 from .CreateDatasetResponse import *
 from .CreateMetricRequest import *
 from .CreateMetricRequestCategoriesItem import *
-from .CreateMetricRequestChildMetricsItem import *
 from .CreateMetricRequestFilters import *
 from .CreateMetricResponse import *
 from .CreateMetricVersionRequest import *
@@ -116,7 +115,6 @@ from .LegacyRunMetricRequestEvent import *
 from .LegacyRunMetricRequestEventFeedback import *
 from .LegacyRunMetricRequestMetric import *
 from .LegacyRunMetricRequestMetricCategoriesItem import *
-from .LegacyRunMetricRequestMetricChildMetricsItem import *
 from .LegacyRunMetricRequestMetricFilters import *
 from .LegacyStartSessionRequest import *
 from .LegacyStartSessionRequestSession import *
@@ -124,24 +122,20 @@ from .LegacyUpdateDatasetRequest import *
 from .LegacyUpdateEventRequest import *
 from .LegacyUpdateMetricRequest import *
 from .LegacyUpdateMetricRequestCategoriesItem import *
-from .LegacyUpdateMetricRequestChildMetricsItem import *
 from .LegacyUpdateMetricRequestFilters import *
 from .MetricComparison import *
 from .MetricDatapoints import *
 from .MetricDetail import *
 from .MetricItem import *
 from .MetricItemCategoriesItem import *
-from .MetricItemChildMetricsItem import *
 from .MetricItemFilters import *
 from .MetricsAggregation import *
 from .MetricVersion import *
 from .MetricVersionContent import *
 from .MetricVersionContentCategoriesItem import *
-from .MetricVersionContentChildMetricsItem import *
 from .MetricVersionContentFilters import *
 from .MetricVersionContentRequest import *
 from .MetricVersionContentRequestCategoriesItem import *
-from .MetricVersionContentRequestChildMetricsItem import *
 from .MetricVersionContentRequestFilters import *
 from .ModelEvent import *
 from .Pagination import *
@@ -168,7 +162,6 @@ from .RunMetricRequestEvent import *
 from .RunMetricRequestEventFeedback import *
 from .RunMetricRequestMetric import *
 from .RunMetricRequestMetricCategoriesItem import *
-from .RunMetricRequestMetricChildMetricsItem import *
 from .RunMetricRequestMetricFilters import *
 from .RunMetricResponse import *
 from .SearchEventsRequest import *
@@ -200,7 +193,6 @@ from .UpdateDatasetResponse import *
 from .UpdateEventRequest import *
 from .UpdateMetricRequest import *
 from .UpdateMetricRequestCategoriesItem import *
-from .UpdateMetricRequestChildMetricsItem import *
 from .UpdateMetricRequestFilters import *
 from .UpdateMetricRequestThreshold import *
 from .UpdateMetricResponse import *

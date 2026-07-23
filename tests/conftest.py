@@ -230,7 +230,7 @@ def setup_test_env(request: Any) -> Any:
 
 @pytest.fixture(autouse=True)
 def reset_opentelemetry_context(request: Any) -> Any:
-    """Reset OpenTelemetry context between tests to prevent isolation issues.
+    """Reset OpenTelemetry context and tracer registry between tests.
 
     Skip for backwards compatibility tests that need real environment behavior.
     """
@@ -245,6 +245,10 @@ def reset_opentelemetry_context(request: Any) -> Any:
     except ImportError:
         pass
 
+    from honeyhive.tracer.registry import clear_registry
+
+    clear_registry()
+
     yield
 
     try:
@@ -252,3 +256,5 @@ def reset_opentelemetry_context(request: Any) -> Any:
         baggage.clear()
     except ImportError:
         pass
+
+    clear_registry()

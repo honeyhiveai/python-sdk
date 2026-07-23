@@ -703,10 +703,18 @@ class TestExperimentsRunComparison:
             assert baseline and baseline.run_id and improved and improved.run_id
 
             poll_for_server_side_score_on_chain(
-                integration_client, baseline.run_id, function_name, metric_name
+                integration_client,
+                baseline.run_id,
+                function_name,
+                metric_name,
+                expected_chain_span_count=len(dataset),
             )
             poll_for_server_side_score_on_chain(
-                integration_client, improved.run_id, function_name, metric_name
+                integration_client,
+                improved.run_id,
+                function_name,
+                metric_name,
+                expected_chain_span_count=len(dataset),
             )
 
             comparison = compare_runs(
@@ -798,10 +806,18 @@ class TestExperimentsRunComparison:
             assert baseline and baseline.run_id and improved and improved.run_id
 
             poll_for_server_side_score_on_chain(
-                integration_client, baseline.run_id, function_name, metric_name
+                integration_client,
+                baseline.run_id,
+                function_name,
+                metric_name,
+                expected_chain_span_count=len(datapoints),
             )
             poll_for_server_side_score_on_chain(
-                integration_client, improved.run_id, function_name, metric_name
+                integration_client,
+                improved.run_id,
+                function_name,
+                metric_name,
+                expected_chain_span_count=len(datapoints),
             )
 
             comparison = compare_runs(

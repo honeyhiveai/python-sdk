@@ -416,8 +416,8 @@ omit = [
 ]
 
 [tool.coverage.report]
-# Project-wide coverage requirement: 73%
-fail_under = 73
+# Project-wide coverage requirement: 74%
+fail_under = 74
 show_missing = true
 skip_covered = false
 precision = 2

@@ -1324,7 +1324,8 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
     # default run name ("experiment-{short_id}") is derived from the same ID
     # that will be sent in the request.
     run_id = run_id or str(uuid.uuid4())
-    run_name = name or f"experiment-{run_id[:8]}"
+    normalized_name = name.strip() if name else None
+    run_name = normalized_name or f"experiment-{run_id[:8]}"
 
     if verbose:
         logger.info("Creating experiment run: %s", run_name)

@@ -56,10 +56,6 @@ class CreateMetricRequest(BaseModel):
 
     categories: Optional[List[Any]] = Field(validation_alias="categories", default=None)
 
-    child_metrics: Optional[List[Any]] = Field(
-        validation_alias="child_metrics", default=None
-    )
-
     filters: Optional[CreateMetricRequestFilters] = Field(
         validation_alias="filters", default=None
     )

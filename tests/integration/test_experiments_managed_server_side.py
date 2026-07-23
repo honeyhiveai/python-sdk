@@ -29,7 +29,7 @@ from tests.integration._experiments_helpers import (
     create_managed_dataset,
     event_field,
     event_metrics,
-    export_events_for_run,
+    export_events_for_run_polling,
     poll_for_server_side_score_on_chain,
     require_server_side_eval_creds,
     safe_delete_dataset,
@@ -150,6 +150,7 @@ class TestExperimentsManagedServerSide:
                 result.run_id,
                 function_name,
                 metric_name,
+                expected_chain_span_count=len(datapoints),
             )
             scored_metrics = event_metrics(scored_event)
             raw_score = scored_metrics[metric_name]
@@ -166,7 +167,12 @@ class TestExperimentsManagedServerSide:
             # Verify dataset_id on every chain event matches the managed
             # dataset (no ``EXT-`` prefix) — same regression coverage as
             # Cell 3.
-            events = export_events_for_run(integration_client, result.run_id)
+            events = export_events_for_run_polling(
+                integration_client,
+                result.run_id,
+                function_name=function_name,
+                expected_chain_span_count=len(datapoints),
+            )
             chains = chain_events_for_function(events, function_name)
             assert len(chains) == len(datapoints)
             for ev in chains:

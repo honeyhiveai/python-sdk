@@ -12,7 +12,6 @@ on:
 
 permissions:
   contents: write  # For creating GitHub releases
-  actions: write  # For dispatching follow-up workflows
   id-token: write  # For trusted publishing to PyPI
 
 env:
@@ -25,13 +24,13 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ github.event.inputs.branch || github.ref }}
           fetch-depth: 0  # Full history for proper release notes
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -285,20 +284,36 @@ jobs:
           echo "body_file=/tmp/release_body.md" >> $GITHUB_OUTPUT
           echo "✅ Release body generated"
 
+      # The vX.Y.Z tag is created upstream when the release is synced to this
+      # repo, so this step creates a Release against that existing tag rather
+      # than cutting a new one. Uses the gh CLI directly instead of a
+      # third-party action. `--verify-tag` makes the step fail loudly if the
+      # tag is missing (e.g. a manual dispatch without a prior sync) rather
+      # than silently cutting one at the default-branch HEAD, which could be
+      # the wrong commit when dispatched from a non-default branch.
       - name: Create GitHub Release
         if: steps.check_pypi.outputs.exists == 'false'
-        uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ steps.get_version.outputs.version }}
-          release_name: v${{ steps.get_version.outputs.version }}
-          body_path: /tmp/release_body.md
-          draft: false
-          prerelease: >-
-            ${{ contains(steps.get_version.outputs.version, 'rc') ||
-            contains(steps.get_version.outputs.version, 'alpha') ||
-            contains(steps.get_version.outputs.version, 'beta') }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.get_version.outputs.version }}
+        run: |
+          set -euo pipefail
+          TAG="v${VERSION}"
+          if [[ "$VERSION" == *rc* || "$VERSION" == *alpha* || "$VERSION" == *beta* ]]; then
+            PRERELEASE_FLAG="--prerelease"
+          else
+            PRERELEASE_FLAG=""
+          fi
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::notice::Release $TAG already exists — skipping creation"
+          else
+            # shellcheck disable=SC2086
+            gh release create "$TAG" \
+              --verify-tag \
+              --title "$TAG" \
+              --notes-file /tmp/release_body.md \
+              $PRERELEASE_FLAG
+          fi
 
       # === SUMMARY ===
 
@@ -330,15 +345,3 @@ jobs:
           echo "- ✅ Installation test passed" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Published to PyPI" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ GitHub release created" >> $GITHUB_STEP_SUMMARY
-
-      - name: Trigger docs changelog sync
-        if: steps.check_pypi.outputs.exists == 'false'
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SYNC_REF: ${{ github.event.inputs.branch || github.ref_name }}
-          VERSION: v${{ steps.get_version.outputs.version }}
-        run: |
-          echo "🚀 Dispatching docs changelog sync for $VERSION on $SYNC_REF..."
-          gh workflow run sync-changelog-to-docs.yml --ref "$SYNC_REF" -f version="$VERSION"
-          echo "✅ Docs changelog sync dispatched"

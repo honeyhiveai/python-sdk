@@ -11,6 +11,7 @@
 # no-else-return: Early return pattern improves readability in complex conditionals
 
 import json
+import uuid
 import warnings
 from typing import Any, List, Optional
 
@@ -18,6 +19,7 @@ from opentelemetry import baggage, context
 from opentelemetry.context import Context
 from opentelemetry.sdk.trace import ReadableSpan, Span, SpanProcessor
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.trace import SpanKind
 
 from ..utils import convert_enum_to_string
 from ..utils.event_type import detect_event_type_from_patterns, extract_raw_attributes
@@ -773,6 +775,31 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                             ),
                         },
                     )
+
+            # Auto-assign a session to root SERVER spans when auto-create is
+            # enabled and no session has been set yet. This fires at on_start
+            # before any child span exists, so baggage propagates to the full
+            # trace without requiring any middleware or create_session() calls.
+            # Incompatible with calling create_session() in Starlette/FastAPI
+            # @app.middleware("http") — that middleware runs after the root span
+            # starts, so its session_id would differ from the one assigned here.
+            # Use a raw ASGI middleware or call create_session() inside the route
+            # handler if per-request session metadata is needed.
+            if (
+                not session_id
+                and getattr(self.tracer_instance, "_session_auto_create", False)
+                and span.kind is SpanKind.SERVER
+                and span.parent is None
+            ):
+                session_id = str(uuid.uuid4())
+                new_ctx = baggage.set_baggage("session_id", session_id, ctx)
+                context.attach(new_ctx)
+                self._safe_log(
+                    "debug",
+                    "🆔 Auto-assigned session_id to root SERVER span: %s → %s",
+                    span.name,
+                    session_id,
+                )
 
             # Collect all attributes to set
             attributes_to_set = {}

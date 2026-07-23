@@ -50,10 +50,6 @@ class MetricItem(BaseModel):
 
     categories: Optional[List[Any]] = Field(validation_alias="categories", default=None)
 
-    child_metrics: Optional[List[Any]] = Field(
-        validation_alias="child_metrics", default=None
-    )
-
     filters: MetricItemFilters = Field(validation_alias="filters")
 
     id: str = Field(validation_alias="id")
