@@ -27,6 +27,8 @@ from typing import Any
 
 import pytest
 
+from tests.integration._llm_helpers import create_live_langchain_client
+
 # Skip entire module if keys not present
 pytestmark = [
     pytest.mark.skipif(not os.getenv("HH_API_KEY"), reason="HH_API_KEY not set"),
@@ -50,7 +52,6 @@ class TestOpenInferenceLangChain:
 
     def test_basic_llm_invoke(self):
         """Test basic LangChain LLM invoke is traced."""
-        from langchain_openai import ChatOpenAI
         from openinference.instrumentation.langchain import LangChainInstrumentor
 
         from honeyhive import HoneyHiveTracer
@@ -65,7 +66,7 @@ class TestOpenInferenceLangChain:
         instrumentor.instrument(tracer_provider=tracer.provider)
 
         try:
-            llm = ChatOpenAI(model="gpt-4o-mini", max_tokens=50)
+            llm = create_live_langchain_client()
             response = llm.invoke("Say 'test' and nothing else.")
 
             assert response.content is not None
@@ -79,7 +80,6 @@ class TestOpenInferenceLangChain:
     def test_chain_with_prompt_template(self):
         """Test LangChain chain with prompt template is traced."""
         from langchain_core.prompts import ChatPromptTemplate
-        from langchain_openai import ChatOpenAI
         from openinference.instrumentation.langchain import LangChainInstrumentor
 
         from honeyhive import HoneyHiveTracer
@@ -100,7 +100,7 @@ class TestOpenInferenceLangChain:
                     ("user", "{input}"),
                 ]
             )
-            llm = ChatOpenAI(model="gpt-4o-mini", max_tokens=50)
+            llm = create_live_langchain_client()
             chain = prompt | llm
 
             response = chain.invoke({"input": "Say 'chain test' and nothing else."})
@@ -116,7 +116,6 @@ class TestOpenInferenceLangChain:
     def test_chain_with_enrichment(self):
         """Test LangChain with span enrichment."""
         from langchain_core.prompts import ChatPromptTemplate
-        from langchain_openai import ChatOpenAI
         from openinference.instrumentation.langchain import LangChainInstrumentor
 
         from honeyhive import HoneyHiveTracer, enrich_span, trace
@@ -142,7 +141,7 @@ class TestOpenInferenceLangChain:
                         ("user", "{query}"),
                     ]
                 )
-                llm = ChatOpenAI(model="gpt-4o-mini", max_tokens=50)
+                llm = create_live_langchain_client()
                 chain = prompt | llm
 
                 response = chain.invoke({"query": query})
@@ -172,7 +171,6 @@ class TestTraceloopLangChain:
     def test_basic_chain_traceloop(self):
         """Test basic LangChain chain with Traceloop instrumentor."""
         from langchain_core.prompts import ChatPromptTemplate
-        from langchain_openai import ChatOpenAI
         from opentelemetry.instrumentation.langchain import LangchainInstrumentor
 
         from honeyhive import HoneyHiveTracer
@@ -190,7 +188,7 @@ class TestTraceloopLangChain:
             prompt = ChatPromptTemplate.from_messages(
                 [("user", "Say 'traceloop test' and nothing else.")]
             )
-            llm = ChatOpenAI(model="gpt-4o-mini", max_tokens=50)
+            llm = create_live_langchain_client()
             chain = prompt | llm
 
             response = chain.invoke({})
@@ -206,7 +204,6 @@ class TestTraceloopLangChain:
     def test_nested_traces_with_langchain(self):
         """Test nested @trace decorators with LangChain calls via Traceloop."""
         from langchain_core.prompts import ChatPromptTemplate
-        from langchain_openai import ChatOpenAI
         from opentelemetry.instrumentation.langchain import LangchainInstrumentor
 
         from honeyhive import HoneyHiveTracer, trace
@@ -234,7 +231,7 @@ class TestTraceloopLangChain:
                 prompt = ChatPromptTemplate.from_messages(
                     [("user", "Summarize in one sentence: {text}")]
                 )
-                llm = ChatOpenAI(model="gpt-4o-mini", max_tokens=30)
+                llm = create_live_langchain_client()
                 chain = prompt | llm
                 response = chain.invoke({"text": text})
                 return response.content

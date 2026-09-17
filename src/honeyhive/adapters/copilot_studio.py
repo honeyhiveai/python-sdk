@@ -32,7 +32,7 @@ from opentelemetry.util.types import AttributeValue
 _LOG = logging.getLogger(__name__)
 
 _SPAN_TYPES: frozenset[str] = frozenset({"AppEvents", "AppRequests", "AppDependencies"})
-# TODO: handle AppExceptions — see HHAI-5791
+# TODO: handle AppExceptions
 
 # Internal Copilot Studio orchestration spans: empty inputs/outputs, no scoreable content.
 # Dropped by default; set COPILOT_STUDIO_ADAPTER_KEEP_TOPIC_SPANS=1 to retain.

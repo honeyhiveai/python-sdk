@@ -29,6 +29,8 @@ import os
 
 import pytest
 
+from tests.integration._llm_helpers import LIVE_OPENAI_MODEL
+
 # Skip entire module if keys not present
 pytestmark = [
     pytest.mark.skipif(not os.getenv("HH_API_KEY"), reason="HH_API_KEY not set"),
@@ -75,7 +77,9 @@ class TestAutoGenIntegration:
 
         try:
             model_client = OpenAIChatCompletionClient(
-                model="gpt-3.5-turbo",
+                model=LIVE_OPENAI_MODEL,
+                reasoning_effort="low",
+                max_completion_tokens=1024,
                 api_key=os.getenv("OPENAI_API_KEY"),
             )
 
@@ -129,7 +133,9 @@ class TestAutoGenIntegration:
                 return 0
 
             model_client = OpenAIChatCompletionClient(
-                model="gpt-3.5-turbo",
+                model=LIVE_OPENAI_MODEL,
+                reasoning_effort="low",
+                max_completion_tokens=1024,
                 api_key=os.getenv("OPENAI_API_KEY"),
             )
 

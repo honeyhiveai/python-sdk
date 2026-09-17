@@ -33,17 +33,12 @@ if TYPE_CHECKING:
 load_dotenv(".env.dotenv")
 load_dotenv()  # Fallback to .env
 
-# Configuration - support both HH_* and HONEYHIVE_* variable names
+# The tracer reads HH_API_KEY and HH_API_URL itself, so only OpenAI's key is
+# read here.
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-HH_API_KEY = os.getenv("HONEYHIVE_API_KEY") or os.getenv("HH_API_KEY")
-HH_SERVER_URL = os.getenv("HONEYHIVE_SERVER_URL") or os.getenv("HH_API_URL")
 
-# Verify required environment variables
 if not OPENAI_API_KEY:
     print("ERROR: OPENAI_API_KEY not set in environment")
-    sys.exit(1)
-if not HH_API_KEY:
-    print("ERROR: HONEYHIVE_API_KEY not set in environment")
     sys.exit(1)
 
 
@@ -53,17 +48,18 @@ def init_honeyhive_tracer(session_name: str):
     print(f"INITIALIZING HONEYHIVE TRACER")
     print(f"{'=' * 80}")
     print(f"Session: {session_name}")
-    print(f"Server URL: {HH_SERVER_URL or 'default'}")
     print(f"Verbose: True")
     print(f"{'=' * 80}\n")
 
     tracer = HoneyHiveTracer.init(
-        api_key=HH_API_KEY,
         source="debug",
         session_name=session_name,
-        server_url=HH_SERVER_URL,
         verbose=True,  # CRITICAL: Enable verbose logging
     )
+    if not tracer.config.api_key:
+        print("ERROR: HH_API_KEY not set in environment")
+        sys.exit(1)
+    print(f"Server URL: {tracer.config.server_url}")
 
     return tracer
 
@@ -318,8 +314,8 @@ if __name__ == "__main__":
 ║                                                                            ║
 ║ REQUIRED ENVIRONMENT VARIABLES:                                            ║
 ║   - OPENAI_API_KEY                                                        ║
-║   - HONEYHIVE_API_KEY                                                     ║
-║   - HONEYHIVE_SERVER_URL / HH_API_URL (optional)                        ║
+║   - HH_API_KEY                                                            ║
+║   - HH_API_URL (optional)                                                 ║
 ║                                                                            ║
 ║ GREP COMMANDS TO EXTRACT SPAN DATA:                                       ║
 ║                                                                            ║

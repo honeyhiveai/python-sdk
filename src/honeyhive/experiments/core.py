@@ -10,7 +10,6 @@ This module provides the core experiment execution functionality including:
 import asyncio
 import functools
 import inspect
-import os
 import threading
 import uuid
 import warnings
@@ -49,11 +48,10 @@ logger = get_logger("honeyhive.experiments.core")
 _INSTRUMENTOR_LIFECYCLE_LOCK = threading.Lock()
 
 
-# Acceptable scalar score types. Mirrors the server-side evaluator contract
-# (see services/data_plane/dp_evaluation_service/app/services/metric_update_service.js
-# castResultToReturnType): scores must be bool | float | str so that
-# compareRunMetrics — which only diffs typeof === 'number' | 'boolean' — can
-# pair them across runs.
+# Acceptable scalar score types. This mirrors the server-side evaluator
+# contract: a score must be bool, int, float, or str. The server pairs scores
+# across runs by comparing numbers and booleans only, so a score of any other
+# type cannot be compared between runs.
 ScalarScore = Union[bool, int, float, str]
 
 
@@ -61,7 +59,7 @@ def _is_scalar_metric_value(value: Any) -> bool:
     """Return True if `value` is safe to drop into `event.metrics` as-is.
 
     The backend's metrics field is `Record<string, unknown>` (no validation),
-    but compareRunMetrics ignores everything that isn't bool/number, so
+    but run comparison ignores everything that isn't bool/number, so
     non-scalar values are silently lost during run comparison. We refuse to
     write them.
     """
@@ -147,7 +145,7 @@ class EvaluatorMetricResult:
             else:
                 logger.warning(
                     "Evaluator %s returned a non-scalar 'score' value (%s); "
-                    "dropping the score (compareRunMetrics only diffs scalar "
+                    "dropping the score (run comparison only diffs scalar "
                     "metrics, so a nested value would be silently lost "
                     "during comparison).",
                     eval_name,
@@ -286,6 +284,7 @@ def run_experiment(
     server_url: Optional[str] = None,
     experiment_context: ExperimentContext,
     api_key: Optional[str] = None,
+    ingestion_api_key: Optional[str] = None,
     max_workers: int = 10,
     verbose: bool = False,
     instrumentors: Optional[List[Callable[[], Any]]] = None,
@@ -313,7 +312,9 @@ def run_experiment(
         dataset: List of datapoint dictionaries
         datapoint_ids: List of datapoint IDs (parallel to dataset)
         experiment_context: ExperimentContext with run metadata
-        api_key: HoneyHive API key for tracer (or set HONEYHIVE_API_KEY env var)
+        api_key: HoneyHive API key for tracer (or set the HH_API_KEY env var)
+        ingestion_api_key: Ingestion API key the per-datapoint tracers send traces
+            with (or set the HH_INGESTION_API_KEY env var); api_key when unset
         max_workers: ThreadPool size (default: 10)
         verbose: Enable verbose logging
         instrumentors: List of instrumentor factory functions. Each factory should
@@ -396,7 +397,11 @@ def run_experiment(
         # Create NEW tracer instance for this datapoint
         # Each tracer is completely isolated (own API client, logger, state)
         tracer = HoneyHiveTracer(
-            api_key=api_key, server_url=server_url, verbose=verbose, **tracer_config
+            api_key=api_key,
+            ingestion_api_key=ingestion_api_key,
+            server_url=server_url,
+            verbose=verbose,
+            **tracer_config,
         )
 
         # Instrument once for the whole experiment under the module lock.
@@ -1102,6 +1107,7 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
     evaluators: Optional[List[Callable]] = None,
     instrumentors: Optional[List[Callable[[], Any]]] = None,
     api_key: Optional[str] = None,
+    ingestion_api_key: Optional[str] = None,
     server_url: Optional[str] = None,
     project: Optional[str] = None,
     name: Optional[str] = None,
@@ -1132,9 +1138,11 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
             return a new instrumentor instance when called. This ensures each
             datapoint gets its own tracer and instrumentor instance for proper
             trace routing. Example: [lambda: OpenAIInstrumentor()]
-        api_key: HoneyHive API key (or set HONEYHIVE_API_KEY/HH_API_KEY env var)
-        server_url: HoneyHive server URL (or set HONEYHIVE_SERVER_URL/
-            HH_SERVER_URL/HH_API_URL env var)
+        api_key: HoneyHive API key (or set the HH_API_KEY env var)
+        ingestion_api_key: Ingestion API key used to send the experiment's traces
+            (or set the HH_INGESTION_API_KEY env var). Run creation and results
+            still use api_key. When unset, api_key sends the traces too.
+        server_url: HoneyHive server URL (or set the HH_API_URL env var)
         project: Deprecated and ignored. Project scope is determined by the API key.
         name: Experiment run name (auto-generated if not provided)
         run_id: Experiment run ID to send to the backend (auto-generated UUID if not
@@ -1212,27 +1220,11 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
             stacklevel=2,
         )
 
-    # Load from environment variables if not provided
-    # Support both HONEYHIVE_* and HH_* prefixes for convenience
-    # Note: HoneyHive client's config only reads HH_* prefix, so we check
-    # HONEYHIVE_* first for better UX, then pass explicitly to client
-    if api_key is None:
-        api_key = os.getenv("HONEYHIVE_API_KEY") or os.getenv("HH_API_KEY")
-
-    if server_url is None:
-        # Check multiple variations for maximum compatibility
-        server_url = (
-            os.getenv("HONEYHIVE_SERVER_URL")  # Most intuitive
-            or os.getenv("HH_SERVER_URL")  # Alternative shorthand
-            or os.getenv("HH_API_URL")  # Client config uses this
-        )
-
-    # Initialize client - passing explicit values ensures both HONEYHIVE_* and HH_*
-    # environment variables work (client's config only checks HH_* prefix)
-    client_params = {"api_key": api_key}
-    if server_url:
-        client_params["base_url"] = server_url
-    client = HoneyHive(**client_params)
+    # The client here and the per-datapoint tracers each resolve the keys and
+    # URL from these same arguments, so evaluate() forwards them as given.
+    client = HoneyHive(
+        api_key=api_key, ingestion_api_key=ingestion_api_key, base_url=server_url
+    )
 
     # Step 1: Prepare dataset
     if dataset is not None:
@@ -1396,6 +1388,7 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
         server_url=server_url,
         experiment_context=context,
         api_key=api_key,
+        ingestion_api_key=ingestion_api_key,
         max_workers=max_workers,
         verbose=verbose,
         instrumentors=instrumentors,

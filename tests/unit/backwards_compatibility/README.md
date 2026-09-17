@@ -54,7 +54,7 @@ These tests run in subprocess to simulate real production behavior:
 
 ```python
 # This simulates real user behavior
-test_script = '''
+test_script = """
 import os
 
 # Import SDK first (like real users do)
@@ -66,7 +66,7 @@ os.environ["HH_API_URL"] = "https://runtime.custom.url"
 # Create tracer - should use runtime env vars
 tracer = HoneyHiveTracer(test_mode=True)
 assert tracer.client.base_url == "https://runtime.custom.url"
-'''
+"""
 
 result = subprocess.run([sys.executable, "-c", test_script], ...)
 ```

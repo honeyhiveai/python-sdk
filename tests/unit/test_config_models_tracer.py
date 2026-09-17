@@ -156,16 +156,21 @@ class TestTracerConfig:
         config = TracerConfig(server_url="http://localhost:8080")
         assert config.server_url == "http://localhost:8080"
 
-    @patch("honeyhive.config.models.base.logger")
+    @patch("honeyhive.config.resolved.logger")
     def test_validate_server_url_invalid_protocol(self, mock_logger: Mock) -> None:
-        """Test server URL validation with invalid protocol falls back to default."""
+        """An explicit server_url with a non-HTTP scheme warns and uses the default.
+
+        The rule and its warning live in honeyhive.config.resolved so the client
+        and the models agree.
+        """
         config = TracerConfig(server_url="ftp://invalid.com")
 
         assert config.server_url == "https://api.dp1.us.honeyhive.ai"
         mock_logger.warning.assert_called_once()
         call_args = mock_logger.warning.call_args
         assert (
-            "Invalid" in call_args[0][0] and "must be HTTP/HTTPS URL" in call_args[0][0]
+            "Invalid" in call_args[0][0]
+            and "must be an HTTP or HTTPS URL" in call_args[0][0]
         )
 
     @patch("honeyhive.config.models.base.logger")

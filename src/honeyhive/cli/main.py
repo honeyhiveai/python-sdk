@@ -11,8 +11,8 @@ import click
 import httpx
 import yaml
 
-from ..api.client import HoneyHive
 from ..config.models.tracer import TracerConfig
+from ..config.resolved import ResolvedConfig
 from ..tracer import HoneyHiveTracer
 from ..utils.cache import close_global_cache, get_global_cache
 from ..utils.connection_pool import close_global_pool, get_global_pool
@@ -327,21 +327,13 @@ def request(
         data: JSON string containing request body data
         timeout: Request timeout in seconds
     """
-    import os
-
     try:
-        # Get API key from environment
-        api_key = os.getenv("HONEYHIVE_API_KEY") or os.getenv("HH_API_KEY")
-        base_url = (
-            os.getenv("HONEYHIVE_SERVER_URL")
-            or os.getenv("HH_API_URL")
-            or "https://api.dp1.us.honeyhive.ai"
-        )
+        connection = ResolvedConfig.resolve()
+        api_key = connection.api_key
+        base_url = connection.api_url
 
         if not api_key:
-            click.echo(
-                "No API key found - set HONEYHIVE_API_KEY or HH_API_KEY", err=True
-            )
+            click.echo("No API key found - set HH_API_KEY", err=True)
             sys.exit(1)
 
         # Parse headers and data

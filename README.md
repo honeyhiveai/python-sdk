@@ -282,6 +282,7 @@ src/honeyhive/
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `HH_API_KEY` | HoneyHive API key | Required |
+| `HH_INGESTION_API_KEY` | Ingestion API key (`hh_ingst_...`) used to send traces and events; `HH_API_KEY` is used when unset | Optional |
 | `HH_API_URL` | API base URL | `https://api.dp1.us.honeyhive.ai` |
 | `HH_SOURCE` | Source environment | `production` |
 | `HH_DISABLE_TRACING` | Disable tracing completely | `false` |

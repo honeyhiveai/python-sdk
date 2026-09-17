@@ -30,6 +30,7 @@ import pytest
 
 from honeyhive import HoneyHive
 from honeyhive.models import CreateDatapointRequest, CreateDatasetRequest, EventFilter
+from tests.integration._llm_helpers import LIVE_OPENAI_MODEL
 
 # --- Generic event helpers ---------------------------------------------------
 
@@ -148,8 +149,8 @@ def assert_run_metadata_on_all_child_events(events: Iterable[Any], run_id: str) 
     """Every chain/tool/model event must carry the three baggage IDs.
 
     The ingestion-side baggage injector stamps ``run_id``, ``dataset_id``,
-    and ``datapoint_id`` onto each non-session event's metadata. This is
-    the assertion HHAI-5269 unblocks; if it regresses, downstream
+    and ``datapoint_id`` onto each non-session event's metadata. This
+    assertion covers that behavior. If it regresses, downstream
     comparison endpoints break silently.
     """
     for ev in events:
@@ -234,7 +235,7 @@ def require_server_side_eval_creds() -> Tuple[str, str]:
     if use_openai:
         if not os.environ.get("OPENAI_API_KEY"):
             pytest.skip("HH_EVALUATOR_E2E_USE_OPENAI=1 but OPENAI_API_KEY is not set.")
-        return "gpt-4o-mini", "openai"
+        return LIVE_OPENAI_MODEL, "openai"
 
     # deterministic/default/default has no latency and error_rate=0, so
     # evaluator calls are instant.  See mock_provider_config.yaml.

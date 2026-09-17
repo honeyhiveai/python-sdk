@@ -229,8 +229,8 @@ class TestExperimentsExternalClientSide:
 
         Verifies the multi-evaluator async dispatch path through
         ``_aapply_inline_evaluators``. The single-evaluator (len==1)
-        case has its own dedicated test below for the HHAI-5270
-        nested-event-loop regression.
+        case has its own dedicated test below for the nested-event-loop
+        regression.
         """
         run_name = f"inline-attach-async-async-{int(time.time())}"
         dataset = passing_failing_dataset()
@@ -298,7 +298,7 @@ class TestExperimentsExternalClientSide:
         real_project: str,
         integration_client: HoneyHive,
     ) -> None:
-        """Async user fn × single async evaluator (len==1) — HHAI-5270 regression.
+        """Async user fn × single async evaluator (len==1) — single-eval regression.
 
         Locks in the nested-event-loop fix on PR #3998. Pre-fix, a
         single async evaluator under an async user function raised
@@ -352,7 +352,7 @@ class TestExperimentsExternalClientSide:
             for c in chain_events_for_function(events, "async_double_value_function")
         )
         assert scores == [0.0, 1.0], (
-            f"HHAI-5270 single-async-eval regression: expected [0.0, 1.0], got {scores}"
+            f"Single-async-eval regression: expected [0.0, 1.0], got {scores}"
         )
 
     def test_inline_chain_span_attachment_mixed_sync_async_evaluators(

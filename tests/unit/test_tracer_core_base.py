@@ -862,6 +862,44 @@ class TestExtractApiParameters:
 
         assert api_params == {"api_key": "test-api-key"}
 
+    @patch("honeyhive.tracer.core.base.create_unified_config")
+    def test_ingestion_api_key_alone_builds_a_client(self, mock_create: Mock) -> None:
+        """An ingestion key with no api_key is enough: sessions and events take it."""
+        ingestion_key = "hh_ingst_" + "A" * 24 + "_" + "b" * 64
+        config = Mock()
+        config.get.side_effect = lambda key, default=None: {
+            "api_key": None,
+            "ingestion_api_key": ingestion_key,
+            "server_url": None,
+        }.get(key, default)
+        mock_create.return_value = config
+
+        tracer = HoneyHiveTracerBase()
+        api_params = tracer._extract_api_parameters_dynamically(config)
+
+        assert api_params == {"api_key": None, "ingestion_api_key": ingestion_key}
+
+    @patch("honeyhive.tracer.core.base.create_unified_config")
+    def test_both_keys_are_passed_to_the_client(self, mock_create: Mock) -> None:
+        """Both credentials reach the client, which routes them per operation."""
+        ingestion_key = "hh_ingst_" + "A" * 24 + "_" + "b" * 64
+        config = Mock()
+        config.get.side_effect = lambda key, default=None: {
+            "api_key": "hh_" + "x" * 32,
+            "ingestion_api_key": ingestion_key,
+            "server_url": "https://example.test",
+        }.get(key, default)
+        mock_create.return_value = config
+
+        tracer = HoneyHiveTracerBase()
+        api_params = tracer._extract_api_parameters_dynamically(config)
+
+        assert api_params == {
+            "api_key": "hh_" + "x" * 32,
+            "ingestion_api_key": ingestion_key,
+            "base_url": "https://example.test",
+        }
+
 
 class TestHoneyHiveTracerBaseProperties:
     """Test tracer properties."""

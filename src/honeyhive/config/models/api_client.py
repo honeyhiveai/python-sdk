@@ -24,13 +24,12 @@ New Usage (Future):
 # validation and environment variable handling.
 
 from pydantic import Field
-from pydantic_settings import SettingsConfigDict
 
-from .base import BaseHoneyHiveConfig, ServerURLMixin
+from .base import BaseHoneyHiveConfig
 from .http_client import HTTPClientConfig
 
 
-class APIClientConfig(BaseHoneyHiveConfig, ServerURLMixin):
+class APIClientConfig(BaseHoneyHiveConfig):
     """Configuration for HoneyHive API client.
 
     This class defines configuration parameters for API client initialization
@@ -40,13 +39,13 @@ class APIClientConfig(BaseHoneyHiveConfig, ServerURLMixin):
 
     Inherited Fields:
         - api_key: HoneyHive API key for authentication
+        - server_url: Server URL for requests (from HH_API_URL env var)
         - project: Deprecated; accepted for backwards compatibility but ignored
           (project is inferred from the API key by the backend)
         - test_mode: Enable test mode (no data sent to backend)
         - verbose: Enable verbose logging output
 
     API Client-Specific Fields:
-        - server_url: Server URL for requests (from HH_API_URL env var)
         - http_config: HTTP transport configuration
 
     Example:
@@ -75,13 +74,11 @@ class APIClientConfig(BaseHoneyHiveConfig, ServerURLMixin):
         ... )
     """
 
-    # Compose HTTP client configuration
+    # Compose HTTP client configuration. The alias equal to the field name keeps
+    # env_prefix from applying, so the variable stays the bare HTTP_CONFIG it has
+    # always been rather than becoming HH_HTTP_CONFIG.
     http_config: HTTPClientConfig = Field(
-        default_factory=HTTPClientConfig, description="HTTP transport configuration"
-    )
-
-    model_config = SettingsConfigDict(
-        validate_assignment=True,
-        extra="forbid",
-        case_sensitive=False,
+        default_factory=HTTPClientConfig,
+        validation_alias="http_config",
+        description="HTTP transport configuration",
     )

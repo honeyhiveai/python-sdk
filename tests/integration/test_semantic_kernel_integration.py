@@ -29,6 +29,8 @@ import os
 
 import pytest
 
+from tests.integration._llm_helpers import LIVE_OPENAI_MODEL
+
 # Skip entire module if keys not present
 pytestmark = [
     pytest.mark.skipif(not os.getenv("HH_API_KEY"), reason="HH_API_KEY not set"),
@@ -75,7 +77,7 @@ class TestSemanticKernelIntegration:
 
         try:
             chat_service = OpenAIChatCompletion(
-                ai_model_id="gpt-3.5-turbo",
+                ai_model_id=LIVE_OPENAI_MODEL,
                 api_key=os.getenv("OPENAI_API_KEY"),
             )
 
@@ -88,7 +90,10 @@ class TestSemanticKernelIntegration:
                     OpenAIChatPromptExecutionSettings,
                 )
 
-                settings = OpenAIChatPromptExecutionSettings(max_tokens=50)
+                # Semantic Kernel supports low as its smallest reasoning effort.
+                settings = OpenAIChatPromptExecutionSettings(
+                    max_completion_tokens=2048, reasoning_effort="low"
+                )
                 response = await chat_service.get_chat_message_content(
                     history, settings
                 )
@@ -135,7 +140,7 @@ class TestSemanticKernelIntegration:
             kernel = Kernel()
             kernel.add_service(
                 OpenAIChatCompletion(
-                    ai_model_id="gpt-3.5-turbo",
+                    ai_model_id=LIVE_OPENAI_MODEL,
                     api_key=os.getenv("OPENAI_API_KEY"),
                     service_id="chat",
                 )

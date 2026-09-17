@@ -14,8 +14,7 @@ import logging
 import os
 from typing import Any, Dict, Optional
 
-from pydantic import AliasChoices, Field, field_validator
-from pydantic_settings import SettingsConfigDict
+from pydantic import Field, field_validator
 
 from .base import BaseHoneyHiveConfig, _safe_validate_url
 
@@ -79,77 +78,66 @@ class OTLPConfig(BaseHoneyHiveConfig):
     """
 
     # OTLP export settings
-    otlp_enabled: bool = Field(  # type: ignore[call-overload,pydantic-alias]
+    otlp_enabled: bool = Field(
         default=True,
         description="Enable OTLP export",
-        validation_alias=AliasChoices("HH_OTLP_ENABLED", "otlp_enabled"),
     )
 
-    otlp_endpoint: Optional[str] = Field(  # type: ignore[call-overload,pydantic-alias]
+    otlp_endpoint: Optional[str] = Field(
         default=None,
         description="Custom OTLP endpoint URL",
-        validation_alias=AliasChoices("HH_OTLP_ENDPOINT", "otlp_endpoint"),
         examples=[
             "https://api.dp1.us.honeyhive.ai/otlp",
             "https://custom.otlp.endpoint",
         ],
     )
 
-    otlp_headers: Optional[Dict[str, Any]] = Field(  # type: ignore[call-overload,pydantic-alias]  # pylint: disable=line-too-long
+    otlp_headers: Optional[Dict[str, Any]] = Field(
         default=None,
         description="OTLP headers in JSON format",
-        validation_alias=AliasChoices("HH_OTLP_HEADERS", "otlp_headers"),
         examples=[{"Authorization": "Bearer token", "X-Custom": "value"}],
     )
 
-    otlp_protocol: str = Field(  # type: ignore[call-overload,pydantic-alias]
+    otlp_protocol: str = Field(
         default="http/json",
         description="OTLP protocol format: 'http/json' (default) or 'http/protobuf'",
-        validation_alias=AliasChoices(
-            "HH_OTLP_PROTOCOL", "OTEL_EXPORTER_OTLP_PROTOCOL", "otlp_protocol"
-        ),
         examples=["http/json", "http/protobuf"],
     )
 
     # Batch processing settings
-    batch_size: int = Field(  # type: ignore[call-overload,pydantic-alias]
+    batch_size: int = Field(
         default=100,
         description="OTLP batch size for performance optimization",
-        validation_alias=AliasChoices("HH_BATCH_SIZE", "batch_size"),
         examples=[50, 100, 200, 500],
     )
 
-    flush_interval: float = Field(  # type: ignore[call-overload,pydantic-alias]
+    flush_interval: float = Field(
         default=5.0,
         description="OTLP flush interval in seconds",
-        validation_alias=AliasChoices("HH_FLUSH_INTERVAL", "flush_interval"),
         examples=[0.5, 1.0, 5.0, 10.0],
     )
 
-    max_export_batch_size: int = Field(  # type: ignore[call-overload,pydantic-alias]
+    max_export_batch_size: int = Field(
         default=512,
         description="Maximum export batch size",
-        validation_alias=AliasChoices(
-            "HH_MAX_EXPORT_BATCH_SIZE", "max_export_batch_size"
-        ),
         examples=[256, 512, 1024],
     )
 
-    export_timeout: float = Field(  # type: ignore[call-overload,pydantic-alias]
+    export_timeout: float = Field(
         default=30.0,
         description="Export timeout in seconds",
-        validation_alias=AliasChoices("HH_EXPORT_TIMEOUT", "export_timeout"),
         examples=[10.0, 30.0, 60.0],
     )
 
-    model_config = SettingsConfigDict(
-        validate_assignment=True,
-        extra="forbid",
-        case_sensitive=False,
-    )
-
     def __init__(self, **data: Any) -> None:
-        """Initialize OTLP config with environment variable loading."""
+        """Load this class's fields from the environment before validation.
+
+        Init kwargs outrank the pydantic-settings environment source, so the
+        HH_ names read here are what populate the fields declared on this
+        class; the inherited fields still come through env_prefix. Reading
+        them here also honours OTEL_EXPORTER_OTLP_PROTOCOL and falls back to
+        the default on a malformed value instead of raising.
+        """
         # Load from environment variables
         env_data = {
             "otlp_enabled": _get_env_bool("HH_OTLP_ENABLED", True),

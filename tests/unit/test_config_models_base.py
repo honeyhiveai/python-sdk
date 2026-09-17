@@ -12,6 +12,7 @@ import pytest
 from pydantic import ValidationError
 
 from honeyhive.config.models.base import BaseHoneyHiveConfig, _safe_validate_url
+from honeyhive.config.resolved import DEFAULT_API_URL
 
 
 class TestBaseHoneyHiveConfig:
@@ -206,29 +207,34 @@ class TestBaseHoneyHiveConfig:
         # This tests the Field definitions in the model
         schema = BaseHoneyHiveConfig.model_json_schema()
 
-        # Check api_key field (now appears as HH_API_KEY in schema due to
-        # validation_alias)
-        api_key_field = schema["properties"]["HH_API_KEY"]
+        api_key_field = schema["properties"]["api_key"]
         assert "description" in api_key_field
         assert "examples" in api_key_field
         assert "hh_" in str(api_key_field["examples"])
 
-        # Check project field (now appears as HH_PROJECT in schema due to
-        # validation_alias)
-        project_field = schema["properties"]["HH_PROJECT"]
+        project_field = schema["properties"]["project"]
         assert "description" in project_field
         assert "examples" in project_field
 
     def test_model_serialization(self) -> None:
         """Test model serialization to dict and JSON."""
+        # server_url is given explicitly so the test is about serialization, not
+        # about what the environment resolves to.
         config = BaseHoneyHiveConfig(
-            api_key="hh_test_key", project="test-project", test_mode=True, verbose=False
+            api_key="hh_test_key",
+            ingestion_api_key=None,
+            server_url=DEFAULT_API_URL,
+            project="test-project",
+            test_mode=True,
+            verbose=False,
         )
 
         # Test dict serialization
         config_dict = config.model_dump()
         expected_dict = {
             "api_key": "hh_test_key",
+            "ingestion_api_key": None,
+            "server_url": DEFAULT_API_URL,
             "project": "test-project",
             "test_mode": True,
             "verbose": False,

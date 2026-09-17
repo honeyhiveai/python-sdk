@@ -29,6 +29,11 @@ import os
 
 import pytest
 
+from tests.integration._llm_helpers import LIVE_OPENAI_MODEL
+
+# DSPy requires a 16,000-token ceiling for reasoning models.
+DSPY_MAX_TOKENS = 16000
+
 # Skip entire module if keys not present
 pytestmark = [
     pytest.mark.skipif(not os.getenv("HH_API_KEY"), reason="HH_API_KEY not set"),
@@ -85,7 +90,12 @@ class TestDSPyIntegration:
 
         try:
             # Configure DSPy with OpenAI
-            lm = dspy.LM("openai/gpt-3.5-turbo", max_tokens=50)
+            lm = dspy.LM(
+                f"openai/{LIVE_OPENAI_MODEL}",
+                max_tokens=DSPY_MAX_TOKENS,
+                temperature=1.0,
+                reasoning_effort="low",
+            )
             dspy.configure(lm=lm)
 
             # Simple prediction
@@ -129,7 +139,12 @@ class TestDSPyIntegration:
         openai_instrumentor.instrument(tracer_provider=tracer.provider)
 
         try:
-            lm = dspy.LM("openai/gpt-3.5-turbo", max_tokens=100)
+            lm = dspy.LM(
+                f"openai/{LIVE_OPENAI_MODEL}",
+                max_tokens=DSPY_MAX_TOKENS,
+                temperature=1.0,
+                reasoning_effort="low",
+            )
             dspy.configure(lm=lm)
 
             cot = dspy.ChainOfThought("question -> answer")
@@ -178,7 +193,12 @@ class TestDSPyIntegration:
         openai_instrumentor.instrument(tracer_provider=tracer.provider)
 
         try:
-            lm = dspy.LM("openai/gpt-3.5-turbo", max_tokens=50)
+            lm = dspy.LM(
+                f"openai/{LIVE_OPENAI_MODEL}",
+                max_tokens=DSPY_MAX_TOKENS,
+                temperature=1.0,
+                reasoning_effort="low",
+            )
             dspy.configure(lm=lm)
 
             class Summarize(dspy.Signature):

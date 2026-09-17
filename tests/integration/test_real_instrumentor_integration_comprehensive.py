@@ -15,6 +15,7 @@ from typing import Any
 
 import pytest
 
+from tests.integration._llm_helpers import LIVE_OPENAI_MODEL
 from tests.utils import (  # pylint: disable=no-name-in-module
     generate_test_id,
     verify_tracer_span,
@@ -177,14 +178,16 @@ print("✅ Subprocess integration test passed")
 
             # Make a real OpenAI API call (this should be traced)
             response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model=LIVE_OPENAI_MODEL,
                 messages=[
                     {
                         "role": "user",
                         "content": "Say 'Hello from HoneyHive integration test'",
                     }
                 ],
-                max_tokens=20,
+                # Reserve tokens for reasoning and the visible response.
+                max_completion_tokens=1024,
+                reasoning_effort="low",
             )
 
             # Verify response

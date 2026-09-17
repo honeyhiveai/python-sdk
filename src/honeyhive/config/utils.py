@@ -67,8 +67,6 @@ def merge_configs_with_params(
     """
     # Start with defaults or provided configs
     tracer_config = config or TracerConfig()
-    session_cfg = session_config or SessionConfig()
-    eval_cfg = evaluation_config or EvaluationConfig()
 
     # Override tracer config with individual parameters
     tracer_overrides = {}
@@ -78,6 +76,21 @@ def merge_configs_with_params(
 
     if tracer_overrides:
         tracer_config = tracer_config.model_copy(update=tracer_overrides)
+
+    # A default session or evaluation config takes the tracer's key and URL
+    # instead of resolving its own. A caller-supplied one keeps its values
+    # here; create_unified_config then sets the connection fields of every
+    # section to the root's, so the two never disagree in the result.
+    session_cfg = session_config or SessionConfig(
+        api_key=tracer_config.api_key,
+        ingestion_api_key=tracer_config.ingestion_api_key,
+        server_url=tracer_config.server_url,
+    )
+    eval_cfg = evaluation_config or EvaluationConfig(
+        api_key=tracer_config.api_key,
+        ingestion_api_key=tracer_config.ingestion_api_key,
+        server_url=tracer_config.server_url,
+    )
 
     # Override session config with individual parameters
     session_overrides = {}
@@ -167,21 +180,35 @@ def create_unified_config(
     if tracer_config:
         unified.update(tracer_config.model_dump())
 
-    # 2. Create nested configs to avoid key collisions
+    # 2. Create nested configs to avoid key collisions. Each takes the tracer's
+    # resolved key and URL rather than resolving its own, so an explicit
+    # override reaches every section.
+    api_key = tracer_config.api_key
+    ingestion_api_key = tracer_config.ingestion_api_key
+    server_url = tracer_config.server_url
+
     # HTTP Client Configuration
-    default_http_config = HTTPClientConfig()
+    default_http_config = HTTPClientConfig(
+        api_key=api_key, ingestion_api_key=ingestion_api_key, server_url=server_url
+    )
     unified.http = DotDict(default_http_config.model_dump())
 
     # OTLP Configuration
-    default_otlp_config = OTLPConfig()
+    default_otlp_config = OTLPConfig(
+        api_key=api_key, ingestion_api_key=ingestion_api_key, server_url=server_url
+    )
     unified.otlp = DotDict(default_otlp_config.model_dump())
 
     # API Client Configuration
-    default_api_config = APIClientConfig()
+    default_api_config = APIClientConfig(
+        api_key=api_key, ingestion_api_key=ingestion_api_key, server_url=server_url
+    )
     unified.api = DotDict(default_api_config.model_dump())
 
     # Experiment Configuration
-    default_experiment_config = ExperimentConfig()
+    default_experiment_config = ExperimentConfig(
+        api_key=api_key, ingestion_api_key=ingestion_api_key, server_url=server_url
+    )
     unified.experiment = DotDict(default_experiment_config.model_dump())
 
     # Session Configuration (nested to avoid collisions with TracerConfig)
@@ -307,5 +334,22 @@ def create_unified_config(
 
         # TracerConfig fields or unknown params go to root
         unified[param] = value
+
+    # The connection is decided once, at the root, and every section carries
+    # it, so no code path can send with a key or host the root did not resolve.
+    # A SessionConfig or EvaluationConfig the caller built resolved its own at
+    # construction; that value is replaced, while one the caller set on it
+    # explicitly is kept (and has already been promoted to the root above).
+    connection_fields = ("api_key", "ingestion_api_key", "server_url")
+    for section in ("http", "otlp", "api", "experiment"):
+        for field in connection_fields:
+            unified[section][field] = unified[field]
+    for section, supplied in (
+        ("session", session_config),
+        ("evaluation", evaluation_config),
+    ):
+        for field in connection_fields:
+            if supplied is None or field not in supplied.model_fields_set:
+                unified[section][field] = unified[field]
 
     return unified

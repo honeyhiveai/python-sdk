@@ -33,6 +33,7 @@ from honeyhive.cli.main import (
     trace,
     watch,
 )
+from honeyhive.config import resolved
 
 # Fixed: Updated httpx mocking to match actual CLI implementation
 
@@ -475,6 +476,25 @@ class TestAPICommands:
         assert '"success": true' in result.output
 
     @patch("honeyhive.cli.main.httpx.Client")
+    def test_api_request_without_a_key_exits_before_sending(
+        self, mock_httpx_client: Mock, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """With no key in any variable the command names HH_API_KEY and stops."""
+        for preferred, alternates in resolved._SETTINGS.values():
+            for variable in (preferred, *alternates):
+                monkeypatch.delenv(variable, raising=False)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            request,
+            ["--method", "GET", "--url", "https://api.dp1.us.honeyhive.ai/test"],
+        )
+
+        assert result.exit_code == 1
+        assert "HH_API_KEY" in result.output
+        mock_httpx_client.assert_not_called()
+
+    @patch("honeyhive.cli.main.httpx.Client")
     @patch("honeyhive.cli.main.time")
     def test_api_request_post_with_data(
         self, mock_time: Mock, mock_httpx_client: Mock
@@ -514,11 +534,8 @@ class TestAPICommands:
         assert "Duration: 1.200s" in result.output
         assert '"id": "created-123"' in result.output
 
-    @patch("honeyhive.cli.main.HoneyHive")
-    def test_api_request_invalid_headers_json(self, mock_client_class: Mock) -> None:
+    def test_api_request_invalid_headers_json(self) -> None:
         """Test API request command with invalid headers JSON."""
-        mock_client_class.return_value = Mock()
-
         runner = CliRunner()
         result = runner.invoke(
             request,
@@ -535,11 +552,8 @@ class TestAPICommands:
         assert result.exit_code == 1
         assert "Invalid JSON for headers" in result.output
 
-    @patch("honeyhive.cli.main.HoneyHive")
-    def test_api_request_invalid_data_json(self, mock_client_class: Mock) -> None:
+    def test_api_request_invalid_data_json(self) -> None:
         """Test API request command with invalid data JSON."""
-        mock_client_class.return_value = Mock()
-
         runner = CliRunner()
         result = runner.invoke(
             request,

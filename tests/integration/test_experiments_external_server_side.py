@@ -189,9 +189,9 @@ class TestExperimentsExternalServerSide:
             explanation_key = f"{metric_name}_explanation"
             if explanation_key in scored_metrics:
                 # When the LLM evaluator emits an explanation, it should
-                # be a string (matches server-side
-                # metric_update_service.js shape). If absent, that's also
-                # OK — explanation is optional in the LLM eval pipeline.
+                # be a string, which matches the server-side shape. If
+                # absent, that is also OK. The explanation is optional in
+                # the LLM eval pipeline.
                 assert isinstance(scored_metrics[explanation_key], str), (
                     f"{explanation_key} should be str; got {type(scored_metrics[explanation_key]).__name__}"
                 )

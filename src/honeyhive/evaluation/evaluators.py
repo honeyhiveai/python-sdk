@@ -769,13 +769,10 @@ def create_evaluation_run(
     """
     if client is None:
         try:
-            import os
-
-            api_key = os.getenv("HONEYHIVE_API_KEY") or os.getenv("HH_API_KEY")
-            if not api_key:
-                logger.warning("No API key found - set HONEYHIVE_API_KEY or HH_API_KEY")
+            client = HoneyHive()
+            if not client.api_key:
+                logger.warning("No API key found - set HH_API_KEY")
                 return None
-            client = HoneyHive(api_key=api_key)
         except Exception as e:
             logger.warning("Could not create HoneyHive client: %s", e)
             return None

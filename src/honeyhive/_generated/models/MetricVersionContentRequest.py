@@ -11,11 +11,10 @@ class MetricVersionContentRequest(BaseModel):
     """
         MetricVersionContentRequest model
             Metric definition snapshot accepted by POST /v1/metrics/{metric_id}/versions.
-    Six fields are optional and fall back to server-side defaults when omitted:
+    Five fields are optional and fall back to server-side defaults when omitted:
     - `description` → `&#34;&#34;`
     - `return_type` → `&#34;float&#34;`
     - `enabled_in_prod` → `true` for HUMAN metrics, `false` otherwise
-    - `needs_ground_truth` → `false`
     - `sampling_percentage` → `10`
     - `filters` → `{ &#34;filterArray&#34;: [] }`
     """
@@ -41,10 +40,6 @@ class MetricVersionContentRequest(BaseModel):
         validation_alias="enabled_in_prod", default=None
     )
 
-    needs_ground_truth: Optional[bool] = Field(
-        validation_alias="needs_ground_truth", default=None
-    )
-
     sampling_percentage: Optional[float] = Field(
         validation_alias="sampling_percentage", default=None
     )
@@ -62,6 +57,14 @@ class MetricVersionContentRequest(BaseModel):
     )
 
     categories: Optional[List[Any]] = Field(validation_alias="categories", default=None)
+
+    needs_ground_truth: Optional[bool] = Field(
+        validation_alias="needs_ground_truth", default=None
+    )
+
+    child_metrics: Optional[List[Any]] = Field(
+        validation_alias="child_metrics", default=None
+    )
 
     filters: Optional[MetricVersionContentRequestFilters] = Field(
         validation_alias="filters", default=None

@@ -32,8 +32,6 @@ class MetricVersionContent(BaseModel):
 
     enabled_in_prod: bool = Field(validation_alias="enabled_in_prod")
 
-    needs_ground_truth: bool = Field(validation_alias="needs_ground_truth")
-
     sampling_percentage: float = Field(validation_alias="sampling_percentage")
 
     model_provider: Optional[str] = Field(
@@ -49,5 +47,11 @@ class MetricVersionContent(BaseModel):
     )
 
     categories: Optional[List[Any]] = Field(validation_alias="categories", default=None)
+
+    needs_ground_truth: bool = Field(validation_alias="needs_ground_truth")
+
+    child_metrics: Optional[List[Any]] = Field(
+        validation_alias="child_metrics", default=None
+    )
 
     filters: MetricVersionContentFilters = Field(validation_alias="filters")

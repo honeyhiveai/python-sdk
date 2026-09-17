@@ -1,4 +1,4 @@
-"""Regression test for HHAI-4245: OTLP batch export must group spans by scope.
+"""Regression test: OTLP batch export must group spans by scope.
 
 When BatchSpanProcessor batches spans from different instrumentors (e.g.
 pydantic-ai chat + httpx POST), the OTLP JSON payload must place each span
@@ -80,7 +80,7 @@ def _make_span(
 
 
 class TestOTLPScopeGroupingRegression:
-    """HHAI-4245: Spans from different scopes must be in separate scopeSpans."""
+    """Spans from different scopes must be in separate scopeSpans."""
 
     def test_multi_scope_batch_preserves_each_spans_scope(self) -> None:
         """A batch with pydantic-ai and httpx spans must produce two scopeSpans.

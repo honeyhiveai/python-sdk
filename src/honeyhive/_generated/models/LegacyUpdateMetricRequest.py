@@ -34,10 +34,6 @@ class LegacyUpdateMetricRequest(BaseModel):
         validation_alias="enabled_in_prod", default=None
     )
 
-    needs_ground_truth: Optional[bool] = Field(
-        validation_alias="needs_ground_truth", default=None
-    )
-
     sampling_percentage: Optional[float] = Field(
         validation_alias="sampling_percentage", default=None
     )
@@ -55,6 +51,14 @@ class LegacyUpdateMetricRequest(BaseModel):
     )
 
     categories: Optional[List[Any]] = Field(validation_alias="categories", default=None)
+
+    needs_ground_truth: Optional[bool] = Field(
+        validation_alias="needs_ground_truth", default=None
+    )
+
+    child_metrics: Optional[List[Any]] = Field(
+        validation_alias="child_metrics", default=None
+    )
 
     filters: Optional[LegacyUpdateMetricRequestFilters] = Field(
         validation_alias="filters", default=None

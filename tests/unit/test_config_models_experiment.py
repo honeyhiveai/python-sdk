@@ -469,7 +469,7 @@ class TestExperimentConfig:
         config: ExperimentConfig = ExperimentConfig()
 
         # Assert
-        assert config.model_config["env_prefix"] == ""
+        assert config.model_config["env_prefix"] == "HH_"
         assert config.model_config["validate_assignment"] is True
         assert config.model_config["extra"] == "forbid"
         assert config.model_config["case_sensitive"] is False

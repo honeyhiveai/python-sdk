@@ -28,8 +28,12 @@ class BaseAPI:
     backwards-compat alias methods preserve the outer caller's timestamp.
     """
 
-    def __init__(self, api_config: APIConfig) -> None:
+    def __init__(self, api_config: APIConfig, ingestion_api_key: str = "") -> None:
         self._api_config = api_config
+        # Empty when the project API key serves ingestion requests too. Only
+        # the namespaces with ingestion wrappers are given a key; the rest
+        # never read it.
+        self._ingestion_api_key = ingestion_api_key
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
@@ -51,6 +55,29 @@ class BaseAPI:
             # onto the class after definition (e.g. test monkeypatching) will
             # not be auto-stamped.
             setattr(cls, name, _stamp_call(attr))
+
+    @property
+    def _ingestion_api_config(self) -> APIConfig:
+        """The configuration an ingestion operation is sent with.
+
+        A wrapper for an operation the ingestion endpoints serve (creating
+        sessions, writing events) passes this; every other wrapper passes
+        ``_api_config`` and is unaffected by the ingestion key. Which
+        operations those are is declared by the published OpenAPI spec, and
+        the live ingestion-key suite checks every wrapper against it.
+
+        It is derived from the Data Plane configuration at call time, so a
+        value a caller sets on ``api_config`` after construction (``verify``
+        for a private CA, ``base_path``, ``timeout``) reaches ingestion
+        requests too. Without an ingestion key it is the Data Plane
+        configuration itself, the same object, so the project API key serves
+        ingestion requests as before.
+        """
+        if not self._ingestion_api_key:
+            return self._api_config
+        return self._api_config.model_copy(
+            update={"access_token": self._ingestion_api_key}
+        )
 
     @property
     def api_config(self) -> APIConfig:

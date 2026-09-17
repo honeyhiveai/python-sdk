@@ -188,6 +188,20 @@ def real_api_key() -> str:
 
 
 @pytest.fixture(scope="session")
+def real_ingestion_api_key() -> str:
+    """Ingestion API key for the test project, or skip.
+
+    Some live-API environments provision only HH_API_KEY. Tests that exercise
+    the ingestion key request this fixture and skip cleanly there instead of
+    failing the whole suite.
+    """
+    key = os.getenv("HH_INGESTION_API_KEY")
+    if not key:
+        pytest.skip("HH_INGESTION_API_KEY not set; ingestion-key tests need one")
+    return key
+
+
+@pytest.fixture(scope="session")
 def real_project() -> str:
     """Optional project name for integration tests that still pass project to the tracer."""
     return os.environ.get("HH_PROJECT", "test-project")

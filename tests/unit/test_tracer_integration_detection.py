@@ -433,6 +433,29 @@ class TestSetGlobalProvider:
 
         mock_log.assert_called()
 
+    def test_reset_to_proxy_provider_does_not_recurse(self) -> None:
+        """Resetting to a ProxyTracerProvider must leave get_tracer usable.
+
+        A ProxyTracerProvider delegates get_tracer to the global provider, so
+        installing one *as* the global provider would recurse forever on the
+        next get_tracer call (e.g. a module-level get_tracer at import time).
+        """
+        set_global_provider(TracerProvider(), force_override=True)
+        set_global_provider(ProxyTracerProvider(), force_override=True)
+
+        assert isinstance(trace.get_tracer_provider(), ProxyTracerProvider)
+        # This is the call that raised RecursionError before the fix; the
+        # isinstance check above passes either way.
+        assert isinstance(trace.get_tracer("test"), trace.ProxyTracer)
+
+        # A real provider can still be installed afterwards.
+        real_provider = TracerProvider()
+        try:
+            set_global_provider(real_provider)
+            assert trace.get_tracer_provider() is real_provider
+        finally:
+            set_global_provider(ProxyTracerProvider(), force_override=True)
+
 
 class TestResetProviderFlagDynamically:
     """Test _reset_provider_flag_dynamically function."""

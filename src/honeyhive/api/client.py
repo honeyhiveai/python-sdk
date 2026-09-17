@@ -59,6 +59,7 @@ from honeyhive._generated.services import (
 )
 from honeyhive._generated.services import async_Metrics_service as metrics_svc_async
 from honeyhive._generated.services import async_Sessions_service as sessions_svc_async
+from honeyhive.config.resolved import ResolvedConfig
 
 # Import models used in type hints
 from honeyhive.models import (
@@ -701,6 +702,16 @@ class EventsAPI(BaseAPI):
     on top of the export endpoint.
     """
 
+    def __init__(
+        self,
+        api_config: APIConfig,
+        ingestion_api_key: str = "",
+        *,
+        retry_config: Optional[RetryConfig] = None,
+    ) -> None:
+        super().__init__(api_config, ingestion_api_key)
+        self._retry_config = RetryConfig.from_optional(retry_config)
+
     # Supported parameters for getEvents() method
     _GET_EVENTS_SUPPORTED_PARAMS = {
         "dateRange",
@@ -847,15 +858,15 @@ class EventsAPI(BaseAPI):
 
     def create(self, request: PostEventRequest) -> PostEventResponse:
         """Create an event."""
-        return events_svc.createEventLegacy(self._api_config, data=request)
+        return events_svc.createEventLegacy(self._ingestion_api_config, data=request)
 
     def update(self, data: UpdateEventRequest) -> None:
         """Update an event."""
-        return events_svc.updateEventLegacy(self._api_config, data=data)
+        return events_svc.updateEventLegacy(self._ingestion_api_config, data=data)
 
     def create_batch(self, data: PostEventBatchRequest) -> PostEventBatchResponse:
         """Create events in batch."""
-        return events_svc.createEventBatchLegacy(self._api_config, data=data)
+        return events_svc.createEventBatchLegacy(self._ingestion_api_config, data=data)
 
     def export(
         self,
@@ -953,8 +964,9 @@ class EventsAPI(BaseAPI):
             request_body["projections"] = projections
 
         # Make direct request to /events/export (bypasses generated model issues)
-        base_path = self._api_config.base_path
-        headers = self._api_config.get_default_headers()
+        api_config = self._api_config
+        base_path = api_config.base_path
+        headers = api_config.get_default_headers()
 
         # Log outgoing request metadata
         logger.debug(
@@ -964,14 +976,15 @@ class EventsAPI(BaseAPI):
             page,
         )
 
-        # Execute with retry logic for transient errors (502, 503, 504, etc.)
-        retry_config = RetryConfig.default()
+        # Retry 408/429/500/502/503/504 and transport timeouts. Budget comes
+        # from HoneyHive(retry_config=...) or HH_MAX_RETRIES. The other API
+        # methods do not retry.
         with httpx.Client(
             base_url=base_path,
-            verify=self._api_config.verify,
+            verify=api_config.verify,
             timeout=EXPORT_TIMEOUT,
         ) as client:
-            response = retry_config.execute(
+            response = self._retry_config.execute(
                 lambda: client.request(
                     "POST",
                     "/v1/events/export",
@@ -1151,18 +1164,22 @@ class EventsAPI(BaseAPI):
 
     async def create_async(self, request: PostEventRequest) -> PostEventResponse:
         """Create an event asynchronously."""
-        return await events_svc_async.createEventLegacy(self._api_config, data=request)
+        return await events_svc_async.createEventLegacy(
+            self._ingestion_api_config, data=request
+        )
 
     async def update_async(self, data: UpdateEventRequest) -> None:
         """Update an event asynchronously."""
-        return await events_svc_async.updateEventLegacy(self._api_config, data=data)
+        return await events_svc_async.updateEventLegacy(
+            self._ingestion_api_config, data=data
+        )
 
     async def create_batch_async(
         self, data: PostEventBatchRequest
     ) -> PostEventBatchResponse:
         """Create events in batch asynchronously."""
         return await events_svc_async.createEventBatchLegacy(
-            self._api_config, data=data
+            self._ingestion_api_config, data=data
         )
 
     async def export_async(
@@ -1228,8 +1245,9 @@ class EventsAPI(BaseAPI):
             request_body["projections"] = projections
 
         # Make direct async request to /events/export
-        base_path = self._api_config.base_path
-        headers = self._api_config.get_default_headers()
+        api_config = self._api_config
+        base_path = api_config.base_path
+        headers = api_config.get_default_headers()
 
         # Log outgoing request metadata
         logger.debug(
@@ -1239,14 +1257,15 @@ class EventsAPI(BaseAPI):
             page,
         )
 
-        # Execute with retry logic for transient errors (502, 503, 504, etc.)
-        retry_config = RetryConfig.default()
+        # Retry 408/429/500/502/503/504 and transport timeouts. Budget comes
+        # from HoneyHive(retry_config=...) or HH_MAX_RETRIES. The other API
+        # methods do not retry.
         async with httpx.AsyncClient(
             base_url=base_path,
-            verify=self._api_config.verify,
+            verify=api_config.verify,
             timeout=EXPORT_TIMEOUT,
         ) as client:
-            response = await retry_config.execute_async(
+            response = await self._retry_config.execute_async(
                 lambda: client.request(
                     "POST",
                     "/v1/events/export",
@@ -2011,7 +2030,7 @@ class SessionsAPI(BaseAPI):
     ) -> PostSessionStartResponse:
         """Start a new session."""
         request = self._coerce_start_session_request(data)
-        return sessions_svc.startSessionLegacy(self._api_config, data=request)
+        return sessions_svc.startSessionLegacy(self._ingestion_api_config, data=request)
 
     # Async methods
     async def start_async(
@@ -2020,7 +2039,7 @@ class SessionsAPI(BaseAPI):
         """Start a new session asynchronously."""
         request = self._coerce_start_session_request(data)
         return await sessions_svc_async.startSessionLegacy(
-            self._api_config, data=request
+            self._ingestion_api_config, data=request
         )
 
     # Backwards compatible aliases
@@ -2063,6 +2082,12 @@ class HoneyHive:
         sessions: API for managing sessions.
     """
 
+    # The published constructor keeps every parameter it has ever accepted until
+    # v2.0, so its argument count is fixed by compatibility and the suppression
+    # below stays until then. This method therefore holds only the frozen
+    # signature and the deprecation warnings; the construction logic lives in
+    # _initialize, where the argument limit and every other lint still apply.
+    # pylint: disable-next=too-many-arguments
     def __init__(
         self,
         api_key: Optional[str] = None,
@@ -2073,11 +2098,11 @@ class HoneyHive:
         # raising TypeError. The argument is otherwise ignored.
         project: Optional[str] = None,
         *,
+        ingestion_api_key: Optional[str] = None,
         # Primary URL parameter
         base_url: Optional[str] = None,
         # Backwards compatible alias for base_url
         server_url: Optional[str] = None,
-        # Backwards compatible parameters (accepted but not used in new client)
         cp_base_url: Optional[str] = None,
         timeout: Optional[float] = None,
         retry_config: Optional[Any] = None,
@@ -2091,63 +2116,102 @@ class HoneyHive:
     ) -> None:
         """Initialize the HoneyHive client.
 
+        Deprecated parameters are accepted so existing calls keep working; each
+        one passed emits a ``DeprecationWarning`` and is otherwise ignored. The
+        client is built by ``_initialize`` from the parameters still in use.
+
         Args:
             api_key: HoneyHive API key (typically starts with ``hh_``).
                      Falls back to HH_API_KEY environment variable.
-            project: Deprecated. Accepted for backwards compatibility only;
-                the backend infers project context from the API key and session.
-                Ignored when constructing the client.
+            ingestion_api_key: Ingestion API key (starts with ``hh_ingst_``) sent
+                     with requests that create sessions or write events. Falls
+                     back to the HH_INGESTION_API_KEY environment variable, then
+                     to api_key. A value that is set but is not an ingestion key
+                     raises ValueError here, at construction.
+            project: Deprecated and ignored; will be removed in v2.0. The
+                backend infers project context from the API key and session.
             base_url: API base URL for HoneyHive.
                       Falls back to HH_API_URL env var, then https://api.dp1.us.honeyhive.ai.
-            server_url: Deprecated alias for base_url (for backwards compatibility).
-            cp_base_url: Deprecated. Accepted for backwards compatibility but ignored;
-                the SDK now uses a single base_url for all operations.
+            server_url: Alias for base_url, kept for callers written against the
+                older name; base_url wins when both are given.
+            cp_base_url: Deprecated and ignored; will be removed in v2.0. The
+                SDK uses a single base_url for all operations.
             timeout: Request timeout in seconds. Falls back to the HH_API_TIMEOUT
                 env var, then to the SDK default of 5s. Pass a larger value when
                 fetching large payloads (e.g. datasets.list for many datasets).
-            retry_config: Retry configuration (accepted for backwards compat, not used).
-            rate_limit_calls: Max calls per time window (accepted for backwards compat).
-            rate_limit_window: Time window in seconds (accepted for backwards compat).
-            max_connections: Max connections in pool (accepted for backwards compat).
-            max_keepalive: Max keepalive connections (accepted for backwards compat).
-            test_mode: Enable test mode (accepted for backwards compat, not used).
-            verbose: Enable verbose logging (accepted for backwards compat, not used).
-            tracer_instance: Tracer instance (accepted for backwards compat, not used).
+            retry_config: Retry configuration for ``events.export()`` /
+                ``events.export_async()``, the only methods that retry. A
+                ``RetryConfig`` is used as-is. When omitted, ``HH_MAX_RETRIES``
+                sets the retry budget (default 3).
+            rate_limit_calls: Deprecated and ignored; will be removed in v2.0.
+            rate_limit_window: Deprecated and ignored; will be removed in v2.0.
+            max_connections: Deprecated and ignored; will be removed in v2.0.
+            max_keepalive: Deprecated and ignored; will be removed in v2.0.
+            test_mode: Recorded and exposed as ``HoneyHive.test_mode``.
+            verbose: Recorded and exposed as ``HoneyHive.verbose``.
+            tracer_instance: Deprecated and ignored; will be removed in v2.0.
         """
-        import os
+        deprecated_parameters = (
+            ("project", project),
+            ("cp_base_url", cp_base_url),
+            ("rate_limit_calls", rate_limit_calls),
+            ("rate_limit_window", rate_limit_window),
+            ("max_connections", max_connections),
+            ("max_keepalive", max_keepalive),
+            ("tracer_instance", tracer_instance),
+        )
+        for name, value in deprecated_parameters:
+            if value is not None:
+                message = (
+                    f"The {name!r} parameter to HoneyHive() is deprecated and "
+                    "ignored; it will be removed in v2.0. Remove it from "
+                    "HoneyHive() calls."
+                )
+                warnings.warn(message, DeprecationWarning, stacklevel=2)
+                logger.warning(message)
 
-        if project is not None:
-            warnings.warn(
-                "The 'project' argument to HoneyHive() is deprecated and ignored; "
-                "it will be removed in v2.0. Remove it from HoneyHive() calls.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-
-        if cp_base_url is not None:
-            warnings.warn(
-                "The 'cp_base_url' parameter is no longer used and will be removed "
-                "in v2.0. The SDK now uses a single base_url for all operations.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-
-        # Resolve API key from parameter or environment
-        self._api_key = api_key or os.environ.get("HH_API_KEY", "")
-
-        # Resolve base URL: base_url > server_url (legacy) > env var > default
-        resolved_base_url = (
-            base_url
-            or server_url  # Legacy parameter
-            or os.environ.get("HH_API_URL")
-            or "https://api.dp1.us.honeyhive.ai"
+        self._initialize(
+            api_key=api_key,
+            ingestion_api_key=ingestion_api_key,
+            base_url=base_url,
+            server_url=server_url,
+            timeout=timeout,
+            retry_config=retry_config,
+            test_mode=test_mode,
+            verbose=verbose,
         )
 
-        # Store backwards compat params (silently accepted)
+    def _initialize(
+        self,
+        *,
+        api_key: Optional[str],
+        ingestion_api_key: Optional[str],
+        base_url: Optional[str],
+        server_url: Optional[str],
+        timeout: Optional[float],
+        retry_config: Optional[Any],
+        test_mode: Optional[bool],
+        verbose: Optional[bool],
+    ) -> None:
+        """Build the client from the parameters still in use.
+
+        ``__init__`` holds the published signature and drops the deprecated
+        parameters before calling here.
+        """
+        connection = ResolvedConfig.resolve(
+            api_key=api_key,
+            ingestion_api_key=ingestion_api_key,
+            api_url=base_url or server_url,
+        )
+        self._api_key = connection.api_key or ""
+        self._ingestion_api_key = connection.ingestion_api_key or ""
+        resolved_base_url = connection.api_url
+
+        # Exposed through the timeout, test_mode, verbose and retry_config properties.
         self._timeout = timeout
         self._test_mode = test_mode if test_mode is not None else False
         self._verbose = verbose if verbose is not None else False
-        self._tracer_instance = tracer_instance
+        self._retry_config = RetryConfig.from_optional(retry_config)
 
         # Create API config. The request timeout is resolved from the explicit
         # arg > HH_API_TIMEOUT env var; when neither is set we omit the key so
@@ -2163,16 +2227,24 @@ class HoneyHive:
             api_config_kwargs["timeout"] = resolved_timeout
         self._api_config = APIConfig(**api_config_kwargs)
 
-        # Initialize API namespaces
+        # Only the namespaces with ingestion wrappers take the ingestion key;
+        # they derive the configuration for those requests from `_api_config`
+        # and the key at call time (see BaseAPI._ingestion_api_config), so
+        # there is one configuration object for a caller to mutate. Every
+        # other namespace sends `_api_config` as it always has.
         self.charts = ChartsAPI(self._api_config)
         self.configurations = ConfigurationsAPI(self._api_config)
         self.datapoints = DatapointsAPI(self._api_config)
         self.datasets = DatasetsAPI(self._api_config)
-        self.events = EventsAPI(self._api_config)
+        self.events = EventsAPI(
+            self._api_config,
+            self._ingestion_api_key,
+            retry_config=self._retry_config,
+        )
         self.experiments = ExperimentsAPI(self._api_config)
         self.metrics = MetricsAPI(self._api_config)
         self.metric_versions = MetricVersionsAPI(self._api_config)
-        self.sessions = SessionsAPI(self._api_config)
+        self.sessions = SessionsAPI(self._api_config, self._ingestion_api_key)
 
         # Alias for backwards compatibility
         self.evaluations = self.experiments
@@ -2193,6 +2265,11 @@ class HoneyHive:
         return self._timeout
 
     @property
+    def retry_config(self) -> RetryConfig:
+        """Retry configuration used by ``events.export()`` / ``export_async()``."""
+        return self._retry_config
+
+    @property
     def api_config(self) -> APIConfig:
         """Access the underlying API configuration."""
         return self._api_config
@@ -2201,6 +2278,11 @@ class HoneyHive:
     def api_key(self) -> str:
         """Get the HoneyHive API key."""
         return self._api_key
+
+    @property
+    def ingestion_api_key(self) -> str:
+        """The ingestion API key, or ``""`` when api_key is used for ingestion too."""
+        return self._ingestion_api_key
 
     @property
     def server_url(self) -> str:

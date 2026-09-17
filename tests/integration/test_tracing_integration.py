@@ -13,12 +13,18 @@ Environment Variables:
 """
 
 import asyncio
+import json
 import os
 from typing import Any, Dict
 
 import pytest
 
-from tests.integration._mock_llm_helpers import MOCK_LLM_MODEL, mock_openai_client
+from tests.integration._llm_helpers import (
+    create_live_langchain_client,
+    create_llm_client,
+    get_completion_options,
+    get_llm_model,
+)
 
 # Skip entire module if key not present
 pytestmark = [
@@ -794,16 +800,16 @@ class TestEndToEndVerification:
         instrumentor.instrument(tracer_provider=tracer.provider)
 
         try:
-            client = mock_openai_client()
+            client = create_llm_client()
 
             # Use a unique prompt we can verify was captured
             test_prompt = "Say exactly: 'integration test verification'"
-            test_model = MOCK_LLM_MODEL
+            test_model = get_llm_model()
 
             response = client.chat.completions.create(
                 model=test_model,
                 messages=[{"role": "user", "content": test_prompt}],
-                max_tokens=20,
+                **get_completion_options(20),
             )
 
             tracer.flush()
@@ -856,12 +862,12 @@ class TestEndToEndVerification:
             ), f"Expected prompt in inputs. Got: {list(inputs.keys())}"
 
             # Verify outputs captured the response
-            output_str = str(outputs).lower()
-            assert (
-                "choices" in outputs
-                or "content" in output_str
-                or "message" in output_str
-            ), f"Expected response in outputs. Got: {list(outputs.keys())}"
+            # Compare the recorded output with this call's response, including live completions.
+            response_content = response.choices[0].message.content
+            assert response_content
+            assert json.dumps(response_content)[1:-1] in json.dumps(outputs), (
+                f"Expected completion in outputs. Got: {list(outputs.keys())}"
+            )
 
         finally:
             instrumentor.uninstrument()
@@ -962,7 +968,8 @@ class TestEndToEndVerification:
 
         try:
             from langchain_core.prompts import ChatPromptTemplate
-            from langchain_openai import ChatOpenAI
+
+            pytest.importorskip("langchain_openai")
             from openinference.instrumentation.langchain import LangChainInstrumentor
         except ImportError:
             pytest.skip("langchain or openinference not installed")
@@ -981,7 +988,7 @@ class TestEndToEndVerification:
         instrumentor.instrument(tracer_provider=tracer.provider)
 
         try:
-            llm = ChatOpenAI(model="gpt-3.5-turbo", max_tokens=20)
+            llm = create_live_langchain_client()
 
             prompt = ChatPromptTemplate.from_messages(
                 [("user", "Say exactly: '{word}'")]

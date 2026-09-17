@@ -321,7 +321,7 @@ class TestOTELBackendVerificationIntegration:
             # Retrieve the decorator's _error span by exact event name.
             # Lookup by the enriched test.unique_id is not possible here:
             # attributes set via enrich_span inside a raising function never
-            # reach the exported span (HHAI-5661).
+            # reach the exported span.
             events = fetch_events(
                 session_id=test_tracer.session_id,
                 project=real_project,

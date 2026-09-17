@@ -102,12 +102,12 @@ from honeyhive import HoneyHiveTracer
 
 # Initialize with multiple instrumentors
 tracer = HoneyHiveTracer.init(
-    api_key='your-key',
+    api_key="your-key",
     instrumentors=[
         OpenAIInstrumentor(),
         AnthropicInstrumentor(),
         BedrockInstrumentor(),
-    ]
+    ],
 )
 ```
 

@@ -1,4 +1,4 @@
-"""Unit tests for span_name_filters feature (HHAI-4085).
+"""Unit tests for span_name_filters feature.
 
 Tests cover:
 - SpanNameFilter and SpanNameFilters Pydantic models

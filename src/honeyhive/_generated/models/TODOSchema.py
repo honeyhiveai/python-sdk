@@ -8,7 +8,7 @@ __all__ = ["TODOSchema"]
 class TODOSchema(BaseModel):
     """
     TODOSchema model
-        TODO: This is a placeholder schema. Proper Zod schemas need to be created in @hive-kube/iso-core-ts for: Sessions, Events, Projects, and Experiment comparison/result endpoints.
+        Placeholder schema. The response shape for this endpoint is not yet fully specified; refer to the endpoint documentation for the fields it returns.
     """
 
     model_config = {

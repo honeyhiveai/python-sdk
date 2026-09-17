@@ -122,7 +122,7 @@ class UpdateMetricRequest(LegacyUpdateMetricRequest):
 
 # Public name kept pointing at the legacy events-schema query model. The
 # canonical spec forked GET /events/schema into GET /v1/runs/{run_id}/schema
-# and GET /v1/runs/schema (HHAI-4990); the generated GetRunSchemaQuery /
+# and GET /v1/runs/schema. The generated GetRunSchemaQuery and
 # GetRunsSchemaQuery models target those new routes and use `.strict()`,
 # but the Python SDK still calls the legacy /v1/events/schema endpoint, so
 # existing customer imports keep resolving to a model that mirrors the wire

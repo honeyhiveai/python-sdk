@@ -3,14 +3,20 @@
 # pylint: disable=duplicate-code  # HTTP error types are standard across modules
 
 import asyncio
+import logging
+import os
 import random
 import time
 from dataclasses import dataclass
-from typing import Awaitable, Callable, NoReturn, Optional
+from typing import Any, Awaitable, Callable, NoReturn, Optional
 
 import httpx
 
 from honeyhive.utils.error_handler import APIError, ErrorResponse
+
+logger = logging.getLogger(__name__)
+
+_DEFAULT_MAX_RETRIES = 3
 
 
 @dataclass
@@ -46,11 +52,20 @@ class RetryConfig:
 
     strategy: str = "exponential"  # "exponential", "linear", "constant"
     backoff_strategy: Optional[BackoffStrategy] = None
-    max_retries: int = 3
+    max_retries: int = _DEFAULT_MAX_RETRIES
     retry_on_status_codes: Optional[set] = None
 
     def __post_init__(self) -> None:
-        """Initialize default values."""
+        """Initialize default values.
+
+        Raises:
+            ValueError: If max_retries is negative.
+        """
+        # execute() attempts range(max_retries + 1) times, so a negative budget
+        # makes no request at all and reports a retry loop that never ran.
+        if self.max_retries < 0:
+            raise ValueError(f"max_retries must be >= 0, got {self.max_retries}")
+
         if self.backoff_strategy is None:
             self.backoff_strategy = BackoffStrategy()
 
@@ -61,6 +76,47 @@ class RetryConfig:
     def default(cls) -> "RetryConfig":
         """Create a default retry configuration."""
         return cls()
+
+    @classmethod
+    def from_env(cls) -> "RetryConfig":
+        """Create a RetryConfig, reading ``HH_MAX_RETRIES`` when set.
+
+        An unset, empty, or invalid value uses the default of 3 retries.
+        ``0`` means do not retry (one attempt).
+        """
+        env_val = os.environ.get("HH_MAX_RETRIES")
+        if not env_val:
+            return cls()
+        try:
+            parsed: Optional[int] = int(env_val)
+        except ValueError:
+            parsed = None
+        if parsed is None or parsed < 0:
+            logger.warning(
+                "HH_MAX_RETRIES must be an integer >= 0, got %r. Using default %s",
+                env_val,
+                _DEFAULT_MAX_RETRIES,
+            )
+            return cls()
+        return cls(max_retries=parsed)
+
+    @classmethod
+    def from_optional(cls, value: Optional[Any] = None) -> "RetryConfig":
+        """Resolve an explicit retry_config argument, else ``from_env()``.
+
+        A ``RetryConfig`` is used as-is. Any other object with a non-negative
+        integer ``max_retries`` attribute becomes ``RetryConfig(max_retries=...)``.
+        """
+        if isinstance(value, cls):
+            return value
+        if value is not None:
+            max_retries = getattr(value, "max_retries", None)
+            if isinstance(max_retries, int) and max_retries >= 0:
+                return cls(max_retries=max_retries)
+            logger.warning(
+                "retry_config is not a RetryConfig. Using HH_MAX_RETRIES or default"
+            )
+        return cls.from_env()
 
     @classmethod
     def exponential(

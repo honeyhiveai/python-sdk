@@ -235,16 +235,12 @@ def _load_configuration(tracer_instance: Any) -> None:
         "source": tracer_instance.source_environment,
         "server_url": tracer_instance.config.server_url,
         "has_api_key": bool(tracer_instance.config.api_key),
+        "has_ingestion_api_key": bool(tracer_instance.config.ingestion_api_key),
         "test_mode": tracer_instance.test_mode,
         "verbose": getattr(tracer_instance, "verbose", False),
         # Environment variables (critical for debugging)
         "env_HH_OTLP_ENABLED": os.getenv("HH_OTLP_ENABLED"),
         "env_HH_TEST_MODE": os.getenv("HH_TEST_MODE"),
-        "env_HH_API_KEY": (
-            f"{os.getenv('HH_API_KEY', '')[:10]}..."
-            if os.getenv("HH_API_KEY")
-            else None
-        ),
         "env_HH_PROJECT": os.getenv("HH_PROJECT"),
         "env_HH_SOURCE": os.getenv("HH_SOURCE"),
         "env_HH_DISABLE_HTTP_TRACING": os.getenv("HH_DISABLE_HTTP_TRACING"),
@@ -827,6 +823,12 @@ def _create_otlp_exporter(tracer_instance: Any) -> Optional[Any]:
             {"session": custom_session} if custom_session is not None else {}
         )
 
+        # Traces go to the ingestion endpoint, which takes the ingestion key when
+        # one is configured and the project key otherwise.
+        export_credential = (
+            tracer_instance.config.ingestion_api_key or tracer_instance.config.api_key
+        )
+
         otlp_exporter = HoneyHiveOTLPExporter(
             tracer_instance=tracer_instance,
             session_config=session_config,
@@ -834,7 +836,7 @@ def _create_otlp_exporter(tracer_instance: Any) -> Optional[Any]:
             protocol=otlp_protocol,  # Use configured protocol (defaults to http/json)
             endpoint=otlp_endpoint,
             headers={
-                "Authorization": f"Bearer {tracer_instance.config.api_key}",
+                "Authorization": f"Bearer {export_credential}",
                 "X-Source": tracer_instance.source_environment,
                 "hh-client-version": _get_sdk_version(),
                 "hh-client-language": "python",
@@ -1065,12 +1067,16 @@ def _initialize_session_management(tracer_instance: Any) -> None:
 
         # Extract configuration values dynamically (config object and legacy attributes)
         api_key = getattr(tracer_instance.config, "api_key", None)
+        ingestion_api_key = getattr(tracer_instance.config, "ingestion_api_key", None)
         server_url = getattr(
             tracer_instance.config, "server_url", "https://api.dp1.us.honeyhive.ai"
         )
 
-        # Build client parameters (new HoneyHive client only accepts api_key and base_url)
+        # The session this client creates is an ingestion request, so the client
+        # gets both credentials and routes each operation itself.
         client_params = {"api_key": api_key}
+        if ingestion_api_key:
+            client_params["ingestion_api_key"] = ingestion_api_key
         if server_url:
             client_params["base_url"] = server_url
 
@@ -1201,25 +1207,29 @@ def _initialize_session_management(tracer_instance: Any) -> None:
 
 
 def _validate_configuration_gracefully(tracer_instance: Any) -> None:
-    """Validate configuration with graceful degradation.
+    """Validate configuration, degrading rather than raising for what is absent.
 
-    Graceful degradation standards:
-    - Never crash the host application
-    - Provide meaningful warnings for missing configuration
-    - Continue operation in degraded mode when possible
-    - Use sensible defaults where appropriate
+    A tracer with no credential at all (neither ``api_key`` nor
+    ``ingestion_api_key``) runs in degraded mode: spans are created but never
+    exported, and a warning names the variables that enable export. Absence
+    degrades; a present ``ingestion_api_key`` of the wrong kind already raised
+    while the configuration was built, before this runs.
     """
     degraded_mode = False
     degradation_reasons = []
 
-    # Handle missing API key with graceful degradation
-    if not tracer_instance.config.api_key:
+    # Either credential exports traces: the ingestion endpoint accepts both.
+    has_credential = bool(tracer_instance.config.api_key) or bool(
+        tracer_instance.config.ingestion_api_key
+    )
+    if not has_credential:
         # Consistent warning regardless of test_mode for debugging
         safe_log(
             tracer_instance,
             "warning",
-            "API key missing. Tracer will operate in no-op mode. "
-            "Set HH_API_KEY environment variable for full functionality.",
+            "API key missing. Tracer will operate in no-op mode. Set the "
+            "HH_INGESTION_API_KEY or HH_API_KEY environment variable for full "
+            "functionality.",
             honeyhive_data={"operation": "api_key_validation"},
         )
         # Set degraded mode - spans will be created but not exported

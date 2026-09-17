@@ -17,6 +17,7 @@ import random
 from unittest.mock import Mock, patch
 
 import httpx
+import pytest
 
 from honeyhive.utils.retry import BackoffStrategy, RetryConfig
 
@@ -134,6 +135,19 @@ class TestBackoffStrategy:
             mock_uniform.assert_not_called()
 
 
+class TestRetryConfigValidation:
+    """RetryConfig rejects a budget that execute() cannot run."""
+
+    def test_negative_max_retries_is_rejected(self) -> None:
+        """A negative budget raises instead of skipping the request."""
+        with pytest.raises(ValueError, match="max_retries must be >= 0"):
+            RetryConfig(max_retries=-1)
+
+    def test_zero_max_retries_is_allowed(self) -> None:
+        """A budget of 0 means one attempt and no retry."""
+        assert RetryConfig(max_retries=0).max_retries == 0
+
+
 class TestRetryConfig:
     """Test RetryConfig class functionality."""
 
@@ -197,6 +211,42 @@ class TestRetryConfig:
         assert isinstance(config.backoff_strategy, BackoffStrategy)
         assert config.max_retries == 3
         assert config.retry_on_status_codes == {408, 429, 500, 502, 503, 504}
+
+    def test_from_env_reads_hh_max_retries(self) -> None:
+        """from_env() uses HH_MAX_RETRIES when set."""
+        with patch.dict("os.environ", {"HH_MAX_RETRIES": "8"}, clear=False):
+            config = RetryConfig.from_env()
+        assert config.max_retries == 8
+
+    def test_from_env_invalid_falls_back_to_default(self) -> None:
+        """from_env() uses the default when HH_MAX_RETRIES is not an integer."""
+        with patch.dict("os.environ", {"HH_MAX_RETRIES": "nope"}, clear=False):
+            config = RetryConfig.from_env()
+        assert config.max_retries == 3
+
+    def test_from_env_negative_falls_back_to_default(self) -> None:
+        """from_env() uses the default when HH_MAX_RETRIES is negative."""
+        with patch.dict("os.environ", {"HH_MAX_RETRIES": "-1"}, clear=False):
+            config = RetryConfig.from_env()
+        assert config.max_retries == 3
+
+    def test_from_env_zero_disables_retries(self) -> None:
+        """from_env() accepts 0 as a no-retry budget."""
+        with patch.dict("os.environ", {"HH_MAX_RETRIES": "0"}, clear=False):
+            config = RetryConfig.from_env()
+        assert config.max_retries == 0
+
+    def test_from_optional_uses_retry_config_as_is(self) -> None:
+        """from_optional() returns an explicit RetryConfig unchanged."""
+        explicit = RetryConfig(max_retries=11)
+        assert RetryConfig.from_optional(explicit) is explicit
+
+    def test_from_optional_reads_max_retries_attribute(self) -> None:
+        """from_optional() accepts any object with max_retries."""
+        payload = Mock()
+        payload.max_retries = 2
+        config = RetryConfig.from_optional(payload)
+        assert config.max_retries == 2
 
     def test_exponential_classmethod_default_values(self) -> None:
         """Test exponential() classmethod with default values."""

@@ -27,6 +27,7 @@ from opentelemetry.trace import INVALID_SPAN_CONTEXT, SpanKind
 from ...api.client import HoneyHive
 from ...config import create_unified_config
 from ...config.models import EvaluationConfig, SessionConfig, TracerConfig
+from ...config.resolved import ResolvedConfig
 from ...utils.cache import CacheConfig, CacheManager
 from ...utils.dotdict import DotDict
 from ...utils.logger import safe_log
@@ -46,6 +47,45 @@ class _ExplicitType:  # pylint: disable=too-few-public-methods
 
 
 _EXPLICIT = _ExplicitType()
+
+
+_Explicit = Union[Optional[str], _ExplicitType]
+
+
+def _resolve_explicit_connection(
+    api_key: _Explicit, ingestion_api_key: _Explicit, server_url: _Explicit
+) -> tuple[_Explicit, _Explicit, _Explicit]:
+    """Run explicitly passed connection arguments through ResolvedConfig.
+
+    create_unified_config applies explicit parameters with model_copy, which
+    runs neither the settings sources nor the validators, so the resolver's
+    rules (a blank is absent, the URL is normalized, an ingestion key of the
+    wrong kind raises, an explicit value beats the environment) are applied
+    here first, before any graceful-degradation handler can swallow them. A
+    parameter the caller did not pass stays as the sentinel, so the config
+    models still receive it from the environment through the field's
+    default_factory.
+    """
+    passed = {
+        "api_key": api_key,
+        "ingestion_api_key": ingestion_api_key,
+        "api_url": server_url,
+    }
+    explicit = {
+        name: value
+        for name, value in passed.items()
+        if not isinstance(value, _ExplicitType)
+    }
+    if not explicit:
+        return api_key, ingestion_api_key, server_url
+    connection = ResolvedConfig.resolve(**explicit)
+    if "api_key" in explicit:
+        api_key = connection.api_key
+    if "ingestion_api_key" in explicit:
+        ingestion_api_key = connection.ingestion_api_key
+    if "api_url" in explicit:
+        server_url = connection.api_url
+    return api_key, ingestion_api_key, server_url
 
 
 class NoOpSpan:
@@ -136,6 +176,7 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
         # Backwards compatibility - all original parameters (keyword-only)
         # Use _EXPLICIT as sentinel to detect explicitly passed vs default values
         api_key: Union[Optional[str], _ExplicitType] = _EXPLICIT,
+        ingestion_api_key: Union[Optional[str], _ExplicitType] = _EXPLICIT,
         project: Union[Optional[str], _ExplicitType] = _EXPLICIT,
         session_name: Union[Optional[str], _ExplicitType] = _EXPLICIT,
         source: Union[str, _ExplicitType] = _EXPLICIT,
@@ -172,6 +213,11 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
         :type session_config: Optional[SessionConfig]
         :param evaluation_config: Evaluation-specific configuration
         :type evaluation_config: Optional[EvaluationConfig]
+        :param ingestion_api_key: Ingestion API key (``hh_ingst_``) the tracer
+            creates sessions and exports traces with; ``api_key`` is used when
+            unset. Also read from HH_INGESTION_API_KEY. A value that is set but
+            is not an ingestion key raises ValueError here, at construction.
+        :type ingestion_api_key: Optional[str]
         :param requests_session: Custom requests.Session for OTLP span export
             HTTP connections (e.g. custom proxies, retries, or TLS). The caller
             owns the session; the SDK will not close it on shutdown.
@@ -180,6 +226,10 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
         # Multi-instance architecture uses safe_log() for all logging
         # No direct logger assignment needed - safe_log handles per-instance logging
 
+        api_key, ingestion_api_key, server_url = _resolve_explicit_connection(
+            api_key, ingestion_api_key, server_url
+        )
+
         # Dynamic configuration merging - handles both new and legacy patterns
         # Create parameter dict with only explicitly provided parameters
         explicit_params = {}
@@ -187,6 +237,7 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
         # Map of parameter names to their values - only include if not sentinel
         param_mapping = {
             "api_key": api_key,
+            "ingestion_api_key": ingestion_api_key,
             "project": project,
             "session_name": session_name,
             "source": source,
@@ -244,6 +295,7 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
 
         # Core configuration attributes
         self.api_key = config.get("api_key")
+        self.ingestion_api_key = config.get("ingestion_api_key")
         self.server_url = config.get("server_url")
         self.verbose = config.get("verbose", False)
 
@@ -360,13 +412,19 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
     ) -> Optional[Dict[str, Any]]:
         """Dynamically extract API parameters from configuration."""
         api_key = config.get("api_key")
+        ingestion_api_key = config.get("ingestion_api_key")
 
-        if not api_key:
+        # Either credential is enough for a client: session creation and event
+        # writes take the ingestion key, and every other request takes api_key.
+        if not api_key and not ingestion_api_key:
             return None
 
-        # Build API parameters (HoneyHive client accepts api_key and base_url only;
-        # project scope is inferred from the API key by the backend)
+        # Build API parameters (HoneyHive client accepts api_key,
+        # ingestion_api_key and base_url; project scope is inferred from the
+        # API key by the backend)
         api_params = {"api_key": api_key}
+        if ingestion_api_key:
+            api_params["ingestion_api_key"] = ingestion_api_key
 
         # Map server_url to base_url for the new client
         server_url = config.get("server_url")

@@ -1,4 +1,3 @@
-import os
 from typing import Any, Dict, Optional, Union
 
 from pydantic import BaseModel, Field
@@ -19,30 +18,6 @@ class APIConfig(BaseModel):
     # to 5.0 to match httpx's own default (so behaviour is unchanged unless set).
     # Set to None to disable timeouts entirely.
     timeout: Optional[float] = 5.0
-
-    @classmethod
-    def from_env(
-        cls,
-        api_key: Optional[str] = None,
-        base_url: Optional[str] = None,
-    ) -> "APIConfig":
-        """Create APIConfig from environment variables with overrides.
-
-        Environment variables:
-            HH_API_KEY: API key for authentication
-            HH_API_URL: Base URL for Data Plane API
-
-        Args:
-            api_key: Override for HH_API_KEY
-            base_url: Override for HH_API_URL
-        """
-        resolved_api_key = api_key or os.environ.get("HH_API_KEY")
-        resolved_base_url = base_url or os.environ.get("HH_API_URL") or DEFAULT_BASE_URL
-
-        return cls(
-            base_path=resolved_base_url,
-            access_token=resolved_api_key,
-        )
 
     def get_access_token(self) -> Optional[str]:
         return self.access_token

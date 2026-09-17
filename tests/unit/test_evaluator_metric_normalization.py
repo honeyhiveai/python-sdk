@@ -5,8 +5,7 @@ inline via ``enrich_span(metrics=…)`` (see ``_apply_inline_evaluators``
 in ``honeyhive.experiments.core``). The wire shape — what becomes
 ``metrics[eval_name]`` vs ``metrics[f"{eval_name}_explanation"]`` vs
 extras — is decided by ``EvaluatorMetricResult.from_raw``, which mirrors
-the canonical server-side evaluator output shape from
-``services/data_plane/dp_evaluation_service/app/services/metric_update_service.js``.
+the canonical server-side evaluator output shape.
 
 This file exercises ``from_raw`` plus the ``to_metric_attrs`` flattener
 and the per-datapoint runner ``_run_evaluators_for_datapoint``.

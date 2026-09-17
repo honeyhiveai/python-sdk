@@ -14,6 +14,7 @@ the default read timeout.
 # pylint: disable=protected-access
 # Justification: Unit tests need to verify private method behavior
 
+from typing import Any, List, Optional
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import httpx
@@ -26,15 +27,6 @@ from honeyhive.api.client import (
     EventsAPI,
     _build_export_timeout,
 )
-
-
-@pytest.fixture
-def api_config() -> APIConfig:
-    """Create a test APIConfig."""
-    return APIConfig(
-        base_path="https://api.test.honeyhive.ai",
-        access_token="test-api-key",
-    )
 
 
 @pytest.fixture
@@ -120,34 +112,34 @@ class TestBuildExportTimeout:
         assert timeout.read == _DEFAULT_EXPORT_READ_TIMEOUT
 
 
+def _ok_response(events: Optional[List[Any]] = None, total: int = 0) -> Mock:
+    """Build a 200 httpx.Response mock for export tests."""
+    mock_response = Mock(spec=httpx.Response)
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "events": events if events is not None else [],
+        "totalEvents": total,
+    }
+    return mock_response
+
+
 class TestExportSyncTimeout:
     """Test that sync export() uses the correct timeout."""
 
     @patch("honeyhive.api.client.httpx.Client")
-    @patch("honeyhive.api.client.RetryConfig")
     def test_export_creates_client_with_timeout(
         self,
-        mock_retry_cls: Mock,
         mock_client_cls: Mock,
         events_api: EventsAPI,
     ) -> None:
         """export() should create httpx.Client with EXPORT_TIMEOUT."""
-        # Set up the mock client context manager
         mock_client = MagicMock()
         mock_client_cls.return_value.__enter__ = Mock(return_value=mock_client)
         mock_client_cls.return_value.__exit__ = Mock(return_value=False)
-
-        # Set up retry to return a successful response
-        mock_response = Mock(spec=httpx.Response)
-        mock_response.status_code = 200
-        mock_response.json.return_value = {"events": [], "totalEvents": 0}
-        mock_retry = Mock()
-        mock_retry.execute.return_value = mock_response
-        mock_retry_cls.default.return_value = mock_retry
+        mock_client.request.return_value = _ok_response()
 
         events_api.export(filters=[])
 
-        # Verify httpx.Client was called with EXPORT_TIMEOUT
         mock_client_cls.assert_called_once_with(
             base_url="https://api.test.honeyhive.ai",
             verify=True,
@@ -155,10 +147,8 @@ class TestExportSyncTimeout:
         )
 
     @patch("honeyhive.api.client.httpx.Client")
-    @patch("honeyhive.api.client.RetryConfig")
     def test_export_returns_events(
         self,
-        mock_retry_cls: Mock,
         mock_client_cls: Mock,
         events_api: EventsAPI,
     ) -> None:
@@ -166,16 +156,10 @@ class TestExportSyncTimeout:
         mock_client = MagicMock()
         mock_client_cls.return_value.__enter__ = Mock(return_value=mock_client)
         mock_client_cls.return_value.__exit__ = Mock(return_value=False)
-
-        mock_response = Mock(spec=httpx.Response)
-        mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "events": [{"event_id": "e1"}, {"event_id": "e2"}],
-            "totalEvents": 2,
-        }
-        mock_retry = Mock()
-        mock_retry.execute.return_value = mock_response
-        mock_retry_cls.default.return_value = mock_retry
+        mock_client.request.return_value = _ok_response(
+            events=[{"event_id": "e1"}, {"event_id": "e2"}],
+            total=2,
+        )
 
         result = events_api.export(filters=[])
 
@@ -187,33 +171,22 @@ class TestExportAsyncTimeout:
     """Test that async export_async() uses the correct timeout."""
 
     @patch("honeyhive.api.client.httpx.AsyncClient")
-    @patch("honeyhive.api.client.RetryConfig")
     @pytest.mark.asyncio
     async def test_export_async_creates_client_with_timeout(
         self,
-        mock_retry_cls: Mock,
         mock_async_client_cls: Mock,
         events_api: EventsAPI,
     ) -> None:
         """export_async() should create httpx.AsyncClient with EXPORT_TIMEOUT."""
-        # Set up the mock async client context manager
         mock_client = AsyncMock()
         mock_async_client_cls.return_value.__aenter__ = AsyncMock(
             return_value=mock_client
         )
         mock_async_client_cls.return_value.__aexit__ = AsyncMock(return_value=False)
-
-        # Set up retry to return a successful response
-        mock_response = Mock(spec=httpx.Response)
-        mock_response.status_code = 200
-        mock_response.json.return_value = {"events": [], "totalEvents": 0}
-        mock_retry = Mock()
-        mock_retry.execute_async = AsyncMock(return_value=mock_response)
-        mock_retry_cls.default.return_value = mock_retry
+        mock_client.request = AsyncMock(return_value=_ok_response())
 
         await events_api.export_async(filters=[])
 
-        # Verify httpx.AsyncClient was called with EXPORT_TIMEOUT
         mock_async_client_cls.assert_called_once_with(
             base_url="https://api.test.honeyhive.ai",
             verify=True,
@@ -221,11 +194,9 @@ class TestExportAsyncTimeout:
         )
 
     @patch("honeyhive.api.client.httpx.AsyncClient")
-    @patch("honeyhive.api.client.RetryConfig")
     @pytest.mark.asyncio
     async def test_export_async_returns_events(
         self,
-        mock_retry_cls: Mock,
         mock_async_client_cls: Mock,
         events_api: EventsAPI,
     ) -> None:
@@ -235,16 +206,12 @@ class TestExportAsyncTimeout:
             return_value=mock_client
         )
         mock_async_client_cls.return_value.__aexit__ = AsyncMock(return_value=False)
-
-        mock_response = Mock(spec=httpx.Response)
-        mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "events": [{"event_id": "e1"}, {"event_id": "e2"}],
-            "totalEvents": 2,
-        }
-        mock_retry = Mock()
-        mock_retry.execute_async = AsyncMock(return_value=mock_response)
-        mock_retry_cls.default.return_value = mock_retry
+        mock_client.request = AsyncMock(
+            return_value=_ok_response(
+                events=[{"event_id": "e1"}, {"event_id": "e2"}],
+                total=2,
+            )
+        )
 
         result = await events_api.export_async(filters=[])
 
@@ -252,11 +219,9 @@ class TestExportAsyncTimeout:
         assert result.total_events == 2
 
     @patch("honeyhive.api.client.httpx.AsyncClient")
-    @patch("honeyhive.api.client.RetryConfig")
     @pytest.mark.asyncio
     async def test_get_by_session_id_async_uses_export_timeout(
         self,
-        mock_retry_cls: Mock,
         mock_async_client_cls: Mock,
         events_api: EventsAPI,
     ) -> None:
@@ -266,20 +231,15 @@ class TestExportAsyncTimeout:
             return_value=mock_client
         )
         mock_async_client_cls.return_value.__aexit__ = AsyncMock(return_value=False)
-
-        mock_response = Mock(spec=httpx.Response)
-        mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "events": [{"event_id": "e1", "session_id": "sess-123"}],
-            "totalEvents": 1,
-        }
-        mock_retry = Mock()
-        mock_retry.execute_async = AsyncMock(return_value=mock_response)
-        mock_retry_cls.default.return_value = mock_retry
+        mock_client.request = AsyncMock(
+            return_value=_ok_response(
+                events=[{"event_id": "e1", "session_id": "sess-123"}],
+                total=1,
+            )
+        )
 
         await events_api.get_by_session_id_async("sess-123")
 
-        # Verify the timeout was passed through to AsyncClient
         mock_async_client_cls.assert_called_once_with(
             base_url="https://api.test.honeyhive.ai",
             verify=True,

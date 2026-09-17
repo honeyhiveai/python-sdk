@@ -179,7 +179,7 @@ openai_instrumentor = OpenAIInstrumentor()
 tracer = HoneyHiveTracer.init(
     api_key="your_key",
     project="your_project",
-    instrumentors=[openai_instrumentor]  # <-- Integration point
+    instrumentors=[openai_instrumentor],  # <-- Integration point
 )
 
 # 3. Use provider normally - tracing happens automatically

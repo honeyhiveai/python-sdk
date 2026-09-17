@@ -503,7 +503,7 @@ class TestGetBySessionIdSorting:
                 response = events_api.get_by_session_id(session_id="test-session-id")
 
                 # Verify events are sorted. response.events is List[LegacyEvent]
-                # (Pydantic, extra="allow") since HHAI-4916 typed the wrapper.
+                # (Pydantic, extra="allow") since the wrapper became typed.
                 assert len(response.events) == 3
                 assert response.events[0].event_name == "event1"
                 assert response.events[1].event_name == "event2"

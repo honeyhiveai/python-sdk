@@ -15,8 +15,7 @@ import logging
 import os
 from typing import Any, Dict, Optional
 
-from pydantic import AliasChoices, Field, field_validator
-from pydantic_settings import SettingsConfigDict
+from pydantic import Field, field_validator
 
 from .base import BaseHoneyHiveConfig, _safe_validate_string
 
@@ -56,54 +55,47 @@ class ExperimentConfig(BaseHoneyHiveConfig):
     """
 
     # Experiment identification
-    experiment_id: Optional[str] = Field(  # type: ignore[call-overload,pydantic-alias]
+    experiment_id: Optional[str] = Field(
         default=None,
         description="Unique experiment identifier",
-        validation_alias=AliasChoices("HH_EXPERIMENT_ID", "experiment_id"),
         examples=["exp_12345", "experiment-2024-01-15"],
     )
 
-    experiment_name: Optional[str] = Field(  # type: ignore[call-overload,pydantic-alias]  # pylint: disable=line-too-long
+    experiment_name: Optional[str] = Field(
         default=None,
         description="Human-readable experiment name",
-        validation_alias=AliasChoices("HH_EXPERIMENT_NAME", "experiment_name"),
         examples=["model-comparison", "baseline-vs-optimized"],
     )
 
     # Experiment variants and groups
-    experiment_variant: Optional[str] = Field(  # type: ignore[call-overload,pydantic-alias]  # pylint: disable=line-too-long
+    experiment_variant: Optional[str] = Field(
         default=None,
         description="Experiment variant/treatment identifier",
-        validation_alias=AliasChoices("HH_EXPERIMENT_VARIANT", "experiment_variant"),
         examples=["baseline", "treatment_a", "optimized"],
     )
 
-    experiment_group: Optional[str] = Field(  # type: ignore[call-overload,pydantic-alias]  # pylint: disable=line-too-long
+    experiment_group: Optional[str] = Field(
         default=None,
         description="Experiment group/cohort identifier",
-        validation_alias=AliasChoices("HH_EXPERIMENT_GROUP", "experiment_group"),
         examples=["control", "test", "cohort_1"],
     )
 
     # Experiment metadata
-    experiment_metadata: Optional[Dict[str, Any]] = Field(  # type: ignore[call-overload,pydantic-alias]  # pylint: disable=line-too-long
+    experiment_metadata: Optional[Dict[str, Any]] = Field(
         default=None,
         description="Experiment metadata and tags",
-        validation_alias=AliasChoices("HH_EXPERIMENT_METADATA", "experiment_metadata"),
         examples=[{"model_type": "gpt-4", "temperature": 0.7}],
     )
 
-    model_config = SettingsConfigDict(
-        validate_assignment=True,
-        extra="forbid",
-        case_sensitive=False,
-    )
-
     def __init__(self, **data: Any) -> None:
-        """Initialize experiment config with environment variable fallbacks.
+        """Load this class's fields from the environment before validation.
 
-        Supports multiple experiment tracking platforms by checking
-        various environment variable patterns.
+        Init kwargs outrank the pydantic-settings environment source, so the
+        HH_ names read here are what populate the fields declared on this
+        class; the inherited fields still come through env_prefix. Reading
+        them here also honours the bare EXPERIMENT_* names and the MLflow,
+        Weights & Biases and Comet variables, and falls back to the default on
+        a malformed value instead of raising.
         """
         # Load from environment variables with fallbacks to standard platforms
         env_data = {

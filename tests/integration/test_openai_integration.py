@@ -21,10 +21,12 @@ from typing import Any, Dict
 
 import pytest
 
-from tests.integration._mock_llm_helpers import (
-    MOCK_LLM_MODEL,
+from tests.integration._llm_helpers import (
     MOCK_RESPONSE,
-    mock_openai_client,
+    create_llm_client,
+    get_completion_options,
+    get_llm_model,
+    using_mock_llm,
 )
 
 pytestmark = [
@@ -61,11 +63,11 @@ class TestOpenInferenceOpenAI:
 
         try:
             # Make OpenAI call
-            client = mock_openai_client()
+            client = create_llm_client()
             response = client.chat.completions.create(
-                model=MOCK_LLM_MODEL,
+                model=get_llm_model(),
                 messages=[{"role": "user", "content": "Say 'test' and nothing else."}],
-                max_tokens=10,
+                **get_completion_options(10),
             )
 
             # Verify response
@@ -102,11 +104,11 @@ class TestOpenInferenceOpenAI:
                 """Process a prompt with OpenAI and enrich the span."""
                 enrich_span(metadata={"prompt_length": len(prompt)})
 
-                client = mock_openai_client()
+                client = create_llm_client()
                 response = client.chat.completions.create(
-                    model=MOCK_LLM_MODEL,
+                    model=get_llm_model(),
                     messages=[{"role": "user", "content": prompt}],
-                    max_tokens=20,
+                    **get_completion_options(20),
                 )
 
                 result = response.choices[0].message.content
@@ -141,11 +143,11 @@ class TestOpenInferenceOpenAI:
         instrumentor.instrument(tracer_provider=tracer.provider)
 
         try:
-            client = mock_openai_client()
+            client = create_llm_client()
             stream = client.chat.completions.create(
-                model=MOCK_LLM_MODEL,
+                model=get_llm_model(),
                 messages=[{"role": "user", "content": "Count from 1 to 5."}],
-                max_tokens=50,
+                **get_completion_options(50),
                 stream=True,
             )
 
@@ -154,13 +156,12 @@ class TestOpenInferenceOpenAI:
                 if chunk.choices[0].delta.content:
                     chunks.append(chunk.choices[0].delta.content)
 
-            # Verify the stream actually chunked rather than buffering the full
-            # response into one delta, AND that concatenating deltas exactly
-            # reconstructs MOCK_RESPONSE. The exact-match assertion catches
-            # both "stream collapsed into one delta" and content corruption.
+            # Mock output is deterministic. Live output must arrive in nonempty chunks.
             full_response = "".join(chunks)
             assert len(chunks) > 1
-            assert full_response == MOCK_RESPONSE
+            assert full_response.strip()
+            if using_mock_llm():
+                assert full_response == MOCK_RESPONSE
 
             tracer.flush()
 
@@ -193,16 +194,16 @@ class TestTraceloopOpenAI:
         instrumentor.instrument(tracer_provider=tracer.provider)
 
         try:
-            client = mock_openai_client()
+            client = create_llm_client()
             response = client.chat.completions.create(
-                model=MOCK_LLM_MODEL,
+                model=get_llm_model(),
                 messages=[
                     {
                         "role": "user",
                         "content": "Say 'traceloop test' and nothing else.",
                     }
                 ],
-                max_tokens=10,
+                **get_completion_options(10),
             )
 
             assert response.choices[0].message.content is not None
@@ -239,11 +240,11 @@ class TestTraceloopOpenAI:
             @trace(event_type="tool")
             def inner_function(text: str) -> str:
                 """Inner traced function that calls OpenAI."""
-                client = mock_openai_client()
+                client = create_llm_client()
                 response = client.chat.completions.create(
-                    model=MOCK_LLM_MODEL,
+                    model=get_llm_model(),
                     messages=[{"role": "user", "content": f"Summarize: {text}"}],
-                    max_tokens=30,
+                    **get_completion_options(30),
                 )
                 return response.choices[0].message.content
 

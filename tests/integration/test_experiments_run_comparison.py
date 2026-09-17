@@ -2,16 +2,16 @@
 
 Three layers of coverage:
 
-1. **Datapoint pairing** — explicit regression coverage for HHAI-3934
-   (`compare_runs` returning 0 common datapoints for the same external
-   dataset). The same external-dataset list across two runs must
-   produce the same ``EXT-`` content-hashed datapoint IDs, and the
-   comparison endpoint must pair them. The managed-dataset path uses
-   the real Mongo IDs assigned at create time.
+1. **Datapoint pairing** — regression coverage for ``compare_runs``
+   returning 0 common datapoints for the same external dataset. The
+   same external-dataset list across two runs must produce the same
+   ``EXT-`` content-hashed datapoint IDs, and the comparison endpoint
+   must pair them. The managed-dataset path uses the real Mongo IDs
+   assigned at create time.
 
 2. **Metric deltas + event-level pairing** — ``compare_runs`` and
    ``compare_run_events`` must surface evaluator scores from the chain
-   spans that PR #3998 emits to. Pre-HHAI-5272 these returned empty
+   spans that PR #3998 emits to. Before the pairing fix these returned empty
    ``metric_deltas`` because pairing was keyed on
    ``metric_name|event_name`` and the user-function-named chain span
    never matched across two runs.
@@ -113,7 +113,7 @@ def _make_named_user_fn(function_name: str):
 class TestExperimentsRunComparison:
     """Multi-run comparison via compare_runs() and /runs/compare/events."""
 
-    # --------------- HHAI-3934 datapoint-pairing regression ---------------
+    # --------------- Datapoint-pairing regression ---------------
 
     def test_compare_runs_datapoint_pairing_for_same_external_dataset(
         self,
@@ -121,7 +121,7 @@ class TestExperimentsRunComparison:
         real_project: str,
         integration_client: HoneyHive,
     ) -> None:
-        """HHAI-3934 regression: same external dataset → same EXT- IDs → paired.
+        """Regression: same external dataset → same EXT- IDs → paired.
 
         ``evaluate(dataset=…)`` generates content-hashed ``EXT-`` IDs for
         each datapoint. Two runs against the same Python list must
@@ -129,7 +129,7 @@ class TestExperimentsRunComparison:
         Pre-fix this returned ``common_datapoints == 0``.
 
         Asserts only the datapoint-pairing guarantee — not the metric
-        deltas (HHAI-5272 dependency, covered by the skiplisted
+        deltas (covered by the skiplisted
         ``test_compare_runs_with_metric_improvements_and_regressions``
         below).
         """
@@ -187,9 +187,9 @@ class TestExperimentsRunComparison:
         assert comparison.new_run_id == run_b.run_id
         assert comparison.old_run_id == run_a.run_id
 
-        # The HHAI-3934 root-cause assertions:
+        # The root-cause assertions:
         assert comparison.common_datapoints == len(dataset), (
-            f"HHAI-3934 regression: same external dataset across two "
+            f"Regression: same external dataset across two "
             f"evaluate() runs must produce {len(dataset)} common "
             f"datapoints (content-hashed EXT- IDs); got "
             f"{comparison.common_datapoints}"
@@ -207,7 +207,7 @@ class TestExperimentsRunComparison:
         real_project: str,
         integration_client: HoneyHive,
     ) -> None:
-        """HHAI-3934 regression: same managed dataset → same Mongo IDs → paired.
+        """Regression: same managed dataset → same Mongo IDs → paired.
 
         Managed datasets identify each datapoint by the Mongo ID assigned
         at create time, not by content hash. Two ``evaluate()`` runs
@@ -271,7 +271,7 @@ class TestExperimentsRunComparison:
             )
             assert comparison is not None
             assert comparison.common_datapoints == len(datapoints), (
-                f"HHAI-3934 regression (managed path): same managed "
+                f"Regression (managed path): same managed "
                 f"dataset across two evaluate() runs must produce "
                 f"{len(datapoints)} common datapoints; got "
                 f"{comparison.common_datapoints}"
@@ -285,7 +285,7 @@ class TestExperimentsRunComparison:
         finally:
             safe_delete_dataset(integration_client, dataset_id)
 
-    # ------- Metric-deltas + event-level (HHAI-5272 skiplisted) ----------
+    # ------- Metric-deltas + event-level (skiplisted) ----------
 
     def test_compare_runs_with_metric_improvements_and_regressions(
         self,
@@ -639,7 +639,7 @@ class TestExperimentsRunComparison:
     @pytest.mark.xfail(
         strict=False,
         reason=(
-            "HHAI-5662: metric_deltas can come back empty when the evaluation "
+            "metric_deltas can come back empty when the evaluation "
             "pipeline is cold — scores land on chain spans but aren't yet "
             "visible to compare_runs"
         ),
@@ -744,7 +744,7 @@ class TestExperimentsRunComparison:
     @pytest.mark.xfail(
         strict=False,
         reason=(
-            "HHAI-5662: metric_deltas can come back empty when the evaluation "
+            "metric_deltas can come back empty when the evaluation "
             "pipeline is cold — scores land on chain spans but aren't yet "
             "visible to compare_runs"
         ),

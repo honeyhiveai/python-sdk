@@ -239,12 +239,8 @@ class TestAPIClientConfig:
         assert config.server_url == "https://api.dp1.us.honeyhive.ai"
 
     def test_model_config_env_prefix(self) -> None:
-        """Test model configuration does not use env_prefix.
-
-        Verifies that the model configuration uses explicit validation_alias
-        instead of env_prefix for environment variable loading.
-        """
-        assert APIClientConfig.model_config["env_prefix"] == ""
+        """Every field reads HH_<FIELD NAME> through the inherited env_prefix."""
+        assert APIClientConfig.model_config["env_prefix"] == "HH_"
 
     def test_model_config_validate_assignment(self) -> None:
         """Test model configuration enables assignment validation.

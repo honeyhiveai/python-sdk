@@ -1101,7 +1101,7 @@ class TestOTLPJSONExporter:
 
 
 class TestOTLPJSONExporterAnyValueMapping:
-    """Verify native-type preservation in OTLP AnyValue encoding (HHAI-4935)."""
+    """Verify native-type preservation in OTLP AnyValue encoding."""
 
     def test_string_attribute_preserved_as_string(self) -> None:
         assert OTLPJSONExporter._to_otlp_any_value("hello") == {"stringValue": "hello"}
@@ -1109,7 +1109,7 @@ class TestOTLPJSONExporterAnyValueMapping:
     def test_int_attribute_serialized_as_string(self) -> None:
         # Integers must serialize as intValue JSON strings per protobuf JSON
         # mapping spec. Raw JSON numbers lose precision above 2^53 through the
-        # server's float64 decode path (HHAI-5004).
+        # server's float64 decode path.
         assert OTLPJSONExporter._to_otlp_any_value(42) == {"intValue": "42"}
 
     def test_large_int_preserved_exactly_as_string(self) -> None:
@@ -1277,7 +1277,7 @@ class TestOTLPJSONExporterAnyValueMapping:
             "replicas": {"intValue": "3"},
         }
 
-        # Span attributes preserve native types (the HHAI-4935 regression).
+        # Span attributes preserve native types.
         span_payload = resource_span["scopeSpans"][0]["spans"][0]
         span_attrs = {kv["key"]: kv["value"] for kv in span_payload["attributes"]}
         assert span_attrs == {
@@ -1289,7 +1289,7 @@ class TestOTLPJSONExporterAnyValueMapping:
 
 
 class TestOTLPJSONExporterTimestamps:
-    """Verify uint64 timestamp fields are serialized as JSON strings (HHAI-5004)."""
+    """Verify uint64 timestamp fields are serialized as JSON strings."""
 
     @patch("honeyhive.tracer.processing.otlp_exporter.requests.Session")
     def test_span_timestamps_are_strings(

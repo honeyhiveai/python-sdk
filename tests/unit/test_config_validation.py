@@ -409,3 +409,40 @@ class TestEnvFileLoading:
         assert tracer is not None
         assert tracer.api_key == "test-key"
         tracer.shutdown()
+
+
+class TestIngestionApiKeyParameter:
+    """The tracer's explicit ``ingestion_api_key`` is checked at construction.
+
+    Explicit parameters bypass the config models' field validators (they are
+    applied with ``model_copy``), so this is the path that must be tested on
+    a real tracer rather than on the model.
+    """
+
+    INGESTION_KEY = "hh_ingst_" + "A" * 24 + "_" + "b" * 64
+    PROJECT_KEY = "hh_" + "x" * 32
+
+    @pytest.fixture(autouse=True)
+    def _no_ambient_keys(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.delenv("HH_INGESTION_API_KEY", raising=False)
+        monkeypatch.delenv("HH_API_KEY", raising=False)
+
+    def test_project_key_raises_at_construction(self) -> None:
+        """A project key passed as the ingestion key fails before any degradation."""
+        with pytest.raises(
+            ValueError, match="ingestion_api_key must be an ingestion API key"
+        ):
+            HoneyHiveTracer(
+                api_key=self.PROJECT_KEY,
+                ingestion_api_key=self.PROJECT_KEY,
+                test_mode=True,
+            )
+
+    def test_well_formed_key_is_kept(self) -> None:
+        """A well-formed key is kept and an absent api_key stays None."""
+        tracer = HoneyHiveTracer(ingestion_api_key=self.INGESTION_KEY, test_mode=True)
+        try:
+            assert tracer.ingestion_api_key == self.INGESTION_KEY
+            assert tracer.api_key is None
+        finally:
+            tracer.shutdown()

@@ -24,6 +24,8 @@ import os
 
 import pytest
 
+from tests.integration._llm_helpers import create_live_langchain_client
+
 # Skip entire module if keys not present
 pytestmark = [
     pytest.mark.skipif(not os.getenv("HH_API_KEY"), reason="HH_API_KEY not set"),
@@ -50,7 +52,6 @@ class TestLangGraphIntegration:
         """Test basic LangGraph workflow is traced."""
         from typing import TypedDict
 
-        from langchain_openai import ChatOpenAI
         from langgraph.graph import END, START, StateGraph
         from openinference.instrumentation.langchain import LangChainInstrumentor
 
@@ -72,7 +73,7 @@ class TestLangGraphIntegration:
                 output: str
 
             # Define nodes
-            model = ChatOpenAI(model="gpt-4o-mini", max_tokens=50)
+            model = create_live_langchain_client()
 
             async def process_node(state: GraphState) -> GraphState:
                 response = await model.ainvoke(state["input"])
@@ -103,7 +104,6 @@ class TestLangGraphIntegration:
         """Test LangGraph conditional workflow is traced."""
         from typing import Literal, TypedDict
 
-        from langchain_openai import ChatOpenAI
         from langgraph.graph import END, START, StateGraph
         from openinference.instrumentation.langchain import LangChainInstrumentor
 
@@ -125,7 +125,7 @@ class TestLangGraphIntegration:
                 route: str
                 response: str
 
-            model = ChatOpenAI(model="gpt-4o-mini", max_tokens=50)
+            model = create_live_langchain_client()
 
             async def router_node(state: GraphState) -> GraphState:
                 """Determine the route based on query."""

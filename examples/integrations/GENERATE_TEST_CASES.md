@@ -35,6 +35,7 @@ Use this temporary local patch pattern:
 ```python
 from capture_spans import setup_span_capture
 
+
 async def main() -> None:
     tracer = HoneyHiveTracer.init(...)
     span_processor = setup_span_capture("<integration_name>", tracer)

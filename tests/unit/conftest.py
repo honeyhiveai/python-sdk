@@ -13,9 +13,19 @@ from unittest.mock import Mock, patch
 import pytest
 from opentelemetry.trace import NoOpTracerProvider
 
+from honeyhive._generated.api_config import APIConfig
 from honeyhive.api.client import HoneyHive
 from honeyhive.tracer import HoneyHiveTracer
 from honeyhive.tracer.integration import set_global_provider
+
+
+@pytest.fixture
+def api_config() -> APIConfig:
+    """Create a test APIConfig."""
+    return APIConfig(
+        base_path="https://api.test.honeyhive.ai",
+        access_token="test-api-key",
+    )
 
 
 @pytest.fixture

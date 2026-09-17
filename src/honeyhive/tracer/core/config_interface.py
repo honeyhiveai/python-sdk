@@ -10,6 +10,9 @@ values without the complexity of the underlying merging system.
 import os
 from typing import Any, Dict
 
+from ...config.models.base import RESOLVED_FIELDS
+from ...config.resolved import DEFAULT_API_URL
+
 
 class TracerConfigInterface:
     """Simple, clean interface for accessing tracer configuration.
@@ -17,6 +20,10 @@ class TracerConfigInterface:
     This class provides both attribute-style and dict-style access to
     configuration values, hiding the complexity of the underlying
     configuration merging system.
+
+    Nothing in the package imports this class: the tracer exposes the DotDict
+    that create_unified_config builds. It stays for code that imports it
+    directly and is not a live path inside the SDK.
 
     Examples:
         >>> tracer = HoneyHiveTracer(api_key="key", project="test")
@@ -140,7 +147,7 @@ class TracerConfigInterface:
         # Common default value patterns (based on original SDK defaults)
         default_patterns = {
             "source": "dev",  # Original: os.getenv("HH_SOURCE", "dev")
-            "server_url": "https://api.dp1.us.honeyhive.ai",  # Original DEFAULT_API_URL
+            "server_url": DEFAULT_API_URL,
             "session_name": "unknown",  # Original fallback when script name fails
             "disable_http_tracing": True,  # New SDK default for performance
             "disable_batch": False,  # Original constructor default
@@ -208,10 +215,16 @@ class TracerConfigInterface:
 
     def _try_environment_variable_access(self, name: str) -> Any:
         """Dynamically resolve environment variables based on naming patterns."""
+        # The API key and URL are resolved once, by honeyhive.config.resolved,
+        # before any config reaches this interface, so a missing value there is
+        # a genuine absence and not something to look up again here.
+        if name in RESOLVED_FIELDS:
+            return None
+
         # Dynamic environment variable mapping based on common patterns
         env_patterns = [
-            f"HH_{name.upper()}",  # HH_API_KEY, HH_BATCH_SIZE
-            f"HONEYHIVE_{name.upper()}",  # HONEYHIVE_API_KEY
+            f"HH_{name.upper()}",  # HH_BATCH_SIZE
+            f"HONEYHIVE_{name.upper()}",  # HONEYHIVE_BATCH_SIZE
             f"HH_{name.upper().replace('_', '_')}",  # Handle underscores
         ]
 
@@ -323,8 +336,8 @@ class TracerConfigInterface:
         # Dynamic default mapping - matches original SDK defaults from main branch
         defaults = {
             # API Configuration (matches original main branch behavior)
-            "api_key": None,  # Required - fallback to HH_API_KEY env var
-            "server_url": "https://api.dp1.us.honeyhive.ai",  # Original DEFAULT_API_URL
+            "api_key": None,  # Resolved upstream; None here means absent
+            "server_url": DEFAULT_API_URL,
             "project": None,  # Deprecated - optional fallback to HH_PROJECT env var
             "source": "dev",  # Original: os.getenv("HH_SOURCE", "dev")
             # "session_name" removed - should use dynamic inference

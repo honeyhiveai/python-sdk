@@ -18,7 +18,11 @@ import pytest
 
 from honeyhive import HoneyHiveTracer, enrich_span, trace
 from honeyhive.tracer.registry import set_default_tracer
-from tests.integration._mock_llm_helpers import MOCK_LLM_MODEL, mock_openai_client
+from tests.integration._llm_helpers import (
+    create_llm_client,
+    get_completion_options,
+    get_llm_model,
+)
 
 # Skip all tests if no API key
 pytestmark = pytest.mark.skipif(
@@ -166,17 +170,17 @@ class TestOpenAIIntegration:
             session_name="e2e-test-openai",
         )
 
-        # Initialize OpenAI client wired to mock-llm
-        client = mock_openai_client()
+        # Use the selected provider without changing other OpenAI clients in the process.
+        client = create_llm_client()
 
         @trace(event_type="model")
         def call_openai(prompt: str) -> str:
             """Call OpenAI and enrich span."""
             try:
                 response = client.chat.completions.create(
-                    model=MOCK_LLM_MODEL,
+                    model=get_llm_model(),
                     messages=[{"role": "user", "content": prompt}],
-                    max_tokens=10,
+                    **get_completion_options(10),
                 )
 
                 result = response.choices[0].message.content or ""
@@ -184,7 +188,7 @@ class TestOpenAIIntegration:
                 # Enrich with model metadata
                 tracer.enrich_span(
                     metadata={
-                        "model": MOCK_LLM_MODEL,
+                        "model": get_llm_model(),
                         "prompt": prompt,
                         "response": result,
                     },
@@ -195,7 +199,7 @@ class TestOpenAIIntegration:
 
                 return result
             except Exception as e:
-                tracer.enrich_span(metadata={"error": str(e), "model": MOCK_LLM_MODEL})
+                tracer.enrich_span(metadata={"error": str(e), "model": get_llm_model()})
                 raise
 
         result = call_openai("Say 'test'")

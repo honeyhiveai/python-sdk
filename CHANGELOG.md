@@ -1,6 +1,31 @@
 # Python SDK Changelog
 
-## [Unreleased]
+## [1.6.0] - 2026-09-17
+
+### Added
+
+- **Ingestion API keys**
+  - `HoneyHive(...)`, `HoneyHiveTracer.init(...)`, and `evaluate(...)` accept `ingestion_api_key=`, also read from `HH_INGESTION_API_KEY`. The ingestion key is sent only on the routes that create sessions and write events, including OTLP trace export; every other route keeps using `api_key`. When it is unset, `api_key` is used for ingestion too, so existing setups are unchanged. A value that is set but is not an `hh_ingst_` key raises `ValueError` at construction rather than failing later at request time.
+
+### Changed
+
+- **Connection settings resolve the same way in every entry point**
+  - The client, the tracer, `evaluate()`, and the CLI now resolve `api_key`, `ingestion_api_key`, and the API URL through one resolver, so a single process can no longer authenticate with one key in `evaluate()` and another in a tracer. An explicit argument beats the environment, and a blank value counts as unset.
+  - `HH_API_KEY` and `HH_API_URL` are the preferred variables and win when more than one is set. `HONEYHIVE_API_KEY`, `HONEYHIVE_SERVER_URL`, and `HH_SERVER_URL` still work but are deprecated and emit a `DeprecationWarning` once per process. If you set both `HONEYHIVE_API_KEY` and `HH_API_KEY` to different values, `evaluate()` and the CLI now use `HH_API_KEY`; they previously preferred `HONEYHIVE_API_KEY`.
+
+### Fixed
+
+- **Tracer: `RecursionError` from `trace.get_tracer()` after tracer shutdown**
+  - Shutting down the main `HoneyHiveTracer` reset the global OpenTelemetry provider to a fresh `ProxyTracerProvider`, which delegates back to the global provider — itself. Any subsequent `opentelemetry.trace.get_tracer(...)` call (including module-level calls made when importing libraries such as `mcp`) raised `RecursionError`. Shutdown now clears the global provider so OpenTelemetry returns its own proxy.
+- **Events API: retry config now controls `events.export()`**
+  - `HoneyHive(retry_config=...)` and `HH_MAX_RETRIES` were accepted and ignored. They did not reach `events.export()` / `export_async()`, which fell back to a fixed budget of 3 retries. Both configuration methods now set the retry budget for `events.export()` / `export_async()`.
+
+### Compatibility
+
+- **Anthropic extras cap `anthropic` below 1.0.0**
+  - `honeyhive[openinference-anthropic]`, `honeyhive[traceloop-anthropic]`, and the bundles that include them now require `anthropic<1.0.0`, and the OpenInference extras also require `openinference-instrumentation-anthropic<2.0.0`. A mismatched pair either raised `ModuleNotFoundError` on import or logged a dependency conflict and skipped instrumentation. The SDK already implicitly depended on `anthropic<1.0.0` as that was the only version available, which worked until Anthropic recently published v1.0 of their SDK.
+- **LangChain extras now install `langchain-openai`**
+  - `honeyhive[openinference-langchain]` and `honeyhive[traceloop-langchain]` pull in `langchain-openai>=1.0.0` alongside `langchain`. These dependencies were always required for tracing to work correctly with LangChain but they weren't declared before.
 
 ## [1.5.1] - 2026-07-21
 

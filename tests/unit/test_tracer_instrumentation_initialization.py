@@ -49,9 +49,10 @@ class MockHoneyHiveTracer:
         self.config.skip_backend_session_creation = False
         self.config.session = Mock()
         self.config.session.inputs = {}
-        # Mirror the real TracerConfig default (Mock would auto-create a
+        # Mirror the real TracerConfig defaults (Mock would auto-create a
         # truthy attribute otherwise, which no real config ever produces)
         self.config.requests_session = None
+        self.config.ingestion_api_key = None
         # Span limit configuration
         self.config.max_attributes = 1024
         self.config.max_events = 1024
@@ -938,6 +939,48 @@ class TestTracerInitialization:
     )
     @patch("honeyhive.tracer.instrumentation.initialization.safe_log")
     @patch.dict("os.environ", {"HH_OTLP_ENABLED": "true"})
+    def test__create_otlp_exporter_exports_with_ingestion_api_key(
+        self, mock_log: Any, mock_session_config: Any, mock_exporter: Any
+    ) -> None:
+        """Traces are exported with the ingestion key when one is configured."""
+        mock_session_config.return_value = Mock()
+        self.mock_tracer.config.otlp_enabled = True
+        self.mock_tracer.test_mode = False
+        self.mock_tracer.config.api_key = "project-key"
+        self.mock_tracer.config.ingestion_api_key = "ingestion-key"
+
+        initialization._create_otlp_exporter(self.mock_tracer)
+
+        headers = mock_exporter.call_args[1]["headers"]
+        assert headers["Authorization"] == "Bearer ingestion-key"
+
+    @patch("honeyhive.tracer.instrumentation.initialization.HoneyHiveOTLPExporter")
+    @patch(
+        "honeyhive.tracer.instrumentation.initialization._get_optimal_session_config"
+    )
+    @patch("honeyhive.tracer.instrumentation.initialization.safe_log")
+    @patch.dict("os.environ", {"HH_OTLP_ENABLED": "true"})
+    def test__create_otlp_exporter_falls_back_to_api_key(
+        self, mock_log: Any, mock_session_config: Any, mock_exporter: Any
+    ) -> None:
+        """Without an ingestion key, traces are exported with the project key."""
+        mock_session_config.return_value = Mock()
+        self.mock_tracer.config.otlp_enabled = True
+        self.mock_tracer.test_mode = False
+        self.mock_tracer.config.api_key = "project-key"
+        self.mock_tracer.config.ingestion_api_key = None
+
+        initialization._create_otlp_exporter(self.mock_tracer)
+
+        headers = mock_exporter.call_args[1]["headers"]
+        assert headers["Authorization"] == "Bearer project-key"
+
+    @patch("honeyhive.tracer.instrumentation.initialization.HoneyHiveOTLPExporter")
+    @patch(
+        "honeyhive.tracer.instrumentation.initialization._get_optimal_session_config"
+    )
+    @patch("honeyhive.tracer.instrumentation.initialization.safe_log")
+    @patch.dict("os.environ", {"HH_OTLP_ENABLED": "true"})
     def test__create_otlp_exporter_default_omits_session_kwarg(
         self, mock_log: Any, mock_session_config: Any, mock_exporter: Any
     ) -> None:
@@ -1516,6 +1559,34 @@ class TestTracerInitialization:
         assert self.mock_tracer._degraded_mode is True
         assert "missing_api_key" in self.mock_tracer._degradation_reasons
         assert "missing_project" not in self.mock_tracer._degradation_reasons
+
+    @patch("honeyhive.tracer.instrumentation.initialization.safe_log")
+    def test__validate_configuration_gracefully_ingestion_key_alone(
+        self, mock_log: Any
+    ) -> None:
+        """An ingestion key with no api_key is a complete credential for tracing."""
+        self.mock_tracer.config.api_key = None
+        self.mock_tracer.config.ingestion_api_key = "ingestion-key"
+
+        initialization._validate_configuration_gracefully(self.mock_tracer)
+
+        assert self.mock_tracer._degraded_mode is False
+        assert self.mock_tracer._degradation_reasons == []
+
+    @patch("honeyhive.tracer.instrumentation.initialization.safe_log")
+    def test__validate_configuration_gracefully_no_credential_names_both_variables(
+        self, mock_log: Any
+    ) -> None:
+        """The degraded-mode warning tells the user both ways to enable export."""
+        self.mock_tracer.config.api_key = None
+        self.mock_tracer.config.ingestion_api_key = None
+
+        initialization._validate_configuration_gracefully(self.mock_tracer)
+
+        assert self.mock_tracer._degraded_mode is True
+        logged = " ".join(str(call) for call in mock_log.call_args_list)
+        assert "HH_INGESTION_API_KEY" in logged
+        assert "HH_API_KEY" in logged
 
     # ========================================================================
     # Tests for _validate_session_id

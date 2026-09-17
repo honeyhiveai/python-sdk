@@ -55,7 +55,6 @@ dev = [
     "psutil>=5.9.0",
     "yamllint>=1.37.0",
     "openapi-python-generator>=2.1.0",  # For SDK generation (pydantic models + client)
-    "docker>=7.0.0",  # For Lambda container tests
     "build>=1.4.2",  # For building packages
     "hatchling>=1.18.0",  # Build backend
 ]
@@ -81,7 +80,7 @@ docs = [
     # re-tokenizes signature code blocks client-side and strips the <a>
     # tags that mkdocstrings injects for type cross-references. Material
     # uses Pygments only, so the server-rendered autoref links survive.
-    "mkdocs-material>=9.5",
+    "mkdocs-material>=9.7.7",
     "mkdocstrings[python]>=0.27",   # griffe-backed Python handler
     "mkdocs-gen-files>=0.5",         # generate ref pages at build time
     "mkdocs-literate-nav>=0.6",      # nav from a SUMMARY.md
@@ -102,9 +101,14 @@ openinference-openai = [
 ]
 
 # Anthropic (openinference-anthropic)
+# Both caps move together. openinference-instrumentation-anthropic 1.x imports
+# `anthropic.resources.completions`, which anthropic 1.0.0 removed, and 2.x
+# declares `anthropic >= 1.0.0` in `_instruments`. A mismatched pair either
+# raises ModuleNotFoundError or makes BaseInstrumentor log DependencyConflict
+# and skip instrumentation, which produces no LLM spans and no error.
 openinference-anthropic = [
-    "openinference-instrumentation-anthropic>=0.1.0",
-    "anthropic>=0.18.0",
+    "openinference-instrumentation-anthropic>=0.1.0,<2.0.0",
+    "anthropic>=0.18.0,<1.0.0",
 ]
 
 # Claude Agents SDK (openinference-claude-agent-sdk)
@@ -160,6 +164,7 @@ openinference-litellm = [
 openinference-langchain = [
     "openinference-instrumentation-langchain>=0.1.0",
     "langchain>=1.0.0",
+    "langchain-openai>=1.0.0",
 ]
 
 # AWS Strands Agents (native OTel; Traceloop-shaped semantic conventions)
@@ -184,9 +189,13 @@ traceloop-openai = [
 ]
 
 # Anthropic (traceloop-anthropic)
+# anthropic 1.0.0 removed the `anthropic.resources.completions` module, which
+# opentelemetry-instrumentation-anthropic still lists in WRAPPED_METHODS and
+# WRAPPED_AMETHODS. Cap anthropic below 1.0.0 until the instrumentor drops
+# that reference.
 traceloop-anthropic = [
     "opentelemetry-instrumentation-anthropic>=0.58.0,<1.0.0",
-    "anthropic>=0.17.0",
+    "anthropic>=0.17.0,<1.0.0",
 ]
 
 # Google Generative AI (traceloop-google-ai)
@@ -218,6 +227,7 @@ traceloop-mcp = [
 traceloop-langchain = [
     "opentelemetry-instrumentation-langchain>=0.58.0,<1.0.0",
     "langchain>=1.0.0",
+    "langchain-openai>=1.0.0",
 ]
 
 # Note: Only documented integrations are included
@@ -226,7 +236,8 @@ traceloop-langchain = [
 # All Available OpenInference Integrations (documented only)
 all-openinference = [
     "openinference-instrumentation-openai>=0.1.0",
-    "openinference-instrumentation-anthropic>=0.1.0",
+    # openinference-anthropic explains why both anthropic caps move together.
+    "openinference-instrumentation-anthropic>=0.1.0,<2.0.0",
     "openinference-instrumentation-claude-agent-sdk>=0.1.0",
     "openinference-instrumentation-openai-agents>=1.4.0",
     "openinference-instrumentation-google-genai>=0.1.0",
@@ -236,7 +247,7 @@ all-openinference = [
     "openinference-instrumentation-langchain>=0.1.0",
     "openinference-instrumentation-mcp>=1.3.0",
     "openai>=1.0.0",
-    "anthropic>=0.18.0",
+    "anthropic>=0.18.0,<1.0.0",
     "claude-agent-sdk>=0.1.56",
     "openai-agents>=0.10.0",
     "google-genai>=0.3.0",
@@ -250,12 +261,13 @@ all-openinference = [
 # Common LLM Providers (OpenInference Ecosystem)
 openinference-llm-providers = [
     "openinference-instrumentation-openai>=0.1.0",
-    "openinference-instrumentation-anthropic>=0.1.0",
+    # openinference-anthropic explains why both anthropic caps move together.
+    "openinference-instrumentation-anthropic>=0.1.0,<2.0.0",
     "openinference-instrumentation-google-genai>=0.1.0",
     "openinference-instrumentation-bedrock>=0.1.0",
     "openinference-instrumentation-litellm>=0.1.30",
     "openai>=1.0.0",
-    "anthropic>=0.18.0",
+    "anthropic>=0.18.0,<1.0.0",
     "google-genai>=0.3.0",
     "litellm>=1.0.0",
     "boto3>=1.26.0",
@@ -271,7 +283,7 @@ all-traceloop = [
     "opentelemetry-instrumentation-langchain>=0.58.0,<1.0.0",
     "opentelemetry-instrumentation-mcp>=0.58.0,<1.0.0",
     "openai>=1.0.0",
-    "anthropic>=0.17.0",
+    "anthropic>=0.17.0,<1.0.0",
     "google-generativeai>=0.3.0",
     "langchain>=1.0.0",
     "boto3>=1.26.0",
@@ -285,7 +297,7 @@ traceloop-llm-providers = [
     "opentelemetry-instrumentation-google-generativeai>=0.58.0,<1.0.0",
     "opentelemetry-instrumentation-bedrock>=0.58.0,<1.0.0",
     "openai>=1.0.0",
-    "anthropic>=0.17.0",
+    "anthropic>=0.17.0,<1.0.0",
     "google-generativeai>=0.3.0",
     "boto3>=1.26.0",
 ]
@@ -439,4 +451,3 @@ exclude_lines = [
 
 [tool.coverage.html]
 directory = "htmlcov"
-

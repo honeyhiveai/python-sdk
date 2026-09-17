@@ -376,20 +376,18 @@ class TestTracerConfigInterface:
         # Arrange
         mock_tracer = Mock()
         config_interface = TracerConfigInterface(mock_tracer)
-        mock_getenv.return_value = "env-api-key"
+        mock_getenv.return_value = "250"
 
         with (
-            patch.object(
-                config_interface, "_convert_env_value", return_value="env-api-key"
-            ),
+            patch.object(config_interface, "_convert_env_value", return_value=250),
             patch.object(config_interface, "_get_sensible_default", return_value=None),
         ):
             # Act
-            result = config_interface._try_environment_variable_access("api_key")
+            result = config_interface._try_environment_variable_access("batch_size")
 
             # Assert
-            assert result == "env-api-key"
-            mock_getenv.assert_called_with("HH_API_KEY")
+            assert result == 250
+            mock_getenv.assert_called_with("HH_BATCH_SIZE")
 
     @patch("os.getenv")
     def test_try_environment_variable_access_honeyhive_prefix(
@@ -400,20 +398,36 @@ class TestTracerConfigInterface:
         mock_tracer = Mock()
         config_interface = TracerConfigInterface(mock_tracer)
         mock_getenv.side_effect = lambda key: (
-            "honeyhive-api-key" if key == "HONEYHIVE_API_KEY" else None
+            "250" if key == "HONEYHIVE_BATCH_SIZE" else None
         )
 
         with (
-            patch.object(
-                config_interface, "_convert_env_value", return_value="honeyhive-api-key"
-            ),
+            patch.object(config_interface, "_convert_env_value", return_value=250),
             patch.object(config_interface, "_get_sensible_default", return_value=None),
         ):
             # Act
-            result = config_interface._try_environment_variable_access("api_key")
+            result = config_interface._try_environment_variable_access("batch_size")
 
             # Assert
-            assert result == "honeyhive-api-key"
+            assert result == 250
+
+    @pytest.mark.parametrize(
+        ("name", "variables"),
+        [
+            ("api_key", ("HH_API_KEY", "HONEYHIVE_API_KEY")),
+            ("ingestion_api_key", ("HH_INGESTION_API_KEY",)),
+            ("server_url", ("HH_SERVER_URL", "HONEYHIVE_SERVER_URL")),
+        ],
+    )
+    def test_try_environment_variable_access_skips_resolved_settings(
+        self, name: str, variables: tuple, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The key and URL are resolved once upstream and never re-read here."""
+        for variable in variables:
+            monkeypatch.setenv(variable, "should-not-be-read")
+        config_interface = TracerConfigInterface(Mock())
+
+        assert config_interface._try_environment_variable_access(name) is None
 
     @patch("os.getenv")
     def test_try_environment_variable_access_fallback_to_default(

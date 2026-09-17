@@ -4,8 +4,8 @@ This module defines priority levels for span attributes to ensure critical
 attributes survive OpenTelemetry's FIFO eviction when span attribute limits
 are exceeded.
 
-Based on multi-repo code intelligence analysis of hive-kube ingestion service
-validation requirements (event_schema.js, new_event_validation.js).
+The priority levels come from the validation rules that the ingestion service
+applies to an event.
 
 Priority Levels:
     - P0 (CRITICAL): Required for backend validation, span rejected if missing
@@ -51,7 +51,7 @@ HONEYHIVE_NAMESPACE = "honeyhive."
 
 
 # Core attributes that MUST survive eviction (P0 - CRITICAL)
-# Source: Backend ingestion service validation (event_schema.js)
+# Source: Backend ingestion service validation
 CRITICAL_ATTRIBUTES: Set[str] = {
     # Trace continuity - If evicted, auto-generates NEW session, breaks trace
     f"{HONEYHIVE_NAMESPACE}session_id",

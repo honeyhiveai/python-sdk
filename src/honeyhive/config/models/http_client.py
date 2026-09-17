@@ -14,8 +14,7 @@ import logging
 import os
 from typing import Any, Optional
 
-from pydantic import AliasChoices, Field, field_validator
-from pydantic_settings import SettingsConfigDict
+from pydantic import Field, field_validator
 
 from .base import BaseHoneyHiveConfig, _safe_validate_url
 
@@ -67,111 +66,94 @@ class HTTPClientConfig(BaseHoneyHiveConfig):
     """
 
     # Connection settings
-    timeout: float = Field(  # type: ignore[call-overload,pydantic-alias]
+    timeout: float = Field(
         default=30.0,
         description="Request timeout in seconds",
-        validation_alias=AliasChoices("HH_TIMEOUT", "timeout"),
         examples=[30.0, 60.0, 120.0],
     )
 
-    max_connections: int = Field(  # type: ignore[call-overload,pydantic-alias]
+    max_connections: int = Field(
         default=10,
         description="Maximum connections in pool",
-        validation_alias=AliasChoices("HH_MAX_CONNECTIONS", "max_connections"),
         examples=[10, 50, 100],
     )
 
-    max_keepalive_connections: int = Field(  # type: ignore[call-overload,pydantic-alias]  # pylint: disable=line-too-long
+    max_keepalive_connections: int = Field(
         default=20,
         description="Maximum keepalive connections",
-        validation_alias=AliasChoices(
-            "HH_MAX_KEEPALIVE_CONNECTIONS", "max_keepalive_connections"
-        ),
         examples=[20, 50, 100],
     )
 
-    keepalive_expiry: float = Field(  # type: ignore[call-overload,pydantic-alias]
+    keepalive_expiry: float = Field(
         default=30.0,
         description="Keepalive expiry time in seconds",
-        validation_alias=AliasChoices("HH_KEEPALIVE_EXPIRY", "keepalive_expiry"),
         examples=[30.0, 60.0, 300.0],
     )
 
-    pool_timeout: float = Field(  # type: ignore[call-overload,pydantic-alias]
+    pool_timeout: float = Field(
         default=10.0,
         description="Pool timeout in seconds",
-        validation_alias=AliasChoices("HH_POOL_TIMEOUT", "pool_timeout"),
         examples=[10.0, 30.0, 60.0],
     )
 
     # Rate limiting
-    rate_limit_calls: int = Field(  # type: ignore[call-overload,pydantic-alias]
+    rate_limit_calls: int = Field(
         default=100,
         description="Maximum calls per time window",
-        validation_alias=AliasChoices("HH_RATE_LIMIT_CALLS", "rate_limit_calls"),
         examples=[100, 200, 500],
     )
 
-    rate_limit_window: float = Field(  # type: ignore[call-overload,pydantic-alias]
+    rate_limit_window: float = Field(
         default=60.0,
         description="Rate limit time window in seconds",
-        validation_alias=AliasChoices("HH_RATE_LIMIT_WINDOW", "rate_limit_window"),
         examples=[60.0, 300.0, 3600.0],
     )
 
-    max_retries: int = Field(  # type: ignore[call-overload,pydantic-alias]
+    max_retries: int = Field(
         3,
         description="Maximum retry attempts",
-        validation_alias=AliasChoices("HH_MAX_RETRIES", "max_retries"),
         examples=[3, 5, 10],
     )
 
     # Proxy settings
-    http_proxy: Optional[str] = Field(  # type: ignore[call-overload,pydantic-alias]
+    http_proxy: Optional[str] = Field(
         None,
         description="HTTP proxy URL",
-        validation_alias=AliasChoices("HH_HTTP_PROXY", "http_proxy"),
         examples=["http://proxy.company.com:8080"],
     )
 
-    https_proxy: Optional[str] = Field(  # type: ignore[call-overload,pydantic-alias]
+    https_proxy: Optional[str] = Field(
         None,
         description="HTTPS proxy URL",
-        validation_alias=AliasChoices("HH_HTTPS_PROXY", "https_proxy"),
         examples=["https://proxy.company.com:8080"],
     )
 
-    no_proxy: Optional[str] = Field(  # type: ignore[call-overload,pydantic-alias]
+    no_proxy: Optional[str] = Field(
         None,
         description="Comma-separated list of hosts to bypass proxy",
-        validation_alias=AliasChoices("HH_NO_PROXY", "no_proxy"),
         examples=["localhost,127.0.0.1,.local"],
     )
 
     # SSL and redirects
-    verify_ssl: bool = Field(  # type: ignore[call-overload,pydantic-alias]
+    verify_ssl: bool = Field(
         True,
         description="Verify SSL certificates",
-        validation_alias=AliasChoices("HH_VERIFY_SSL", "verify_ssl"),
     )
 
-    follow_redirects: bool = Field(  # type: ignore[call-overload,pydantic-alias]
+    follow_redirects: bool = Field(
         True,
         description="Follow HTTP redirects",
-        validation_alias=AliasChoices("HH_FOLLOW_REDIRECTS", "follow_redirects"),
-    )
-
-    model_config = SettingsConfigDict(
-        validate_assignment=True,
-        extra="forbid",
-        case_sensitive=False,
     )
 
     def __init__(self, **data: Any) -> None:
-        """Initialize HTTP client config with environment variable fallbacks.
+        """Load this class's fields from the environment before validation.
 
-        Supports both HH_* and standard HTTP_* environment variables
-        for maximum compatibility with existing infrastructure.
+        Init kwargs outrank the pydantic-settings environment source, so the
+        HH_ names read here are what populate the fields declared on this
+        class; the inherited fields still come through env_prefix. Reading
+        them here also honours the standard HTTP_*, *_PROXY, VERIFY_SSL and
+        FOLLOW_REDIRECTS variables and falls back to the default on a
+        malformed value instead of raising.
         """
         # Load from environment variables with fallbacks to standard env vars
         env_data = {

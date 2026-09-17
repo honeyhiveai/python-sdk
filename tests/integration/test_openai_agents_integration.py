@@ -35,6 +35,8 @@ import os
 
 import pytest
 
+from tests.integration._llm_helpers import LIVE_OPENAI_MODEL
+
 # Skip entire module if keys not present
 pytestmark = [
     pytest.mark.skipif(not os.getenv("HH_API_KEY"), reason="HH_API_KEY not set"),
@@ -65,7 +67,8 @@ class TestOpenAIAgentsIntegration:
         - Result contains final_output
         - At least one event is exported end-to-end to HoneyHive
         """
-        from agents import Agent, Runner
+        from agents import Agent, ModelSettings, Runner
+        from openai.types.shared import Reasoning
         from openinference.instrumentation.openai_agents import OpenAIAgentsInstrumentor
 
         from honeyhive import HoneyHiveTracer
@@ -88,7 +91,10 @@ class TestOpenAIAgentsIntegration:
             agent = Agent(
                 name="test_agent",
                 instructions="You are a helpful assistant. Keep responses brief.",
-                model="gpt-4o-mini",
+                model=LIVE_OPENAI_MODEL,
+                model_settings=ModelSettings(
+                    reasoning=Reasoning(effort="low"), max_tokens=1024
+                ),
             )
 
             result = await Runner.run(agent, "Say 'test' and nothing else.")
@@ -115,7 +121,8 @@ class TestOpenAIAgentsIntegration:
         - Agent invokes tool during execution; tool events appear in HoneyHive
         - enrich_span() metadata and metrics are captured on the exported span
         """
-        from agents import Agent, Runner, function_tool
+        from agents import Agent, ModelSettings, Runner, function_tool
+        from openai.types.shared import Reasoning
         from openinference.instrumentation.openai_agents import OpenAIAgentsInstrumentor
 
         from honeyhive import HoneyHiveTracer, enrich_span, trace
@@ -144,7 +151,10 @@ class TestOpenAIAgentsIntegration:
             agent = Agent(
                 name="math_agent",
                 instructions="You are a math assistant. Use the add_numbers tool when asked to add.",
-                model="gpt-4o-mini",
+                model=LIVE_OPENAI_MODEL,
+                model_settings=ModelSettings(
+                    reasoning=Reasoning(effort="low"), max_tokens=1024
+                ),
                 tools=[add_numbers],
             )
 
@@ -160,37 +170,40 @@ class TestOpenAIAgentsIntegration:
 
             tracer.flush()
 
-            events = fetch_events(session_id=session_id, project=project_name)
-            assert len(events) > 0, (
-                f"Expected exported events for session {session_id}, got none"
+            # The session event arrives before the tool and enriched chain spans.
+            events = fetch_events(
+                session_id=session_id,
+                project=project_name,
+                min_events=3,
+                predicate=lambda events: (
+                    any(e.event_type == "tool" for e in events)
+                    and any(
+                        e.metadata
+                        and "query" in e.metadata
+                        and e.metrics
+                        and "output_length" in e.metrics
+                        for e in events
+                    )
+                ),
             )
-
             # Verify tool spans were exported
-            tool_events = [
-                e
-                for e in events
-                if "tool" in (e.event_type or "").lower()
-                or "tool" in (e.event_name or "").lower()
-            ]
+            tool_events = [e for e in events if e.event_type == "tool"]
             assert len(tool_events) > 0, (
                 "Expected at least one tool-related event in exported spans. "
                 f"Got {len(events)} total events: "
                 f"{[(e.event_type, e.event_name) for e in events]}"
             )
 
-            # Verify enrich_span metadata and metrics were captured
-            metadata_found = any(e.metadata and "query" in e.metadata for e in events)
-            assert metadata_found, (
-                "enrich_span metadata 'query' not found in exported events. "
-                f"Metadata across events: {[e.metadata for e in events]}"
-            )
-
-            metrics_found = any(
-                e.metrics and "output_length" in e.metrics for e in events
-            )
-            assert metrics_found, (
-                "enrich_span metric 'output_length' not found in exported events. "
-                f"Metrics across events: {[e.metrics for e in events]}"
+            # Both enrichments belong to the same traced function span.
+            assert any(
+                e.metadata
+                and "query" in e.metadata
+                and e.metrics
+                and "output_length" in e.metrics
+                for e in events
+            ), (
+                "Expected query metadata and output_length metric on the same event. "
+                f"Got: {[(e.event_name, e.metadata, e.metrics) for e in events]}"
             )
 
         finally:
@@ -206,7 +219,8 @@ class TestOpenAIAgentsIntegration:
         - Final output contains specialist-provided content (order status from tool)
         - Agent and handoff spans are exported to HoneyHive
         """
-        from agents import Agent, Runner, function_tool
+        from agents import Agent, ModelSettings, Runner, function_tool
+        from openai.types.shared import Reasoning
         from openinference.instrumentation.openai_agents import OpenAIAgentsInstrumentor
 
         from honeyhive import HoneyHiveTracer
@@ -236,15 +250,21 @@ class TestOpenAIAgentsIntegration:
             order_specialist = Agent(
                 name="order_specialist",
                 handoff_description="Handles order status and shipping questions.",
-                instructions="Use lookup_order_status for order questions. Be concise.",
-                model="gpt-4o-mini",
+                instructions="Call lookup_order_status with the order ID before answering. Be concise.",
+                model=LIVE_OPENAI_MODEL,
+                model_settings=ModelSettings(
+                    reasoning=Reasoning(effort="low"), max_tokens=1024
+                ),
                 tools=[lookup_order_status],
             )
 
             triage_agent = Agent(
                 name="triage_agent",
-                instructions="Route order questions to order_specialist.",
-                model="gpt-4o-mini",
+                instructions="Call transfer_to_order_specialist for order questions instead of answering them yourself.",
+                model=LIVE_OPENAI_MODEL,
+                model_settings=ModelSettings(
+                    reasoning=Reasoning(effort="low"), max_tokens=1024
+                ),
                 handoffs=[order_specialist],
             )
 
@@ -279,7 +299,8 @@ class TestOpenAIAgentsIntegration:
         - Final output contains policy content from the canned lookup_policy response
         - Nested agent/tool spans are exported to HoneyHive
         """
-        from agents import Agent, Runner, function_tool
+        from agents import Agent, ModelSettings, Runner, function_tool
+        from openai.types.shared import Reasoning
         from openinference.instrumentation.openai_agents import OpenAIAgentsInstrumentor
 
         from honeyhive import HoneyHiveTracer
@@ -302,7 +323,7 @@ class TestOpenAIAgentsIntegration:
 
             @function_tool
             def lookup_policy(topic: str) -> str:
-                """Look up support policy by topic."""
+                """Look up support policy. The topic must be 'refund' or 'cancellation'."""
                 policies = {
                     "refund": "Refunds within 30 days.",
                     "cancellation": "Cancel before shipment.",
@@ -312,7 +333,10 @@ class TestOpenAIAgentsIntegration:
             policy_agent = Agent(
                 name="policy_agent",
                 instructions="Use lookup_policy to answer policy questions.",
-                model="gpt-4o-mini",
+                model=LIVE_OPENAI_MODEL,
+                model_settings=ModelSettings(
+                    reasoning=Reasoning(effort="low"), max_tokens=1024
+                ),
                 tools=[lookup_policy],
             )
 
@@ -322,7 +346,10 @@ class TestOpenAIAgentsIntegration:
                     "Use the policy_expert tool to gather policy information "
                     "and provide a concise answer."
                 ),
-                model="gpt-4o-mini",
+                model=LIVE_OPENAI_MODEL,
+                model_settings=ModelSettings(
+                    reasoning=Reasoning(effort="low"), max_tokens=1024
+                ),
                 tools=[
                     policy_agent.as_tool(
                         tool_name="policy_expert",
@@ -358,7 +385,8 @@ class TestOpenAIAgentsIntegration:
         - Second Runner.run() call references name introduced in first turn
         - Multi-turn session spans are exported to HoneyHive
         """
-        from agents import Agent, Runner, SQLiteSession
+        from agents import Agent, ModelSettings, Runner, SQLiteSession
+        from openai.types.shared import Reasoning
         from openinference.instrumentation.openai_agents import OpenAIAgentsInstrumentor
 
         from honeyhive import HoneyHiveTracer
@@ -381,7 +409,10 @@ class TestOpenAIAgentsIntegration:
             agent = Agent(
                 name="session_agent",
                 instructions="You are a helpful assistant. Keep responses very brief.",
-                model="gpt-4o-mini",
+                model=LIVE_OPENAI_MODEL,
+                model_settings=ModelSettings(
+                    reasoning=Reasoning(effort="low"), max_tokens=1024
+                ),
             )
 
             session = SQLiteSession("test_session", db_path=":memory:")

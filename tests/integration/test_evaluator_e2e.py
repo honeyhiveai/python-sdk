@@ -1,4 +1,4 @@
-"""End-to-end integration test for server-side LLM evaluators (HHAI-4323).
+"""End-to-end integration test for server-side LLM evaluators.
 
 Validates the federated golden path: create LLM metric -> ingest trace ->
 async evaluation -> scores on event -> scores readable via DP event export
@@ -126,7 +126,7 @@ class TestEvaluatorLlmE2E:
         create_req = CreateMetricRequest(
             name=metric_name,
             type="LLM",
-            description="E2E LLM evaluator integration test (HHAI-4323)",
+            description="E2E LLM evaluator integration test",
             criteria=criteria,
             return_type="float",
             scale=5,

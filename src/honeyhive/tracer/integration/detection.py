@@ -699,8 +699,17 @@ def set_global_provider(
     This function properly handles OpenTelemetry's internal warnings when
     setting a tracer provider, using dynamic provider management techniques.
 
+    Passing a ``ProxyTracerProvider`` is treated as a request to *clear* the
+    global provider rather than to install that instance: OpenTelemetry's
+    proxy delegates ``get_tracer`` to the global provider, so storing one as
+    the global would recurse. After clearing, ``trace.get_tracer_provider()``
+    returns OpenTelemetry's own proxy (or, when ``OTEL_PYTHON_TRACER_PROVIDER``
+    is set, a fresh provider loaded from that entry point), not the instance
+    passed in.
+
     Args:
-        provider: The TracerProvider instance to set as global
+        provider: The TracerProvider instance to set as global. A
+                  ``ProxyTracerProvider`` clears the global instead (see above).
         force_override: If True, allows overriding existing real providers
                        (intended for test utilities and clean state management)
         tracer_instance: Optional tracer instance for logging context
@@ -742,12 +751,23 @@ def set_global_provider(
             reason = "real_provider_exists_no_force"
 
         if should_set:
-            _set_tracer_provider(provider, log=False)
+            if isinstance(provider, trace.ProxyTracerProvider):
+                # ProxyTracerProvider.get_tracer delegates to the global provider,
+                # so storing one *as* the global recurses infinitely on the next
+                # get_tracer call. OpenTelemetry represents "no provider" as
+                # _TRACER_PROVIDER = None and hands out its own proxy from
+                # get_tracer_provider(), so clear the global instead.
+                _clear_global_provider()
+                action = "cleared"
+            else:
+                _set_tracer_provider(provider, log=False)
+                action = "set"
             safe_log(
                 tracer_instance,
                 "debug",
-                "Global provider set successfully",
+                f"Global provider {action} successfully",
                 honeyhive_data={
+                    "action": action,
                     "provider_class": type(provider).__name__,
                     "replaced_provider": provider_type,
                     "reason": reason,
@@ -779,6 +799,14 @@ def set_global_provider(
             },
         )
         raise
+
+
+def _clear_global_provider() -> None:
+    """Return OpenTelemetry to its unset state so a new provider can be installed.
+
+    Callers are expected to have already reset the SET_ONCE flag.
+    """
+    trace._TRACER_PROVIDER = None
 
 
 def _reset_provider_flag_dynamically(tracer_instance: Any = None) -> None:

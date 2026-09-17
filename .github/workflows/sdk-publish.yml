@@ -1,9 +1,19 @@
 ---
 name: Publish to PyPI
 
-# Trigger only via manual dispatch
+# Trigger on pushes to main or via manual dispatch. Publishing is guarded by
+# the PyPI version check below, so pushes that don't bump __version__ no-op.
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
+
+concurrency:
+  # Serialize publishes so a push + dispatch (or two rapid pushes) can't both
+  # pass the PyPI existence check and race on `twine upload`.
+  group: publish-pypi-${{ github.ref }}
+  cancel-in-progress: false
     inputs:
       branch:
         description: 'Branch to publish from'
