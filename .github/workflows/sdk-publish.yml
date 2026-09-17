@@ -8,17 +8,17 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to publish from'
+        required: false
+        default: 'main'
 
 concurrency:
   # Serialize publishes so a push + dispatch (or two rapid pushes) can't both
   # pass the PyPI existence check and race on `twine upload`.
   group: publish-pypi-${{ github.ref }}
   cancel-in-progress: false
-    inputs:
-      branch:
-        description: 'Branch to publish from'
-        required: false
-        default: 'main'
 
 permissions:
   contents: write  # For creating GitHub releases
