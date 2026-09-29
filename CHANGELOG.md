@@ -1,5 +1,17 @@
 # Python SDK Changelog
 
+## [1.6.1] - 2026-09-29
+
+### Fixed
+
+- **Install: `import honeyhive` failed with `ModuleNotFoundError: No module named 'requests'`**
+  - On a fresh install of 1.6.0, `import honeyhive` could fail with this error. `pip install honeyhive` now installs everything the SDK needs to import.
+
+### Compatibility
+
+- **`requests>=2.32.0` and `urllib3>=1.26` are now required**
+  - If your environment pins `requests` or `urllib3` below these versions, raise the pin to install 1.6.1.
+
 ## [1.6.0] - 2026-09-17
 
 ### Added

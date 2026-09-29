@@ -629,6 +629,45 @@ class TestHoneyHiveSpanProcessorEventTypeDetection:
 
             assert result == "model"
 
+    @pytest.mark.parametrize(
+        ("op_name", "expected"),
+        [
+            ("chat", "model"),
+            ("text_completion", "model"),
+            ("generate_content", "model"),
+            ("embeddings", "model"),
+            ("invoke_agent", "chain"),
+            ("create_agent", "chain"),
+            ("invoke_workflow", "chain"),
+            ("execute_tool", "tool"),
+            ("retrieval", "tool"),
+            ("Invoke_Workflow", "chain"),
+        ],
+    )
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_detect_event_type_from_genai_operation_name(
+        self, mock_safe_log: Mock, op_name: str, expected: str
+    ) -> None:
+        """Test that gen_ai.operation.name decides over the default 'tool' value."""
+        processor = HoneyHiveSpanProcessor()
+        mock_span = Mock(spec=Span)
+        mock_span.name = "test_span"
+        mock_span.attributes = {
+            "honeyhive_event_type": "tool",
+            "gen_ai.operation.name": op_name,
+        }
+        mock_span.get_span_context.return_value = Mock(span_id="test-span-id")
+
+        with patch(
+            "honeyhive.tracer.processing.span_processor.detect_event_type_from_patterns"
+        ) as mock_detect:
+            mock_detect.return_value = "tool"
+
+            result = processor._detect_event_type(mock_span)
+
+        assert result == expected
+        mock_detect.assert_not_called()
+
     @patch("honeyhive.utils.logger.safe_log")
     def test_detect_event_type_default_fallback(self, mock_safe_log: Mock) -> None:
         """Test event type detection default fallback to 'tool'."""

@@ -599,6 +599,34 @@ class TestErrorHandler:  # pylint: disable=too-many-public-methods
         assert result.status_code == 403
 
     @patch("honeyhive.utils.error_handler.get_logger")
+    def test_handle_http_error_404_names_both_causes(
+        self, mock_get_logger: Mock
+    ) -> None:
+        """A 404 covers a missing resource and a key without access; the message says so."""
+        # Arrange
+        handler = ErrorHandler()
+        context = ErrorContext(operation="test_op")
+
+        mock_response = Mock()
+        mock_response.status_code = 404
+        mock_response.reason_phrase = "Not Found"
+        mock_response.headers = {"content-type": "application/json"}
+        mock_response.json.return_value = {"message": "Not found"}
+
+        exception = httpx.HTTPStatusError(
+            "404 Not Found", request=Mock(), response=mock_response
+        )
+
+        # Act
+        result = handler._handle_http_error(exception, context)
+
+        # Assert
+        assert result.error_type == "APIError"
+        assert result.error_code == "CLIENT_ERROR"
+        assert result.status_code == 404
+        assert "does not exist or the API key lacks access" in result.error_message
+
+    @patch("honeyhive.utils.error_handler.get_logger")
     def test_handle_http_error_400_client_error(self, mock_get_logger: Mock) -> None:
         """Test _handle_http_error with 400 Client Error."""
         # Arrange

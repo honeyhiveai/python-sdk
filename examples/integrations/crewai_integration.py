@@ -19,11 +19,6 @@ Environment:
     OPENAI_API_KEY
     HH_API_URL (optional, defaults to production; also read from env automatically)
     HH_SOURCE (optional, defaults to "python_sdk_example")
-
-Known gap:
-    Current OpenInference + CrewAI instrumentation surfaces custom tool usage
-    inside model/tool-call payloads, but does not yet emit separate standalone
-    tool events for these function tools in HoneyHive.
 """
 
 import os

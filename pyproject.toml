@@ -35,6 +35,10 @@ dependencies = [
     "typing-extensions>=4.5.0",
     "click>=8.0.0",
     "pyyaml>=6.0",
+    # Floor is the CVE-2024-35195 fix (Session reused verify=False per host).
+    "requests>=2.32.0",
+    # Imported directly by tracer/processing/otlp_session.py.
+    "urllib3>=1.26",
     "rich>=13.9.4",
 ]
 

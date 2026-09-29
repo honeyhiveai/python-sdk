@@ -248,9 +248,17 @@ class ErrorHandler:  # pylint: disable=too-few-public-methods
             except ValueError:
                 pass
 
+        error_message = f"HTTP {response.status_code}: {response.reason_phrase}"
+        if response.status_code == 404:
+            # The API answers 404 for a missing resource and for an API key that
+            # cannot access it alike, so the message has to say both.
+            error_message += (
+                " (the resource does not exist or the API key lacks access to it)"
+            )
+
         return ErrorResponse(
             error_type=error_type,
-            error_message=f"HTTP {response.status_code}: {response.reason_phrase}",
+            error_message=error_message,
             error_code=error_code,
             status_code=response.status_code,
             details=details,

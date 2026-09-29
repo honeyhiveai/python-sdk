@@ -26,13 +26,18 @@ from ..utils.event_type import detect_event_type_from_patterns, extract_raw_attr
 
 # No module-level logger - use tracer instance logger
 
+# Must agree with the gen_ai.operation.name mapping that HoneyHive applies at
+# ingestion, so a span gets the same event type in the SDK and on the server.
 _GENAI_OP_TO_EVENT_TYPE = {
     "chat": "model",
     "text_completion": "model",
     "generate_content": "model",
+    "embeddings": "model",
     "invoke_agent": "chain",
     "create_agent": "chain",
+    "invoke_workflow": "chain",
     "execute_tool": "tool",
+    "retrieval": "tool",
 }
 
 
