@@ -202,6 +202,32 @@ def real_ingestion_api_key() -> str:
 
 
 @pytest.fixture(scope="session")
+def real_data_plane_api_key() -> str:
+    """Fine-grained data plane API key for the test project, or skip.
+
+    Tests that exercise the data plane key request this fixture, so a live-API
+    environment that provisions no such key skips them instead of failing.
+    """
+    key = os.getenv("HH_DATA_PLANE_API_KEY")
+    if not key:
+        pytest.skip("HH_DATA_PLANE_API_KEY not set; data plane key tests need one")
+    return key
+
+
+@pytest.fixture(scope="session")
+def real_project_id() -> str:
+    """Id of the project both HH_API_KEY and HH_DATA_PLANE_API_KEY act on, or skip.
+
+    An operation that takes the data plane key names its project in the path,
+    so those tests need the id, where the tracer tests need only the name.
+    """
+    project_id = os.getenv("HH_PROJECT_ID")
+    if not project_id:
+        pytest.skip("HH_PROJECT_ID not set; data plane key tests need one")
+    return project_id
+
+
+@pytest.fixture(scope="session")
 def real_project() -> str:
     """Optional project name for integration tests that still pass project to the tracer."""
     return os.environ.get("HH_PROJECT", "test-project")

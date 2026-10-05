@@ -5,10 +5,10 @@ HoneyHive Python SDK - LLM Observability and Evaluation Platform
 # Version must be defined BEFORE imports to avoid circular import issues
 # Version must be semver or semver followed by "a" (alpha), "b" (beta), or "rc"
 # (release candidate) + a number
-__version__ = "1.6.1"
+__version__ = "1.7.0"
 
 # Main API client
-from .api import HoneyHive
+from .api import HoneyHive, MissingApiKeyError
 
 # Tracer (if available - may have additional dependencies)
 try:
@@ -49,6 +49,7 @@ except ImportError:
 __all__ = [
     # Core client
     "HoneyHive",
+    "MissingApiKeyError",
 ]
 
 # Add tracer exports if available

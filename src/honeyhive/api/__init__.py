@@ -7,6 +7,7 @@ Usage:
     configs = client.configurations.list()
 """
 
+from ._base import MissingApiKeyError
 from .client import (
     ConfigurationsAPI,
     DatapointsAPI,
@@ -25,6 +26,7 @@ SessionAPI = SessionsAPI
 
 __all__ = [
     "HoneyHive",
+    "MissingApiKeyError",
     # API classes
     "ConfigurationsAPI",
     "DatapointsAPI",

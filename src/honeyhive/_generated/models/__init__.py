@@ -19,11 +19,17 @@ from .CreateChartResponse import *
 from .CreateChartResponseData import *
 from .CreateConfigurationRequest import *
 from .CreateConfigurationResponse import *
+from .CreateDataPlaneApiKeyRequest import *
+from .CreateDataPlaneApiKeyResponse import *
+from .CreateDataPlaneApiKeyResponseData import *
 from .CreateDatapointRequest import *
 from .CreateDatapointResponse import *
 from .CreateDatapointResponseResult import *
 from .CreateDatasetRequest import *
 from .CreateDatasetResponse import *
+from .CreateIngestionApiKeyRequest import *
+from .CreateIngestionApiKeyResponse import *
+from .CreateIngestionApiKeyResponseData import *
 from .CreateMetricRequest import *
 from .CreateMetricRequestCategoriesItem import *
 from .CreateMetricRequestChildMetricsItem import *

@@ -2,7 +2,12 @@ from typing import *
 
 import httpx
 
-from ..api_config import APIConfig, HTTPException, _serialize_query_params
+from ..api_config import (
+    APIConfig,
+    HTTPException,
+    _raise_http_exception,
+    _serialize_query_params,
+)
 from ..models import *
 
 
@@ -34,10 +39,7 @@ async def getDatasets(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"getDatasets failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("getDatasets", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -70,10 +72,7 @@ async def createDataset(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"createDataset failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("createDataset", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -108,10 +107,7 @@ async def updateDatasetLegacy(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"updateDatasetLegacy failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("updateDatasetLegacy", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -145,10 +141,7 @@ async def deleteDatasetLegacy(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"deleteDatasetLegacy failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("deleteDatasetLegacy", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -186,10 +179,7 @@ async def updateDataset(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"updateDataset failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("updateDataset", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -223,10 +213,7 @@ async def deleteDataset(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"deleteDataset failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("deleteDataset", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -264,10 +251,7 @@ async def addDatapoints(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"addDatapoints failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("addDatapoints", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -304,10 +288,7 @@ async def removeDatapoint(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"removeDatapoint failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("removeDatapoint", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -346,10 +327,7 @@ async def removeDatapointLegacy(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"removeDatapointLegacy failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("removeDatapointLegacy", response)
     else:
         body = None if 200 == 204 else response.json()
 

@@ -2,7 +2,12 @@ from typing import *
 
 import httpx
 
-from ..api_config import APIConfig, HTTPException, _serialize_query_params
+from ..api_config import (
+    APIConfig,
+    HTTPException,
+    _raise_http_exception,
+    _serialize_query_params,
+)
 from ..models import *
 
 
@@ -37,10 +42,7 @@ def getDatapoints(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"getDatapoints failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("getDatapoints", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -75,10 +77,7 @@ def createDatapoint(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"createDatapoint failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("createDatapoint", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -117,10 +116,7 @@ def batchCreateDatapoints(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"batchCreateDatapoints failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("batchCreateDatapoints", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -156,10 +152,7 @@ def getDatapoint(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"getDatapoint failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("getDatapoint", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -195,10 +188,7 @@ def updateDatapoint(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"updateDatapoint failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("updateDatapoint", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -234,10 +224,7 @@ def deleteDatapoint(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"deleteDatapoint failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("deleteDatapoint", response)
     else:
         body = None if 200 == 204 else response.json()
 

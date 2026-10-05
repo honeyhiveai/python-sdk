@@ -2,7 +2,12 @@ from typing import *
 
 import httpx
 
-from ..api_config import APIConfig, HTTPException, _serialize_query_params
+from ..api_config import (
+    APIConfig,
+    HTTPException,
+    _raise_http_exception,
+    _serialize_query_params,
+)
 from ..models import *
 
 
@@ -32,10 +37,7 @@ async def startSessionLegacy(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"startSessionLegacy failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("startSessionLegacy", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -75,10 +77,7 @@ async def addSessionTracesLegacy(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"addSessionTracesLegacy failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("addSessionTracesLegacy", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -113,10 +112,7 @@ async def createSession(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"createSession failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("createSession", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -156,10 +152,7 @@ async def createSessionEventBatch(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"createSessionEventBatch failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("createSessionEventBatch", response)
     else:
         body = None if 200 == 204 else response.json()
 

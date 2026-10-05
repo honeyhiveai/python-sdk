@@ -12,6 +12,9 @@ there; this module covers only what the client adds on top.
 import os
 from unittest.mock import patch
 
+import pytest
+
+from honeyhive import MissingApiKeyError
 from honeyhive.api.client import HoneyHive
 
 INGESTION_KEY = "hh_ingst_" + "A" * 24 + "_" + "b" * 64
@@ -52,16 +55,32 @@ class TestCredentialRouting:
     def test_ingestion_key_alone_serves_ingestion_only(self) -> None:
         """An ingestion-only client carries the key on ingestion requests and nothing else.
 
-        Every other namespace is exactly a client with no key: the ingestion
-        key changes nothing about how they behave.
+        Every other operation is refused, naming the project key, exactly as on
+        a client with no key: the ingestion key never stands in for it.
         """
         with patch.dict(os.environ, {}, clear=True):
             client = HoneyHive(ingestion_api_key=INGESTION_KEY)
 
         assert client.sessions._ingestion_api_config.access_token == INGESTION_KEY
         assert client.events._ingestion_api_config.access_token == INGESTION_KEY
-        assert client.experiments._api_config.access_token == ""
+        with pytest.raises(MissingApiKeyError) as exc_info:
+            _ = client.experiments._api_config
+        assert exc_info.value.key_kind == "project"
         assert client.experiments._ingestion_api_key == ""
+
+    def test_neither_key_refuses_ingestion_naming_the_ingestion_key(self) -> None:
+        """With no key at all, an ingestion operation is refused before it is sent."""
+        with patch.dict(os.environ, {}, clear=True):
+            client = HoneyHive()
+
+        with pytest.raises(
+            MissingApiKeyError,
+            match=(
+                "Missing ingestion API key: provide ingestion_api_key or set the "
+                "HH_INGESTION_API_KEY environment variable"
+            ),
+        ):
+            _ = client.sessions._ingestion_api_config
 
     def test_mutations_of_api_config_reach_ingestion_requests(self) -> None:
         """A value set on api_config after construction applies to both credentials.

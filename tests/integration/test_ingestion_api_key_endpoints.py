@@ -17,7 +17,8 @@ from typing import Any, Callable, List
 import pytest
 
 from honeyhive.api.client import HoneyHive
-from tests.integration._ingestion_operations import OPERATIONS, data_plane_url
+from tests.integration._ingestion_operations import OPERATIONS
+from tests.integration._spec_operations import data_plane_url
 
 pytestmark = [pytest.mark.integration, pytest.mark.real_api, pytest.mark.slow]
 

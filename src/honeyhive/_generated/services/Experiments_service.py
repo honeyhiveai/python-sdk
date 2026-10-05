@@ -2,7 +2,12 @@ from typing import *
 
 import httpx
 
-from ..api_config import APIConfig, HTTPException, _serialize_query_params
+from ..api_config import (
+    APIConfig,
+    HTTPException,
+    _raise_http_exception,
+    _serialize_query_params,
+)
 from ..models import *
 
 
@@ -51,10 +56,7 @@ def getRuns(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"getRuns failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("getRuns", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -91,10 +93,7 @@ def createRun(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"createRun failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("createRun", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -132,10 +131,7 @@ def getRunsSchema(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"getRunsSchema failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("getRunsSchema", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -171,10 +167,7 @@ def getRun(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"getRun failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("getRun", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -214,10 +207,7 @@ def updateRun(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"updateRun failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("updateRun", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -253,10 +243,7 @@ def deleteRun(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"deleteRun failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("deleteRun", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -295,10 +282,7 @@ def getRunSchema(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"getRunSchema failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("getRunSchema", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -338,10 +322,7 @@ def getExperimentRunMetrics(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"getExperimentRunMetrics failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("getExperimentRunMetrics", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -384,10 +365,7 @@ def getExperimentSummary(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"getExperimentSummary failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("getExperimentSummary", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -430,10 +408,7 @@ def getExperimentResultLegacy(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"getExperimentResultLegacy failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("getExperimentResultLegacy", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -477,10 +452,7 @@ def getExperimentComparison(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"getExperimentComparison failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("getExperimentComparison", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -524,10 +496,7 @@ def getExperimentComparisonLegacy(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"getExperimentComparisonLegacy failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("getExperimentComparisonLegacy", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -577,10 +546,7 @@ def getExperimentCompareEvents(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"getExperimentCompareEvents failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("getExperimentCompareEvents", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -632,10 +598,7 @@ def getExperimentCompareEventsLegacy(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"getExperimentCompareEventsLegacy failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("getExperimentCompareEventsLegacy", response)
     else:
         body = None if 200 == 204 else response.json()
 

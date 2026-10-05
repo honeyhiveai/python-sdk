@@ -4,6 +4,7 @@ This module tests the following fixes:
 1. Event ordering in get_by_session_id (sorted by start_time)
 2. Deprecation of project parameter in export and get_by_session_id
 3. Enrich span with event_id calls PUT /events API
+4. events.update_event accepts a dict as well as the request model
 """
 
 import warnings
@@ -412,6 +413,32 @@ class TestConfigurationsDeprecationWarning:
                     or "events.export" in str(warning.message)
                     for warning in deprecation_warnings
                 )
+
+
+class TestUpdateEventAlias:
+    """events.update_event accepts the request model or the equivalent dict."""
+
+    def test_dict_is_sent_as_the_request_model(self) -> None:
+        """A dict is validated into the model that update() sends."""
+        events_api = EventsAPI(MagicMock())
+
+        with patch("honeyhive.api.client.events_svc.updateEventLegacy") as mock_update:
+            events_api.update_event({"event_id": "evt-1", "metadata": {"step": 2}})
+
+        sent = mock_update.call_args.kwargs["data"]
+        assert isinstance(sent, UpdateEventRequest)
+        assert sent.event_id == "evt-1"
+        assert sent.metadata == {"step": 2}
+
+    def test_model_is_passed_through(self) -> None:
+        """A request model reaches the generated function unchanged."""
+        events_api = EventsAPI(MagicMock())
+        request = UpdateEventRequest(event_id="evt-1")
+
+        with patch("honeyhive.api.client.events_svc.updateEventLegacy") as mock_update:
+            events_api.update_event(request)
+
+        assert mock_update.call_args.kwargs["data"] is request
 
 
 class TestExportRequestBody:

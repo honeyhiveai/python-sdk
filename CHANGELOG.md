@@ -1,5 +1,32 @@
 # Python SDK Changelog
 
+## [1.7.0] - 2026-10-05
+
+### Added
+
+- **Data plane API keys**
+  - `HoneyHive(...)` accepts `data_plane_api_key=`, also read from `HH_DATA_PLANE_API_KEY`, for fine-grained `hh_fgdp_` keys. It is exposed as `client.data_plane_api_key`. A value that is set but is not a complete `hh_fgdp_` key raises `ValueError` at construction.
+- **Project-scoped chart operations**
+  - Every `client.charts` method (`list`, `get`, `create`, `update`, `delete` and their `_async` variants) accepts an optional keyword-only `project_id`. With `project_id`, the call targets that project and is sent with the data plane API key. It never falls back to `api_key`.
+- **`MissingApiKeyError`**
+  - New exception, importable from `honeyhive`. It subclasses `ValueError` and has a `key_kind` attribute. An operation raises it before sending a request when no key it accepts is configured, and the message names the key and environment variable to set.
+
+### Changed
+
+- **Clearer API error messages**
+  - `HTTPException` raised by API calls now includes the server's error message, and a 404 adds a hint that the resource does not exist or the key lacks access to it. New `server_message` and `error_code` attributes expose the parsed error body. The exception type, `status_code`, and the message prefix are unchanged, so existing handlers keep working.
+- **Missing keys fail before the request is sent**
+  - An operation called with no usable API key now raises `MissingApiKeyError` locally, instead of sending an unauthenticated request and failing at the API.
+- **`events.update_event()` accepts a model**
+  - `update_event()` now accepts an `UpdateEventRequest` as well as a dict. A dict is validated into the model.
+
+### Deprecated
+
+- **Chart calls without `project_id`**
+  - Calling a `client.charts` method without `project_id` still uses the project API key, but now emits a `DeprecationWarning`. These calls stop working in v2.0. Pass `project_id` and configure a data plane API key.
+- **Unused error-handling helpers in `honeyhive.utils`**
+  - `ErrorHandler`, `get_error_handler`, `handle_api_errors`, `ErrorContext`, `ValidationError`, `HoneyHiveConnectionError`, `RateLimitError`, and `AuthenticationError` can still be imported from `honeyhive.utils` and `honeyhive.utils.error_handler`, but importing them now emits a `DeprecationWarning`.
+
 ## [1.6.1] - 2026-09-29
 
 ### Fixed

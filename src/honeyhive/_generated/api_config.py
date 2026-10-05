@@ -1,5 +1,6 @@
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, NoReturn, Optional, Union
 
+import httpx
 from pydantic import BaseModel, Field
 
 from honeyhive._clock import _get_or_stamp_call_time_ns
@@ -48,14 +49,61 @@ def _get_sdk_version() -> str:
         return "unknown"
 
 
+_NOT_FOUND_HINT = "the resource does not exist or the API key lacks access to it"
+
+
 class HTTPException(Exception):
-    def __init__(self, status_code: int, message: str):
+    def __init__(
+        self,
+        status_code: int,
+        message: str,
+        *,
+        server_message: Optional[str] = None,
+        error_code: Optional[str] = None,
+    ) -> None:
         self.status_code = status_code
         self.message = message
+        self.server_message = server_message
+        self.error_code = error_code
         super().__init__(f"{status_code} {message}")
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.status_code} {self.message}"
+
+
+def _parse_error_body(response: httpx.Response) -> tuple[Optional[str], Optional[str]]:
+    """Return the ``message`` and ``errorCode`` fields of an API error body.
+
+    Bodies that are not JSON objects (e.g. an HTML page from a proxy) yield
+    ``(None, None)``.
+    """
+    try:
+        body = response.json()
+    except ValueError:
+        return None, None
+    if not isinstance(body, dict):
+        return None, None
+    message = body.get("message")
+    error_code = body.get("errorCode")
+    return (
+        message if isinstance(message, str) and message else None,
+        error_code if isinstance(error_code, str) and error_code else None,
+    )
+
+
+def _raise_http_exception(operation_id: str, response: httpx.Response) -> NoReturn:
+    server_message, error_code = _parse_error_body(response)
+    message = f"{operation_id} failed with status code: {response.status_code}"
+    if server_message:
+        message += f": {server_message}"
+    if response.status_code == 404:
+        message += f" ({_NOT_FOUND_HINT})"
+    raise HTTPException(
+        response.status_code,
+        message,
+        server_message=server_message,
+        error_code=error_code,
+    )
 
 
 def _serialize_query_params(

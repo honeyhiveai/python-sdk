@@ -245,6 +245,7 @@ from honeyhive.models.models import (
     GetEventsResponse,
     GetEventsSchemaQuery,
     GetEventsSchemaResponse,
+    GetExperimentCompareEventsResponse,
     GetExperimentRunCompareEventsQuery,
     GetExperimentRunCompareParams,
     GetExperimentRunCompareQuery,
@@ -353,6 +354,7 @@ __all__ = [
     # Experiment models
     "DeleteExperimentRunParams",
     "DeleteExperimentRunResponse",
+    "GetExperimentCompareEventsResponse",
     "GetExperimentRunCompareEventsQuery",
     "GetExperimentRunCompareParams",
     "GetExperimentRunCompareQuery",

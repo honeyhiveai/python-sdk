@@ -2,7 +2,12 @@ from typing import *
 
 import httpx
 
-from ..api_config import APIConfig, HTTPException, _serialize_query_params
+from ..api_config import (
+    APIConfig,
+    HTTPException,
+    _raise_http_exception,
+    _serialize_query_params,
+)
 from ..models import *
 
 
@@ -31,10 +36,7 @@ async def getMetricVersions(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"getMetricVersions failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("getMetricVersions", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -74,10 +76,7 @@ async def createMetricVersion(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"createMetricVersion failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("createMetricVersion", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -116,10 +115,7 @@ async def deployMetricVersion(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"deployMetricVersion failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("deployMetricVersion", response)
     else:
         body = None if 200 == 204 else response.json()
 

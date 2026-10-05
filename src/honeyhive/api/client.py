@@ -19,14 +19,17 @@ Usage::
 import asyncio
 import logging
 import os
+import sys
 import warnings
 from typing import Any, Dict, List, Optional, TypeVar, Union
 
 import httpx
 
-try:
+# A version check rather than a try/except, so the type checker sees a typed
+# decorator on every Python version the SDK supports.
+if sys.version_info >= (3, 13):
     from warnings import deprecated
-except ImportError:
+else:
     from typing_extensions import deprecated
 
 from honeyhive._generated.api_config import APIConfig
@@ -95,6 +98,7 @@ from honeyhive.models import (
     GetEventsQuery,
     GetEventsResponse,
     GetEventsSchemaResponse,
+    GetExperimentCompareEventsResponse,
     GetExperimentRunResponse,
     GetExperimentRunsResponse,
     GetMetricVersionsResponse,
@@ -213,52 +217,198 @@ def _chunk_list(items: List[T], size: int) -> List[List[T]]:
     return [items[i : i + size] for i in range(0, len(items), size)]
 
 
+def _warn_call_without_project_id(namespace: str, method: str) -> None:
+    """Warn that a method taking ``project_id`` was called without it.
+
+    A ``DeprecationWarning`` is shown only when it is attributed to the
+    caller's code. ``stacklevel`` counts this helper, the calling method, and
+    the timestamp wrapper ``BaseAPI`` puts around every public method, so the
+    warning lands on the line that called the method. Calling this from
+    anywhere but the body of a public method of a ``BaseAPI`` subclass, such as
+    from a private helper that method calls, misattributes it.
+
+    The message names v2.0, as every other deprecation in this SDK does. That
+    is this package's next major version, and the other HoneyHive SDKs number
+    their versions separately, so their warnings say "the next major version".
+    """
+    warnings.warn(
+        f"Calling {namespace}.{method}() without project_id is deprecated and will "
+        "stop working in v2.0. Pass project_id, and configure a data plane API "
+        "key with data_plane_api_key or the HH_DATA_PLANE_API_KEY environment "
+        "variable.",
+        DeprecationWarning,
+        stacklevel=4,
+    )
+
+
 class ChartsAPI(BaseAPI):
-    """Charts API."""
+    """Charts API.
 
-    def list(self) -> GetChartsResponse:
-        """List charts in the current scope."""
-        return charts_svc.getCharts(self._api_config)
+    Every method takes an optional ``project_id``. With it, the request names
+    the project in its path and is sent with the data plane API key. Without
+    it, the request acts on the project API key's project, is sent with that
+    key, and issues a ``DeprecationWarning``.
+    """
 
-    def get(self, chart_id: str) -> GetChartResponse:
-        """Get a chart by ID."""
-        return charts_svc.getChart(self._api_config, chart_id=chart_id)
+    def list(self, *, project_id: Optional[str] = None) -> GetChartsResponse:
+        """List the charts in a project.
 
-    def create(self, request: CreateChartRequest) -> CreateChartResponse:
-        """Create a chart."""
-        return charts_svc.createChart(self._api_config, data=request)
+        Args:
+            project_id: The project whose charts are listed. Omitting it lists
+                the project API key's charts, which is deprecated.
+        """
+        if project_id is None:
+            _warn_call_without_project_id("charts", "list")
+            return charts_svc.getChartsLegacy(self._api_config)
+        return charts_svc.getCharts(self._data_plane_api_config, project_id=project_id)
 
-    def update(self, chart_id: str, request: UpdateChartRequest) -> UpdateChartResponse:
-        """Update a chart."""
-        return charts_svc.updateChart(self._api_config, chart_id=chart_id, data=request)
+    def get(
+        self, chart_id: str, *, project_id: Optional[str] = None
+    ) -> GetChartResponse:
+        """Get a chart by ID.
 
-    def delete(self, chart_id: str) -> DeleteChartResponse:
-        """Delete a chart."""
-        return charts_svc.deleteChart(self._api_config, chart_id=chart_id)
-
-    async def list_async(self) -> GetChartsResponse:
-        """List charts in the current scope asynchronously."""
-        return await charts_svc_async.getCharts(self._api_config)
-
-    async def get_async(self, chart_id: str) -> GetChartResponse:
-        """Get a chart by ID asynchronously."""
-        return await charts_svc_async.getChart(self._api_config, chart_id=chart_id)
-
-    async def create_async(self, request: CreateChartRequest) -> CreateChartResponse:
-        """Create a chart asynchronously."""
-        return await charts_svc_async.createChart(self._api_config, data=request)
-
-    async def update_async(
-        self, chart_id: str, request: UpdateChartRequest
-    ) -> UpdateChartResponse:
-        """Update a chart asynchronously."""
-        return await charts_svc_async.updateChart(
-            self._api_config, chart_id=chart_id, data=request
+        Args:
+            chart_id: The chart to get.
+            project_id: The project that owns the chart. Omitting it reads from
+                the project API key's project, which is deprecated.
+        """
+        if project_id is None:
+            _warn_call_without_project_id("charts", "get")
+            return charts_svc.getChartLegacy(self._api_config, chart_id=chart_id)
+        return charts_svc.getChart(
+            self._data_plane_api_config, project_id=project_id, chart_id=chart_id
         )
 
-    async def delete_async(self, chart_id: str) -> DeleteChartResponse:
-        """Delete a chart asynchronously."""
-        return await charts_svc_async.deleteChart(self._api_config, chart_id=chart_id)
+    def create(
+        self, request: CreateChartRequest, *, project_id: Optional[str] = None
+    ) -> CreateChartResponse:
+        """Create a chart.
+
+        Args:
+            request: The chart to create.
+            project_id: The project the chart is created in. Omitting it creates
+                it in the project API key's project, which is deprecated.
+        """
+        if project_id is None:
+            _warn_call_without_project_id("charts", "create")
+            return charts_svc.createChartLegacy(self._api_config, data=request)
+        return charts_svc.createChart(
+            self._data_plane_api_config, project_id=project_id, data=request
+        )
+
+    def update(
+        self,
+        chart_id: str,
+        request: UpdateChartRequest,
+        *,
+        project_id: Optional[str] = None,
+    ) -> UpdateChartResponse:
+        """Update a chart. Only the fields set in ``request`` are changed.
+
+        Args:
+            chart_id: The chart to update.
+            request: The fields to change.
+            project_id: The project that owns the chart. Omitting it updates it
+                in the project API key's project, which is deprecated.
+        """
+        if project_id is None:
+            _warn_call_without_project_id("charts", "update")
+            return charts_svc.updateChartLegacy(
+                self._api_config, chart_id=chart_id, data=request
+            )
+        return charts_svc.updateChart(
+            self._data_plane_api_config,
+            project_id=project_id,
+            chart_id=chart_id,
+            data=request,
+        )
+
+    def delete(
+        self, chart_id: str, *, project_id: Optional[str] = None
+    ) -> DeleteChartResponse:
+        """Delete a chart and remove it from the project's dashboards.
+
+        Args:
+            chart_id: The chart to delete.
+            project_id: The project that owns the chart. Omitting it deletes it
+                from the project API key's project, which is deprecated.
+        """
+        if project_id is None:
+            _warn_call_without_project_id("charts", "delete")
+            return charts_svc.deleteChartLegacy(self._api_config, chart_id=chart_id)
+        return charts_svc.deleteChart(
+            self._data_plane_api_config, project_id=project_id, chart_id=chart_id
+        )
+
+    async def list_async(
+        self, *, project_id: Optional[str] = None
+    ) -> GetChartsResponse:
+        """List the charts in a project asynchronously. See ``list()``."""
+        if project_id is None:
+            _warn_call_without_project_id("charts", "list_async")
+            return await charts_svc_async.getChartsLegacy(self._api_config)
+        return await charts_svc_async.getCharts(
+            self._data_plane_api_config, project_id=project_id
+        )
+
+    async def get_async(
+        self, chart_id: str, *, project_id: Optional[str] = None
+    ) -> GetChartResponse:
+        """Get a chart by ID asynchronously. See ``get()``."""
+        if project_id is None:
+            _warn_call_without_project_id("charts", "get_async")
+            return await charts_svc_async.getChartLegacy(
+                self._api_config, chart_id=chart_id
+            )
+        return await charts_svc_async.getChart(
+            self._data_plane_api_config, project_id=project_id, chart_id=chart_id
+        )
+
+    async def create_async(
+        self, request: CreateChartRequest, *, project_id: Optional[str] = None
+    ) -> CreateChartResponse:
+        """Create a chart asynchronously. See ``create()``."""
+        if project_id is None:
+            _warn_call_without_project_id("charts", "create_async")
+            return await charts_svc_async.createChartLegacy(
+                self._api_config, data=request
+            )
+        return await charts_svc_async.createChart(
+            self._data_plane_api_config, project_id=project_id, data=request
+        )
+
+    async def update_async(
+        self,
+        chart_id: str,
+        request: UpdateChartRequest,
+        *,
+        project_id: Optional[str] = None,
+    ) -> UpdateChartResponse:
+        """Update a chart asynchronously. See ``update()``."""
+        if project_id is None:
+            _warn_call_without_project_id("charts", "update_async")
+            return await charts_svc_async.updateChartLegacy(
+                self._api_config, chart_id=chart_id, data=request
+            )
+        return await charts_svc_async.updateChart(
+            self._data_plane_api_config,
+            project_id=project_id,
+            chart_id=chart_id,
+            data=request,
+        )
+
+    async def delete_async(
+        self, chart_id: str, *, project_id: Optional[str] = None
+    ) -> DeleteChartResponse:
+        """Delete a chart asynchronously. See ``delete()``."""
+        if project_id is None:
+            _warn_call_without_project_id("charts", "delete_async")
+            return await charts_svc_async.deleteChartLegacy(
+                self._api_config, chart_id=chart_id
+            )
+        return await charts_svc_async.deleteChart(
+            self._data_plane_api_config, project_id=project_id, chart_id=chart_id
+        )
 
 
 class ConfigurationsAPI(BaseAPI):
@@ -1305,8 +1455,14 @@ class EventsAPI(BaseAPI):
         """Create an event (backwards compatible alias for create())."""
         return self.create(request)
 
-    def update_event(self, data: Dict[str, Any]) -> None:
-        """Update an event (backwards compatible alias for update())."""
+    def update_event(self, data: Union[UpdateEventRequest, Dict[str, Any]]) -> None:
+        """Update an event (backwards compatible alias for update()).
+
+        Accepts the request model or the equivalent dict. A dict is validated
+        into the model, because ``update()`` sends a model.
+        """
+        if not isinstance(data, UpdateEventRequest):
+            data = UpdateEventRequest.model_validate(data)
         return self.update(data)
 
     def list_events(
@@ -1813,7 +1969,7 @@ class ExperimentsAPI(BaseAPI):
         filter: Optional[Any] = None,
         limit: Optional[int] = None,
         page: Optional[int] = None,
-    ) -> Dict[str, Any]:
+    ) -> GetExperimentCompareEventsResponse:
         """Compare events between two experiment runs.
 
         Args:
@@ -2023,7 +2179,7 @@ class SessionsAPI(BaseAPI):
             DeprecationWarning,
             stacklevel=3,
         )
-        return StartSessionRequest(session=data)
+        return StartSessionRequest.model_validate({"session": data})
 
     def start(
         self, data: Union[StartSessionRequest, Dict[str, Any]]
@@ -2099,6 +2255,7 @@ class HoneyHive:
         project: Optional[str] = None,
         *,
         ingestion_api_key: Optional[str] = None,
+        data_plane_api_key: Optional[str] = None,
         # Primary URL parameter
         base_url: Optional[str] = None,
         # Backwards compatible alias for base_url
@@ -2128,6 +2285,14 @@ class HoneyHive:
                      back to the HH_INGESTION_API_KEY environment variable, then
                      to api_key. A value that is set but is not an ingestion key
                      raises ValueError here, at construction.
+            data_plane_api_key: Fine-grained data plane API key (starts with
+                     ``hh_fgdp_``), the credential for the operations that name
+                     a project in their path. Falls back to the
+                     HH_DATA_PLANE_API_KEY environment variable. Without either,
+                     those operations raise MissingApiKeyError before sending,
+                     because they refuse api_key. A value that is set but is not
+                     a fine-grained data plane key raises ValueError here, at
+                     construction.
             project: Deprecated and ignored; will be removed in v2.0. The
                 backend infers project context from the API key and session.
             base_url: API base URL for HoneyHive.
@@ -2173,6 +2338,7 @@ class HoneyHive:
         self._initialize(
             api_key=api_key,
             ingestion_api_key=ingestion_api_key,
+            data_plane_api_key=data_plane_api_key,
             base_url=base_url,
             server_url=server_url,
             timeout=timeout,
@@ -2186,6 +2352,7 @@ class HoneyHive:
         *,
         api_key: Optional[str],
         ingestion_api_key: Optional[str],
+        data_plane_api_key: Optional[str],
         base_url: Optional[str],
         server_url: Optional[str],
         timeout: Optional[float],
@@ -2201,10 +2368,12 @@ class HoneyHive:
         connection = ResolvedConfig.resolve(
             api_key=api_key,
             ingestion_api_key=ingestion_api_key,
+            data_plane_api_key=data_plane_api_key,
             api_url=base_url or server_url,
         )
         self._api_key = connection.api_key or ""
         self._ingestion_api_key = connection.ingestion_api_key or ""
+        self._data_plane_api_key = connection.data_plane_api_key or ""
         resolved_base_url = connection.api_url
 
         # Exposed through the timeout, test_mode, verbose and retry_config properties.
@@ -2227,12 +2396,15 @@ class HoneyHive:
             api_config_kwargs["timeout"] = resolved_timeout
         self._api_config = APIConfig(**api_config_kwargs)
 
-        # Only the namespaces with ingestion wrappers take the ingestion key;
-        # they derive the configuration for those requests from `_api_config`
-        # and the key at call time (see BaseAPI._ingestion_api_config), so
-        # there is one configuration object for a caller to mutate. Every
-        # other namespace sends `_api_config` as it always has.
-        self.charts = ChartsAPI(self._api_config)
+        # Only the namespaces with wrappers for a typed key's operations take
+        # that key; they derive the configuration for those requests from
+        # `_api_config` and the key at call time (see
+        # BaseAPI._typed_api_config), so there is one configuration object for
+        # a caller to mutate. Every other namespace sends `_api_config` as it
+        # always has.
+        self.charts = ChartsAPI(
+            self._api_config, data_plane_api_key=self._data_plane_api_key
+        )
         self.configurations = ConfigurationsAPI(self._api_config)
         self.datapoints = DatapointsAPI(self._api_config)
         self.datasets = DatasetsAPI(self._api_config)
@@ -2283,6 +2455,11 @@ class HoneyHive:
     def ingestion_api_key(self) -> str:
         """The ingestion API key, or ``""`` when api_key is used for ingestion too."""
         return self._ingestion_api_key
+
+    @property
+    def data_plane_api_key(self) -> str:
+        """The fine-grained data plane API key, or ``""`` when none is configured."""
+        return self._data_plane_api_key
 
     @property
     def server_url(self) -> str:

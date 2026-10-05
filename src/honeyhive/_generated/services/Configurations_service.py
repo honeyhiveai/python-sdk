@@ -2,7 +2,12 @@ from typing import *
 
 import httpx
 
-from ..api_config import APIConfig, HTTPException, _serialize_query_params
+from ..api_config import (
+    APIConfig,
+    HTTPException,
+    _raise_http_exception,
+    _serialize_query_params,
+)
 from ..models import *
 
 
@@ -35,10 +40,7 @@ def getConfigurations(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"getConfigurations failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("getConfigurations", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -75,10 +77,7 @@ def createConfiguration(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"createConfiguration failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("createConfiguration", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -118,10 +117,7 @@ def updateConfiguration(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"updateConfiguration failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("updateConfiguration", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -157,10 +153,7 @@ def deleteConfiguration(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"deleteConfiguration failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("deleteConfiguration", response)
     else:
         body = None if 200 == 204 else response.json()
 

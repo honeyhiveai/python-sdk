@@ -2,7 +2,12 @@ from typing import *
 
 import httpx
 
-from ..api_config import APIConfig, HTTPException, _serialize_query_params
+from ..api_config import (
+    APIConfig,
+    HTTPException,
+    _raise_http_exception,
+    _serialize_query_params,
+)
 from ..models import *
 
 
@@ -34,10 +39,7 @@ async def getMetrics(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"getMetrics failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("getMetrics", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -70,10 +72,7 @@ async def createMetric(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"createMetric failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("createMetric", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -106,10 +105,7 @@ async def updateMetricLegacy(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"updateMetricLegacy failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("updateMetricLegacy", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -141,10 +137,7 @@ async def deleteMetricLegacy(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"deleteMetricLegacy failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("deleteMetricLegacy", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -180,10 +173,7 @@ async def updateMetric(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"updateMetric failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("updateMetric", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -215,10 +205,7 @@ async def deleteMetric(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"deleteMetric failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("deleteMetric", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -251,10 +238,7 @@ async def runMetric(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"runMetric failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("runMetric", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -287,10 +271,7 @@ async def runMetricLegacy(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"runMetricLegacy failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("runMetricLegacy", response)
     else:
         body = None if 200 == 204 else response.json()
 

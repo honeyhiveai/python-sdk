@@ -2,7 +2,12 @@ from typing import *
 
 import httpx
 
-from ..api_config import APIConfig, HTTPException, _serialize_query_params
+from ..api_config import (
+    APIConfig,
+    HTTPException,
+    _raise_http_exception,
+    _serialize_query_params,
+)
 from ..models import *
 
 
@@ -32,10 +37,7 @@ async def createEventLegacy(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"createEventLegacy failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("createEventLegacy", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -68,10 +70,7 @@ async def updateEventLegacy(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"updateEventLegacy failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("updateEventLegacy", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -104,10 +103,7 @@ async def createEvent(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"createEvent failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("createEvent", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -139,10 +135,7 @@ async def getEvent(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"getEvent failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("getEvent", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -178,10 +171,7 @@ async def updateEvent(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"updateEvent failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("updateEvent", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -214,10 +204,7 @@ async def exportEventsLegacy(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"exportEventsLegacy failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("exportEventsLegacy", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -250,10 +237,7 @@ async def searchEvents(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"searchEvents failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("searchEvents", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -286,10 +270,7 @@ async def createEventBatch(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"createEventBatch failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("createEventBatch", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -324,10 +305,7 @@ async def createModelEventLegacy(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"createModelEventLegacy failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("createModelEventLegacy", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -362,10 +340,7 @@ async def createEventBatchLegacy(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"createEventBatchLegacy failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("createEventBatchLegacy", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -400,10 +375,7 @@ async def createModelEventBatchLegacy(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"createModelEventBatchLegacy failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("createModelEventBatchLegacy", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -443,10 +415,7 @@ async def getEventsSchemaLegacy(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"getEventsSchemaLegacy failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("getEventsSchemaLegacy", response)
     else:
         body = None if 200 == 204 else response.json()
 

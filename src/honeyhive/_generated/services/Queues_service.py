@@ -2,7 +2,12 @@ from typing import *
 
 import httpx
 
-from ..api_config import APIConfig, HTTPException, _serialize_query_params
+from ..api_config import (
+    APIConfig,
+    HTTPException,
+    _raise_http_exception,
+    _serialize_query_params,
+)
 from ..models import *
 
 
@@ -31,10 +36,7 @@ def getQueues(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"getQueues failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("getQueues", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -73,10 +75,7 @@ def createQueue(
         )
 
     if response.status_code != 201:
-        raise HTTPException(
-            response.status_code,
-            f"createQueue failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("createQueue", response)
     else:
         body = None if 201 == 204 else response.json()
 
@@ -112,10 +111,7 @@ def getQueue(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"getQueue failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("getQueue", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -155,10 +151,7 @@ def updateQueue(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"updateQueue failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("updateQueue", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -194,10 +187,7 @@ def deleteQueue(
         )
 
     if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"deleteQueue failed with status code: {response.status_code}",
-        )
+        _raise_http_exception("deleteQueue", response)
     else:
         body = None if 200 == 204 else response.json()
 

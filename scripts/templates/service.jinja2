@@ -5,6 +5,7 @@
   - Added _serialize_query_params to the api_config import so service functions
     can use bracket-notation query param serialization (fixes Zod "expected array,
     received string" errors when List params are passed to GET endpoints).
+  - Added _raise_http_exception to the api_config import.
 #}
 from typing import *
 import {{ library_import }}
@@ -15,6 +16,6 @@ from uuid import UUID
 {% endif %}
 
 from ..models import *
-from ..api_config import APIConfig, HTTPException, _serialize_query_params
+from ..api_config import APIConfig, HTTPException, _raise_http_exception, _serialize_query_params
 
 {{ content | safe}}

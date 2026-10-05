@@ -19,9 +19,10 @@ of the release that added them names them. They are kept out of the README and
 the docs site, reading one emits a ``DeprecationWarning`` once per process, and
 removing one is a breaking change.
 
-The ingestion API key is typed: a present value that is not an ``hh_ingst_`` key
-raises here, at resolution, whether or not the run goes on to send anything with
-it. The project API key has no shape rule and is forwarded as given.
+The ingestion API key and the data plane API key are typed: a present value
+that is not an ``hh_ingst_`` or an ``hh_fgdp_`` key respectively raises here, at
+resolution, whether or not the run goes on to send anything with it. The project
+API key has no shape rule and is forwarded as given.
 
 This type holds HoneyHive's canonical connection settings and nothing else. A
 new field is a deliberate decision about a canonical setting, never a
@@ -48,19 +49,23 @@ DEFAULT_API_URL = "https://api.dp1.us.honeyhive.ai"
 
 INGESTION_API_KEY_PREFIX = "hh_ingst_"
 
+DATA_PLANE_API_KEY_PREFIX = "hh_fgdp_"
+
 # Every HoneyHive API key begins with this, so a value that does not is not a
 # HoneyHive key of any kind.
 _HONEYHIVE_KEY_PREFIX = "hh_"
 
-# An ingestion key is the prefix, a 24-character id, and a 64-character secret.
-# Both lengths are fixed properties of the key format, so a value of any other
-# shape is a truncated or corrupted key, never a newer variant.
-_INGESTION_API_KEY_PATTERN = re.compile(r"^hh_ingst_[A-Za-z0-9]{24}_[A-Za-z0-9_-]{64}$")
+# What follows the prefix of a typed key: a 24-character id and a 64-character
+# secret. Both lengths are fixed properties of the key format, shared by every
+# typed kind, so a value of any other shape is a truncated or corrupted key,
+# never a newer variant.
+_KEY_ID_AND_SECRET_PATTERN = re.compile(r"^[A-Za-z0-9]{24}_[A-Za-z0-9_-]{64}$")
 
 # Setting name -> (preferred variable, alternates in precedence order).
 _SETTINGS: Dict[str, Tuple[str, Tuple[str, ...]]] = {
     "api_key": ("HH_API_KEY", ("HONEYHIVE_API_KEY",)),
     "ingestion_api_key": ("HH_INGESTION_API_KEY", ()),
+    "data_plane_api_key": ("HH_DATA_PLANE_API_KEY", ()),
     "api_url": ("HH_API_URL", ("HONEYHIVE_SERVER_URL", "HH_SERVER_URL")),
 }
 
@@ -145,6 +150,43 @@ def normalize_api_url(value: str, source: str) -> str:
     return value.rstrip("/")
 
 
+def _check_typed_api_key(value: str, source: str, prefix: str, label: str) -> str:
+    """Return ``value`` if it is a well-formed key of the typed kind ``prefix`` names.
+
+    Args:
+        value: The candidate key, already known to be a non-blank string.
+        source: Where the value came from, named in the error.
+        prefix: The kind's prefix, for example ``"hh_ingst_"``.
+        label: The kind's name in the error, with its article, for example
+            ``"an ingestion API key"``.
+
+    Returns:
+        The key with surrounding whitespace removed.
+
+    Raises:
+        ValueError: ``value`` is not a key of that kind. The message says what
+            the value looks like instead and never echoes the value itself.
+    """
+    candidate = value.strip()
+    if candidate.startswith(prefix) and _KEY_ID_AND_SECRET_PATTERN.fullmatch(
+        candidate[len(prefix) :]
+    ):
+        return candidate
+
+    expectation = f"{source} must be {label}, a value beginning with {prefix!r}"
+    if candidate.startswith(prefix):
+        raise ValueError(
+            f"{expectation}; the value provided begins with it but is not a "
+            "complete key."
+        )
+    if candidate.startswith(_HONEYHIVE_KEY_PREFIX):
+        raise ValueError(
+            f"{expectation}; the value provided looks like a different kind of "
+            "HoneyHive API key."
+        )
+    raise ValueError(f"{expectation}; the value provided is not a HoneyHive API key.")
+
+
 def check_ingestion_api_key(value: str, source: str) -> str:
     """Return ``value`` if it is a well-formed ingestion API key.
 
@@ -160,25 +202,30 @@ def check_ingestion_api_key(value: str, source: str) -> str:
         ValueError: ``value`` is not an ingestion API key. The message says what
             the value looks like instead and never echoes the value itself.
     """
-    candidate = value.strip()
-    if _INGESTION_API_KEY_PATTERN.fullmatch(candidate):
-        return candidate
-
-    expectation = (
-        f"{source} must be an ingestion API key, a value beginning with "
-        f"{INGESTION_API_KEY_PREFIX!r}"
+    return _check_typed_api_key(
+        value, source, INGESTION_API_KEY_PREFIX, "an ingestion API key"
     )
-    if candidate.startswith(INGESTION_API_KEY_PREFIX):
-        raise ValueError(
-            f"{expectation}; the value provided begins with it but is not a "
-            "complete key."
-        )
-    if candidate.startswith(_HONEYHIVE_KEY_PREFIX):
-        raise ValueError(
-            f"{expectation}; the value provided looks like a different kind of "
-            "HoneyHive API key."
-        )
-    raise ValueError(f"{expectation}; the value provided is not a HoneyHive API key.")
+
+
+def check_data_plane_api_key(value: str, source: str) -> str:
+    """Return ``value`` if it is a well-formed fine-grained data plane API key.
+
+    Args:
+        value: The candidate key, already known to be a non-blank string.
+        source: Where the value came from, named in the error, for example
+            ``"HH_DATA_PLANE_API_KEY"`` or ``"data_plane_api_key"``.
+
+    Returns:
+        The key with surrounding whitespace removed.
+
+    Raises:
+        ValueError: ``value`` is not a fine-grained data plane API key. The
+            message says what the value looks like instead and never echoes the
+            value itself.
+    """
+    return _check_typed_api_key(
+        value, source, DATA_PLANE_API_KEY_PREFIX, "a fine-grained data plane API key"
+    )
 
 
 def environment_api_key() -> Optional[str]:
@@ -199,6 +246,19 @@ def environment_ingestion_api_key() -> Optional[str]:
     return check_ingestion_api_key(value, source)
 
 
+def environment_data_plane_api_key() -> Optional[str]:
+    """The data plane API key from the environment alone, checked; None when unset.
+
+    Raises:
+        ValueError: The variable is set to something other than a fine-grained
+            data plane API key.
+    """
+    value, source = _from_environment("data_plane_api_key")
+    if value is None:
+        return None
+    return check_data_plane_api_key(value, source)
+
+
 def environment_api_url() -> str:
     """The API URL from the environment alone, normalized; the default when unset."""
     value, source = _from_environment("api_url")
@@ -211,13 +271,15 @@ def environment_api_url() -> str:
 class ResolvedConfig:
     """The API keys and API URL after precedence has been applied.
 
-    ``api_key`` and ``ingestion_api_key`` are None when nothing supplied them;
-    whether that is an error is the consumer's decision, since a tracer can run
-    on an ingestion key alone while a Data Plane call cannot.
+    ``api_key``, ``ingestion_api_key``, and ``data_plane_api_key`` are None when
+    nothing supplied them; whether that is an error is the consumer's decision,
+    since a tracer can run on an ingestion key alone while a Data Plane call
+    cannot.
     """
 
     api_key: Optional[str]
     ingestion_api_key: Optional[str]
+    data_plane_api_key: Optional[str]
     api_url: str
 
     @classmethod
@@ -226,29 +288,31 @@ class ResolvedConfig:
         *,
         api_key: Optional[str] = None,
         ingestion_api_key: Optional[str] = None,
+        data_plane_api_key: Optional[str] = None,
         api_url: Optional[str] = None,
     ) -> "ResolvedConfig":
         """Merge an entry point's explicit arguments with the environment.
 
         For each setting: the explicit argument if it is set, else the preferred
         variable, else the alternates in order. None and blank strings count as
-        unset at every step. A present ingestion key is checked for shape,
+        unset at every step. A present typed key is checked for shape,
         whichever step supplied it.
 
         Raises:
             TypeError: An explicit argument is neither None nor a string.
-            ValueError: The ingestion key, explicit or from the environment, is
-                not an ingestion API key. The message names its source.
+            ValueError: A typed key, explicit or from the environment, is not a
+                key of its kind. The message names its source.
         """
         resolved_key = _present(api_key, "api_key")
         if resolved_key is None:
             resolved_key = environment_api_key()
 
-        # The shape check runs for every caller, including one that will never
-        # send this key (the CLI, a client used only for Data Plane reads): a
-        # typed credential that is present and malformed is a deployment error,
-        # and surfacing it from every entry point beats a user learning of it
-        # only when the tracer path runs somewhere else.
+        # The shape checks run for every caller, including one that will never
+        # send the key (the CLI, a client used only for Data Plane reads, a
+        # tracer whose environment carries a data plane key): a typed credential
+        # that is present and malformed is a deployment error, and surfacing it
+        # from every entry point beats a user learning of it only when the path
+        # that sends it runs somewhere else.
         explicit_ingestion_key = _present(ingestion_api_key, "ingestion_api_key")
         if explicit_ingestion_key is not None:
             resolved_ingestion_key: Optional[str] = check_ingestion_api_key(
@@ -256,6 +320,14 @@ class ResolvedConfig:
             )
         else:
             resolved_ingestion_key = environment_ingestion_api_key()
+
+        explicit_data_plane_key = _present(data_plane_api_key, "data_plane_api_key")
+        if explicit_data_plane_key is not None:
+            resolved_data_plane_key: Optional[str] = check_data_plane_api_key(
+                explicit_data_plane_key, "data_plane_api_key"
+            )
+        else:
+            resolved_data_plane_key = environment_data_plane_api_key()
 
         explicit_url = _present(api_url, "api_url")
         if explicit_url is not None:
@@ -266,6 +338,7 @@ class ResolvedConfig:
         return cls(
             api_key=resolved_key,
             ingestion_api_key=resolved_ingestion_key,
+            data_plane_api_key=resolved_data_plane_key,
             api_url=resolved_url,
         )
 

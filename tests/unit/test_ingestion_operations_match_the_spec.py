@@ -9,18 +9,18 @@ the spec is reached through a symlink that resolves only in a monorepo
 checkout; the integration image cannot see it.
 """
 
-from tests.integration._ingestion_operations import (
-    OPERATIONS,
+from tests.integration._ingestion_operations import INGESTION_SCHEME, OPERATIONS
+from tests.integration._spec_operations import (
     require_spec,
     shim_operations,
-    spec_ingestion_operations,
+    spec_operations_declaring,
 )
 
 
 def test_every_wrapped_ingestion_operation_has_a_live_entry() -> None:
     """OPERATIONS keys equal the spec's IngestionApiKey operations the shim wraps."""
     require_spec()
-    ingestion = spec_ingestion_operations()
+    ingestion = spec_operations_declaring(INGESTION_SCHEME)
     assert ingestion, "the spec declares no IngestionApiKey operations"
     wrapped = ingestion & shim_operations()
     assert wrapped, "the shim wraps no ingestion operation"

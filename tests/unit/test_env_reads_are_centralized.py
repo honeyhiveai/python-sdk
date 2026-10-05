@@ -30,11 +30,17 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 SHIPPED_PROSE = (REPO_ROOT / "examples", REPO_ROOT / "README.md")
 SCANNED_SUFFIXES = (".py", ".md")
 
-PREFERRED = ("HH_API_KEY", "HH_INGESTION_API_KEY", "HH_API_URL")
+PREFERRED = (
+    "HH_API_KEY",
+    "HH_INGESTION_API_KEY",
+    "HH_DATA_PLANE_API_KEY",
+    "HH_API_URL",
+)
 ALTERNATES = ("HONEYHIVE_API_KEY", "HONEYHIVE_SERVER_URL", "HH_SERVER_URL")
 ENVIRONMENT_HELPERS = (
     "environment_api_key",
     "environment_ingestion_api_key",
+    "environment_data_plane_api_key",
     "environment_api_url",
 )
 
@@ -52,7 +58,8 @@ _READ = re.compile(
 _RESOLVE = re.compile(r"(?P<name>ResolvedConfig\.resolve)\(")
 # A call, not the bare reference a ``default_factory=`` declaration makes.
 _HELPER_CALL = re.compile(
-    r"(?P<name>environment_api_key|environment_ingestion_api_key|environment_api_url)\("
+    r"(?P<name>environment_api_key|environment_ingestion_api_key"
+    r"|environment_data_plane_api_key|environment_api_url)\("
 )
 _ALTERNATE = re.compile(
     r"(?P<name>HONEYHIVE_API_KEY|HONEYHIVE_SERVER_URL|HH_SERVER_URL)"

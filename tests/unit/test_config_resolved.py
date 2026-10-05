@@ -21,6 +21,7 @@ from honeyhive.config.models.tracer import EvaluationConfig, SessionConfig, Trac
 from honeyhive.config.resolved import (
     DEFAULT_API_URL,
     ResolvedConfig,
+    check_data_plane_api_key,
     check_ingestion_api_key,
 )
 from honeyhive.config.utils import create_unified_config
@@ -29,6 +30,7 @@ ALL_VARIABLES = (
     "HH_API_KEY",
     "HONEYHIVE_API_KEY",
     "HH_INGESTION_API_KEY",
+    "HH_DATA_PLANE_API_KEY",
     "HH_API_URL",
     "HH_SERVER_URL",
     "HONEYHIVE_SERVER_URL",
@@ -36,6 +38,8 @@ ALL_VARIABLES = (
 
 INGESTION_KEY = "hh_ingst_" + "A" * 24 + "_" + "b" * 64
 OTHER_INGESTION_KEY = "hh_ingst_" + "B" * 24 + "_" + "c" * 64
+DATA_PLANE_KEY = "hh_fgdp_" + "D" * 24 + "_" + "e" * 64
+OTHER_DATA_PLANE_KEY = "hh_fgdp_" + "F" * 24 + "_" + "g" * 64
 PROJECT_KEY = "hh_" + "x" * 32
 SECTIONS = ("session", "evaluation", "http", "otlp", "api", "experiment")
 
@@ -418,6 +422,108 @@ class TestIngestionApiKeyPrecedence:
     def test_an_ingestion_key_in_api_key_is_forwarded_unchanged(self) -> None:
         """api_key has no shape rule; the server decides."""
         assert ResolvedConfig.resolve(api_key=INGESTION_KEY).api_key == INGESTION_KEY
+
+
+class TestDataPlaneApiKeyShape:
+    """The shape check for a fine-grained data plane key."""
+
+    def test_accepts_a_well_formed_key(self) -> None:
+        """A complete hh_fgdp_ key passes through unchanged."""
+        assert (
+            check_data_plane_api_key(DATA_PLANE_KEY, "HH_DATA_PLANE_API_KEY")
+            == DATA_PLANE_KEY
+        )
+
+    def test_strips_surrounding_whitespace(self) -> None:
+        """Whitespace around a key is removed, as for the ingestion key."""
+        assert check_data_plane_api_key(f"  {DATA_PLANE_KEY}\n", "x") == DATA_PLANE_KEY
+
+    def test_rejects_an_ingestion_key_and_names_the_source(self) -> None:
+        """Another typed kind is refused by name, without echoing it."""
+        with pytest.raises(
+            ValueError,
+            match="HH_DATA_PLANE_API_KEY must be a fine-grained data plane API key",
+        ) as exc_info:
+            check_data_plane_api_key(INGESTION_KEY, "HH_DATA_PLANE_API_KEY")
+        assert "different kind of HoneyHive API key" in str(exc_info.value)
+        assert INGESTION_KEY not in str(exc_info.value)
+
+    def test_rejects_a_value_that_is_not_a_honeyhive_key(self) -> None:
+        """A value from another vendor is refused without echoing it."""
+        with pytest.raises(ValueError, match="not a HoneyHive API key") as exc_info:
+            check_data_plane_api_key("sk-not-ours", "data_plane_api_key")
+        assert "sk-not-ours" not in str(exc_info.value)
+
+    def test_rejects_a_truncated_key(self) -> None:
+        """The prefix alone is not enough; the id and secret lengths are fixed."""
+        with pytest.raises(ValueError, match="not a complete key"):
+            check_data_plane_api_key(DATA_PLANE_KEY[:-1], "data_plane_api_key")
+
+
+class TestDataPlaneApiKeyPrecedence:
+    """Explicit argument, then HH_DATA_PLANE_API_KEY, then None; no alternate."""
+
+    def test_explicit_beats_the_variable(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """An explicit key wins over the variable."""
+        monkeypatch.setenv("HH_DATA_PLANE_API_KEY", DATA_PLANE_KEY)
+        config = ResolvedConfig.resolve(data_plane_api_key=OTHER_DATA_PLANE_KEY)
+        assert config.data_plane_api_key == OTHER_DATA_PLANE_KEY
+
+    def test_variable_is_read(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """HH_DATA_PLANE_API_KEY is the one variable."""
+        monkeypatch.setenv("HH_DATA_PLANE_API_KEY", DATA_PLANE_KEY)
+        assert ResolvedConfig.resolve().data_plane_api_key == DATA_PLANE_KEY
+
+    def test_nothing_set_is_none(self) -> None:
+        """Absence is reported, not judged."""
+        assert ResolvedConfig.resolve().data_plane_api_key is None
+
+    @pytest.mark.parametrize("blank", ["", "   "])
+    def test_blank_counts_as_unset(
+        self, blank: str, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A blank value, explicit or in the variable, counts as unset."""
+        monkeypatch.setenv("HH_DATA_PLANE_API_KEY", blank)
+        assert ResolvedConfig.resolve().data_plane_api_key is None
+        assert (
+            ResolvedConfig.resolve(data_plane_api_key=blank).data_plane_api_key is None
+        )
+
+    def test_wrong_kind_in_the_variable_raises_naming_it(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A project key in the variable fails at resolution and names the variable."""
+        monkeypatch.setenv("HH_DATA_PLANE_API_KEY", PROJECT_KEY)
+        with pytest.raises(
+            ValueError,
+            match="HH_DATA_PLANE_API_KEY must be a fine-grained data plane API key",
+        ) as exc_info:
+            ResolvedConfig.resolve()
+        assert PROJECT_KEY not in str(exc_info.value)
+
+    def test_wrong_kind_in_the_argument_raises_naming_it(self) -> None:
+        """A project key passed explicitly fails and names the parameter."""
+        with pytest.raises(
+            ValueError,
+            match="data_plane_api_key must be a fine-grained data plane API key",
+        ):
+            ResolvedConfig.resolve(data_plane_api_key=PROJECT_KEY)
+
+    def test_non_string_argument_raises(self) -> None:
+        """A non-string is malformed with no default, so it raises."""
+        with pytest.raises(TypeError, match="data_plane_api_key must be a string"):
+            ResolvedConfig.resolve(**{"data_plane_api_key": 123})
+
+    def test_the_other_keys_are_unaffected(self) -> None:
+        """Each typed key resolves on its own; neither fills the other's field."""
+        config = ResolvedConfig.resolve(
+            api_key=PROJECT_KEY,
+            ingestion_api_key=INGESTION_KEY,
+            data_plane_api_key=DATA_PLANE_KEY,
+        )
+        assert config.api_key == PROJECT_KEY
+        assert config.ingestion_api_key == INGESTION_KEY
+        assert config.data_plane_api_key == DATA_PLANE_KEY
 
 
 class TestIngestionApiKeyOnModels:
