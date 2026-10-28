@@ -11,7 +11,7 @@ from ..api_config import (
 from ..models import *
 
 
-async def getRuns(
+async def getRunsLegacy(
     api_config_override: Optional[APIConfig] = None,
     *,
     dataset_id: Optional[str] = None,
@@ -56,7 +56,7 @@ async def getRuns(
         )
 
     if response.status_code != 200:
-        _raise_http_exception("getRuns", response)
+        _raise_http_exception("getRunsLegacy", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -67,7 +67,7 @@ async def getRuns(
     )
 
 
-async def createRun(
+async def createRunLegacy(
     api_config_override: Optional[APIConfig] = None, *, data: PostExperimentRunRequest
 ) -> PostExperimentRunResponse:
     api_config = api_config_override if api_config_override else APIConfig()
@@ -93,7 +93,7 @@ async def createRun(
         )
 
     if response.status_code != 200:
-        _raise_http_exception("createRun", response)
+        _raise_http_exception("createRunLegacy", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -104,7 +104,7 @@ async def createRun(
     )
 
 
-async def getRunsSchema(
+async def getRunsSchemaLegacy(
     api_config_override: Optional[APIConfig] = None,
     *,
     dateRange: Optional[Union[str, GetRunsSchemaDateRangeOneOf1]] = None,
@@ -131,7 +131,7 @@ async def getRunsSchema(
         )
 
     if response.status_code != 200:
-        _raise_http_exception("getRunsSchema", response)
+        _raise_http_exception("getRunsSchemaLegacy", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -142,7 +142,7 @@ async def getRunsSchema(
     )
 
 
-async def getRun(
+async def getRunLegacy(
     api_config_override: Optional[APIConfig] = None, *, run_id: str
 ) -> GetExperimentRunResponse:
     api_config = api_config_override if api_config_override else APIConfig()
@@ -167,7 +167,7 @@ async def getRun(
         )
 
     if response.status_code != 200:
-        _raise_http_exception("getRun", response)
+        _raise_http_exception("getRunLegacy", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -178,7 +178,7 @@ async def getRun(
     )
 
 
-async def updateRun(
+async def updateRunLegacy(
     api_config_override: Optional[APIConfig] = None,
     *,
     run_id: str,
@@ -207,7 +207,7 @@ async def updateRun(
         )
 
     if response.status_code != 200:
-        _raise_http_exception("updateRun", response)
+        _raise_http_exception("updateRunLegacy", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -218,7 +218,7 @@ async def updateRun(
     )
 
 
-async def deleteRun(
+async def deleteRunLegacy(
     api_config_override: Optional[APIConfig] = None, *, run_id: str
 ) -> DeleteExperimentRunResponse:
     api_config = api_config_override if api_config_override else APIConfig()
@@ -243,7 +243,7 @@ async def deleteRun(
         )
 
     if response.status_code != 200:
-        _raise_http_exception("deleteRun", response)
+        _raise_http_exception("deleteRunLegacy", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -254,7 +254,7 @@ async def deleteRun(
     )
 
 
-async def getRunSchema(
+async def getRunSchemaLegacy(
     api_config_override: Optional[APIConfig] = None,
     *,
     run_id: str,
@@ -282,7 +282,7 @@ async def getRunSchema(
         )
 
     if response.status_code != 200:
-        _raise_http_exception("getRunSchema", response)
+        _raise_http_exception("getRunSchemaLegacy", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -293,7 +293,7 @@ async def getRunSchema(
     )
 
 
-async def getExperimentRunMetrics(
+async def getExperimentRunMetricsLegacy(
     api_config_override: Optional[APIConfig] = None,
     *,
     run_id: str,
@@ -322,7 +322,7 @@ async def getExperimentRunMetrics(
         )
 
     if response.status_code != 200:
-        _raise_http_exception("getExperimentRunMetrics", response)
+        _raise_http_exception("getExperimentRunMetricsLegacy", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -333,7 +333,7 @@ async def getExperimentRunMetrics(
     )
 
 
-async def getExperimentSummary(
+async def getExperimentSummaryLegacy(
     api_config_override: Optional[APIConfig] = None,
     *,
     run_id: str,
@@ -365,7 +365,7 @@ async def getExperimentSummary(
         )
 
     if response.status_code != 200:
-        _raise_http_exception("getExperimentSummary", response)
+        _raise_http_exception("getExperimentSummaryLegacy", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -419,7 +419,7 @@ async def getExperimentResultLegacy(
     )
 
 
-async def getExperimentComparison(
+async def getExperimentComparisonLegacy(
     api_config_override: Optional[APIConfig] = None,
     *,
     new_run_id: str,
@@ -452,6 +452,51 @@ async def getExperimentComparison(
         )
 
     if response.status_code != 200:
+        _raise_http_exception("getExperimentComparisonLegacy", response)
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return (
+        GetExperimentRunCompareResponse(**body)
+        if body is not None
+        else GetExperimentRunCompareResponse()
+    )
+
+
+async def getExperimentComparison(
+    api_config_override: Optional[APIConfig] = None,
+    *,
+    project_id: str,
+    new_run_id: str,
+    old_run_id: str,
+    aggregate_function: Optional[str] = None,
+    filters: Optional[Union[str, List[Dict[str, Any]]]] = None,
+) -> GetExperimentRunCompareResponse:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/v1/projects/{project_id}/runs/{new_run_id}/compare/{old_run_id}"
+    headers = api_config.get_default_headers()
+    query_params: Dict[str, Any] = {
+        "aggregate_function": aggregate_function,
+        "filters": filters,
+    }
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    async with httpx.AsyncClient(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
+        response = await client.request(
+            "get",
+            httpx.URL(path),
+            headers=headers,
+            params=_serialize_query_params(query_params),
+        )
+
+    if response.status_code != 200:
         _raise_http_exception("getExperimentComparison", response)
     else:
         body = None if 200 == 204 else response.json()
@@ -463,7 +508,7 @@ async def getExperimentComparison(
     )
 
 
-async def getExperimentComparisonLegacy(
+async def getExperimentComparisonCompareWithLegacy(
     api_config_override: Optional[APIConfig] = None,
     *,
     new_run_id: str,
@@ -496,7 +541,7 @@ async def getExperimentComparisonLegacy(
         )
 
     if response.status_code != 200:
-        _raise_http_exception("getExperimentComparisonLegacy", response)
+        _raise_http_exception("getExperimentComparisonCompareWithLegacy", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -507,7 +552,7 @@ async def getExperimentComparisonLegacy(
     )
 
 
-async def getExperimentCompareEvents(
+async def getExperimentCompareEventsLegacy(
     api_config_override: Optional[APIConfig] = None,
     *,
     new_run_id: str,
@@ -546,7 +591,7 @@ async def getExperimentCompareEvents(
         )
 
     if response.status_code != 200:
-        _raise_http_exception("getExperimentCompareEvents", response)
+        _raise_http_exception("getExperimentCompareEventsLegacy", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -557,7 +602,7 @@ async def getExperimentCompareEvents(
     )
 
 
-async def getExperimentCompareEventsLegacy(
+async def getExperimentCompareEventsQueryIdLegacy(
     api_config_override: Optional[APIConfig] = None,
     *,
     run_id_1: str,
@@ -598,7 +643,432 @@ async def getExperimentCompareEventsLegacy(
         )
 
     if response.status_code != 200:
-        _raise_http_exception("getExperimentCompareEventsLegacy", response)
+        _raise_http_exception("getExperimentCompareEventsQueryIdLegacy", response)
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return (
+        GetExperimentCompareEventsResponse(**body)
+        if body is not None
+        else GetExperimentCompareEventsResponse()
+    )
+
+
+async def getRuns(
+    api_config_override: Optional[APIConfig] = None,
+    *,
+    project_id: str,
+    dataset_id: Optional[str] = None,
+    page: Optional[int] = None,
+    limit: Optional[int] = None,
+    run_ids: Optional[List[str]] = None,
+    name: Optional[str] = None,
+    status: Optional[str] = None,
+    dateRange: Optional[Union[str, GetRunsDateRangeOneOf1]] = None,
+    sort_by: Optional[str] = None,
+    sort_order: Optional[str] = None,
+) -> GetExperimentRunsResponse:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/v1/projects/{project_id}/runs"
+    headers = api_config.get_default_headers()
+    query_params: Dict[str, Any] = {
+        "dataset_id": dataset_id,
+        "page": page,
+        "limit": limit,
+        "run_ids": run_ids,
+        "name": name,
+        "status": status,
+        "dateRange": dateRange,
+        "sort_by": sort_by,
+        "sort_order": sort_order,
+    }
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    async with httpx.AsyncClient(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
+        response = await client.request(
+            "get",
+            httpx.URL(path),
+            headers=headers,
+            params=_serialize_query_params(query_params),
+        )
+
+    if response.status_code != 200:
+        _raise_http_exception("getRuns", response)
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return (
+        GetExperimentRunsResponse(**body)
+        if body is not None
+        else GetExperimentRunsResponse()
+    )
+
+
+async def createRun(
+    api_config_override: Optional[APIConfig] = None,
+    *,
+    project_id: str,
+    data: PostExperimentRunRequest,
+) -> PostExperimentRunResponse:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/v1/projects/{project_id}/runs"
+    headers = api_config.get_default_headers()
+    query_params: Dict[str, Any] = {}
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    async with httpx.AsyncClient(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
+        response = await client.request(
+            "post",
+            httpx.URL(path),
+            headers=headers,
+            params=_serialize_query_params(query_params),
+            json=data.model_dump(exclude_none=True),
+        )
+
+    if response.status_code != 200:
+        _raise_http_exception("createRun", response)
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return (
+        PostExperimentRunResponse(**body)
+        if body is not None
+        else PostExperimentRunResponse()
+    )
+
+
+async def getRunsSchema(
+    api_config_override: Optional[APIConfig] = None,
+    *,
+    project_id: str,
+    dateRange: Optional[Union[str, GetRunsSchemaDateRangeOneOf1]] = None,
+) -> GetEventsSchemaResponse:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/v1/projects/{project_id}/runs/schema"
+    headers = api_config.get_default_headers()
+    query_params: Dict[str, Any] = {"dateRange": dateRange}
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    async with httpx.AsyncClient(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
+        response = await client.request(
+            "get",
+            httpx.URL(path),
+            headers=headers,
+            params=_serialize_query_params(query_params),
+        )
+
+    if response.status_code != 200:
+        _raise_http_exception("getRunsSchema", response)
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return (
+        GetEventsSchemaResponse(**body)
+        if body is not None
+        else GetEventsSchemaResponse()
+    )
+
+
+async def getRun(
+    api_config_override: Optional[APIConfig] = None, *, project_id: str, run_id: str
+) -> GetExperimentRunResponse:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/v1/projects/{project_id}/runs/{run_id}"
+    headers = api_config.get_default_headers()
+    query_params: Dict[str, Any] = {}
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    async with httpx.AsyncClient(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
+        response = await client.request(
+            "get",
+            httpx.URL(path),
+            headers=headers,
+            params=_serialize_query_params(query_params),
+        )
+
+    if response.status_code != 200:
+        _raise_http_exception("getRun", response)
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return (
+        GetExperimentRunResponse(**body)
+        if body is not None
+        else GetExperimentRunResponse()
+    )
+
+
+async def deleteRun(
+    api_config_override: Optional[APIConfig] = None, *, project_id: str, run_id: str
+) -> DeleteExperimentRunResponse:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/v1/projects/{project_id}/runs/{run_id}"
+    headers = api_config.get_default_headers()
+    query_params: Dict[str, Any] = {}
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    async with httpx.AsyncClient(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
+        response = await client.request(
+            "delete",
+            httpx.URL(path),
+            headers=headers,
+            params=_serialize_query_params(query_params),
+        )
+
+    if response.status_code != 200:
+        _raise_http_exception("deleteRun", response)
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return (
+        DeleteExperimentRunResponse(**body)
+        if body is not None
+        else DeleteExperimentRunResponse()
+    )
+
+
+async def updateRun(
+    api_config_override: Optional[APIConfig] = None,
+    *,
+    project_id: str,
+    run_id: str,
+    data: PutExperimentRunRequest,
+) -> PutExperimentRunResponse:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/v1/projects/{project_id}/runs/{run_id}"
+    headers = api_config.get_default_headers()
+    query_params: Dict[str, Any] = {}
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    async with httpx.AsyncClient(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
+        response = await client.request(
+            "patch",
+            httpx.URL(path),
+            headers=headers,
+            params=_serialize_query_params(query_params),
+            json=data.model_dump(exclude_none=True),
+        )
+
+    if response.status_code != 200:
+        _raise_http_exception("updateRun", response)
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return (
+        PutExperimentRunResponse(**body)
+        if body is not None
+        else PutExperimentRunResponse()
+    )
+
+
+async def getRunSchema(
+    api_config_override: Optional[APIConfig] = None,
+    *,
+    project_id: str,
+    run_id: str,
+    dateRange: Optional[Union[str, GetRunSchemaDateRangeOneOf1]] = None,
+) -> GetEventsSchemaResponse:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/v1/projects/{project_id}/runs/{run_id}/schema"
+    headers = api_config.get_default_headers()
+    query_params: Dict[str, Any] = {"dateRange": dateRange}
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    async with httpx.AsyncClient(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
+        response = await client.request(
+            "get",
+            httpx.URL(path),
+            headers=headers,
+            params=_serialize_query_params(query_params),
+        )
+
+    if response.status_code != 200:
+        _raise_http_exception("getRunSchema", response)
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return (
+        GetEventsSchemaResponse(**body)
+        if body is not None
+        else GetEventsSchemaResponse()
+    )
+
+
+async def getExperimentSummary(
+    api_config_override: Optional[APIConfig] = None,
+    *,
+    project_id: str,
+    run_id: str,
+    aggregate_function: Optional[str] = None,
+    filters: Optional[Union[str, List[Dict[str, Any]]]] = None,
+) -> GetExperimentRunResultResponse:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/v1/projects/{project_id}/runs/{run_id}/summary"
+    headers = api_config.get_default_headers()
+    query_params: Dict[str, Any] = {
+        "aggregate_function": aggregate_function,
+        "filters": filters,
+    }
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    async with httpx.AsyncClient(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
+        response = await client.request(
+            "get",
+            httpx.URL(path),
+            headers=headers,
+            params=_serialize_query_params(query_params),
+        )
+
+    if response.status_code != 200:
+        _raise_http_exception("getExperimentSummary", response)
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return (
+        GetExperimentRunResultResponse(**body)
+        if body is not None
+        else GetExperimentRunResultResponse()
+    )
+
+
+async def getExperimentRunMetrics(
+    api_config_override: Optional[APIConfig] = None,
+    *,
+    project_id: str,
+    run_id: str,
+    dateRange: Optional[str] = None,
+    filters: Optional[Union[str, List[Dict[str, Any]]]] = None,
+) -> GetExperimentRunMetricsResponse:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/v1/projects/{project_id}/runs/{run_id}/metrics"
+    headers = api_config.get_default_headers()
+    query_params: Dict[str, Any] = {"dateRange": dateRange, "filters": filters}
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    async with httpx.AsyncClient(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
+        response = await client.request(
+            "get",
+            httpx.URL(path),
+            headers=headers,
+            params=_serialize_query_params(query_params),
+        )
+
+    if response.status_code != 200:
+        _raise_http_exception("getExperimentRunMetrics", response)
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return (
+        GetExperimentRunMetricsResponse(**body)
+        if body is not None
+        else GetExperimentRunMetricsResponse()
+    )
+
+
+async def getExperimentCompareEvents(
+    api_config_override: Optional[APIConfig] = None,
+    *,
+    project_id: str,
+    new_run_id: str,
+    old_run_id: str,
+    event_name: Optional[str] = None,
+    event_type: Optional[str] = None,
+    filter: Optional[Union[str, Dict[str, Any]]] = None,
+    limit: Optional[int] = None,
+    page: Optional[int] = None,
+) -> GetExperimentCompareEventsResponse:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/v1/projects/{project_id}/runs/{new_run_id}/compare/{old_run_id}/events"
+    headers = api_config.get_default_headers()
+    query_params: Dict[str, Any] = {
+        "event_name": event_name,
+        "event_type": event_type,
+        "filter": filter,
+        "limit": limit,
+        "page": page,
+    }
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    async with httpx.AsyncClient(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
+        response = await client.request(
+            "get",
+            httpx.URL(path),
+            headers=headers,
+            params=_serialize_query_params(query_params),
+        )
+
+    if response.status_code != 200:
+        _raise_http_exception("getExperimentCompareEvents", response)
     else:
         body = None if 200 == 204 else response.json()
 

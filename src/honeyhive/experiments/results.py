@@ -46,6 +46,9 @@ def get_run_result(
     ❌ DO NOT compute these client-side!
     ✅ Use backend endpoint for all aggregations
 
+    Accepted keys:
+        Project API key
+
     Args:
         client: HoneyHive API client
         run_id: Experiment run ID
@@ -78,7 +81,7 @@ def get_run_result(
 
     # Use experiments API for run results
     # Note: project_id is no longer passed - backend uses auth scopes
-    response = client.experiments.get_result(
+    response = client.experiments._get_result(
         run_id=run_id, aggregate_function=aggregate_function
     )
 
@@ -113,6 +116,9 @@ def get_run_metrics(
     - Custom aggregation logic (if needed)
     - Detailed metric analysis
 
+    Accepted keys:
+        Project API key
+
     Args:
         client: HoneyHive API client
         run_id: Experiment run ID
@@ -138,7 +144,7 @@ def get_run_metrics(
     # Note: project_id is no longer passed - backend uses auth scopes
     return cast(
         Dict[str, Any],
-        client.experiments.get_result(run_id=run_id),
+        client.experiments._get_result(run_id=run_id),
     )
 
 
@@ -162,6 +168,9 @@ def compare_runs(
 
     ❌ DO NOT compute these client-side!
     ✅ Use backend endpoint for all comparisons
+
+    Accepted keys:
+        Project API key
 
     Args:
         client: HoneyHive API client
@@ -203,7 +212,7 @@ def compare_runs(
 
     # Use experiments API comparison endpoint
     # Note: project_id is no longer passed - backend uses auth scopes
-    response = client.experiments.compare_runs(
+    response = client.experiments._compare_runs(
         new_run_id=new_run_id,
         old_run_id=old_run_id,
         aggregate_function=aggregate_function,

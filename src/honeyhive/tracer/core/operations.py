@@ -633,6 +633,9 @@ class TracerOperationsMixin(TracerOperationsInterface):
         This method uses dynamic logic to create events with flexible parameter
         handling, automatic session management, and comprehensive error recovery.
 
+        Accepted keys:
+            Ingestion API key; Project API key (deprecated)
+
         Args:
             event_name: Name of the event
             event_type: Type of event (model, tool, chain, session)

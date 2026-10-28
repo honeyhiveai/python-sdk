@@ -32,7 +32,7 @@ def _call_sync(mock_client_cls: MagicMock, response: httpx.Response) -> HTTPExce
     mock_client.request.return_value = response
     mock_client_cls.return_value.__enter__.return_value = mock_client
     with pytest.raises(HTTPException) as exc_info:
-        datasets_svc.getDatasets(api_config_override=APIConfig())
+        datasets_svc.getDatasets(api_config_override=APIConfig(), project_id="p1")
     return exc_info.value
 
 
@@ -125,7 +125,9 @@ class TestAsyncServiceErrors:
         mock_client_cls.return_value.__aexit__.return_value = None
 
         with pytest.raises(HTTPException) as exc_info:
-            await datasets_svc_async.getDatasets(api_config_override=APIConfig())
+            await datasets_svc_async.getDatasets(
+                api_config_override=APIConfig(), project_id="p1"
+            )
 
         exc = exc_info.value
         assert exc.status_code == 404
@@ -150,7 +152,9 @@ class TestAsyncServiceErrors:
         mock_client_cls.return_value.__aexit__.return_value = None
 
         with pytest.raises(HTTPException) as exc_info:
-            await datasets_svc_async.getDatasets(api_config_override=APIConfig())
+            await datasets_svc_async.getDatasets(
+                api_config_override=APIConfig(), project_id="p1"
+            )
 
         assert exc_info.value.status_code == 502
         assert exc_info.value.message == "getDatasets failed with status code: 502"

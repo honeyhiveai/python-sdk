@@ -90,24 +90,24 @@ class TestDatapointsListBatching:
         """Lists <= QUERY_BATCH_SIZE should pass through directly."""
         ids = [f"id_{i}" for i in range(50)]
         expected = _make_datapoints_response(ids)
-        mock_svc.getDatapoints.return_value = expected
+        mock_svc.getDatapointsLegacy.return_value = expected
 
         api = _make_api(DatapointsAPI)
         result = api.list(datapoint_ids=ids)
 
-        mock_svc.getDatapoints.assert_called_once()
+        mock_svc.getDatapointsLegacy.assert_called_once()
         assert result is expected
 
     @patch("honeyhive.api.client.datapoints_svc")
     def test_none_passes_through(self, mock_svc: MagicMock) -> None:
         """None datapoint_ids should pass through without batching."""
         expected = _make_datapoints_response([])
-        mock_svc.getDatapoints.return_value = expected
+        mock_svc.getDatapointsLegacy.return_value = expected
 
         api = _make_api(DatapointsAPI)
         result = api.list(datapoint_ids=None)
 
-        mock_svc.getDatapoints.assert_called_once()
+        mock_svc.getDatapointsLegacy.assert_called_once()
         assert result is expected
 
     @patch("honeyhive.api.client.datapoints_svc")
@@ -116,7 +116,7 @@ class TestDatapointsListBatching:
         total = QUERY_BATCH_SIZE + 50
         all_ids = [f"id_{i}" for i in range(total)]
 
-        mock_svc.getDatapoints.side_effect = [
+        mock_svc.getDatapointsLegacy.side_effect = [
             _make_datapoints_response(all_ids[:QUERY_BATCH_SIZE]),
             _make_datapoints_response(all_ids[QUERY_BATCH_SIZE:]),
         ]
@@ -124,7 +124,7 @@ class TestDatapointsListBatching:
         api = _make_api(DatapointsAPI)
         result = api.list(datapoint_ids=all_ids)
 
-        assert mock_svc.getDatapoints.call_count == 2
+        assert mock_svc.getDatapointsLegacy.call_count == 2
         assert len(result.datapoints) == total
 
     @patch("honeyhive.api.client.datapoints_svc")
@@ -132,12 +132,12 @@ class TestDatapointsListBatching:
         """Exactly QUERY_BATCH_SIZE items should NOT trigger batching."""
         ids = [f"id_{i}" for i in range(QUERY_BATCH_SIZE)]
         expected = _make_datapoints_response(ids)
-        mock_svc.getDatapoints.return_value = expected
+        mock_svc.getDatapointsLegacy.return_value = expected
 
         api = _make_api(DatapointsAPI)
         result = api.list(datapoint_ids=ids)
 
-        mock_svc.getDatapoints.assert_called_once()
+        mock_svc.getDatapointsLegacy.assert_called_once()
         assert result is expected
 
     @patch("honeyhive.api.client.datapoints_svc")
@@ -146,7 +146,7 @@ class TestDatapointsListBatching:
         total = QUERY_BATCH_SIZE + 10
         all_ids = [f"id_{i}" for i in range(total)]
 
-        mock_svc.getDatapoints.side_effect = [
+        mock_svc.getDatapointsLegacy.side_effect = [
             _make_datapoints_response(all_ids[:QUERY_BATCH_SIZE]),
             _make_datapoints_response(all_ids[QUERY_BATCH_SIZE:]),
         ]
@@ -154,8 +154,32 @@ class TestDatapointsListBatching:
         api = _make_api(DatapointsAPI)
         api.list(datapoint_ids=all_ids, dataset_name="my-dataset")
 
-        for c in mock_svc.getDatapoints.call_args_list:
+        for c in mock_svc.getDatapointsLegacy.call_args_list:
             assert c.kwargs["dataset_name"] == "my-dataset"
+
+    @patch("honeyhive.api.client.datapoints_svc")
+    def test_large_list_batches_on_the_scoped_operation(
+        self, mock_svc: MagicMock
+    ) -> None:
+        """With project_id every batch is sent to the project-scoped operation."""
+        total = QUERY_BATCH_SIZE + 10
+        all_ids = [f"id_{i}" for i in range(total)]
+
+        mock_svc.getDatapoints.side_effect = [
+            _make_datapoints_response(all_ids[:QUERY_BATCH_SIZE]),
+            _make_datapoints_response(all_ids[QUERY_BATCH_SIZE:]),
+        ]
+
+        api = DatapointsAPI(
+            _make_api(DatapointsAPI)._api_config, data_plane_api_key="dp"
+        )
+        result = api.list(datapoint_ids=all_ids, project_id="p1")
+
+        assert mock_svc.getDatapoints.call_count == 2
+        mock_svc.getDatapointsLegacy.assert_not_called()
+        for c in mock_svc.getDatapoints.call_args_list:
+            assert c.kwargs["project_id"] == "p1"
+        assert len(result.datapoints) == total
 
 
 # ---------------------------------------------------------------------------
@@ -170,7 +194,7 @@ class TestDatapointsListAsyncBatching:
         total = QUERY_BATCH_SIZE + 30
         all_ids = [f"id_{i}" for i in range(total)]
 
-        mock_svc.getDatapoints = AsyncMock(
+        mock_svc.getDatapointsLegacy = AsyncMock(
             side_effect=[
                 _make_datapoints_response(all_ids[:QUERY_BATCH_SIZE]),
                 _make_datapoints_response(all_ids[QUERY_BATCH_SIZE:]),
@@ -180,7 +204,7 @@ class TestDatapointsListAsyncBatching:
         api = _make_api(DatapointsAPI)
         result = asyncio.run(api.list_async(datapoint_ids=all_ids))
 
-        assert mock_svc.getDatapoints.call_count == 2
+        assert mock_svc.getDatapointsLegacy.call_count == 2
         assert len(result.datapoints) == total
 
 
@@ -194,12 +218,12 @@ class TestExperimentsListRunsBatching:
     def test_small_list_makes_single_call(self, mock_svc: MagicMock) -> None:
         ids = [f"run_{i}" for i in range(50)]
         expected = _make_runs_response(ids)
-        mock_svc.getRuns.return_value = expected
+        mock_svc.getRunsLegacy.return_value = expected
 
         api = _make_api(ExperimentsAPI)
         result = api.list_runs(run_ids=ids)
 
-        mock_svc.getRuns.assert_called_once()
+        mock_svc.getRunsLegacy.assert_called_once()
         assert result is expected
 
     @patch("honeyhive.api.client.experiments_svc")
@@ -207,7 +231,7 @@ class TestExperimentsListRunsBatching:
         total = QUERY_BATCH_SIZE + 20
         all_ids = [f"run_{i}" for i in range(total)]
 
-        mock_svc.getRuns.side_effect = [
+        mock_svc.getRunsLegacy.side_effect = [
             _make_runs_response(all_ids[:QUERY_BATCH_SIZE], metrics=["accuracy", "f1"]),
             _make_runs_response(all_ids[QUERY_BATCH_SIZE:], metrics=["f1", "latency"]),
         ]
@@ -215,7 +239,7 @@ class TestExperimentsListRunsBatching:
         api = _make_api(ExperimentsAPI)
         result = api.list_runs(run_ids=all_ids)
 
-        assert mock_svc.getRuns.call_count == 2
+        assert mock_svc.getRunsLegacy.call_count == 2
         assert len(result.evaluations) == total
         # Metrics should be deduplicated and order-preserved.
         assert result.metrics == ["accuracy", "f1", "latency"]
@@ -229,7 +253,7 @@ class TestExperimentsListRunsBatching:
         total = QUERY_BATCH_SIZE + 10
         all_ids = [f"run_{i}" for i in range(total)]
 
-        mock_svc.getRuns.side_effect = [
+        mock_svc.getRunsLegacy.side_effect = [
             _make_runs_response(all_ids[:QUERY_BATCH_SIZE]),
             _make_runs_response(all_ids[QUERY_BATCH_SIZE:]),
         ]
@@ -238,20 +262,45 @@ class TestExperimentsListRunsBatching:
         api.list_runs(run_ids=all_ids, page=3, limit=25)
 
         # Neither batch call should include page or limit.
-        for call in mock_svc.getRuns.call_args_list:
+        for call in mock_svc.getRunsLegacy.call_args_list:
             assert "page" not in call.kwargs
             assert "limit" not in call.kwargs
 
     @patch("honeyhive.api.client.experiments_svc")
     def test_none_run_ids_passes_through(self, mock_svc: MagicMock) -> None:
         expected = _make_runs_response([])
-        mock_svc.getRuns.return_value = expected
+        mock_svc.getRunsLegacy.return_value = expected
 
         api = _make_api(ExperimentsAPI)
         result = api.list_runs(run_ids=None)
 
-        mock_svc.getRuns.assert_called_once()
+        mock_svc.getRunsLegacy.assert_called_once()
         assert result is expected
+
+    @patch("honeyhive.api.client.experiments_svc")
+    def test_large_list_batches_on_the_scoped_operation(
+        self, mock_svc: MagicMock
+    ) -> None:
+        """With project_id every batch is sent to the project-scoped operation."""
+        total = QUERY_BATCH_SIZE + 10
+        all_ids = [f"run_{i}" for i in range(total)]
+
+        mock_svc.getRuns.side_effect = [
+            _make_runs_response(all_ids[:QUERY_BATCH_SIZE]),
+            _make_runs_response(all_ids[QUERY_BATCH_SIZE:]),
+        ]
+
+        api = ExperimentsAPI(
+            _make_api(ExperimentsAPI)._api_config, data_plane_api_key="dp"
+        )
+        result = api.list_runs(run_ids=all_ids, page=3, project_id="p1")
+
+        assert mock_svc.getRuns.call_count == 2
+        mock_svc.getRunsLegacy.assert_not_called()
+        for c in mock_svc.getRuns.call_args_list:
+            assert c.kwargs["project_id"] == "p1"
+            assert "page" not in c.kwargs
+        assert len(result.evaluations) == total
 
 
 # ---------------------------------------------------------------------------
@@ -265,7 +314,7 @@ class TestExperimentsListRunsAsyncBatching:
         total = QUERY_BATCH_SIZE + 10
         all_ids = [f"run_{i}" for i in range(total)]
 
-        mock_svc.getRuns = AsyncMock(
+        mock_svc.getRunsLegacy = AsyncMock(
             side_effect=[
                 _make_runs_response(all_ids[:QUERY_BATCH_SIZE]),
                 _make_runs_response(all_ids[QUERY_BATCH_SIZE:]),
@@ -275,5 +324,32 @@ class TestExperimentsListRunsAsyncBatching:
         api = _make_api(ExperimentsAPI)
         result = asyncio.run(api.list_runs_async(run_ids=all_ids))
 
+        assert mock_svc.getRunsLegacy.call_count == 2
+        assert len(result.evaluations) == total
+
+    @patch("honeyhive.api.client.experiments_svc_async")
+    def test_large_list_batches_async_on_the_scoped_operation(
+        self, mock_svc: MagicMock
+    ) -> None:
+        """Async: with project_id every batch is sent to the project-scoped operation."""
+        total = QUERY_BATCH_SIZE + 10
+        all_ids = [f"run_{i}" for i in range(total)]
+
+        mock_svc.getRuns = AsyncMock(
+            side_effect=[
+                _make_runs_response(all_ids[:QUERY_BATCH_SIZE]),
+                _make_runs_response(all_ids[QUERY_BATCH_SIZE:]),
+            ]
+        )
+        mock_svc.getRunsLegacy = AsyncMock()
+
+        api = ExperimentsAPI(
+            _make_api(ExperimentsAPI)._api_config, data_plane_api_key="dp"
+        )
+        result = asyncio.run(api.list_runs_async(run_ids=all_ids, project_id="p1"))
+
         assert mock_svc.getRuns.call_count == 2
+        mock_svc.getRunsLegacy.assert_not_called()
+        for c in mock_svc.getRuns.call_args_list:
+            assert c.kwargs["project_id"] == "p1"
         assert len(result.evaluations) == total

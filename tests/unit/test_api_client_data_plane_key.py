@@ -10,12 +10,13 @@ and is tested there; this module covers only what the client adds on top.
 # pylint: disable=protected-access
 
 import os
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
 from honeyhive import MissingApiKeyError
-from honeyhive.api.client import ChartsAPI, HoneyHive
+from honeyhive.api.client import ChartsAPI, HoneyHive, charts_svc, charts_svc_async
+from honeyhive.models import ChartQueryRequest
 
 DATA_PLANE_KEY = "hh_fgdp_" + "A" * 24 + "_" + "b" * 64
 INGESTION_KEY = "hh_ingst_" + "C" * 24 + "_" + "d" * 64
@@ -128,3 +129,73 @@ class TestNamespaceConfiguration:
             ),
         ):
             _ = charts._data_plane_api_config
+
+
+class TestChartQuery:
+    """``charts.query`` sends the request with the data plane key only."""
+
+    REQUEST = ChartQueryRequest.model_validate(
+        {
+            "date_range": {
+                "start_time": "2026-01-01T00:00:00Z",
+                "end_time": "2026-01-02T00:00:00Z",
+            },
+            "filters": [
+                {
+                    "field": "event_type",
+                    "operator": "is",
+                    "value": "model",
+                    "type": "string",
+                }
+            ],
+            "query": {"kind": "scalar", "measure": {"metric": "event_count"}},
+        }
+    )
+
+    def test_sends_the_project_scoped_request(self) -> None:
+        """The request names the project in its path and carries the data plane key."""
+        with patch.dict(os.environ, {}, clear=True):
+            client = HoneyHive(api_key=PROJECT_KEY)
+        charts = ChartsAPI(client.api_config, data_plane_api_key=DATA_PLANE_KEY)
+
+        with patch.object(charts_svc, "queryChart") as query_chart:
+            result = charts.query(self.REQUEST, project_id="p1")
+
+        assert result is query_chart.return_value
+        (api_config,) = query_chart.call_args.args
+        assert api_config.access_token == DATA_PLANE_KEY
+        assert query_chart.call_args.kwargs == {
+            "project_id": "p1",
+            "data": self.REQUEST,
+        }
+
+    @pytest.mark.asyncio
+    async def test_async_sends_the_project_scoped_request(self) -> None:
+        """``query_async`` dispatches exactly as ``query`` does."""
+        with patch.dict(os.environ, {}, clear=True):
+            client = HoneyHive(api_key=PROJECT_KEY)
+        charts = ChartsAPI(client.api_config, data_plane_api_key=DATA_PLANE_KEY)
+
+        with patch.object(
+            charts_svc_async, "queryChart", new_callable=AsyncMock
+        ) as query_chart:
+            result = await charts.query_async(self.REQUEST, project_id="p1")
+
+        assert result is query_chart.return_value
+        (api_config,) = query_chart.call_args.args
+        assert api_config.access_token == DATA_PLANE_KEY
+        assert query_chart.call_args.kwargs == {
+            "project_id": "p1",
+            "data": self.REQUEST,
+        }
+
+    def test_the_project_key_never_stands_in(self) -> None:
+        """With only the project key, the query is refused before it is sent."""
+        with patch.dict(os.environ, {}, clear=True):
+            client = HoneyHive(api_key=PROJECT_KEY)
+        charts = ChartsAPI(client.api_config)
+
+        with patch.object(charts_svc, "queryChart") as query_chart:
+            with pytest.raises(MissingApiKeyError):
+                charts.query(self.REQUEST, project_id="p1")
+        query_chart.assert_not_called()

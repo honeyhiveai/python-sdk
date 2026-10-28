@@ -803,7 +803,7 @@ def create_evaluation_run(
             return None
 
         # Submit to API (experiments API handles runs)
-        response = client.experiments.create_run(run_request)
+        response = client.experiments._create_run(run_request)
 
         logger.info(
             "Created evaluation run: %s",

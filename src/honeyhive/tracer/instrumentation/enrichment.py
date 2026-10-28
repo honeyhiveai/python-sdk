@@ -617,6 +617,9 @@ class UnifiedEnrichSpan:
         :type kwargs: Any
         :return: Self for chaining
         :rtype: UnifiedEnrichSpan
+
+        Accepted keys:
+            Ingestion API key; Project API key (deprecated)
         """
         # Store all arguments for later use
         self._attributes = attributes

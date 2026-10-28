@@ -17,7 +17,7 @@ TestRunEvaluatorsForDatapoint, TestApplyInlineEvaluators).
 
 import threading
 from typing import Any, Collection, Dict
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, call, patch
 
 import httpx
 import pytest
@@ -498,7 +498,7 @@ class TestEvaluate:
         # The evaluate function no longer validates api_key presence
         # It's passed to HoneyHive client which handles missing keys gracefully
         mock_client = Mock()
-        mock_client.evaluations.create_run.side_effect = Exception("No API key")
+        mock_client.experiments._create_run.side_effect = Exception("No API key")
         mock_honeyhive_class.return_value = mock_client
 
         with pytest.raises(Exception):  # Client will raise error, not evaluate
@@ -514,7 +514,9 @@ class TestEvaluate:
         with pytest.warns(DeprecationWarning, match="project.*deprecated"):
             with patch("honeyhive.experiments.core.HoneyHive") as mock_honeyhive_class:
                 mock_client = Mock()
-                mock_client.evaluations.create_run.side_effect = Exception("stop early")
+                mock_client.experiments._create_run.side_effect = Exception(
+                    "stop early"
+                )
                 mock_honeyhive_class.return_value = mock_client
                 with pytest.raises(Exception):
                     evaluate(
@@ -551,26 +553,26 @@ class TestEvaluate:
 
         mock_client = Mock()
 
-        # Mock dataset response - code uses datasets.list() now
+        # The dataset response evaluate() reads through the list core
         mock_ds = Mock()
         mock_ds.datapoints = ["dp-1", "dp-2"]
         mock_ds_response = Mock()
         mock_ds_response.datasets = [mock_ds]
-        mock_client.datasets.list.return_value = mock_ds_response
+        mock_client.datasets._list.return_value = mock_ds_response
 
         # Mock datapoint responses — typed GetDatapointResponse with
         # `.datapoint` (List[Datapoint]) attribute.
         dp1 = Mock(inputs={"x": 1}, ground_truth={"y": 2}, id="dp-1")
         dp2 = Mock(inputs={"x": 3}, ground_truth={"y": 4}, id="dp-2")
-        mock_client.datapoints.get_datapoint.side_effect = [
+        mock_client.datapoints._get.side_effect = [
             Mock(datapoint=[dp1]),
             Mock(datapoint=[dp2]),
         ]
 
         mock_run_response = Mock()
         mock_run_response.run_id = "run-789"
-        mock_client.experiments.create_run.return_value = mock_run_response
-        mock_client.experiments.update_run.return_value = None
+        mock_client.experiments._create_run.return_value = mock_run_response
+        mock_client.experiments._update_run.return_value = None
         mock_honeyhive_class.return_value = mock_client
 
         mock_context = Mock()
@@ -599,8 +601,17 @@ class TestEvaluate:
 
         # Verify
         assert result == mock_result
-        mock_client.datasets.list.assert_called_once_with(dataset_id="ds-123")
-        assert mock_client.datapoints.get_datapoint.call_count == 2
+        # Both reads go through cores, which never warn: evaluate() takes no
+        # project_id, so its caller could not act on a deprecation warning.
+        mock_client.datasets._list.assert_called_once_with(dataset_id="ds-123")
+        mock_client.datasets.list.assert_not_called()
+        mock_client.datasets.get_dataset.assert_not_called()
+        assert mock_client.datapoints._get.call_args_list == [
+            call("dp-1"),
+            call("dp-2"),
+        ]
+        mock_client.datapoints.get_datapoint.assert_not_called()
+        mock_client.datapoints.get.assert_not_called()
         mock_run_experiment.assert_called_once()
         mock_get_result.assert_called_once()
 
@@ -636,12 +647,12 @@ class TestEvaluate:
 
         mock_client = Mock()
 
-        # Mock dataset response - code uses datasets.list() now
+        # The dataset response evaluate() reads through the list core
         mock_ds = Mock()
         mock_ds.datapoints = ["dp-1", "dp-2"]
         mock_ds_response = Mock()
         mock_ds_response.datasets = [mock_ds]
-        mock_client.datasets.list.return_value = mock_ds_response
+        mock_client.datasets._list.return_value = mock_ds_response
 
         # First datapoint succeeds — the SDK returns a typed
         # GetDatapointResponse whose `.datapoint` is a list of Datapoint
@@ -650,7 +661,7 @@ class TestEvaluate:
         first_response = Mock(datapoint=[first_dp])
         # Second datapoint hits a 503 — this is the kind of transient
         # failure the per-dp try/except is supposed to absorb.
-        mock_client.datapoints.get_datapoint.side_effect = [
+        mock_client.datapoints._get.side_effect = [
             first_response,
             HTTPException(503, "service unavailable"),
         ]
@@ -659,9 +670,9 @@ class TestEvaluate:
         mock_run_response.run_id = "run-abc"
         # The runtime client aliases self.evaluations = self.experiments,
         # but Mock() makes them independent auto-children; evaluate()
-        # actually calls client.experiments.create_run/update_run.
-        mock_client.experiments.create_run.return_value = mock_run_response
-        mock_client.experiments.update_run.return_value = None
+        # actually calls client.experiments._create_run/_update_run.
+        mock_client.experiments._create_run.return_value = mock_run_response
+        mock_client.experiments._update_run.return_value = None
         mock_honeyhive_class.return_value = mock_client
 
         mock_context = Mock()
@@ -686,7 +697,7 @@ class TestEvaluate:
 
         # Verify - should continue with available datapoints
         assert result == mock_result
-        assert mock_client.datapoints.get_datapoint.call_count == 2
+        assert mock_client.datapoints._get.call_count == 2
 
     @patch("honeyhive.experiments.core.get_run_result")
     @patch("honeyhive.experiments.core.run_experiment")
@@ -725,10 +736,10 @@ class TestEvaluate:
         mock_ds.datapoints = ["dp-1"]
         mock_ds_response = Mock()
         mock_ds_response.datasets = [mock_ds]
-        mock_client.datasets.list.return_value = mock_ds_response
+        mock_client.datasets._list.return_value = mock_ds_response
 
         # Programming error — must propagate.
-        mock_client.datapoints.get_datapoint.side_effect = AttributeError(
+        mock_client.datapoints._get.side_effect = AttributeError(
             "'GetDatapointResponse' object has no attribute 'get'"
         )
         mock_honeyhive_class.return_value = mock_client
@@ -772,11 +783,11 @@ class TestEvaluate:
         mock_ds.datapoints = ["dp-1", "dp-2"]
         mock_ds_response = Mock()
         mock_ds_response.datasets = [mock_ds]
-        mock_client.datasets.list.return_value = mock_ds_response
+        mock_client.datasets._list.return_value = mock_ds_response
 
         first_dp = Mock(inputs={"x": 1}, ground_truth={"y": 2}, id="dp-1")
         first_response = Mock(datapoint=[first_dp])
-        mock_client.datapoints.get_datapoint.side_effect = [
+        mock_client.datapoints._get.side_effect = [
             first_response,
             httpx.ConnectError("connection refused"),
         ]
@@ -785,8 +796,8 @@ class TestEvaluate:
         mock_run_response.run_id = "run-abc"
         # See note in test_evaluate_datapoint_fetch_error_handling re. the
         # experiments/evaluations alias not propagating through Mock().
-        mock_client.experiments.create_run.return_value = mock_run_response
-        mock_client.experiments.update_run.return_value = None
+        mock_client.experiments._create_run.return_value = mock_run_response
+        mock_client.experiments._update_run.return_value = None
         mock_honeyhive_class.return_value = mock_client
 
         mock_context_class.return_value = Mock()
@@ -804,7 +815,7 @@ class TestEvaluate:
             api_key="test-key",
         )
         assert result == mock_result
-        assert mock_client.datapoints.get_datapoint.call_count == 2
+        assert mock_client.datapoints._get.call_count == 2
 
     @patch("honeyhive.experiments.core.get_run_result")
     @patch("honeyhive.experiments.core.run_experiment")
@@ -842,11 +853,11 @@ class TestEvaluate:
         mock_ds.datapoints = ["dp-1", "dp-2", "dp-3"]
         mock_ds_response = Mock()
         mock_ds_response.datasets = [mock_ds]
-        mock_client.datasets.list.return_value = mock_ds_response
+        mock_client.datasets._list.return_value = mock_ds_response
 
         # All three datapoint fetches hit transient errors — narrow
         # except absorbs them, but the post-loop guard must raise.
-        mock_client.datapoints.get_datapoint.side_effect = [
+        mock_client.datapoints._get.side_effect = [
             HTTPException(503, "service unavailable"),
             HTTPException(503, "service unavailable"),
             HTTPException(503, "service unavailable"),
@@ -860,7 +871,7 @@ class TestEvaluate:
                 api_key="test-key",
             )
         # Confirm we did try every datapoint before raising.
-        assert mock_client.datapoints.get_datapoint.call_count == 3
+        assert mock_client.datapoints._get.call_count == 3
 
     @patch("honeyhive.experiments.core.get_run_result")
     @patch("honeyhive.experiments.core.run_experiment")
@@ -892,10 +903,10 @@ class TestEvaluate:
         mock_client = Mock()
         mock_run_response = Mock()
         mock_run_response.run_id = "run-xyz"
-        mock_client.evaluations.create_run.return_value = mock_run_response
+        mock_client.experiments._create_run.return_value = mock_run_response
 
-        # experiments.update_run raises error (not evaluations.update_run_from_dict)
-        mock_client.experiments.update_run.side_effect = Exception("API error")
+        # experiments._update_run raises error (not evaluations.update_run_from_dict)
+        mock_client.experiments._update_run.side_effect = Exception("API error")
         mock_honeyhive_class.return_value = mock_client
 
         mock_context = Mock()
@@ -920,7 +931,7 @@ class TestEvaluate:
 
         # Verify - should still return result despite update failure
         assert result == mock_result
-        mock_client.experiments.update_run.assert_called_once()
+        mock_client.experiments._update_run.assert_called_once()
 
     @patch("honeyhive.experiments.core.get_run_result")
     @patch("honeyhive.experiments.core.run_experiment")
@@ -952,8 +963,8 @@ class TestEvaluate:
         mock_client = Mock()
         mock_run_response = Mock()
         mock_run_response.run_id = "run-123"
-        mock_client.evaluations.create_run.return_value = mock_run_response
-        mock_client.evaluations.update_run.return_value = None
+        mock_client.experiments._create_run.return_value = mock_run_response
+        mock_client.experiments._update_run.return_value = None
         mock_honeyhive_class.return_value = mock_client
 
         mock_context = Mock()
@@ -1023,8 +1034,8 @@ class TestEvaluate:
         mock_client = Mock()
         mock_run_response = Mock()
         mock_run_response.run_id = "run-123"
-        mock_client.evaluations.create_run.return_value = mock_run_response
-        mock_client.evaluations.update_run.return_value = None
+        mock_client.experiments._create_run.return_value = mock_run_response
+        mock_client.experiments._update_run.return_value = None
         mock_honeyhive_class.return_value = mock_client
 
         mock_context = Mock()
@@ -1080,8 +1091,8 @@ class TestEvaluate:
         mock_client = Mock()
         mock_run_response = Mock()
         mock_run_response.run_id = "run-123"
-        mock_client.evaluations.create_run.return_value = mock_run_response
-        mock_client.evaluations.update_run.return_value = None
+        mock_client.experiments._create_run.return_value = mock_run_response
+        mock_client.experiments._update_run.return_value = None
         mock_honeyhive_class.return_value = mock_client
 
         mock_context = Mock()
@@ -1132,8 +1143,8 @@ class TestEvaluate:
         mock_client = Mock()
         mock_run_response = Mock()
         mock_run_response.run_id = "run-123"
-        mock_client.evaluations.create_run.return_value = mock_run_response
-        mock_client.evaluations.update_run.return_value = None
+        mock_client.experiments._create_run.return_value = mock_run_response
+        mock_client.experiments._update_run.return_value = None
         mock_honeyhive_class.return_value = mock_client
         mock_context_class.return_value = Mock()
         mock_run_experiment.return_value = [
@@ -1183,8 +1194,8 @@ class TestEvaluate:
         mock_client = Mock()
         mock_run_response = Mock()
         mock_run_response.run_id = "run-123"
-        mock_client.evaluations.create_run.return_value = mock_run_response
-        mock_client.evaluations.update_run.return_value = None
+        mock_client.experiments._create_run.return_value = mock_run_response
+        mock_client.experiments._update_run.return_value = None
         mock_honeyhive_class.return_value = mock_client
 
         mock_context = Mock()
@@ -1642,7 +1653,7 @@ class TestResultsBackwardCompatibility:
     def test_get_run_result_positional_project_and_aggregate(self) -> None:
         """Legacy 4-arg positional call still routes aggregate_function correctly."""
         mock_client = Mock()
-        mock_client.experiments.get_result.return_value = {
+        mock_client.experiments._get_result.return_value = {
             "status": "completed",
             "success": True,
             "passed": [],
@@ -1654,14 +1665,14 @@ class TestResultsBackwardCompatibility:
         with pytest.warns(DeprecationWarning, match="project_id.*deprecated"):
             get_run_result(mock_client, "run-123", "my-project", "median")
 
-        mock_client.experiments.get_result.assert_called_once_with(
+        mock_client.experiments._get_result.assert_called_once_with(
             run_id="run-123", aggregate_function="median"
         )
 
     def test_get_run_result_three_arg_positional_project(self) -> None:
         """Legacy 3-arg call passes project_id positionally, not aggregate_function."""
         mock_client = Mock()
-        mock_client.experiments.get_result.return_value = {
+        mock_client.experiments._get_result.return_value = {
             "status": "completed",
             "success": True,
             "passed": [],
@@ -1673,14 +1684,14 @@ class TestResultsBackwardCompatibility:
         with pytest.warns(DeprecationWarning, match="project_id.*deprecated"):
             get_run_result(mock_client, "run-123", "my-project")
 
-        mock_client.experiments.get_result.assert_called_once_with(
+        mock_client.experiments._get_result.assert_called_once_with(
             run_id="run-123", aggregate_function="average"
         )
 
     def test_compare_runs_positional_project_and_aggregate(self) -> None:
         """Legacy positional compare_runs(project_id, aggregate_function) still works."""
         mock_client = Mock()
-        mock_client.experiments.compare_runs.return_value = {
+        mock_client.experiments._compare_runs.return_value = {
             "commonDatapoints": [],
             "metrics": [],
         }
@@ -1688,7 +1699,7 @@ class TestResultsBackwardCompatibility:
         with pytest.warns(DeprecationWarning, match="project_id.*deprecated"):
             compare_runs(mock_client, "run-new", "run-old", "my-project", "median")
 
-        mock_client.experiments.compare_runs.assert_called_once_with(
+        mock_client.experiments._compare_runs.assert_called_once_with(
             new_run_id="run-new",
             old_run_id="run-old",
             aggregate_function="median",
@@ -1697,9 +1708,9 @@ class TestResultsBackwardCompatibility:
     def test_get_run_metrics_positional_project(self) -> None:
         """Legacy 3-arg get_run_metrics(client, run_id, project_id) still works."""
         mock_client = Mock()
-        mock_client.experiments.get_result.return_value = {"metrics": {}}
+        mock_client.experiments._get_result.return_value = {"metrics": {}}
 
         with pytest.warns(DeprecationWarning, match="project_id.*deprecated"):
             get_run_metrics(mock_client, "run-123", "my-project")
 
-        mock_client.experiments.get_result.assert_called_once_with(run_id="run-123")
+        mock_client.experiments._get_result.assert_called_once_with(run_id="run-123")

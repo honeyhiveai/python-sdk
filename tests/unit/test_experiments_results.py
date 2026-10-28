@@ -233,7 +233,7 @@ class TestCompareRuns:
             "old_run": {"run_id": "run-old"},
             "new_run": {"run_id": "run-new"},
         }
-        mock_client.evaluations.compare_runs.return_value = mock_response
+        mock_client.experiments._compare_runs.return_value = mock_response
 
         result = compare_runs(mock_client, "run-new", "run-old")
 
@@ -243,7 +243,7 @@ class TestCompareRuns:
         assert result.common_datapoints == 10
         assert result.new_only_datapoints == 0
         assert result.old_only_datapoints == 0
-        mock_client.evaluations.compare_runs.assert_called_once_with(
+        mock_client.experiments._compare_runs.assert_called_once_with(
             new_run_id="run-new", old_run_id="run-old", aggregate_function="average"
         )
 
@@ -255,11 +255,11 @@ class TestCompareRuns:
             "old_run": {},
             "new_run": {},
         }
-        mock_client.evaluations.compare_runs.return_value = mock_response
+        mock_client.experiments._compare_runs.return_value = mock_response
 
         compare_runs(mock_client, "run-new", "run-old", aggregate_function="median")
 
-        mock_client.evaluations.compare_runs.assert_called_once_with(
+        mock_client.experiments._compare_runs.assert_called_once_with(
             new_run_id="run-new", old_run_id="run-old", aggregate_function="median"
         )
 
@@ -297,7 +297,7 @@ class TestCompareRuns:
             "old_run": {},
             "new_run": {},
         }
-        mock_client.evaluations.compare_runs.return_value = mock_response
+        mock_client.experiments._compare_runs.return_value = mock_response
 
         result = compare_runs(mock_client, "run-new", "run-old")
 
@@ -316,7 +316,7 @@ class TestCompareRuns:
             "old_run": {},
             "new_run": {},
         }
-        mock_client.evaluations.compare_runs.return_value = mock_response
+        mock_client.experiments._compare_runs.return_value = mock_response
 
         result = compare_runs(mock_client, "run-new", "run-old")
 
@@ -373,7 +373,7 @@ class TestCompareRuns:
             "old_run": {},
             "new_run": {},
         }
-        mock_client.evaluations.compare_runs.return_value = mock_response
+        mock_client.experiments._compare_runs.return_value = mock_response
 
         result = compare_runs(mock_client, "run-new", "run-old")
 

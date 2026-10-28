@@ -18,12 +18,13 @@ These tests validate end-to-end behavior with REAL API calls and backend verific
 import os
 import time
 import traceback
-from typing import Any, Dict, Set
+from typing import Any, Dict, Optional, Set
 
 import pytest
 
 from honeyhive import HoneyHive, HoneyHiveTracer, enrich_session, trace
 from honeyhive.experiments import evaluate
+from honeyhive.models import LegacyEvent
 
 
 @pytest.mark.integration
@@ -49,6 +50,74 @@ class TestV1ImmediateShipRequirements:
             },
         ]
 
+    @staticmethod
+    def _find_session_root(
+        integration_client: HoneyHive, session_id: str
+    ) -> Optional[LegacyEvent]:
+        """Return the root event of a session, or None if it is not there yet.
+
+        Args:
+            integration_client: Client that reads the session events.
+            session_id: The session to look up.
+        """
+        session_events = integration_client.events.get_by_session_id(
+            session_id, limit=50
+        )
+        return next(
+            (
+                event
+                for event in session_events.events
+                if event.event_type == "session" or event.event_id == session_id
+            ),
+            None,
+        )
+
+    @staticmethod
+    def _wait_for_session_feedback(
+        integration_client: HoneyHive,
+        run_id: str,
+        *,
+        poll_interval_sec: float = 2.0,
+        max_wait_sec: float = 60.0,
+    ) -> None:
+        """Poll until the run's first session has ``ground_truth`` in its feedback.
+
+        The backend applies the SDK's post-run session update asynchronously, so
+        the feedback can be empty when ``evaluate()`` returns. On timeout this
+        returns without an error, and ``_validate_backend_results`` reports the
+        missing fields.
+
+        Args:
+            integration_client: Client that reads the run and its session events.
+            run_id: The experiment run to watch.
+            poll_interval_sec: Seconds between polls.
+            max_wait_sec: Seconds to poll before it stops.
+        """
+        deadline = time.monotonic() + max_wait_sec
+        last_state = "no poll completed"
+        while time.monotonic() < deadline:
+            backend_run = integration_client.evaluations.get_run(run_id)
+            evaluation = getattr(backend_run, "evaluation", None)
+            event_ids = getattr(evaluation, "event_ids", None) or []
+            if not event_ids:
+                last_state = "run has no event_ids yet"
+            else:
+                session_id = event_ids[0]
+                session_event = TestV1ImmediateShipRequirements._find_session_root(
+                    integration_client, session_id
+                )
+                if session_event is None:
+                    last_state = f"session root {session_id} not found yet"
+                else:
+                    feedback = session_event.feedback or {}
+                    if "ground_truth" in feedback:
+                        return
+                    last_state = (
+                        f"session {session_id} feedback keys: {sorted(feedback)}"
+                    )
+            time.sleep(poll_interval_sec)
+        print(f"⚠ Session feedback not ready after {max_wait_sec:.0f}s: {last_state}")
+
     def _validate_backend_results(
         self,
         integration_client: HoneyHive,
@@ -72,18 +141,7 @@ class TestV1ImmediateShipRequirements:
         # `session_events.events` is List[LegacyEvent] (extra="allow" passes
         # through any backend fields not in the spec).
         session_id_str = event_ids[0]
-        session_events = integration_client.events.get_by_session_id(
-            session_id_str,
-            limit=50,
-        )
-        session_event = next(
-            (
-                event
-                for event in session_events.events
-                if event.event_type == "session" or event.event_id == session_id_str
-            ),
-            None,
-        )
+        session_event = self._find_session_root(integration_client, session_id_str)
         assert session_event is not None, "Expected to find the session root event"
 
         # TASK 1: Session naming validation
@@ -309,7 +367,7 @@ class TestV1ImmediateShipRequirements:
 
         # Wait for backend processing
         print("\n⏳ Waiting for backend to process events...")
-        time.sleep(5)
+        self._wait_for_session_feedback(integration_client, result.run_id)
 
         # BACKEND VALIDATION
         print(f"\n{'=' * 70}")

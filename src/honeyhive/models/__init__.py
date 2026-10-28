@@ -206,6 +206,8 @@ from honeyhive.models.models import (
     AddDatapointsToDatasetRequest,
     BatchCreateDatapointsRequest,
     BatchCreateDatapointsResponse,
+    ChartQueryRequest,
+    ChartQueryResponse,
     ConfigurationItem,
     CreateChartRequest,
     CreateChartResponse,
@@ -297,6 +299,8 @@ from honeyhive.models.models import (
 
 __all__ = [
     # Chart models
+    "ChartQueryRequest",
+    "ChartQueryResponse",
     "CreateChartRequest",
     "CreateChartResponse",
     "DeleteChartResponse",

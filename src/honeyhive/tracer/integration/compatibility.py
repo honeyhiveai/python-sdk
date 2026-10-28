@@ -39,6 +39,9 @@ def enrich_session(
     This function provides backward compatibility for the global enrich_session
     function using dynamic tracer discovery and flexible metadata handling.
 
+    Accepted keys:
+        Ingestion API key; Project API key (deprecated)
+
     Args:
         session_id: The session ID to enrich
         metadata: Metadata dictionary to add to the session

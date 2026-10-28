@@ -5,8 +5,8 @@ the dataset is a HoneyHive-managed dataset (created via the SDK's
 datasets API + linked datapoints) instead of an inline external list.
 
 This cell exercises the ``dataset_id=`` branch of ``evaluate()`` —
-``client.datasets.list(dataset_id=…)`` is hit, datapoints are fetched
-one-by-one via ``client.datapoints.get_datapoint(...)``, and the
+``client.datasets._list(dataset_id=…)`` is hit, datapoints are fetched
+one-by-one via ``client.datapoints._get(...)``, and the
 ``EXT-`` prefix never appears in either the dataset_id or the
 datapoint_ids. The chain-span metric-attachment guarantees still hold.
 """

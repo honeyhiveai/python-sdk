@@ -27,6 +27,9 @@ class HoneyHiveTracer(HoneyHiveTracerBase, TracerOperationsMixin, TracerContextM
     All operations use dynamic logic for flexible parameter handling,
     automatic error recovery, and graceful degradation.
 
+    Accepted keys:
+        Ingestion API key; Project API key (deprecated)
+
     Example:
         >>> # New Pydantic config approach (recommended)
         >>> config = TracerConfig(api_key="...", project="...", verbose=True)

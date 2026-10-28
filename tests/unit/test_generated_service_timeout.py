@@ -32,7 +32,9 @@ class TestSyncServiceTimeout:
         mock_client.request.return_value = _mock_response()
         mock_client_cls.return_value.__enter__.return_value = mock_client
 
-        datasets_svc.getDatasets(api_config_override=APIConfig(timeout=2.5))
+        datasets_svc.getDatasets(
+            api_config_override=APIConfig(timeout=2.5), project_id="p1"
+        )
 
         assert mock_client_cls.call_args.kwargs["timeout"] == 2.5
 
@@ -42,7 +44,7 @@ class TestSyncServiceTimeout:
         mock_client.request.return_value = _mock_response()
         mock_client_cls.return_value.__enter__.return_value = mock_client
 
-        datasets_svc.getDatasets(api_config_override=APIConfig())
+        datasets_svc.getDatasets(api_config_override=APIConfig(), project_id="p1")
 
         assert mock_client_cls.call_args.kwargs["timeout"] == 5.0
 
@@ -58,7 +60,9 @@ class TestAsyncServiceTimeout:
         mock_client_cls.return_value.__aenter__.return_value = mock_client
         mock_client_cls.return_value.__aexit__.return_value = None
 
-        await datasets_svc_async.getDatasets(api_config_override=APIConfig(timeout=2.5))
+        await datasets_svc_async.getDatasets(
+            api_config_override=APIConfig(timeout=2.5), project_id="p1"
+        )
 
         assert mock_client_cls.call_args.kwargs["timeout"] == 2.5
 
@@ -70,6 +74,8 @@ class TestAsyncServiceTimeout:
         mock_client_cls.return_value.__aenter__.return_value = mock_client
         mock_client_cls.return_value.__aexit__.return_value = None
 
-        await datasets_svc_async.getDatasets(api_config_override=APIConfig())
+        await datasets_svc_async.getDatasets(
+            api_config_override=APIConfig(), project_id="p1"
+        )
 
         assert mock_client_cls.call_args.kwargs["timeout"] == 5.0

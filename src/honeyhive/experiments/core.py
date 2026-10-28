@@ -305,6 +305,9 @@ def run_experiment(
     - Each tracer instance is completely isolated
     - Python 3.11+ GIL improvements for I/O
 
+    Accepted keys:
+        Ingestion API key; Project API key (deprecated)
+
     Args:
         function: User function to execute against each datapoint. Can be either
             a synchronous function or an async function. Async functions are
@@ -729,7 +732,7 @@ def _update_run_with_results(  # pylint: disable=too-many-branches
 
         # Use experiments API with PutExperimentRunRequest
         update_request = PutExperimentRunRequest(**update_data)
-        client.experiments.update_run(run_id, update_request)
+        client.experiments._update_run(run_id, update_request)
 
         if verbose and session_ids:
             logger.info("Linked %d sessions to run %s", len(session_ids), run_id)
@@ -1127,6 +1130,12 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
     4. Runs evaluators (if provided)
     5. Retrieves aggregated results from backend
 
+    Accepted keys:
+        - Project API key, required: creates and updates the run, reads the
+          dataset, and reads the run results.
+        - Ingestion API key, optional: sends the traces and session results.
+          Without it, the project key sends them.
+
     Args:
         function: User function to execute against each datapoint. Can be either
             a synchronous function or an async function. Async functions are
@@ -1247,8 +1256,10 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
             logger.info("DEBUG - Input dataset_id type: %s", type(dataset_id))
             logger.info("DEBUG - Is EXT- dataset: %s", dataset_id.startswith("EXT-"))
 
-        # Get dataset metadata - list() returns GetDatasetsResponse with datasets list
-        ds_response = client.datasets.list(dataset_id=dataset_id)
+        # The dataset metadata comes through the list core, which never warns,
+        # because evaluate() takes no project_id and its caller could not act
+        # on a deprecation warning.
+        ds_response = client.datasets._list(dataset_id=dataset_id)
         dataset_list = []
         datapoint_ids = []
 
@@ -1258,8 +1269,10 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
         dataset_obj = ds_response.datasets[0]
 
         # Dataset.datapoints is List[str] (IDs only), fetch each datapoint.
-        # get_datapoint returns a typed GetDatapointResponse Pydantic model
-        # whose `.datapoint` field is List[Datapoint] (also Pydantic).
+        # The fetch goes through the core, which never warns, because
+        # evaluate() takes no project_id and its caller could not act on a
+        # deprecation warning. It returns a typed GetDatapointResponse
+        # Pydantic model whose `.datapoint` field is List[Datapoint].
         #
         # Catch ONLY the exception types that represent a fetch failure
         # we can reasonably skip and keep going on (HTTP errors from the
@@ -1270,7 +1283,7 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
         if dataset_obj.datapoints:
             for dp_id in dataset_obj.datapoints:
                 try:
-                    dp_response = client.datapoints.get_datapoint(dp_id)
+                    dp_response = client.datapoints._get(dp_id)
                 except (HTTPException, httpx.HTTPError) as e:
                     logger.warning("Failed to fetch datapoint %s: %s", dp_id, str(e))
                     continue
@@ -1355,7 +1368,7 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
 
     # Create run via API (experiments API handles runs)
     run_request = PostExperimentRunRequest(**run_data)
-    run_response = client.experiments.create_run(run_request)
+    run_response = client.experiments._create_run(run_request)
 
     # Use backend-generated run_id if available
     if hasattr(run_response, "run_id") and run_response.run_id:

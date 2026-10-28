@@ -29,7 +29,7 @@ class UpdateAnnotationQueueRequest(BaseModel):
 
     enabled: Optional[bool] = Field(validation_alias="enabled", default=None)
 
-    id: str = Field(validation_alias="id")
+    id: Optional[str] = Field(validation_alias="id", default=None)
 
     add_event_ids: Optional[List[str]] = Field(
         validation_alias="add_event_ids", default=None

@@ -21,7 +21,17 @@ import logging
 import os
 import sys
 import warnings
-from typing import Any, Dict, List, Optional, TypeVar, Union
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 import httpx
 
@@ -33,6 +43,10 @@ else:
     from typing_extensions import deprecated
 
 from honeyhive._generated.api_config import APIConfig
+from honeyhive._generated.models import (
+    GetExperimentRunMetricsResponse as _GetExperimentRunMetricsResponse,
+)
+from honeyhive._generated.models import UpdateDatasetRequest as UpdateDatasetBody
 
 # Import async services
 # Import sync services
@@ -68,6 +82,10 @@ from honeyhive.config.resolved import ResolvedConfig
 from honeyhive.models import (
     AddDatapointsResponse,
     AddDatapointsToDatasetRequest,
+    BatchCreateDatapointsRequest,
+    BatchCreateDatapointsResponse,
+    ChartQueryRequest,
+    ChartQueryResponse,
     ConfigurationItem,
     CreateChartRequest,
     CreateChartResponse,
@@ -241,6 +259,22 @@ def _warn_call_without_project_id(namespace: str, method: str) -> None:
     )
 
 
+def _split_dataset_update(
+    request: UpdateDatasetRequest,
+) -> Tuple[str, UpdateDatasetBody]:
+    """The dataset an update request names, and the body without it.
+
+    The project-scoped operation takes ``dataset_id`` in its path and refuses
+    it in the body.
+    """
+    if not request.dataset_id:
+        raise ValueError("UpdateDatasetRequest.dataset_id is required")
+    body = UpdateDatasetBody(
+        **request.model_dump(exclude={"dataset_id"}, exclude_none=True)
+    )
+    return request.dataset_id, body
+
+
 class ChartsAPI(BaseAPI):
     """Charts API.
 
@@ -248,10 +282,18 @@ class ChartsAPI(BaseAPI):
     the project in its path and is sent with the data plane API key. Without
     it, the request acts on the project API key's project, is sent with that
     key, and issues a ``DeprecationWarning``.
+
+    Each public method warns and then calls its private core, which sends the
+    request and never warns. SDK code that reaches a chart operation calls the
+    core, so the warning reaches only a caller who can pass ``project_id``.
     """
 
     def list(self, *, project_id: Optional[str] = None) -> GetChartsResponse:
         """List the charts in a project.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
 
         Args:
             project_id: The project whose charts are listed. Omitting it lists
@@ -259,13 +301,16 @@ class ChartsAPI(BaseAPI):
         """
         if project_id is None:
             _warn_call_without_project_id("charts", "list")
-            return charts_svc.getChartsLegacy(self._api_config)
-        return charts_svc.getCharts(self._data_plane_api_config, project_id=project_id)
+        return self._list(project_id=project_id)
 
     def get(
         self, chart_id: str, *, project_id: Optional[str] = None
     ) -> GetChartResponse:
         """Get a chart by ID.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
 
         Args:
             chart_id: The chart to get.
@@ -274,15 +319,16 @@ class ChartsAPI(BaseAPI):
         """
         if project_id is None:
             _warn_call_without_project_id("charts", "get")
-            return charts_svc.getChartLegacy(self._api_config, chart_id=chart_id)
-        return charts_svc.getChart(
-            self._data_plane_api_config, project_id=project_id, chart_id=chart_id
-        )
+        return self._get(chart_id, project_id=project_id)
 
     def create(
         self, request: CreateChartRequest, *, project_id: Optional[str] = None
     ) -> CreateChartResponse:
         """Create a chart.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
 
         Args:
             request: The chart to create.
@@ -291,10 +337,7 @@ class ChartsAPI(BaseAPI):
         """
         if project_id is None:
             _warn_call_without_project_id("charts", "create")
-            return charts_svc.createChartLegacy(self._api_config, data=request)
-        return charts_svc.createChart(
-            self._data_plane_api_config, project_id=project_id, data=request
-        )
+        return self._create(request, project_id=project_id)
 
     def update(
         self,
@@ -305,6 +348,10 @@ class ChartsAPI(BaseAPI):
     ) -> UpdateChartResponse:
         """Update a chart. Only the fields set in ``request`` are changed.
 
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+
         Args:
             chart_id: The chart to update.
             request: The fields to change.
@@ -313,6 +360,161 @@ class ChartsAPI(BaseAPI):
         """
         if project_id is None:
             _warn_call_without_project_id("charts", "update")
+        return self._update(chart_id, request, project_id=project_id)
+
+    def delete(
+        self, chart_id: str, *, project_id: Optional[str] = None
+    ) -> DeleteChartResponse:
+        """Delete a chart and remove it from the project's dashboards.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+
+        Args:
+            chart_id: The chart to delete.
+            project_id: The project that owns the chart. Omitting it deletes it
+                from the project API key's project, which is deprecated.
+        """
+        if project_id is None:
+            _warn_call_without_project_id("charts", "delete")
+        return self._delete(chart_id, project_id=project_id)
+
+    async def list_async(
+        self, *, project_id: Optional[str] = None
+    ) -> GetChartsResponse:
+        """List the charts in a project asynchronously. See ``list()``.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+        """
+        if project_id is None:
+            _warn_call_without_project_id("charts", "list_async")
+        return await self._list_async(project_id=project_id)
+
+    async def get_async(
+        self, chart_id: str, *, project_id: Optional[str] = None
+    ) -> GetChartResponse:
+        """Get a chart by ID asynchronously. See ``get()``.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+        """
+        if project_id is None:
+            _warn_call_without_project_id("charts", "get_async")
+        return await self._get_async(chart_id, project_id=project_id)
+
+    async def create_async(
+        self, request: CreateChartRequest, *, project_id: Optional[str] = None
+    ) -> CreateChartResponse:
+        """Create a chart asynchronously. See ``create()``.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+        """
+        if project_id is None:
+            _warn_call_without_project_id("charts", "create_async")
+        return await self._create_async(request, project_id=project_id)
+
+    async def update_async(
+        self,
+        chart_id: str,
+        request: UpdateChartRequest,
+        *,
+        project_id: Optional[str] = None,
+    ) -> UpdateChartResponse:
+        """Update a chart asynchronously. See ``update()``.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+        """
+        if project_id is None:
+            _warn_call_without_project_id("charts", "update_async")
+        return await self._update_async(chart_id, request, project_id=project_id)
+
+    async def delete_async(
+        self, chart_id: str, *, project_id: Optional[str] = None
+    ) -> DeleteChartResponse:
+        """Delete a chart asynchronously. See ``delete()``.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+        """
+        if project_id is None:
+            _warn_call_without_project_id("charts", "delete_async")
+        return await self._delete_async(chart_id, project_id=project_id)
+
+    def query(
+        self, request: ChartQueryRequest, *, project_id: str
+    ) -> ChartQueryResponse:
+        """Aggregate a project's events into one chart result.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project.event.get``
+
+        Args:
+            request: The date range, filters, and query to run. The filters
+                must include an ``event_type`` filter.
+            project_id: The project whose events are queried.
+        """
+        return charts_svc.queryChart(
+            self._data_plane_api_config, project_id=project_id, data=request
+        )
+
+    async def query_async(
+        self, request: ChartQueryRequest, *, project_id: str
+    ) -> ChartQueryResponse:
+        """Aggregate a project's events asynchronously. See ``query()``.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project.event.get``
+        """
+        return await charts_svc_async.queryChart(
+            self._data_plane_api_config, project_id=project_id, data=request
+        )
+
+    # ---- Cores: send the request, never warn ----
+
+    def _list(self, *, project_id: Optional[str] = None) -> GetChartsResponse:
+        """The request ``list()`` sends."""
+        if project_id is None:
+            return charts_svc.getChartsLegacy(self._api_config)
+        return charts_svc.getCharts(self._data_plane_api_config, project_id=project_id)
+
+    def _get(
+        self, chart_id: str, *, project_id: Optional[str] = None
+    ) -> GetChartResponse:
+        """The request ``get()`` sends."""
+        if project_id is None:
+            return charts_svc.getChartLegacy(self._api_config, chart_id=chart_id)
+        return charts_svc.getChart(
+            self._data_plane_api_config, project_id=project_id, chart_id=chart_id
+        )
+
+    def _create(
+        self, request: CreateChartRequest, *, project_id: Optional[str] = None
+    ) -> CreateChartResponse:
+        """The request ``create()`` sends."""
+        if project_id is None:
+            return charts_svc.createChartLegacy(self._api_config, data=request)
+        return charts_svc.createChart(
+            self._data_plane_api_config, project_id=project_id, data=request
+        )
+
+    def _update(
+        self,
+        chart_id: str,
+        request: UpdateChartRequest,
+        *,
+        project_id: Optional[str] = None,
+    ) -> UpdateChartResponse:
+        """The request ``update()`` sends."""
+        if project_id is None:
             return charts_svc.updateChartLegacy(
                 self._api_config, chart_id=chart_id, data=request
             )
@@ -323,40 +525,31 @@ class ChartsAPI(BaseAPI):
             data=request,
         )
 
-    def delete(
+    def _delete(
         self, chart_id: str, *, project_id: Optional[str] = None
     ) -> DeleteChartResponse:
-        """Delete a chart and remove it from the project's dashboards.
-
-        Args:
-            chart_id: The chart to delete.
-            project_id: The project that owns the chart. Omitting it deletes it
-                from the project API key's project, which is deprecated.
-        """
+        """The request ``delete()`` sends."""
         if project_id is None:
-            _warn_call_without_project_id("charts", "delete")
             return charts_svc.deleteChartLegacy(self._api_config, chart_id=chart_id)
         return charts_svc.deleteChart(
             self._data_plane_api_config, project_id=project_id, chart_id=chart_id
         )
 
-    async def list_async(
+    async def _list_async(
         self, *, project_id: Optional[str] = None
     ) -> GetChartsResponse:
-        """List the charts in a project asynchronously. See ``list()``."""
+        """The request ``list_async()`` sends."""
         if project_id is None:
-            _warn_call_without_project_id("charts", "list_async")
             return await charts_svc_async.getChartsLegacy(self._api_config)
         return await charts_svc_async.getCharts(
             self._data_plane_api_config, project_id=project_id
         )
 
-    async def get_async(
+    async def _get_async(
         self, chart_id: str, *, project_id: Optional[str] = None
     ) -> GetChartResponse:
-        """Get a chart by ID asynchronously. See ``get()``."""
+        """The request ``get_async()`` sends."""
         if project_id is None:
-            _warn_call_without_project_id("charts", "get_async")
             return await charts_svc_async.getChartLegacy(
                 self._api_config, chart_id=chart_id
             )
@@ -364,12 +557,11 @@ class ChartsAPI(BaseAPI):
             self._data_plane_api_config, project_id=project_id, chart_id=chart_id
         )
 
-    async def create_async(
+    async def _create_async(
         self, request: CreateChartRequest, *, project_id: Optional[str] = None
     ) -> CreateChartResponse:
-        """Create a chart asynchronously. See ``create()``."""
+        """The request ``create_async()`` sends."""
         if project_id is None:
-            _warn_call_without_project_id("charts", "create_async")
             return await charts_svc_async.createChartLegacy(
                 self._api_config, data=request
             )
@@ -377,16 +569,15 @@ class ChartsAPI(BaseAPI):
             self._data_plane_api_config, project_id=project_id, data=request
         )
 
-    async def update_async(
+    async def _update_async(
         self,
         chart_id: str,
         request: UpdateChartRequest,
         *,
         project_id: Optional[str] = None,
     ) -> UpdateChartResponse:
-        """Update a chart asynchronously. See ``update()``."""
+        """The request ``update_async()`` sends."""
         if project_id is None:
-            _warn_call_without_project_id("charts", "update_async")
             return await charts_svc_async.updateChartLegacy(
                 self._api_config, chart_id=chart_id, data=request
             )
@@ -397,12 +588,11 @@ class ChartsAPI(BaseAPI):
             data=request,
         )
 
-    async def delete_async(
+    async def _delete_async(
         self, chart_id: str, *, project_id: Optional[str] = None
     ) -> DeleteChartResponse:
-        """Delete a chart asynchronously. See ``delete()``."""
+        """The request ``delete_async()`` sends."""
         if project_id is None:
-            _warn_call_without_project_id("charts", "delete_async")
             return await charts_svc_async.deleteChartLegacy(
                 self._api_config, chart_id=chart_id
             )
@@ -417,6 +607,9 @@ class ConfigurationsAPI(BaseAPI):
     # Sync methods
     def list(self, project: Optional[str] = None) -> List[ConfigurationItem]:
         """List configurations.
+
+        Accepted keys:
+            Project API key
 
         Note:
             The v1 API does not currently support project filtering.
@@ -436,19 +629,31 @@ class ConfigurationsAPI(BaseAPI):
     def create(
         self, request: CreateConfigurationRequest
     ) -> CreateConfigurationResponse:
-        """Create a configuration."""
+        """Create a configuration.
+
+        Accepted keys:
+            Project API key
+        """
         return configs_svc.createConfiguration(self._api_config, data=request)
 
     def update(
         self, id: str, request: UpdateConfigurationRequest
     ) -> UpdateConfigurationResponse:
-        """Update a configuration."""
+        """Update a configuration.
+
+        Accepted keys:
+            Project API key
+        """
         return configs_svc.updateConfiguration(
             self._api_config, configId=id, data=request
         )
 
     def delete(self, id: str) -> DeleteConfigurationResponse:
-        """Delete a configuration."""
+        """Delete a configuration.
+
+        Accepted keys:
+            Project API key
+        """
         return configs_svc.deleteConfiguration(self._api_config, configId=id)
 
     # Async methods
@@ -456,6 +661,9 @@ class ConfigurationsAPI(BaseAPI):
         self, project: Optional[str] = None
     ) -> List[ConfigurationItem]:
         """List configurations asynchronously.
+
+        Accepted keys:
+            Project API key
 
         Note:
             The v1 API does not currently support project filtering.
@@ -474,7 +682,11 @@ class ConfigurationsAPI(BaseAPI):
     async def create_async(
         self, request: CreateConfigurationRequest
     ) -> CreateConfigurationResponse:
-        """Create a configuration asynchronously."""
+        """Create a configuration asynchronously.
+
+        Accepted keys:
+            Project API key
+        """
         return await configs_svc_async.createConfiguration(
             self._api_config, data=request
         )
@@ -482,75 +694,389 @@ class ConfigurationsAPI(BaseAPI):
     async def update_async(
         self, id: str, request: UpdateConfigurationRequest
     ) -> UpdateConfigurationResponse:
-        """Update a configuration asynchronously."""
+        """Update a configuration asynchronously.
+
+        Accepted keys:
+            Project API key
+        """
         return await configs_svc_async.updateConfiguration(
             self._api_config, configId=id, data=request
         )
 
     async def delete_async(self, id: str) -> DeleteConfigurationResponse:
-        """Delete a configuration asynchronously."""
+        """Delete a configuration asynchronously.
+
+        Accepted keys:
+            Project API key
+        """
         return await configs_svc_async.deleteConfiguration(
             self._api_config, configId=id
         )
 
     # Backwards compatible aliases
     def get_configuration(self, id: str) -> List[ConfigurationItem]:
-        """Get a configuration (backwards compatible alias)."""
+        """Get a configuration (backwards compatible alias).
+
+        Accepted keys:
+            Project API key
+        """
         del id
         return self.list()  # No single-get endpoint, returns all
 
     def create_configuration(
         self, request: CreateConfigurationRequest
     ) -> CreateConfigurationResponse:
-        """Create a configuration (backwards compatible alias)."""
+        """Create a configuration (backwards compatible alias).
+
+        Accepted keys:
+            Project API key
+        """
         return self.create(request)
 
     def update_configuration(
         self, id: str, request: UpdateConfigurationRequest
     ) -> UpdateConfigurationResponse:
-        """Update a configuration (backwards compatible alias)."""
+        """Update a configuration (backwards compatible alias).
+
+        Accepted keys:
+            Project API key
+        """
         return self.update(id, request)
 
     def delete_configuration(self, id: str) -> DeleteConfigurationResponse:
-        """Delete a configuration (backwards compatible alias)."""
+        """Delete a configuration (backwards compatible alias).
+
+        Accepted keys:
+            Project API key
+        """
         return self.delete(id)
 
     def list_configurations(
         self, project: Optional[str] = None
     ) -> List[ConfigurationItem]:
-        """List configurations (backwards compatible alias)."""
+        """List configurations (backwards compatible alias).
+
+        Accepted keys:
+            Project API key
+        """
         return self.list(project)
 
 
 class DatapointsAPI(BaseAPI):
-    """Datapoints API."""
+    """Datapoints API.
+
+    A method that takes ``project_id`` sends the request with the data plane
+    API key when given it, naming the project in the path. Without it, the
+    request acts on the project API key's project, is sent with that key, and
+    issues a ``DeprecationWarning``.
+
+    Each such public method, alias included, warns in its own name and then
+    calls its private core, which sends the request and never warns. SDK code
+    that reaches the operation calls the core, so the warning reaches only a
+    caller who can pass ``project_id``.
+    """
 
     # Sync methods
     def list(
         self,
         datapoint_ids: Optional[List[str]] = None,
         dataset_name: Optional[str] = None,
+        *,
+        project_id: Optional[str] = None,
     ) -> GetDatapointsResponse:
         """List datapoints.
 
         When datapoint_ids exceeds QUERY_BATCH_SIZE, requests are automatically
         batched to stay within URL length limits and the results are merged.
 
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+
         Args:
             datapoint_ids: Optional list of datapoint IDs to fetch.
             dataset_name: Optional dataset name to filter by.
+            project_id: The project whose datapoints are listed. Omitting it
+                lists the project API key's datapoints, which is deprecated.
         """
+        if project_id is None:
+            _warn_call_without_project_id("datapoints", "list")
+        return self._list(datapoint_ids, dataset_name, project_id=project_id)
+
+    def get(self, id: str, *, project_id: Optional[str] = None) -> GetDatapointResponse:
+        """Get a datapoint by ID.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+
+        Args:
+            id: The datapoint to get.
+            project_id: The project that owns the datapoint. Omitting it reads
+                from the project API key's project, which is deprecated.
+        """
+        if project_id is None:
+            _warn_call_without_project_id("datapoints", "get")
+        return self._get(id, project_id=project_id)
+
+    def create(
+        self, request: CreateDatapointRequest, *, project_id: Optional[str] = None
+    ) -> CreateDatapointResponse:
+        """Create a datapoint.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+        """
+        if project_id is None:
+            _warn_call_without_project_id("datapoints", "create")
+        return self._create(request, project_id=project_id)
+
+    def create_batch(
+        self, request: BatchCreateDatapointsRequest, *, project_id: Optional[str] = None
+    ) -> BatchCreateDatapointsResponse:
+        """Create datapoints from the events ``request.checkState`` checks.
+
+        A data plane API key needs both ``project.datapoint.post`` and
+        ``project.event.get`` for the project, and also
+        ``project.dataset.post`` when ``request.dataset_id`` is set.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+        """
+        if project_id is None:
+            _warn_call_without_project_id("datapoints", "create_batch")
+        return self._create_batch(request, project_id=project_id)
+
+    def update(
+        self,
+        id: str,
+        request: UpdateDatapointRequest,
+        *,
+        project_id: Optional[str] = None,
+    ) -> UpdateDatapointResponse:
+        """Update a datapoint.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+        """
+        if project_id is None:
+            _warn_call_without_project_id("datapoints", "update")
+        return self._update(id, request, project_id=project_id)
+
+    def delete(
+        self, id: str, *, project_id: Optional[str] = None
+    ) -> DeleteDatapointResponse:
+        """Delete a datapoint and remove it from every dataset that holds it.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+
+        Args:
+            id: The datapoint to delete.
+            project_id: The project that owns the datapoint. Omitting it deletes
+                it from the project API key's project, which is deprecated.
+        """
+        if project_id is None:
+            _warn_call_without_project_id("datapoints", "delete")
+        return self._delete(id, project_id=project_id)
+
+    # Async methods
+    async def list_async(
+        self,
+        datapoint_ids: Optional[List[str]] = None,
+        dataset_name: Optional[str] = None,
+        *,
+        project_id: Optional[str] = None,
+    ) -> GetDatapointsResponse:
+        """List datapoints asynchronously. See ``list()``.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+        """
+        if project_id is None:
+            _warn_call_without_project_id("datapoints", "list_async")
+        return await self._list_async(
+            datapoint_ids, dataset_name, project_id=project_id
+        )
+
+    async def get_async(
+        self, id: str, *, project_id: Optional[str] = None
+    ) -> GetDatapointResponse:
+        """Get a datapoint by ID asynchronously. See ``get()``.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+        """
+        if project_id is None:
+            _warn_call_without_project_id("datapoints", "get_async")
+        return await self._get_async(id, project_id=project_id)
+
+    async def create_async(
+        self, request: CreateDatapointRequest, *, project_id: Optional[str] = None
+    ) -> CreateDatapointResponse:
+        """Create a datapoint asynchronously.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+        """
+        if project_id is None:
+            _warn_call_without_project_id("datapoints", "create_async")
+        return await self._create_async(request, project_id=project_id)
+
+    async def create_batch_async(
+        self, request: BatchCreateDatapointsRequest, *, project_id: Optional[str] = None
+    ) -> BatchCreateDatapointsResponse:
+        """Create datapoints from events asynchronously. See ``create_batch()``.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+        """
+        if project_id is None:
+            _warn_call_without_project_id("datapoints", "create_batch_async")
+        return await self._create_batch_async(request, project_id=project_id)
+
+    async def update_async(
+        self,
+        id: str,
+        request: UpdateDatapointRequest,
+        *,
+        project_id: Optional[str] = None,
+    ) -> UpdateDatapointResponse:
+        """Update a datapoint asynchronously.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+        """
+        if project_id is None:
+            _warn_call_without_project_id("datapoints", "update_async")
+        return await self._update_async(id, request, project_id=project_id)
+
+    async def delete_async(
+        self, id: str, *, project_id: Optional[str] = None
+    ) -> DeleteDatapointResponse:
+        """Delete a datapoint asynchronously. See ``delete()``.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+        """
+        if project_id is None:
+            _warn_call_without_project_id("datapoints", "delete_async")
+        return await self._delete_async(id, project_id=project_id)
+
+    # Backwards compatible aliases
+    def get_datapoint(
+        self, id: str, *, project_id: Optional[str] = None
+    ) -> GetDatapointResponse:
+        """Get a datapoint by ID (backwards compatible alias for get()).
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+        """
+        if project_id is None:
+            _warn_call_without_project_id("datapoints", "get_datapoint")
+        return self._get(id, project_id=project_id)
+
+    def create_datapoint(
+        self, request: CreateDatapointRequest, *, project_id: Optional[str] = None
+    ) -> CreateDatapointResponse:
+        """Create a datapoint (backwards compatible alias for create()).
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+        """
+        if project_id is None:
+            _warn_call_without_project_id("datapoints", "create_datapoint")
+        return self._create(request, project_id=project_id)
+
+    def update_datapoint(
+        self,
+        id: str,
+        request: UpdateDatapointRequest,
+        *,
+        project_id: Optional[str] = None,
+    ) -> UpdateDatapointResponse:
+        """Update a datapoint (backwards compatible alias for update()).
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+        """
+        if project_id is None:
+            _warn_call_without_project_id("datapoints", "update_datapoint")
+        return self._update(id, request, project_id=project_id)
+
+    def delete_datapoint(
+        self, id: str, *, project_id: Optional[str] = None
+    ) -> DeleteDatapointResponse:
+        """Delete a datapoint (backwards compatible alias for delete()).
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+        """
+        if project_id is None:
+            _warn_call_without_project_id("datapoints", "delete_datapoint")
+        return self._delete(id, project_id=project_id)
+
+    def list_datapoints(
+        self,
+        datapoint_ids: Optional[List[str]] = None,
+        dataset_name: Optional[str] = None,
+        *,
+        project_id: Optional[str] = None,
+    ) -> GetDatapointsResponse:
+        """List datapoints (backwards compatible alias for list()).
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+        """
+        if project_id is None:
+            _warn_call_without_project_id("datapoints", "list_datapoints")
+        return self._list(datapoint_ids, dataset_name, project_id=project_id)
+
+    # ---- Cores: send the request, never warn ----
+
+    def _list(
+        self,
+        datapoint_ids: Optional[List[str]] = None,
+        dataset_name: Optional[str] = None,
+        *,
+        project_id: Optional[str] = None,
+    ) -> GetDatapointsResponse:
+        """The request ``list()`` sends, one per ``QUERY_BATCH_SIZE`` chunk of ids."""
+
+        def send(ids: Optional[List[str]]) -> GetDatapointsResponse:
+            if project_id is None:
+                return datapoints_svc.getDatapointsLegacy(
+                    self._api_config, datapoint_ids=ids, dataset_name=dataset_name
+                )
+            return datapoints_svc.getDatapoints(
+                self._data_plane_api_config,
+                project_id=project_id,
+                datapoint_ids=ids,
+                dataset_name=dataset_name,
+            )
+
         # Batch if the list is large enough to risk exceeding URL length limits.
         if datapoint_ids and len(datapoint_ids) > QUERY_BATCH_SIZE:
             all_datapoints: List[Any] = []
             batches = _chunk_list(datapoint_ids, QUERY_BATCH_SIZE)
             for i, batch in enumerate(batches):
                 try:
-                    resp = datapoints_svc.getDatapoints(
-                        self._api_config,
-                        datapoint_ids=batch,
-                        dataset_name=dataset_name,
-                    )
+                    resp = send(batch)
                 except Exception:
                     logger.warning(
                         "Batch %d/%d failed (%d IDs)", i + 1, len(batches), len(batch)
@@ -560,288 +1086,674 @@ class DatapointsAPI(BaseAPI):
             # Skip re-validation — items are already validated Datapoint instances.
             return GetDatapointsResponse.model_construct(datapoints=all_datapoints)
 
-        return datapoints_svc.getDatapoints(
-            self._api_config, datapoint_ids=datapoint_ids, dataset_name=dataset_name
-        )
+        return send(datapoint_ids)
 
-    def get(self, id: str) -> GetDatapointResponse:
-        """Get a datapoint by ID."""
-        return datapoints_svc.getDatapoint(self._api_config, datapoint_id=id)
-
-    def create(self, request: CreateDatapointRequest) -> CreateDatapointResponse:
-        """Create a datapoint."""
-        return datapoints_svc.createDatapoint(self._api_config, data=request)
-
-    def update(
-        self, id: str, request: UpdateDatapointRequest
-    ) -> UpdateDatapointResponse:
-        """Update a datapoint."""
-        return datapoints_svc.updateDatapoint(
-            self._api_config, datapoint_id=id, data=request
-        )
-
-    def delete(self, id: str) -> DeleteDatapointResponse:
-        """Delete a datapoint."""
-        return datapoints_svc.deleteDatapoint(self._api_config, datapoint_id=id)
-
-    # Async methods
-    async def list_async(
+    async def _list_async(
         self,
         datapoint_ids: Optional[List[str]] = None,
         dataset_name: Optional[str] = None,
+        *,
+        project_id: Optional[str] = None,
     ) -> GetDatapointsResponse:
-        """List datapoints asynchronously.
+        """The request ``list_async()`` sends, one per ``QUERY_BATCH_SIZE`` chunk of ids."""
 
-        When datapoint_ids exceeds QUERY_BATCH_SIZE, requests are automatically
-        batched to stay within URL length limits and the results are merged.
+        async def send(ids: Optional[List[str]]) -> GetDatapointsResponse:
+            if project_id is None:
+                return await datapoints_svc_async.getDatapointsLegacy(
+                    self._api_config, datapoint_ids=ids, dataset_name=dataset_name
+                )
+            return await datapoints_svc_async.getDatapoints(
+                self._data_plane_api_config,
+                project_id=project_id,
+                datapoint_ids=ids,
+                dataset_name=dataset_name,
+            )
 
-        Args:
-            datapoint_ids: Optional list of datapoint IDs to fetch.
-            dataset_name: Optional dataset name to filter by.
-        """
         # Batch if the list is large enough to risk exceeding URL length limits.
         if datapoint_ids and len(datapoint_ids) > QUERY_BATCH_SIZE:
             batches = _chunk_list(datapoint_ids, QUERY_BATCH_SIZE)
-            resps = await asyncio.gather(
-                *(
-                    datapoints_svc_async.getDatapoints(
-                        self._api_config,
-                        datapoint_ids=batch,
-                        dataset_name=dataset_name,
-                    )
-                    for batch in batches
-                )
-            )
+            resps = await asyncio.gather(*(send(batch) for batch in batches))
             all_datapoints: List[Any] = []
             for resp in resps:
                 all_datapoints.extend(resp.datapoints)
             # Skip re-validation — items are already validated Datapoint instances.
             return GetDatapointsResponse.model_construct(datapoints=all_datapoints)
 
-        return await datapoints_svc_async.getDatapoints(
-            self._api_config, datapoint_ids=datapoint_ids, dataset_name=dataset_name
+        return await send(datapoint_ids)
+
+    def _get(
+        self, id: str, *, project_id: Optional[str] = None
+    ) -> GetDatapointResponse:
+        """The request ``get()`` sends."""
+        if project_id is None:
+            return datapoints_svc.getDatapointLegacy(self._api_config, datapoint_id=id)
+        return datapoints_svc.getDatapoint(
+            self._data_plane_api_config, project_id=project_id, datapoint_id=id
         )
 
-    async def get_async(self, id: str) -> GetDatapointResponse:
-        """Get a datapoint by ID asynchronously."""
+    async def _get_async(
+        self, id: str, *, project_id: Optional[str] = None
+    ) -> GetDatapointResponse:
+        """The request ``get_async()`` sends."""
+        if project_id is None:
+            return await datapoints_svc_async.getDatapointLegacy(
+                self._api_config, datapoint_id=id
+            )
         return await datapoints_svc_async.getDatapoint(
-            self._api_config, datapoint_id=id
+            self._data_plane_api_config, project_id=project_id, datapoint_id=id
         )
 
-    async def create_async(
-        self, request: CreateDatapointRequest
+    def _create(
+        self, request: CreateDatapointRequest, *, project_id: Optional[str] = None
     ) -> CreateDatapointResponse:
-        """Create a datapoint asynchronously."""
+        """The request ``create()`` sends."""
+        if project_id is None:
+            return datapoints_svc.createDatapointLegacy(self._api_config, data=request)
+        return datapoints_svc.createDatapoint(
+            self._data_plane_api_config, project_id=project_id, data=request
+        )
+
+    async def _create_async(
+        self, request: CreateDatapointRequest, *, project_id: Optional[str] = None
+    ) -> CreateDatapointResponse:
+        """The request ``create_async()`` sends."""
+        if project_id is None:
+            return await datapoints_svc_async.createDatapointLegacy(
+                self._api_config, data=request
+            )
         return await datapoints_svc_async.createDatapoint(
-            self._api_config, data=request
+            self._data_plane_api_config, project_id=project_id, data=request
         )
 
-    async def update_async(
-        self, id: str, request: UpdateDatapointRequest
-    ) -> UpdateDatapointResponse:
-        """Update a datapoint asynchronously."""
-        return await datapoints_svc_async.updateDatapoint(
-            self._api_config, datapoint_id=id, data=request
+    def _create_batch(
+        self, request: BatchCreateDatapointsRequest, *, project_id: Optional[str] = None
+    ) -> BatchCreateDatapointsResponse:
+        """The request ``create_batch()`` sends."""
+        if project_id is None:
+            return datapoints_svc.batchCreateDatapointsLegacy(
+                self._api_config, data=request
+            )
+        return datapoints_svc.batchCreateDatapoints(
+            self._data_plane_api_config, project_id=project_id, data=request
         )
 
-    async def delete_async(self, id: str) -> DeleteDatapointResponse:
-        """Delete a datapoint asynchronously."""
-        return await datapoints_svc_async.deleteDatapoint(
-            self._api_config, datapoint_id=id
+    async def _create_batch_async(
+        self, request: BatchCreateDatapointsRequest, *, project_id: Optional[str] = None
+    ) -> BatchCreateDatapointsResponse:
+        """The request ``create_batch_async()`` sends."""
+        if project_id is None:
+            return await datapoints_svc_async.batchCreateDatapointsLegacy(
+                self._api_config, data=request
+            )
+        return await datapoints_svc_async.batchCreateDatapoints(
+            self._data_plane_api_config, project_id=project_id, data=request
         )
 
-    # Backwards compatible aliases
-    def get_datapoint(self, id: str) -> GetDatapointResponse:
-        """Get a datapoint by ID (backwards compatible alias for get())."""
-        return self.get(id)
-
-    def create_datapoint(
-        self, request: CreateDatapointRequest
-    ) -> CreateDatapointResponse:
-        """Create a datapoint (backwards compatible alias for create())."""
-        return self.create(request)
-
-    def update_datapoint(
-        self, id: str, request: UpdateDatapointRequest
-    ) -> UpdateDatapointResponse:
-        """Update a datapoint (backwards compatible alias for update())."""
-        return self.update(id, request)
-
-    def delete_datapoint(self, id: str) -> DeleteDatapointResponse:
-        """Delete a datapoint (backwards compatible alias for delete())."""
-        return self.delete(id)
-
-    def list_datapoints(
+    def _update(
         self,
-        datapoint_ids: Optional[List[str]] = None,
-        dataset_name: Optional[str] = None,
-    ) -> GetDatapointsResponse:
-        """List datapoints (backwards compatible alias)."""
-        return self.list(datapoint_ids=datapoint_ids, dataset_name=dataset_name)
+        id: str,
+        request: UpdateDatapointRequest,
+        *,
+        project_id: Optional[str] = None,
+    ) -> UpdateDatapointResponse:
+        """The request ``update()`` sends."""
+        if project_id is None:
+            return datapoints_svc.updateDatapointLegacy(
+                self._api_config, datapoint_id=id, data=request
+            )
+        return datapoints_svc.updateDatapoint(
+            self._data_plane_api_config,
+            project_id=project_id,
+            datapoint_id=id,
+            data=request,
+        )
+
+    async def _update_async(
+        self,
+        id: str,
+        request: UpdateDatapointRequest,
+        *,
+        project_id: Optional[str] = None,
+    ) -> UpdateDatapointResponse:
+        """The request ``update_async()`` sends."""
+        if project_id is None:
+            return await datapoints_svc_async.updateDatapointLegacy(
+                self._api_config, datapoint_id=id, data=request
+            )
+        return await datapoints_svc_async.updateDatapoint(
+            self._data_plane_api_config,
+            project_id=project_id,
+            datapoint_id=id,
+            data=request,
+        )
+
+    def _delete(
+        self, id: str, *, project_id: Optional[str] = None
+    ) -> DeleteDatapointResponse:
+        """The request ``delete()`` sends."""
+        if project_id is None:
+            return datapoints_svc.deleteDatapointLegacy(
+                self._api_config, datapoint_id=id
+            )
+        return datapoints_svc.deleteDatapoint(
+            self._data_plane_api_config, project_id=project_id, datapoint_id=id
+        )
+
+    async def _delete_async(
+        self, id: str, *, project_id: Optional[str] = None
+    ) -> DeleteDatapointResponse:
+        """The request ``delete_async()`` sends."""
+        if project_id is None:
+            return await datapoints_svc_async.deleteDatapointLegacy(
+                self._api_config, datapoint_id=id
+            )
+        return await datapoints_svc_async.deleteDatapoint(
+            self._data_plane_api_config, project_id=project_id, datapoint_id=id
+        )
 
 
 class DatasetsAPI(BaseAPI):
-    """Datasets API."""
+    """Datasets API.
+
+    A method that takes ``project_id`` sends the request with the data plane
+    API key when given it, naming the project in the path. Without it, the
+    request acts on the project API key's project, is sent with that key, and
+    issues a ``DeprecationWarning``.
+
+    Each such public method, alias included, warns in its own name and then
+    calls its private core, which sends the request and never warns. SDK code
+    that reaches the operation calls the core, so the warning reaches only a
+    caller who can pass ``project_id``.
+    """
 
     # Sync methods
     def list(
         self,
         dataset_id: Optional[str] = None,
         name: Optional[str] = None,
+        *,
+        project_id: Optional[str] = None,
     ) -> GetDatasetsResponse:
         """List datasets.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
 
         Args:
             dataset_id: Optional dataset ID to fetch.
             name: Optional dataset name to filter by.
+            project_id: The project whose datasets are listed. Omitting it lists
+                the project API key's datasets, which is deprecated.
         """
-        return datasets_svc.getDatasets(
-            self._api_config,
-            dataset_id=dataset_id,
-            name=name,
-        )
+        if project_id is None:
+            _warn_call_without_project_id("datasets", "list")
+        return self._list(dataset_id, name, project_id=project_id)
 
-    def create(self, request: CreateDatasetRequest) -> CreateDatasetResponse:
-        """Create a dataset."""
-        return datasets_svc.createDataset(self._api_config, data=request)
+    def create(
+        self, request: CreateDatasetRequest, *, project_id: Optional[str] = None
+    ) -> CreateDatasetResponse:
+        """Create a dataset.
 
-    def update(self, request: UpdateDatasetRequest) -> UpdateDatasetResponse:
-        """Update a dataset."""
-        return datasets_svc.updateDatasetLegacy(self._api_config, data=request)
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+        """
+        if project_id is None:
+            _warn_call_without_project_id("datasets", "create")
+        return self._create(request, project_id=project_id)
 
-    def delete(self, id: str) -> DeleteDatasetResponse:
-        """Delete a dataset."""
-        return datasets_svc.deleteDatasetLegacy(self._api_config, dataset_id=id)
+    def update(
+        self, request: UpdateDatasetRequest, *, project_id: Optional[str] = None
+    ) -> UpdateDatasetResponse:
+        """Update a dataset.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+
+        Args:
+            request: The fields to update, with the dataset's ``dataset_id``.
+            project_id: The project that owns the dataset. Omitting it updates
+                it in the project API key's project, which is deprecated.
+        """
+        if project_id is None:
+            _warn_call_without_project_id("datasets", "update")
+        return self._update(request, project_id=project_id)
+
+    def delete(
+        self, id: str, *, project_id: Optional[str] = None
+    ) -> DeleteDatasetResponse:
+        """Delete a dataset.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+
+        Args:
+            id: The dataset to delete.
+            project_id: The project that owns the dataset. Omitting it deletes
+                it from the project API key's project, which is deprecated.
+        """
+        if project_id is None:
+            _warn_call_without_project_id("datasets", "delete")
+        return self._delete(id, project_id=project_id)
 
     def add_datapoints(
-        self, dataset_id: str, request: AddDatapointsToDatasetRequest
+        self,
+        dataset_id: str,
+        request: AddDatapointsToDatasetRequest,
+        *,
+        project_id: Optional[str] = None,
     ) -> AddDatapointsResponse:
         """Add datapoints to a dataset.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
 
         Args:
             dataset_id: The unique identifier of the dataset to add datapoints to.
             request: The request containing data and mapping for the datapoints.
+            project_id: The project that owns the dataset. Omitting it adds to
+                the dataset in the project API key's project, which is
+                deprecated.
 
         Returns:
             AddDatapointsResponse with inserted status and datapoint IDs.
         """
-        return datasets_svc.addDatapoints(
-            self._api_config, dataset_id=dataset_id, data=request
-        )
+        if project_id is None:
+            _warn_call_without_project_id("datasets", "add_datapoints")
+        return self._add_datapoints(dataset_id, request, project_id=project_id)
 
     def remove_datapoint(
-        self, dataset_id: str, datapoint_id: str
+        self,
+        dataset_id: str,
+        datapoint_id: str,
+        *,
+        project_id: Optional[str] = None,
     ) -> RemoveDatapointResponse:
         """Remove a datapoint from a dataset.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
 
         Args:
             dataset_id: The unique identifier of the dataset.
             datapoint_id: The unique identifier of the datapoint to remove.
+            project_id: The project that owns the dataset. Omitting it removes
+                the datapoint from the dataset in the project API key's
+                project, which is deprecated.
 
         Returns:
             RemoveDatapointResponse with dereferenced status and message.
         """
-        return datasets_svc.removeDatapointLegacy(
-            self._api_config, dataset_id=dataset_id, datapoint_id=datapoint_id
-        )
+        if project_id is None:
+            _warn_call_without_project_id("datasets", "remove_datapoint")
+        return self._remove_datapoint(dataset_id, datapoint_id, project_id=project_id)
 
     # Async methods
     async def list_async(
         self,
         dataset_id: Optional[str] = None,
         name: Optional[str] = None,
+        *,
+        project_id: Optional[str] = None,
     ) -> GetDatasetsResponse:
-        """List datasets asynchronously.
+        """List datasets asynchronously. See ``list()``.
 
-        Args:
-            dataset_id: Optional dataset ID to fetch.
-            name: Optional dataset name to filter by.
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
         """
-        return await datasets_svc_async.getDatasets(
-            self._api_config,
-            dataset_id=dataset_id,
-            name=name,
-        )
+        if project_id is None:
+            _warn_call_without_project_id("datasets", "list_async")
+        return await self._list_async(dataset_id, name, project_id=project_id)
 
     async def create_async(
-        self, request: CreateDatasetRequest
+        self, request: CreateDatasetRequest, *, project_id: Optional[str] = None
     ) -> CreateDatasetResponse:
-        """Create a dataset asynchronously."""
-        return await datasets_svc_async.createDataset(self._api_config, data=request)
+        """Create a dataset asynchronously.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+        """
+        if project_id is None:
+            _warn_call_without_project_id("datasets", "create_async")
+        return await self._create_async(request, project_id=project_id)
 
     async def update_async(
-        self, request: UpdateDatasetRequest
+        self, request: UpdateDatasetRequest, *, project_id: Optional[str] = None
     ) -> UpdateDatasetResponse:
-        """Update a dataset asynchronously."""
-        return await datasets_svc_async.updateDatasetLegacy(
-            self._api_config, data=request
-        )
+        """Update a dataset asynchronously. See ``update()``.
 
-    async def delete_async(self, id: str) -> DeleteDatasetResponse:
-        """Delete a dataset asynchronously."""
-        return await datasets_svc_async.deleteDatasetLegacy(
-            self._api_config, dataset_id=id
-        )
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+        """
+        if project_id is None:
+            _warn_call_without_project_id("datasets", "update_async")
+        return await self._update_async(request, project_id=project_id)
+
+    async def delete_async(
+        self, id: str, *, project_id: Optional[str] = None
+    ) -> DeleteDatasetResponse:
+        """Delete a dataset asynchronously. See ``delete()``.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+        """
+        if project_id is None:
+            _warn_call_without_project_id("datasets", "delete_async")
+        return await self._delete_async(id, project_id=project_id)
 
     async def add_datapoints_async(
-        self, dataset_id: str, request: AddDatapointsToDatasetRequest
+        self,
+        dataset_id: str,
+        request: AddDatapointsToDatasetRequest,
+        *,
+        project_id: Optional[str] = None,
     ) -> AddDatapointsResponse:
-        """Add datapoints to a dataset asynchronously.
+        """Add datapoints to a dataset asynchronously. See ``add_datapoints()``.
 
-        Args:
-            dataset_id: The unique identifier of the dataset to add datapoints to.
-            request: The request containing data and mapping for the datapoints.
-
-        Returns:
-            AddDatapointsResponse with inserted status and datapoint IDs.
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
         """
-        return await datasets_svc_async.addDatapoints(
-            self._api_config, dataset_id=dataset_id, data=request
+        if project_id is None:
+            _warn_call_without_project_id("datasets", "add_datapoints_async")
+        return await self._add_datapoints_async(
+            dataset_id, request, project_id=project_id
         )
 
     async def remove_datapoint_async(
-        self, dataset_id: str, datapoint_id: str
+        self,
+        dataset_id: str,
+        datapoint_id: str,
+        *,
+        project_id: Optional[str] = None,
     ) -> RemoveDatapointResponse:
-        """Remove a datapoint from a dataset asynchronously.
+        """Remove a datapoint from a dataset asynchronously. See ``remove_datapoint()``.
 
-        Args:
-            dataset_id: The unique identifier of the dataset.
-            datapoint_id: The unique identifier of the datapoint to remove.
-
-        Returns:
-            RemoveDatapointResponse with dereferenced status and message.
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
         """
-        return await datasets_svc_async.removeDatapointLegacy(
-            self._api_config, dataset_id=dataset_id, datapoint_id=datapoint_id
+        if project_id is None:
+            _warn_call_without_project_id("datasets", "remove_datapoint_async")
+        return await self._remove_datapoint_async(
+            dataset_id, datapoint_id, project_id=project_id
         )
 
     # Backwards compatible aliases
-    def get_dataset(self, id: str) -> GetDatasetsResponse:
+    def get_dataset(
+        self, id: str, *, project_id: Optional[str] = None
+    ) -> GetDatasetsResponse:
         """Get a dataset by ID (backwards compatible alias).
 
-        Note: Uses list() with dataset_id filter since there's no single-get endpoint.
+        Sends the list request filtered to ``id``, because there is no
+        single-dataset operation.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
         """
-        return self.list(dataset_id=id)
+        if project_id is None:
+            _warn_call_without_project_id("datasets", "get_dataset")
+        return self._list(dataset_id=id, project_id=project_id)
 
-    def create_dataset(self, request: CreateDatasetRequest) -> CreateDatasetResponse:
-        """Create a dataset (backwards compatible alias for create())."""
-        return self.create(request)
+    def create_dataset(
+        self, request: CreateDatasetRequest, *, project_id: Optional[str] = None
+    ) -> CreateDatasetResponse:
+        """Create a dataset (backwards compatible alias for create()).
 
-    def update_dataset(self, request: UpdateDatasetRequest) -> UpdateDatasetResponse:
-        """Update a dataset (backwards compatible alias for update())."""
-        return self.update(request)
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+        """
+        if project_id is None:
+            _warn_call_without_project_id("datasets", "create_dataset")
+        return self._create(request, project_id=project_id)
 
-    def delete_dataset(self, id: str) -> DeleteDatasetResponse:
-        """Delete a dataset (backwards compatible alias for delete())."""
-        return self.delete(id)
+    def update_dataset(
+        self, request: UpdateDatasetRequest, *, project_id: Optional[str] = None
+    ) -> UpdateDatasetResponse:
+        """Update a dataset (backwards compatible alias for update()).
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+        """
+        if project_id is None:
+            _warn_call_without_project_id("datasets", "update_dataset")
+        return self._update(request, project_id=project_id)
+
+    def delete_dataset(
+        self, id: str, *, project_id: Optional[str] = None
+    ) -> DeleteDatasetResponse:
+        """Delete a dataset (backwards compatible alias for delete()).
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+        """
+        if project_id is None:
+            _warn_call_without_project_id("datasets", "delete_dataset")
+        return self._delete(id, project_id=project_id)
 
     def list_datasets(
         self,
         dataset_id: Optional[str] = None,
         name: Optional[str] = None,
+        *,
+        project_id: Optional[str] = None,
     ) -> GetDatasetsResponse:
-        """List datasets (backwards compatible alias)."""
-        return self.list(dataset_id=dataset_id, name=name)
+        """List datasets (backwards compatible alias).
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+        """
+        if project_id is None:
+            _warn_call_without_project_id("datasets", "list_datasets")
+        return self._list(dataset_id, name, project_id=project_id)
+
+    # ---- Cores: send the request, never warn ----
+
+    def _list(
+        self,
+        dataset_id: Optional[str] = None,
+        name: Optional[str] = None,
+        *,
+        project_id: Optional[str] = None,
+    ) -> GetDatasetsResponse:
+        """The request ``list()`` sends."""
+        if project_id is None:
+            return datasets_svc.getDatasetsLegacy(
+                self._api_config, dataset_id=dataset_id, name=name
+            )
+        return datasets_svc.getDatasets(
+            self._data_plane_api_config,
+            project_id=project_id,
+            dataset_id=dataset_id,
+            name=name,
+        )
+
+    async def _list_async(
+        self,
+        dataset_id: Optional[str] = None,
+        name: Optional[str] = None,
+        *,
+        project_id: Optional[str] = None,
+    ) -> GetDatasetsResponse:
+        """The request ``list_async()`` sends."""
+        if project_id is None:
+            return await datasets_svc_async.getDatasetsLegacy(
+                self._api_config, dataset_id=dataset_id, name=name
+            )
+        return await datasets_svc_async.getDatasets(
+            self._data_plane_api_config,
+            project_id=project_id,
+            dataset_id=dataset_id,
+            name=name,
+        )
+
+    def _create(
+        self, request: CreateDatasetRequest, *, project_id: Optional[str] = None
+    ) -> CreateDatasetResponse:
+        """The request ``create()`` sends."""
+        if project_id is None:
+            return datasets_svc.createDatasetLegacy(self._api_config, data=request)
+        return datasets_svc.createDataset(
+            self._data_plane_api_config, project_id=project_id, data=request
+        )
+
+    async def _create_async(
+        self, request: CreateDatasetRequest, *, project_id: Optional[str] = None
+    ) -> CreateDatasetResponse:
+        """The request ``create_async()`` sends."""
+        if project_id is None:
+            return await datasets_svc_async.createDatasetLegacy(
+                self._api_config, data=request
+            )
+        return await datasets_svc_async.createDataset(
+            self._data_plane_api_config, project_id=project_id, data=request
+        )
+
+    def _update(
+        self, request: UpdateDatasetRequest, *, project_id: Optional[str] = None
+    ) -> UpdateDatasetResponse:
+        """The request ``update()`` sends."""
+        if project_id is None:
+            return datasets_svc.updateDatasetBodyIdLegacy(
+                self._api_config, data=request
+            )
+        dataset_id, body = _split_dataset_update(request)
+        return datasets_svc.updateDataset(
+            self._data_plane_api_config,
+            project_id=project_id,
+            dataset_id=dataset_id,
+            data=body,
+        )
+
+    async def _update_async(
+        self, request: UpdateDatasetRequest, *, project_id: Optional[str] = None
+    ) -> UpdateDatasetResponse:
+        """The request ``update_async()`` sends."""
+        if project_id is None:
+            return await datasets_svc_async.updateDatasetBodyIdLegacy(
+                self._api_config, data=request
+            )
+        dataset_id, body = _split_dataset_update(request)
+        return await datasets_svc_async.updateDataset(
+            self._data_plane_api_config,
+            project_id=project_id,
+            dataset_id=dataset_id,
+            data=body,
+        )
+
+    def _delete(
+        self, id: str, *, project_id: Optional[str] = None
+    ) -> DeleteDatasetResponse:
+        """The request ``delete()`` sends."""
+        if project_id is None:
+            return datasets_svc.deleteDatasetQueryIdLegacy(
+                self._api_config, dataset_id=id
+            )
+        return datasets_svc.deleteDataset(
+            self._data_plane_api_config, project_id=project_id, dataset_id=id
+        )
+
+    async def _delete_async(
+        self, id: str, *, project_id: Optional[str] = None
+    ) -> DeleteDatasetResponse:
+        """The request ``delete_async()`` sends."""
+        if project_id is None:
+            return await datasets_svc_async.deleteDatasetQueryIdLegacy(
+                self._api_config, dataset_id=id
+            )
+        return await datasets_svc_async.deleteDataset(
+            self._data_plane_api_config, project_id=project_id, dataset_id=id
+        )
+
+    def _add_datapoints(
+        self,
+        dataset_id: str,
+        request: AddDatapointsToDatasetRequest,
+        *,
+        project_id: Optional[str] = None,
+    ) -> AddDatapointsResponse:
+        """The request ``add_datapoints()`` sends."""
+        if project_id is None:
+            return datasets_svc.addDatapointsLegacy(
+                self._api_config, dataset_id=dataset_id, data=request
+            )
+        return datasets_svc.addDatapoints(
+            self._data_plane_api_config,
+            project_id=project_id,
+            dataset_id=dataset_id,
+            data=request,
+        )
+
+    async def _add_datapoints_async(
+        self,
+        dataset_id: str,
+        request: AddDatapointsToDatasetRequest,
+        *,
+        project_id: Optional[str] = None,
+    ) -> AddDatapointsResponse:
+        """The request ``add_datapoints_async()`` sends."""
+        if project_id is None:
+            return await datasets_svc_async.addDatapointsLegacy(
+                self._api_config, dataset_id=dataset_id, data=request
+            )
+        return await datasets_svc_async.addDatapoints(
+            self._data_plane_api_config,
+            project_id=project_id,
+            dataset_id=dataset_id,
+            data=request,
+        )
+
+    def _remove_datapoint(
+        self,
+        dataset_id: str,
+        datapoint_id: str,
+        *,
+        project_id: Optional[str] = None,
+    ) -> RemoveDatapointResponse:
+        """The request ``remove_datapoint()`` sends."""
+        if project_id is None:
+            return datasets_svc.removeDatapointShortPathLegacy(
+                self._api_config, dataset_id=dataset_id, datapoint_id=datapoint_id
+            )
+        return datasets_svc.removeDatapoint(
+            self._data_plane_api_config,
+            project_id=project_id,
+            dataset_id=dataset_id,
+            datapoint_id=datapoint_id,
+        )
+
+    async def _remove_datapoint_async(
+        self,
+        dataset_id: str,
+        datapoint_id: str,
+        *,
+        project_id: Optional[str] = None,
+    ) -> RemoveDatapointResponse:
+        """The request ``remove_datapoint_async()`` sends."""
+        if project_id is None:
+            return await datasets_svc_async.removeDatapointShortPathLegacy(
+                self._api_config, dataset_id=dataset_id, datapoint_id=datapoint_id
+            )
+        return await datasets_svc_async.removeDatapoint(
+            self._data_plane_api_config,
+            project_id=project_id,
+            dataset_id=dataset_id,
+            datapoint_id=datapoint_id,
+        )
 
 
 class EventsAPI(BaseAPI):
@@ -881,6 +1793,9 @@ class EventsAPI(BaseAPI):
         data: Optional[Union[GetEventsQuery, Dict[str, Any]]] = None,
     ) -> GetEventsResponse:
         """Get events via the legacy list helper.
+
+        Accepted keys:
+            Project API key
 
         Args:
             query: Query parameters as GetEventsQuery model or dict.
@@ -939,6 +1854,9 @@ class EventsAPI(BaseAPI):
         Deprecated: this compatibility helper wraps export() with a session_id
         filter. New code should call events.export() directly.
         Events are returned sorted by start_time in chronological order.
+
+        Accepted keys:
+            Project API key
 
         Args:
             session_id: The session ID to fetch events for.
@@ -1007,15 +1925,27 @@ class EventsAPI(BaseAPI):
         return result
 
     def create(self, request: PostEventRequest) -> PostEventResponse:
-        """Create an event."""
+        """Create an event.
+
+        Accepted keys:
+            Ingestion API key; Project API key (deprecated)
+        """
         return events_svc.createEventLegacy(self._ingestion_api_config, data=request)
 
     def update(self, data: UpdateEventRequest) -> None:
-        """Update an event."""
+        """Update an event.
+
+        Accepted keys:
+            Ingestion API key; Project API key (deprecated)
+        """
         return events_svc.updateEventLegacy(self._ingestion_api_config, data=data)
 
     def create_batch(self, data: PostEventBatchRequest) -> PostEventBatchResponse:
-        """Create events in batch."""
+        """Create events in batch.
+
+        Accepted keys:
+            Ingestion API key; Project API key (deprecated)
+        """
         return events_svc.createEventBatchLegacy(self._ingestion_api_config, data=data)
 
     def export(
@@ -1034,6 +1964,9 @@ class EventsAPI(BaseAPI):
         This is the primary method for retrieving events from HoneyHive.
         It uses the Data Plane endpoint which supports filtering by session_id,
         event_type, and other fields.
+
+        Accepted keys:
+            Project API key
 
         Args:
             project: Project name associated with the events. Deprecated in v1.0
@@ -1214,6 +2147,9 @@ class EventsAPI(BaseAPI):
     ) -> GetEventsResponse:
         """Get events asynchronously via the legacy list helper.
 
+        Accepted keys:
+            Project API key
+
         Args:
             query: Query parameters as GetEventsQuery model or dict.
 
@@ -1260,6 +2196,9 @@ class EventsAPI(BaseAPI):
         Deprecated: this compatibility helper wraps export_async() with a
         session_id filter. New code should call events.export_async() directly.
         Events are returned sorted by start_time in chronological order.
+
+        Accepted keys:
+            Project API key
 
         Args:
             session_id: The session ID to fetch events for.
@@ -1313,13 +2252,21 @@ class EventsAPI(BaseAPI):
         return result
 
     async def create_async(self, request: PostEventRequest) -> PostEventResponse:
-        """Create an event asynchronously."""
+        """Create an event asynchronously.
+
+        Accepted keys:
+            Ingestion API key; Project API key (deprecated)
+        """
         return await events_svc_async.createEventLegacy(
             self._ingestion_api_config, data=request
         )
 
     async def update_async(self, data: UpdateEventRequest) -> None:
-        """Update an event asynchronously."""
+        """Update an event asynchronously.
+
+        Accepted keys:
+            Ingestion API key; Project API key (deprecated)
+        """
         return await events_svc_async.updateEventLegacy(
             self._ingestion_api_config, data=data
         )
@@ -1327,7 +2274,11 @@ class EventsAPI(BaseAPI):
     async def create_batch_async(
         self, data: PostEventBatchRequest
     ) -> PostEventBatchResponse:
-        """Create events in batch asynchronously."""
+        """Create events in batch asynchronously.
+
+        Accepted keys:
+            Ingestion API key; Project API key (deprecated)
+        """
         return await events_svc_async.createEventBatchLegacy(
             self._ingestion_api_config, data=data
         )
@@ -1346,6 +2297,9 @@ class EventsAPI(BaseAPI):
         """Export events via POST /events/export asynchronously (Data Plane).
 
         Async version of export(). See export() for full documentation.
+
+        Accepted keys:
+            Project API key
 
         Args:
             project: Project name associated with the events. Deprecated in v1.0
@@ -1452,7 +2406,11 @@ class EventsAPI(BaseAPI):
 
     # Backwards compatible aliases
     def create_event(self, request: PostEventRequest) -> PostEventResponse:
-        """Create an event (backwards compatible alias for create())."""
+        """Create an event (backwards compatible alias for create()).
+
+        Accepted keys:
+            Ingestion API key; Project API key (deprecated)
+        """
         return self.create(request)
 
     def update_event(self, data: Union[UpdateEventRequest, Dict[str, Any]]) -> None:
@@ -1460,6 +2418,9 @@ class EventsAPI(BaseAPI):
 
         Accepts the request model or the equivalent dict. A dict is validated
         into the model, because ``update()`` sends a model.
+
+        Accepted keys:
+            Ingestion API key; Project API key (deprecated)
         """
         if not isinstance(data, UpdateEventRequest):
             data = UpdateEventRequest.model_validate(data)
@@ -1479,6 +2440,9 @@ class EventsAPI(BaseAPI):
 
         This is a backwards compatible alias for export(). Uses the Data Plane
         POST /events/export endpoint.
+
+        Accepted keys:
+            Project API key
 
         Args:
             project: Project name. Deprecated in v1.0 and will be removed in v2.0.
@@ -1515,6 +2479,9 @@ class EventsAPI(BaseAPI):
         This is a backwards compatible alias for export(). Uses the Data Plane
         POST /events/export endpoint.
 
+        Accepted keys:
+            Project API key
+
         Args:
             project: Project name. Deprecated in v1.0 and will be removed in v2.0.
             filters: List of EventFilter objects or dicts.
@@ -1547,6 +2514,9 @@ class EventsAPI(BaseAPI):
     ) -> EventExportResponse:
         """List events asynchronously (backwards compatible alias for export_async).
 
+        Accepted keys:
+            Project API key
+
         Args:
             project: Project name. Deprecated in v1.0 and will be removed in v2.0.
         """
@@ -1571,6 +2541,9 @@ class EventsAPI(BaseAPI):
     ) -> EventExportResponse:
         """Get events asynchronously (backwards compatible alias for export_async).
 
+        Accepted keys:
+            Project API key
+
         Args:
             project: Project name. Deprecated in v1.0 and will be removed in v2.0.
         """
@@ -1585,22 +2558,64 @@ class EventsAPI(BaseAPI):
 
 
 class ExperimentsAPI(BaseAPI):
-    """Experiments API."""
+    """Experiments API.
+
+    A method that takes ``project_id`` sends the request with the data plane
+    API key when given it, naming the project in the path. Without it, the
+    request acts on the project API key's project, is sent with that key, and
+    issues a ``DeprecationWarning``.
+
+    Each such public method warns in its own name and then calls its private
+    core, which sends the request and never warns. SDK code that reaches the
+    operation calls the core, so the warning reaches only a caller who can pass
+    ``project_id``.
+    """
 
     # Sync methods
     def get_schema(
         self,
         dateRange: Optional[Any] = None,
         evaluation_id: Optional[str] = None,
+        *,
+        project_id: Optional[str] = None,
     ) -> GetEventsSchemaResponse:
-        """Get experiment runs schema.
+        """Get the events schema across a project's experiment runs, or of one run.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
 
         Args:
             dateRange: Filter by date range (string or dict with $gte/$lte).
-            evaluation_id: Filter by evaluation/run ID.
+            evaluation_id: Filter by evaluation/run ID: the schema covers that
+                one run.
+            project_id: The project whose runs the schema covers. Omitting it
+                reads the project API key's project, which is deprecated.
         """
-        return events_svc.getEventsSchemaLegacy(
-            self._api_config, dateRange=dateRange, evaluation_id=evaluation_id
+        if project_id is None:
+            _warn_call_without_project_id("experiments", "get_schema")
+        return self._get_schema(dateRange, evaluation_id, project_id=project_id)
+
+    def _get_schema(
+        self,
+        dateRange: Optional[Any] = None,
+        evaluation_id: Optional[str] = None,
+        *,
+        project_id: Optional[str] = None,
+    ) -> GetEventsSchemaResponse:
+        if project_id is None:
+            return events_svc.getEventsSchemaLegacy(
+                self._api_config, dateRange=dateRange, evaluation_id=evaluation_id
+            )
+        if evaluation_id is not None:
+            return experiments_svc.getRunSchema(
+                self._data_plane_api_config,
+                project_id=project_id,
+                run_id=evaluation_id,
+                dateRange=dateRange,
+            )
+        return experiments_svc.getRunsSchema(
+            self._data_plane_api_config, project_id=project_id, dateRange=dateRange
         )
 
     def list_runs(
@@ -1614,11 +2629,17 @@ class ExperimentsAPI(BaseAPI):
         dateRange: Optional[Any] = None,
         sort_by: Optional[str] = None,
         sort_order: Optional[str] = None,
+        *,
+        project_id: Optional[str] = None,
     ) -> GetExperimentRunsResponse:
         """List experiment runs.
 
         When run_ids exceeds QUERY_BATCH_SIZE, requests are automatically
         batched to stay within URL length limits and the results are merged.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
 
         Args:
             dataset_id: Filter by dataset ID.
@@ -1630,23 +2651,12 @@ class ExperimentsAPI(BaseAPI):
             dateRange: Filter by date range.
             sort_by: Sort by field.
             sort_order: Sort order (asc/desc).
+            project_id: The project whose runs are listed. Omitting it lists the
+                project API key's runs, which is deprecated.
         """
-        # Batch if the list is large enough to risk exceeding URL length limits.
-        if run_ids and len(run_ids) > QUERY_BATCH_SIZE:
-            return self._batched_list_runs(
-                dataset_id=dataset_id,
-                page=page,
-                limit=limit,
-                run_ids=run_ids,
-                name=name,
-                status=status,
-                dateRange=dateRange,
-                sort_by=sort_by,
-                sort_order=sort_order,
-            )
-
-        return experiments_svc.getRuns(
-            self._api_config,
+        if project_id is None:
+            _warn_call_without_project_id("experiments", "list_runs")
+        return self._list_runs(
             dataset_id=dataset_id,
             page=page,
             limit=limit,
@@ -1656,12 +2666,17 @@ class ExperimentsAPI(BaseAPI):
             dateRange=dateRange,
             sort_by=sort_by,
             sort_order=sort_order,
+            project_id=project_id,
         )
 
     def _batched_list_runs(
-        self, *, run_ids: List[str], **kwargs: Any
+        self,
+        send: Callable[..., GetExperimentRunsResponse],
+        *,
+        run_ids: List[str],
+        **kwargs: Any,
     ) -> GetExperimentRunsResponse:
-        """Fetch runs in batches and merge the responses."""
+        """Fetch runs in batches through ``send`` and merge the responses."""
         # Pagination doesn't apply when batching by IDs — each batch must
         # return all matching runs for its chunk.
         kwargs.pop("page", None)
@@ -1675,9 +2690,7 @@ class ExperimentsAPI(BaseAPI):
         batches = _chunk_list(run_ids, QUERY_BATCH_SIZE)
         for i, batch in enumerate(batches):
             try:
-                resp = experiments_svc.getRuns(
-                    self._api_config, run_ids=batch, **kwargs
-                )
+                resp = send(run_ids=batch, **kwargs)
             except Exception:
                 logger.warning(
                     "Batch %d/%d failed (%d run IDs)",
@@ -1705,40 +2718,156 @@ class ExperimentsAPI(BaseAPI):
             ),
         )
 
-    def get_run(self, run_id: str) -> GetExperimentRunResponse:
-        """Get an experiment run by ID."""
-        return experiments_svc.getRun(self._api_config, run_id=run_id)
+    def get_run(
+        self, run_id: str, *, project_id: Optional[str] = None
+    ) -> GetExperimentRunResponse:
+        """Get an experiment run by ID.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+
+        Args:
+            run_id: The run to get.
+            project_id: The project the run is read from. Omitting it reads
+                from the project API key's project, which is deprecated.
+        """
+        if project_id is None:
+            _warn_call_without_project_id("experiments", "get_run")
+        return self._get_run(run_id, project_id=project_id)
+
+    def get_run_metrics(
+        self,
+        run_id: str,
+        dateRange: Optional[str] = None,
+        filters: Optional[Union[str, List[Dict[str, Any]]]] = None,
+        *,
+        project_id: Optional[str] = None,
+    ) -> _GetExperimentRunMetricsResponse:
+        """Get the event metrics of an experiment run.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+
+        Args:
+            run_id: The run whose event metrics are read.
+            dateRange: Date range filter as a JSON string.
+            filters: Filters to apply, as a JSON string or a list of filter
+                objects.
+            project_id: The project that holds the run. Omitting it reads from
+                the project API key's project, which is deprecated.
+        """
+        if project_id is None:
+            _warn_call_without_project_id("experiments", "get_run_metrics")
+        return self._get_run_metrics(run_id, dateRange, filters, project_id=project_id)
 
     def create_run(
-        self, request: PostExperimentRunRequest
+        self, request: PostExperimentRunRequest, *, project_id: Optional[str] = None
     ) -> PostExperimentRunResponse:
-        """Create an experiment run."""
-        return experiments_svc.createRun(self._api_config, data=request)
+        """Create an experiment run.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+
+        Args:
+            request: The run to create.
+            project_id: The project the run is created in. Omitting it creates
+                it in the project API key's project, which is deprecated.
+        """
+        if project_id is None:
+            _warn_call_without_project_id("experiments", "create_run")
+        return self._create_run(request, project_id=project_id)
 
     def update_run(
-        self, run_id: str, request: PutExperimentRunRequest
+        self,
+        run_id: str,
+        request: PutExperimentRunRequest,
+        *,
+        project_id: Optional[str] = None,
     ) -> PutExperimentRunResponse:
-        """Update an experiment run."""
-        return experiments_svc.updateRun(self._api_config, run_id=run_id, data=request)
+        """Update an experiment run.
 
-    def delete_run(self, run_id: str) -> DeleteExperimentRunResponse:
-        """Delete an experiment run."""
-        return experiments_svc.deleteRun(self._api_config, run_id=run_id)
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+
+        Args:
+            run_id: The run to update.
+            request: The fields to update.
+            project_id: The project that holds the run. Omitting it updates the
+                run in the project API key's project, which is deprecated.
+        """
+        if project_id is None:
+            _warn_call_without_project_id("experiments", "update_run")
+        return self._update_run(run_id, request, project_id=project_id)
+
+    def delete_run(
+        self, run_id: str, *, project_id: Optional[str] = None
+    ) -> DeleteExperimentRunResponse:
+        """Delete an experiment run.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+
+        Args:
+            run_id: The run to delete.
+            project_id: The project that holds the run. Omitting it deletes the
+                run in the project API key's project, which is deprecated.
+        """
+        if project_id is None:
+            _warn_call_without_project_id("experiments", "delete_run")
+        return self._delete_run(run_id, project_id=project_id)
 
     # Async methods
     async def get_schema_async(
         self,
         dateRange: Optional[Any] = None,
         evaluation_id: Optional[str] = None,
+        *,
+        project_id: Optional[str] = None,
     ) -> GetEventsSchemaResponse:
-        """Get experiment runs schema asynchronously.
+        """Get the events schema across a project's experiment runs, or of one run, asynchronously.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
 
         Args:
             dateRange: Filter by date range (string or dict with $gte/$lte).
-            evaluation_id: Filter by evaluation/run ID.
+            evaluation_id: Filter by evaluation/run ID: the schema covers that
+                one run.
+            project_id: The project whose runs the schema covers. Omitting it
+                reads the project API key's project, which is deprecated.
         """
-        return await events_svc_async.getEventsSchemaLegacy(
-            self._api_config, dateRange=dateRange, evaluation_id=evaluation_id
+        if project_id is None:
+            _warn_call_without_project_id("experiments", "get_schema_async")
+        return await self._get_schema_async(
+            dateRange, evaluation_id, project_id=project_id
+        )
+
+    async def _get_schema_async(
+        self,
+        dateRange: Optional[Any] = None,
+        evaluation_id: Optional[str] = None,
+        *,
+        project_id: Optional[str] = None,
+    ) -> GetEventsSchemaResponse:
+        if project_id is None:
+            return await events_svc_async.getEventsSchemaLegacy(
+                self._api_config, dateRange=dateRange, evaluation_id=evaluation_id
+            )
+        if evaluation_id is not None:
+            return await experiments_svc_async.getRunSchema(
+                self._data_plane_api_config,
+                project_id=project_id,
+                run_id=evaluation_id,
+                dateRange=dateRange,
+            )
+        return await experiments_svc_async.getRunsSchema(
+            self._data_plane_api_config, project_id=project_id, dateRange=dateRange
         )
 
     async def list_runs_async(
@@ -1752,39 +2881,18 @@ class ExperimentsAPI(BaseAPI):
         dateRange: Optional[Any] = None,
         sort_by: Optional[str] = None,
         sort_order: Optional[str] = None,
+        *,
+        project_id: Optional[str] = None,
     ) -> GetExperimentRunsResponse:
-        """List experiment runs asynchronously.
+        """List experiment runs asynchronously. See ``list_runs()``.
 
-        When run_ids exceeds QUERY_BATCH_SIZE, requests are automatically
-        batched to stay within URL length limits and the results are merged.
-
-        Args:
-            dataset_id: Filter by dataset ID.
-            page: Page number for pagination.
-            limit: Number of results per page.
-            run_ids: Filter by specific run IDs.
-            name: Filter by run name.
-            status: Filter by run status.
-            dateRange: Filter by date range.
-            sort_by: Sort by field.
-            sort_order: Sort order (asc/desc).
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
         """
-        # Batch if the list is large enough to risk exceeding URL length limits.
-        if run_ids and len(run_ids) > QUERY_BATCH_SIZE:
-            return await self._batched_list_runs_async(
-                dataset_id=dataset_id,
-                page=page,
-                limit=limit,
-                run_ids=run_ids,
-                name=name,
-                status=status,
-                dateRange=dateRange,
-                sort_by=sort_by,
-                sort_order=sort_order,
-            )
-
-        return await experiments_svc_async.getRuns(
-            self._api_config,
+        if project_id is None:
+            _warn_call_without_project_id("experiments", "list_runs_async")
+        return await self._list_runs_async(
             dataset_id=dataset_id,
             page=page,
             limit=limit,
@@ -1794,22 +2902,24 @@ class ExperimentsAPI(BaseAPI):
             dateRange=dateRange,
             sort_by=sort_by,
             sort_order=sort_order,
+            project_id=project_id,
         )
 
     async def _batched_list_runs_async(
-        self, *, run_ids: List[str], **kwargs: Any
+        self,
+        send: Callable[..., Awaitable[GetExperimentRunsResponse]],
+        *,
+        run_ids: List[str],
+        **kwargs: Any,
     ) -> GetExperimentRunsResponse:
-        """Fetch runs in batches (async, parallel) and merge the responses."""
+        """Fetch runs in batches (async, parallel) through ``send`` and merge the responses."""
         # Strip pagination params — each batch fetches its full slice.
         kwargs.pop("page", None)
         kwargs.pop("limit", None)
 
         batches = _chunk_list(run_ids, QUERY_BATCH_SIZE)
         resps = await asyncio.gather(
-            *(
-                experiments_svc_async.getRuns(self._api_config, run_ids=batch, **kwargs)
-                for batch in batches
-            )
+            *(send(run_ids=batch, **kwargs) for batch in batches)
         )
 
         all_evaluations: List[Any] = []
@@ -1836,47 +2946,144 @@ class ExperimentsAPI(BaseAPI):
             ),
         )
 
-    async def get_run_async(self, run_id: str) -> GetExperimentRunResponse:
-        """Get an experiment run by ID asynchronously."""
-        return await experiments_svc_async.getRun(self._api_config, run_id=run_id)
+    async def get_run_metrics_async(
+        self,
+        run_id: str,
+        dateRange: Optional[str] = None,
+        filters: Optional[Union[str, List[Dict[str, Any]]]] = None,
+        *,
+        project_id: Optional[str] = None,
+    ) -> _GetExperimentRunMetricsResponse:
+        """Get the event metrics of an experiment run asynchronously.
 
-    async def create_run_async(
-        self, request: PostExperimentRunRequest
-    ) -> PostExperimentRunResponse:
-        """Create an experiment run asynchronously."""
-        return await experiments_svc_async.createRun(self._api_config, data=request)
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
 
-    async def update_run_async(
-        self, run_id: str, request: PutExperimentRunRequest
-    ) -> PutExperimentRunResponse:
-        """Update an experiment run asynchronously."""
-        return await experiments_svc_async.updateRun(
-            self._api_config, run_id=run_id, data=request
+        Args:
+            run_id: The run whose event metrics are read.
+            dateRange: Date range filter as a JSON string.
+            filters: Filters to apply, as a JSON string or a list of filter
+                objects.
+            project_id: The project that holds the run. Omitting it reads from
+                the project API key's project, which is deprecated.
+        """
+        if project_id is None:
+            _warn_call_without_project_id("experiments", "get_run_metrics_async")
+        return await self._get_run_metrics_async(
+            run_id, dateRange, filters, project_id=project_id
         )
 
-    async def delete_run_async(self, run_id: str) -> DeleteExperimentRunResponse:
-        """Delete an experiment run asynchronously."""
-        return await experiments_svc_async.deleteRun(self._api_config, run_id=run_id)
+    async def get_run_async(
+        self, run_id: str, *, project_id: Optional[str] = None
+    ) -> GetExperimentRunResponse:
+        """Get an experiment run by ID asynchronously. See ``get_run()``.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+        """
+        if project_id is None:
+            _warn_call_without_project_id("experiments", "get_run_async")
+        return await self._get_run_async(run_id, project_id=project_id)
+
+    async def create_run_async(
+        self, request: PostExperimentRunRequest, *, project_id: Optional[str] = None
+    ) -> PostExperimentRunResponse:
+        """Create an experiment run asynchronously. See ``create_run()``.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+        """
+        if project_id is None:
+            _warn_call_without_project_id("experiments", "create_run_async")
+        return await self._create_run_async(request, project_id=project_id)
+
+    async def update_run_async(
+        self,
+        run_id: str,
+        request: PutExperimentRunRequest,
+        *,
+        project_id: Optional[str] = None,
+    ) -> PutExperimentRunResponse:
+        """Update an experiment run asynchronously. See ``update_run()``.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+        """
+        if project_id is None:
+            _warn_call_without_project_id("experiments", "update_run_async")
+        return await self._update_run_async(run_id, request, project_id=project_id)
+
+    async def delete_run_async(
+        self, run_id: str, *, project_id: Optional[str] = None
+    ) -> DeleteExperimentRunResponse:
+        """Delete an experiment run asynchronously. See ``delete_run()``.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+        """
+        if project_id is None:
+            _warn_call_without_project_id("experiments", "delete_run_async")
+        return await self._delete_run_async(run_id, project_id=project_id)
 
     def get_result(
         self,
         run_id: str,
         aggregate_function: Optional[str] = None,
         filters: Optional[Any] = None,
+        *,
+        project_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Get experiment run result.
 
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+
         Args:
             run_id: The experiment run ID.
-            aggregate_function: Aggregation function to apply.
+            aggregate_function: Aggregation function to apply. With
+                ``project_id`` it must be one of ``average``, ``min``, ``max``,
+                ``median``, ``p90``, ``p95``, ``p99``, ``sum`` or ``count``;
+                any other value answers 400. Without ``project_id`` an
+                unknown value falls back to ``average``.
             filters: Optional filters to apply.
+            project_id: The project that holds the run. Omitting it reads the
+                project API key's project, which is deprecated.
         """
-        result = experiments_svc.getExperimentResultLegacy(
-            self._api_config,
-            run_id=run_id,
-            aggregate_function=aggregate_function,
-            filters=filters,
+        if project_id is None:
+            _warn_call_without_project_id("experiments", "get_result")
+        return self._get_result(
+            run_id, aggregate_function, filters, project_id=project_id
         )
+
+    def _get_result(
+        self,
+        run_id: str,
+        aggregate_function: Optional[str] = None,
+        filters: Optional[Any] = None,
+        *,
+        project_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        if project_id is None:
+            result = experiments_svc.getExperimentResultLegacy(
+                self._api_config,
+                run_id=run_id,
+                aggregate_function=aggregate_function,
+                filters=filters,
+            )
+        else:
+            result = experiments_svc.getExperimentSummary(
+                self._data_plane_api_config,
+                project_id=project_id,
+                run_id=run_id,
+                aggregate_function=aggregate_function,
+                filters=filters,
+            )
         # GetExperimentRunResultResponse is a pass-through dict model
         return result.model_dump() if hasattr(result, "model_dump") else dict(result)
 
@@ -1886,44 +3093,76 @@ class ExperimentsAPI(BaseAPI):
         old_run_id: str,
         aggregate_function: Optional[str] = None,
         filters: Optional[Any] = None,
+        *,
+        project_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Compare two experiment runs.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
 
         Args:
             new_run_id: The new run ID to compare.
             old_run_id: The old run ID to compare against.
             aggregate_function: Aggregation function to apply.
             filters: Optional filters to apply.
+            project_id: The project that holds both runs. Omitting it compares
+                runs in the project API key's project, which is deprecated.
         """
-        result = experiments_svc.getExperimentComparisonLegacy(
-            self._api_config,
-            new_run_id=new_run_id,
-            old_run_id=old_run_id,
-            aggregate_function=aggregate_function,
-            filters=filters,
+        if project_id is None:
+            _warn_call_without_project_id("experiments", "compare_runs")
+        return self._compare_runs(
+            new_run_id,
+            old_run_id,
+            aggregate_function,
+            filters,
+            project_id=project_id,
         )
-        # GetExperimentRunCompareResponse is a pass-through dict model
-        return result.model_dump() if hasattr(result, "model_dump") else dict(result)
 
     async def get_result_async(
         self,
         run_id: str,
         aggregate_function: Optional[str] = None,
         filters: Optional[Any] = None,
+        *,
+        project_id: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """Get experiment run result asynchronously.
+        """Get experiment run result asynchronously. See ``get_result()``.
 
-        Args:
-            run_id: The experiment run ID.
-            aggregate_function: Aggregation function to apply.
-            filters: Optional filters to apply.
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
         """
-        result = await experiments_svc_async.getExperimentResultLegacy(
-            self._api_config,
-            run_id=run_id,
-            aggregate_function=aggregate_function,
-            filters=filters,
+        if project_id is None:
+            _warn_call_without_project_id("experiments", "get_result_async")
+        return await self._get_result_async(
+            run_id, aggregate_function, filters, project_id=project_id
         )
+
+    async def _get_result_async(
+        self,
+        run_id: str,
+        aggregate_function: Optional[str] = None,
+        filters: Optional[Any] = None,
+        *,
+        project_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        if project_id is None:
+            result = await experiments_svc_async.getExperimentResultLegacy(
+                self._api_config,
+                run_id=run_id,
+                aggregate_function=aggregate_function,
+                filters=filters,
+            )
+        else:
+            result = await experiments_svc_async.getExperimentSummary(
+                self._data_plane_api_config,
+                project_id=project_id,
+                run_id=run_id,
+                aggregate_function=aggregate_function,
+                filters=filters,
+            )
         return result.model_dump() if hasattr(result, "model_dump") else dict(result)
 
     async def compare_runs_async(
@@ -1932,23 +3171,32 @@ class ExperimentsAPI(BaseAPI):
         old_run_id: str,
         aggregate_function: Optional[str] = None,
         filters: Optional[Any] = None,
+        *,
+        project_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Compare two experiment runs asynchronously.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
 
         Args:
             new_run_id: The new run ID to compare.
             old_run_id: The old run ID to compare against.
             aggregate_function: Aggregation function to apply.
             filters: Optional filters to apply.
+            project_id: The project that holds both runs. Omitting it compares
+                runs in the project API key's project, which is deprecated.
         """
-        result = await experiments_svc_async.getExperimentComparisonLegacy(
-            self._api_config,
-            new_run_id=new_run_id,
-            old_run_id=old_run_id,
-            aggregate_function=aggregate_function,
-            filters=filters,
+        if project_id is None:
+            _warn_call_without_project_id("experiments", "compare_runs_async")
+        return await self._compare_runs_async(
+            new_run_id,
+            old_run_id,
+            aggregate_function,
+            filters,
+            project_id=project_id,
         )
-        return result.model_dump() if hasattr(result, "model_dump") else dict(result)
 
     # Aliases for backwards compatibility (evaluations naming)
     def get_run_result(
@@ -1956,9 +3204,20 @@ class ExperimentsAPI(BaseAPI):
         run_id: str,
         aggregate_function: Optional[str] = None,
         filters: Optional[Any] = None,
+        *,
+        project_id: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """Get experiment run result (alias for get_result)."""
-        return self.get_result(run_id, aggregate_function, filters)
+        """Get experiment run result (alias for get_result).
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+        """
+        if project_id is None:
+            _warn_call_without_project_id("experiments", "get_run_result")
+        return self._get_result(
+            run_id, aggregate_function, filters, project_id=project_id
+        )
 
     def compare_run_events(
         self,
@@ -1969,8 +3228,14 @@ class ExperimentsAPI(BaseAPI):
         filter: Optional[Any] = None,
         limit: Optional[int] = None,
         page: Optional[int] = None,
+        *,
+        project_id: Optional[str] = None,
     ) -> GetExperimentCompareEventsResponse:
         """Compare events between two experiment runs.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
 
         Args:
             new_run_id: The new run ID to compare.
@@ -1980,16 +3245,453 @@ class ExperimentsAPI(BaseAPI):
             filter: Additional filter criteria.
             limit: Maximum number of results.
             page: Page number for pagination.
+            project_id: The project that holds both runs. Omitting it reads the
+                project API key's project, which is deprecated.
         """
-        return experiments_svc.getExperimentCompareEventsLegacy(
-            self._api_config,
-            run_id_1=new_run_id,
-            run_id_2=old_run_id,
+        if project_id is None:
+            _warn_call_without_project_id("experiments", "compare_run_events")
+        return self._compare_run_events(
+            new_run_id,
+            old_run_id,
+            event_name,
+            event_type,
+            filter,
+            limit,
+            page,
+            project_id=project_id,
+        )
+
+    def _compare_run_events(
+        self,
+        new_run_id: str,
+        old_run_id: str,
+        event_name: Optional[str] = None,
+        event_type: Optional[str] = None,
+        filter: Optional[Any] = None,
+        limit: Optional[int] = None,
+        page: Optional[int] = None,
+        *,
+        project_id: Optional[str] = None,
+    ) -> GetExperimentCompareEventsResponse:
+        """The request ``compare_run_events()`` sends."""
+        if project_id is None:
+            return experiments_svc.getExperimentCompareEventsQueryIdLegacy(
+                self._api_config,
+                run_id_1=new_run_id,
+                run_id_2=old_run_id,
+                event_name=event_name,
+                event_type=event_type,
+                filter=filter,
+                limit=limit,
+                page=page,
+            )
+        return experiments_svc.getExperimentCompareEvents(
+            self._data_plane_api_config,
+            project_id=project_id,
+            new_run_id=new_run_id,
+            old_run_id=old_run_id,
             event_name=event_name,
             event_type=event_type,
             filter=filter,
             limit=limit,
             page=page,
+        )
+
+    async def compare_run_events_async(
+        self,
+        new_run_id: str,
+        old_run_id: str,
+        event_name: Optional[str] = None,
+        event_type: Optional[str] = None,
+        filter: Optional[Any] = None,
+        limit: Optional[int] = None,
+        page: Optional[int] = None,
+        *,
+        project_id: Optional[str] = None,
+    ) -> GetExperimentCompareEventsResponse:
+        """Compare events between two experiment runs asynchronously.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project_id``; Project API key
+            without ``project_id`` (deprecated)
+
+        Args:
+            new_run_id: The new run ID to compare.
+            old_run_id: The old run ID to compare against.
+            event_name: Filter by event name.
+            event_type: Filter by event type.
+            filter: Additional filter criteria.
+            limit: Maximum number of results.
+            page: Page number for pagination.
+            project_id: The project that holds both runs. Omitting it reads the
+                project API key's project, which is deprecated.
+        """
+        if project_id is None:
+            _warn_call_without_project_id("experiments", "compare_run_events_async")
+        return await self._compare_run_events_async(
+            new_run_id,
+            old_run_id,
+            event_name,
+            event_type,
+            filter,
+            limit,
+            page,
+            project_id=project_id,
+        )
+
+    async def _compare_run_events_async(
+        self,
+        new_run_id: str,
+        old_run_id: str,
+        event_name: Optional[str] = None,
+        event_type: Optional[str] = None,
+        filter: Optional[Any] = None,
+        limit: Optional[int] = None,
+        page: Optional[int] = None,
+        *,
+        project_id: Optional[str] = None,
+    ) -> GetExperimentCompareEventsResponse:
+        """The request ``compare_run_events_async()`` sends."""
+        if project_id is None:
+            return await experiments_svc_async.getExperimentCompareEventsQueryIdLegacy(
+                self._api_config,
+                run_id_1=new_run_id,
+                run_id_2=old_run_id,
+                event_name=event_name,
+                event_type=event_type,
+                filter=filter,
+                limit=limit,
+                page=page,
+            )
+        return await experiments_svc_async.getExperimentCompareEvents(
+            self._data_plane_api_config,
+            project_id=project_id,
+            new_run_id=new_run_id,
+            old_run_id=old_run_id,
+            event_name=event_name,
+            event_type=event_type,
+            filter=filter,
+            limit=limit,
+            page=page,
+        )
+
+    def _get_run_metrics(
+        self,
+        run_id: str,
+        dateRange: Optional[str] = None,
+        filters: Optional[Union[str, List[Dict[str, Any]]]] = None,
+        *,
+        project_id: Optional[str] = None,
+    ) -> _GetExperimentRunMetricsResponse:
+        """The request ``get_run_metrics()`` sends."""
+        if project_id is None:
+            return experiments_svc.getExperimentRunMetricsLegacy(
+                self._api_config, run_id=run_id, dateRange=dateRange, filters=filters
+            )
+        return experiments_svc.getExperimentRunMetrics(
+            self._data_plane_api_config,
+            project_id=project_id,
+            run_id=run_id,
+            dateRange=dateRange,
+            filters=filters,
+        )
+
+    def _get_run(
+        self, run_id: str, *, project_id: Optional[str] = None
+    ) -> GetExperimentRunResponse:
+        """The request ``get_run()`` sends."""
+        if project_id is None:
+            return experiments_svc.getRunLegacy(self._api_config, run_id=run_id)
+        return experiments_svc.getRun(
+            self._data_plane_api_config, project_id=project_id, run_id=run_id
+        )
+
+    async def _get_run_metrics_async(
+        self,
+        run_id: str,
+        dateRange: Optional[str] = None,
+        filters: Optional[Union[str, List[Dict[str, Any]]]] = None,
+        *,
+        project_id: Optional[str] = None,
+    ) -> _GetExperimentRunMetricsResponse:
+        """The request ``get_run_metrics_async()`` sends."""
+        if project_id is None:
+            return await experiments_svc_async.getExperimentRunMetricsLegacy(
+                self._api_config, run_id=run_id, dateRange=dateRange, filters=filters
+            )
+        return await experiments_svc_async.getExperimentRunMetrics(
+            self._data_plane_api_config,
+            project_id=project_id,
+            run_id=run_id,
+            dateRange=dateRange,
+            filters=filters,
+        )
+
+    async def _get_run_async(
+        self, run_id: str, *, project_id: Optional[str] = None
+    ) -> GetExperimentRunResponse:
+        """The request ``get_run_async()`` sends."""
+        if project_id is None:
+            return await experiments_svc_async.getRunLegacy(
+                self._api_config, run_id=run_id
+            )
+        return await experiments_svc_async.getRun(
+            self._data_plane_api_config, project_id=project_id, run_id=run_id
+        )
+
+    def _compare_runs(
+        self,
+        new_run_id: str,
+        old_run_id: str,
+        aggregate_function: Optional[str] = None,
+        filters: Optional[Any] = None,
+        *,
+        project_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """The request ``compare_runs()`` sends."""
+        if project_id is None:
+            result = experiments_svc.getExperimentComparisonCompareWithLegacy(
+                self._api_config,
+                new_run_id=new_run_id,
+                old_run_id=old_run_id,
+                aggregate_function=aggregate_function,
+                filters=filters,
+            )
+        else:
+            result = experiments_svc.getExperimentComparison(
+                self._data_plane_api_config,
+                project_id=project_id,
+                new_run_id=new_run_id,
+                old_run_id=old_run_id,
+                aggregate_function=aggregate_function,
+                filters=filters,
+            )
+        # GetExperimentRunCompareResponse is a pass-through dict model
+        return result.model_dump() if hasattr(result, "model_dump") else dict(result)
+
+    async def _compare_runs_async(
+        self,
+        new_run_id: str,
+        old_run_id: str,
+        aggregate_function: Optional[str] = None,
+        filters: Optional[Any] = None,
+        *,
+        project_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """The request ``compare_runs_async()`` sends."""
+        if project_id is None:
+            result = (
+                await experiments_svc_async.getExperimentComparisonCompareWithLegacy(
+                    self._api_config,
+                    new_run_id=new_run_id,
+                    old_run_id=old_run_id,
+                    aggregate_function=aggregate_function,
+                    filters=filters,
+                )
+            )
+        else:
+            result = await experiments_svc_async.getExperimentComparison(
+                self._data_plane_api_config,
+                project_id=project_id,
+                new_run_id=new_run_id,
+                old_run_id=old_run_id,
+                aggregate_function=aggregate_function,
+                filters=filters,
+            )
+        return result.model_dump() if hasattr(result, "model_dump") else dict(result)
+
+    def _create_run(
+        self, request: PostExperimentRunRequest, *, project_id: Optional[str] = None
+    ) -> PostExperimentRunResponse:
+        """The request ``create_run()`` sends."""
+        if project_id is None:
+            return experiments_svc.createRunLegacy(self._api_config, data=request)
+        return experiments_svc.createRun(
+            self._data_plane_api_config, project_id=project_id, data=request
+        )
+
+    async def _create_run_async(
+        self, request: PostExperimentRunRequest, *, project_id: Optional[str] = None
+    ) -> PostExperimentRunResponse:
+        """The request ``create_run_async()`` sends."""
+        if project_id is None:
+            return await experiments_svc_async.createRunLegacy(
+                self._api_config, data=request
+            )
+        return await experiments_svc_async.createRun(
+            self._data_plane_api_config, project_id=project_id, data=request
+        )
+
+    def _list_runs(
+        self,
+        dataset_id: Optional[str] = None,
+        page: Optional[int] = None,
+        limit: Optional[int] = None,
+        run_ids: Optional[List[str]] = None,
+        name: Optional[str] = None,
+        status: Optional[str] = None,
+        dateRange: Optional[Any] = None,
+        sort_by: Optional[str] = None,
+        sort_order: Optional[str] = None,
+        *,
+        project_id: Optional[str] = None,
+    ) -> GetExperimentRunsResponse:
+        """The request ``list_runs()`` sends."""
+        if project_id is None:
+            api_config = self._api_config
+
+            def send(**query: Any) -> GetExperimentRunsResponse:
+                return experiments_svc.getRunsLegacy(api_config, **query)
+
+        else:
+            api_config = self._data_plane_api_config
+            scoped_project_id = project_id
+
+            def send(**query: Any) -> GetExperimentRunsResponse:
+                return experiments_svc.getRuns(
+                    api_config, project_id=scoped_project_id, **query
+                )
+
+        # Batch if the list is large enough to risk exceeding URL length limits.
+        if run_ids and len(run_ids) > QUERY_BATCH_SIZE:
+            return self._batched_list_runs(
+                send,
+                dataset_id=dataset_id,
+                page=page,
+                limit=limit,
+                run_ids=run_ids,
+                name=name,
+                status=status,
+                dateRange=dateRange,
+                sort_by=sort_by,
+                sort_order=sort_order,
+            )
+        return send(
+            dataset_id=dataset_id,
+            page=page,
+            limit=limit,
+            run_ids=run_ids,
+            name=name,
+            status=status,
+            dateRange=dateRange,
+            sort_by=sort_by,
+            sort_order=sort_order,
+        )
+
+    async def _list_runs_async(
+        self,
+        dataset_id: Optional[str] = None,
+        page: Optional[int] = None,
+        limit: Optional[int] = None,
+        run_ids: Optional[List[str]] = None,
+        name: Optional[str] = None,
+        status: Optional[str] = None,
+        dateRange: Optional[Any] = None,
+        sort_by: Optional[str] = None,
+        sort_order: Optional[str] = None,
+        *,
+        project_id: Optional[str] = None,
+    ) -> GetExperimentRunsResponse:
+        """The request ``list_runs_async()`` sends."""
+        if project_id is None:
+            api_config = self._api_config
+
+            async def send(**query: Any) -> GetExperimentRunsResponse:
+                return await experiments_svc_async.getRunsLegacy(api_config, **query)
+
+        else:
+            api_config = self._data_plane_api_config
+            scoped_project_id = project_id
+
+            async def send(**query: Any) -> GetExperimentRunsResponse:
+                return await experiments_svc_async.getRuns(
+                    api_config, project_id=scoped_project_id, **query
+                )
+
+        # Batch if the list is large enough to risk exceeding URL length limits.
+        if run_ids and len(run_ids) > QUERY_BATCH_SIZE:
+            return await self._batched_list_runs_async(
+                send,
+                dataset_id=dataset_id,
+                page=page,
+                limit=limit,
+                run_ids=run_ids,
+                name=name,
+                status=status,
+                dateRange=dateRange,
+                sort_by=sort_by,
+                sort_order=sort_order,
+            )
+        return await send(
+            dataset_id=dataset_id,
+            page=page,
+            limit=limit,
+            run_ids=run_ids,
+            name=name,
+            status=status,
+            dateRange=dateRange,
+            sort_by=sort_by,
+            sort_order=sort_order,
+        )
+
+    def _update_run(
+        self,
+        run_id: str,
+        request: PutExperimentRunRequest,
+        *,
+        project_id: Optional[str] = None,
+    ) -> PutExperimentRunResponse:
+        """The request ``update_run()`` sends."""
+        if project_id is None:
+            return experiments_svc.updateRunLegacy(
+                self._api_config, run_id=run_id, data=request
+            )
+        return experiments_svc.updateRun(
+            self._data_plane_api_config,
+            project_id=project_id,
+            run_id=run_id,
+            data=request,
+        )
+
+    async def _update_run_async(
+        self,
+        run_id: str,
+        request: PutExperimentRunRequest,
+        *,
+        project_id: Optional[str] = None,
+    ) -> PutExperimentRunResponse:
+        """The request ``update_run_async()`` sends."""
+        if project_id is None:
+            return await experiments_svc_async.updateRunLegacy(
+                self._api_config, run_id=run_id, data=request
+            )
+        return await experiments_svc_async.updateRun(
+            self._data_plane_api_config,
+            project_id=project_id,
+            run_id=run_id,
+            data=request,
+        )
+
+    def _delete_run(
+        self, run_id: str, *, project_id: Optional[str] = None
+    ) -> DeleteExperimentRunResponse:
+        """The request ``delete_run()`` sends."""
+        if project_id is None:
+            return experiments_svc.deleteRunLegacy(self._api_config, run_id=run_id)
+        return experiments_svc.deleteRun(
+            self._data_plane_api_config, project_id=project_id, run_id=run_id
+        )
+
+    async def _delete_run_async(
+        self, run_id: str, *, project_id: Optional[str] = None
+    ) -> DeleteExperimentRunResponse:
+        """The request ``delete_run_async()`` sends."""
+        if project_id is None:
+            return await experiments_svc_async.deleteRunLegacy(
+                self._api_config, run_id=run_id
+            )
+        return await experiments_svc_async.deleteRun(
+            self._data_plane_api_config, project_id=project_id, run_id=run_id
         )
 
 
@@ -2003,7 +3705,11 @@ class MetricsAPI(BaseAPI):
         name: Optional[str] = None,
         type: Optional[str] = None,
     ) -> List[MetricItem]:
-        """List metrics."""
+        """List metrics.
+
+        Accepted keys:
+            Project API key
+        """
         # Keep the legacy filters in the public signature for back-compat, but
         # warn because the dataplane metrics list endpoint no longer honors them.
         if project is not None or name is not None:
@@ -2020,15 +3726,27 @@ class MetricsAPI(BaseAPI):
         return response.metrics
 
     def create(self, request: CreateMetricRequest) -> CreateMetricResponse:
-        """Create a metric."""
+        """Create a metric.
+
+        Accepted keys:
+            Project API key
+        """
         return metrics_svc.createMetric(self._api_config, data=request)
 
     def update(self, request: UpdateMetricRequest) -> UpdateMetricResponse:
-        """Update a metric."""
+        """Update a metric.
+
+        Accepted keys:
+            Project API key
+        """
         return metrics_svc.updateMetricLegacy(self._api_config, data=request)
 
     def delete(self, id: str) -> DeleteMetricResponse:
-        """Delete a metric."""
+        """Delete a metric.
+
+        Accepted keys:
+            Project API key
+        """
         return metrics_svc.deleteMetricLegacy(self._api_config, metric_id=id)
 
     # Async methods
@@ -2038,7 +3756,11 @@ class MetricsAPI(BaseAPI):
         name: Optional[str] = None,
         type: Optional[str] = None,
     ) -> List[MetricItem]:
-        """List metrics asynchronously."""
+        """List metrics asynchronously.
+
+        Accepted keys:
+            Project API key
+        """
         # Keep the legacy filters in the public signature for back-compat, but
         # warn because the dataplane metrics list endpoint no longer honors them.
         if project is not None or name is not None:
@@ -2053,37 +3775,65 @@ class MetricsAPI(BaseAPI):
         return response.metrics
 
     async def create_async(self, request: CreateMetricRequest) -> CreateMetricResponse:
-        """Create a metric asynchronously."""
+        """Create a metric asynchronously.
+
+        Accepted keys:
+            Project API key
+        """
         return await metrics_svc_async.createMetric(self._api_config, data=request)
 
     async def update_async(self, request: UpdateMetricRequest) -> UpdateMetricResponse:
-        """Update a metric asynchronously."""
+        """Update a metric asynchronously.
+
+        Accepted keys:
+            Project API key
+        """
         return await metrics_svc_async.updateMetricLegacy(
             self._api_config, data=request
         )
 
     async def delete_async(self, id: str) -> DeleteMetricResponse:
-        """Delete a metric asynchronously."""
+        """Delete a metric asynchronously.
+
+        Accepted keys:
+            Project API key
+        """
         return await metrics_svc_async.deleteMetricLegacy(
             self._api_config, metric_id=id
         )
 
     # Backwards compatible aliases
     def get_metric(self, id: str) -> List[MetricItem]:
-        """Get a metric (backwards compatible alias)."""
+        """Get a metric (backwards compatible alias).
+
+        Accepted keys:
+            Project API key
+        """
         response = metrics_svc.getMetrics(self._api_config, id=id)
         return response.metrics
 
     def create_metric(self, request: CreateMetricRequest) -> CreateMetricResponse:
-        """Create a metric (backwards compatible alias)."""
+        """Create a metric (backwards compatible alias).
+
+        Accepted keys:
+            Project API key
+        """
         return self.create(request)
 
     def update_metric(self, request: UpdateMetricRequest) -> UpdateMetricResponse:
-        """Update a metric (backwards compatible alias)."""
+        """Update a metric (backwards compatible alias).
+
+        Accepted keys:
+            Project API key
+        """
         return self.update(request)
 
     def delete_metric(self, id: str) -> DeleteMetricResponse:
-        """Delete a metric (backwards compatible alias)."""
+        """Delete a metric (backwards compatible alias).
+
+        Accepted keys:
+            Project API key
+        """
         return self.delete(id)
 
     def list_metrics(
@@ -2092,7 +3842,11 @@ class MetricsAPI(BaseAPI):
         name: Optional[str] = None,
         type: Optional[str] = None,
     ) -> List[MetricItem]:
-        """List metrics (backwards compatible alias)."""
+        """List metrics (backwards compatible alias).
+
+        Accepted keys:
+            Project API key
+        """
         return self.list(project=project, name=name, type=type)
 
 
@@ -2106,7 +3860,11 @@ class MetricVersionsAPI(BaseAPI):
 
     # Sync methods
     def list(self, metric_id: str) -> GetMetricVersionsResponse:
-        """List all versions for a metric, oldest-first."""
+        """List all versions for a metric, oldest-first.
+
+        Accepted keys:
+            Project API key
+        """
         return metric_versions_svc.getMetricVersions(
             self._api_config, metric_id=metric_id
         )
@@ -2118,20 +3876,31 @@ class MetricVersionsAPI(BaseAPI):
 
         Set ``request.deploy_immediately = True`` to atomically mark the new
         version as deployed in the same transaction.
+
+        Accepted keys:
+            Project API key
         """
         return metric_versions_svc.createMetricVersion(
             self._api_config, metric_id=metric_id, data=request
         )
 
     def deploy(self, metric_id: str, version_name: str) -> DeployMetricVersionResponse:
-        """Deploy an existing version of a metric, replacing the live version."""
+        """Deploy an existing version of a metric, replacing the live version.
+
+        Accepted keys:
+            Project API key
+        """
         return metric_versions_svc.deployMetricVersion(
             self._api_config, metric_id=metric_id, version_name=version_name
         )
 
     # Async methods
     async def list_async(self, metric_id: str) -> GetMetricVersionsResponse:
-        """List all versions for a metric asynchronously."""
+        """List all versions for a metric asynchronously.
+
+        Accepted keys:
+            Project API key
+        """
         return await metric_versions_svc_async.getMetricVersions(
             self._api_config, metric_id=metric_id
         )
@@ -2139,7 +3908,11 @@ class MetricVersionsAPI(BaseAPI):
     async def create_async(
         self, metric_id: str, request: CreateMetricVersionRequest
     ) -> CreateMetricVersionResponse:
-        """Create a new version of a metric asynchronously."""
+        """Create a new version of a metric asynchronously.
+
+        Accepted keys:
+            Project API key
+        """
         return await metric_versions_svc_async.createMetricVersion(
             self._api_config, metric_id=metric_id, data=request
         )
@@ -2147,7 +3920,11 @@ class MetricVersionsAPI(BaseAPI):
     async def deploy_async(
         self, metric_id: str, version_name: str
     ) -> DeployMetricVersionResponse:
-        """Deploy an existing version of a metric asynchronously."""
+        """Deploy an existing version of a metric asynchronously.
+
+        Accepted keys:
+            Project API key
+        """
         return await metric_versions_svc_async.deployMetricVersion(
             self._api_config, metric_id=metric_id, version_name=version_name
         )
@@ -2184,7 +3961,11 @@ class SessionsAPI(BaseAPI):
     def start(
         self, data: Union[StartSessionRequest, Dict[str, Any]]
     ) -> PostSessionStartResponse:
-        """Start a new session."""
+        """Start a new session.
+
+        Accepted keys:
+            Ingestion API key; Project API key (deprecated)
+        """
         request = self._coerce_start_session_request(data)
         return sessions_svc.startSessionLegacy(self._ingestion_api_config, data=request)
 
@@ -2192,7 +3973,11 @@ class SessionsAPI(BaseAPI):
     async def start_async(
         self, data: Union[StartSessionRequest, Dict[str, Any]]
     ) -> PostSessionStartResponse:
-        """Start a new session asynchronously."""
+        """Start a new session asynchronously.
+
+        Accepted keys:
+            Ingestion API key; Project API key (deprecated)
+        """
         request = self._coerce_start_session_request(data)
         return await sessions_svc_async.startSessionLegacy(
             self._ingestion_api_config, data=request
@@ -2202,13 +3987,21 @@ class SessionsAPI(BaseAPI):
     def create_session(
         self, request: Union[StartSessionRequest, Dict[str, Any]]
     ) -> PostSessionStartResponse:
-        """Create/start a session (backwards compatible alias for start())."""
+        """Create/start a session (backwards compatible alias for start()).
+
+        Accepted keys:
+            Ingestion API key; Project API key (deprecated)
+        """
         return self.start(request)
 
     def start_session(
         self, request: Union[StartSessionRequest, Dict[str, Any]]
     ) -> PostSessionStartResponse:
-        """Start a session (backwards compatible alias for start())."""
+        """Start a session (backwards compatible alias for start()).
+
+        Accepted keys:
+            Ingestion API key; Project API key (deprecated)
+        """
         return self.start(request)
 
 
@@ -2217,6 +4010,14 @@ class HoneyHive:
 
     Provides an ergonomic interface to the HoneyHive API with both
     sync and async methods.
+
+    Each method's "Accepted keys" section names the API keys it can send. A
+    project API key is passed as ``api_key``, an ingestion API key as
+    ``ingestion_api_key``, and a data plane fine-grained API key as
+    ``data_plane_api_key``. Where a method names a typed key beside a project
+    API key, the project API key is deprecated. Each key type, and where to
+    create one, is described at
+    <https://docs.honeyhive.ai/v2/workspace/api-keys#key-types>.
 
     Example::
 
@@ -2406,14 +4207,20 @@ class HoneyHive:
             self._api_config, data_plane_api_key=self._data_plane_api_key
         )
         self.configurations = ConfigurationsAPI(self._api_config)
-        self.datapoints = DatapointsAPI(self._api_config)
-        self.datasets = DatasetsAPI(self._api_config)
+        self.datapoints = DatapointsAPI(
+            self._api_config, data_plane_api_key=self._data_plane_api_key
+        )
+        self.datasets = DatasetsAPI(
+            self._api_config, data_plane_api_key=self._data_plane_api_key
+        )
         self.events = EventsAPI(
             self._api_config,
             self._ingestion_api_key,
             retry_config=self._retry_config,
         )
-        self.experiments = ExperimentsAPI(self._api_config)
+        self.experiments = ExperimentsAPI(
+            self._api_config, data_plane_api_key=self._data_plane_api_key
+        )
         self.metrics = MetricsAPI(self._api_config)
         self.metric_versions = MetricVersionsAPI(self._api_config)
         self.sessions = SessionsAPI(self._api_config, self._ingestion_api_key)

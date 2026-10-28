@@ -136,6 +136,9 @@ class TracerContextMixin(TracerContextInterface):
         flexible parameter handling and automatic session detection. Use it to
         add user properties, feedback, metrics, or custom metadata to sessions.
 
+        Accepted keys:
+            Ingestion API key; Project API key (deprecated)
+
         Args:
             session_id: Optional explicit session ID to enrich.
                         If not provided, uses tracer's current session ID.
@@ -277,6 +280,9 @@ class TracerContextMixin(TracerContextInterface):
             safe for concurrent requests. For multi-session handling in web
             servers, use :meth:`create_session` instead.
 
+        Accepted keys:
+            Ingestion API key; Project API key (deprecated)
+
         Returns:
             Session ID if successful, None otherwise
 
@@ -331,6 +337,9 @@ class TracerContextMixin(TracerContextInterface):
         - Each async task/thread gets its own isolated session context
         - The span processor reads from baggage first (priority over instance)
         - No race conditions between concurrent requests
+
+        Accepted keys:
+            Ingestion API key; Project API key (deprecated)
 
         Args:
             session_name: Name for the session. Auto-generated if not provided.
@@ -485,6 +494,9 @@ class TracerContextMixin(TracerContextInterface):
         Creates a session via async API call and stores session_id in baggage.
         This is the recommended method for async web servers.
 
+        Accepted keys:
+            Ingestion API key; Project API key (deprecated)
+
         Args:
             session_name: Name for the session. Auto-generated if not provided.
             session_id: Custom session ID. If provided along with skip_api_call=True,
@@ -614,6 +626,9 @@ class TracerContextMixin(TracerContextInterface):
         Creates a session and yields the session_id. All spans created within
         the context will use this session. The session context is automatically
         managed via OpenTelemetry baggage.
+
+        Accepted keys:
+            Ingestion API key; Project API key (deprecated)
 
         Args:
             session_name: Name for the session
@@ -811,6 +826,9 @@ class TracerContextMixin(TracerContextInterface):
         This method uses dynamic logic to add attributes to the current span
         with flexible parameter handling and automatic span detection. It enriches
         the currently active span with metadata, metrics, or custom attributes.
+
+        Accepted keys:
+            Ingestion API key; Project API key (deprecated)
 
         Args:
             attributes: Span attributes to add directly (dict of key-value pairs)

@@ -1,5 +1,30 @@
 # Python SDK Changelog
 
+## [1.8.0] - 2026-10-27
+
+### Added
+
+- **Chart queries**
+  - New `client.charts.query()` and `query_async()` aggregate a project's events into a single chart result. They take a `ChartQueryRequest` (date range, filters including an `event_type` filter, and the query) and a required keyword-only `project_id`, and they return a `ChartQueryResponse`. Both models can be imported from `honeyhive.models`. The call is sent with the data plane API key, which needs `project.event.get`.
+- **Project-scoped dataset, datapoint, and experiment run operations**
+  - Every `client.datasets`, `client.datapoints`, and `client.experiments` run method (list, get, create, update, delete, add/remove datapoints, schema, results, comparisons, and their `_async` variants and aliases) accepts an optional keyword-only `project_id`. With `project_id`, the call targets that project and is sent with the data plane API key (`data_plane_api_key` / `HH_DATA_PLANE_API_KEY`).
+- **`datapoints.create_batch()`**
+  - New `client.datapoints.create_batch()` and `create_batch_async()` create datapoints from events, optionally adding them to a dataset.
+- **`experiments.get_run_metrics()`**
+  - New `client.experiments.get_run_metrics()` and `get_run_metrics_async()` return the event metrics of an experiment run, with optional `dateRange` and `filters`.
+- **`experiments.compare_run_events_async()`**
+  - New async variant of `compare_run_events()`.
+
+### Deprecated
+
+- **Dataset, datapoint, and experiment run calls without `project_id`**
+  - Calling these methods without `project_id` still uses the project API key, but now emits a `DeprecationWarning`. These calls stop working in v2.0. Pass `project_id` and configure a data plane API key. `evaluate()` and `run_experiment()` do not emit this warning.
+
+### Compatibility
+
+- **Higher minimums for optional integration extras**
+  - The Claude Agent SDK extras (`openinference-claude-agent-sdk`, `all-openinference`) now require `claude-agent-sdk>=0.2.121`. The `aws-strands` extra now requires `strands-agents>=1.48.0`. If you pin either package below these versions, raise the pin.
+
 ## [1.7.0] - 2026-10-05
 
 ### Added

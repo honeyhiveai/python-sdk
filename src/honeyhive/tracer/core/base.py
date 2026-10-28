@@ -222,6 +222,9 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
             HTTP connections (e.g. custom proxies, retries, or TLS). The caller
             owns the session; the SDK will not close it on shutdown.
         :type requests_session: Optional[requests.Session]
+
+        Accepted keys:
+            Ingestion API key; Project API key (deprecated)
         """
         # Multi-instance architecture uses safe_log() for all logging
         # No direct logger assignment needed - safe_log handles per-instance logging
@@ -596,6 +599,9 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
         """Factory method for creating tracer instances with dynamic configuration.
 
         This is a simple pass-through to __init__ for backwards compatibility.
+
+        Accepted keys:
+            Ingestion API key; Project API key (deprecated)
 
         Args:
             config: Pydantic tracer configuration
