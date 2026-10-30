@@ -1,5 +1,12 @@
 # Python SDK Changelog
 
+## [1.8.1] - 2026-10-30
+
+### Changed
+
+- **Clearer deprecation message for the events `project` parameter**
+  - When you pass the deprecated `project` argument to a `client.events` method, the `DeprecationWarning` now says that the project comes from the API key. Before, it said that the backend infers the project from `session_id` or the filters. The parameter still works and is still scheduled for removal in v2.0.
+
 ## [1.8.0] - 2026-10-27
 
 ### Added

@@ -110,7 +110,7 @@ def createEvent(
     return PostEventResponse(**body) if body is not None else PostEventResponse()
 
 
-def getEvent(
+def getEventLegacy(
     api_config_override: Optional[APIConfig] = None, *, event_id: str
 ) -> GetEventResponse:
     api_config = api_config_override if api_config_override else APIConfig()
@@ -135,7 +135,7 @@ def getEvent(
         )
 
     if response.status_code != 200:
-        _raise_http_exception("getEvent", response)
+        _raise_http_exception("getEventLegacy", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -178,6 +178,38 @@ def updateEvent(
     return None
 
 
+def getEvent(
+    api_config_override: Optional[APIConfig] = None, *, project_id: str, event_id: str
+) -> GetEventResponse:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/v1/projects/{project_id}/events/{event_id}"
+    headers = api_config.get_default_headers()
+    query_params: Dict[str, Any] = {}
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
+        response = client.request(
+            "get",
+            httpx.URL(path),
+            headers=headers,
+            params=_serialize_query_params(query_params),
+        )
+
+    if response.status_code != 200:
+        _raise_http_exception("getEvent", response)
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return GetEventResponse(**body) if body is not None else GetEventResponse()
+
+
 def exportEventsLegacy(
     api_config_override: Optional[APIConfig] = None, *, data: LegacyExportEventsRequest
 ) -> ExportEventsResponse:
@@ -211,13 +243,49 @@ def exportEventsLegacy(
     return ExportEventsResponse(**body) if body is not None else ExportEventsResponse()
 
 
-def searchEvents(
+def searchEventsLegacy(
     api_config_override: Optional[APIConfig] = None, *, data: SearchEventsRequest
 ) -> ExportEventsResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
     path = f"/v1/events/search"
+    headers = api_config.get_default_headers()
+    query_params: Dict[str, Any] = {}
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
+        response = client.request(
+            "post",
+            httpx.URL(path),
+            headers=headers,
+            params=_serialize_query_params(query_params),
+            json=data.model_dump(exclude_none=True),
+        )
+
+    if response.status_code != 200:
+        _raise_http_exception("searchEventsLegacy", response)
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return ExportEventsResponse(**body) if body is not None else ExportEventsResponse()
+
+
+def searchEvents(
+    api_config_override: Optional[APIConfig] = None,
+    *,
+    project_id: str,
+    data: SearchEventsRequest,
+) -> ExportEventsResponse:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/v1/projects/{project_id}/events/search"
     headers = api_config.get_default_headers()
     query_params: Dict[str, Any] = {}
 
