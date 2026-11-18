@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -20,7 +20,7 @@ class ChartResultCategorical(BaseModel):
         "protected_namespaces": (),
     }
 
-    kind: str = Field(validation_alias="kind")
+    kind: Literal["categorical"] = Field(validation_alias="kind")
 
     meta: ChartResultCategoricalMeta = Field(validation_alias="meta")
 

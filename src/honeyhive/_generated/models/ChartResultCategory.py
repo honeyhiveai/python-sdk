@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -23,4 +23,4 @@ class ChartResultCategory(BaseModel):
 
     dimensions: Dict[str, Any] = Field(validation_alias="dimensions")
 
-    is_other: Optional[bool] = Field(validation_alias="is_other", default=None)
+    is_other: Optional[Literal[True]] = Field(validation_alias="is_other", default=None)

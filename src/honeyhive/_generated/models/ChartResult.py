@@ -1,18 +1,24 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Annotated, TypeAlias, Union
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from .ChartResultCategorical import ChartResultCategorical
+from .ChartResultHistogram import ChartResultHistogram
+from .ChartResultScalar import ChartResultScalar
+from .ChartResultScatter import ChartResultScatter
+from .ChartResultTable import ChartResultTable
+from .ChartResultTimeSeries import ChartResultTimeSeries
 
 __all__ = ["ChartResult"]
 
-
-class ChartResult(BaseModel):
-    """
-    ChartResult model
-    """
-
-    model_config = {
-        "populate_by_name": True,
-        "validate_assignment": True,
-        "extra": "allow",
-        "protected_namespaces": (),
-    }
+ChartResult: TypeAlias = Annotated[
+    Union[
+        ChartResultTimeSeries,
+        ChartResultCategorical,
+        ChartResultScalar,
+        ChartResultHistogram,
+        ChartResultTable,
+        ChartResultScatter,
+    ],
+    Field(discriminator="kind"),
+]

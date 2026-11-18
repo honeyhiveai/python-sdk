@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -20,6 +20,6 @@ class GetMetricVersionsResponse(BaseModel):
         "protected_namespaces": (),
     }
 
-    success: bool = Field(validation_alias="success")
+    success: Literal[True] = Field(validation_alias="success")
 
     data: List[MetricVersion] = Field(validation_alias="data")

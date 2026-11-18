@@ -11,7 +11,7 @@ from ..api_config import (
 from ..models import *
 
 
-async def getConfigurations(
+async def getConfigurationsLegacy(
     api_config_override: Optional[APIConfig] = None,
     *,
     name: Optional[str] = None,
@@ -40,7 +40,7 @@ async def getConfigurations(
         )
 
     if response.status_code != 200:
-        _raise_http_exception("getConfigurations", response)
+        _raise_http_exception("getConfigurationsLegacy", response)
     else:
         body = None if 200 == 204 else response.json()
 
@@ -85,6 +85,47 @@ async def createConfiguration(
         CreateConfigurationResponse(**body)
         if body is not None
         else CreateConfigurationResponse()
+    )
+
+
+async def getConfigurations(
+    api_config_override: Optional[APIConfig] = None,
+    *,
+    project_id: str,
+    name: Optional[str] = None,
+    env: Optional[str] = None,
+    tags: Optional[str] = None,
+) -> GetConfigurationsResponse:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/v1/projects/{project_id}/configurations"
+    headers = api_config.get_default_headers()
+    query_params: Dict[str, Any] = {"name": name, "env": env, "tags": tags}
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    async with httpx.AsyncClient(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
+        response = await client.request(
+            "get",
+            httpx.URL(path),
+            headers=headers,
+            params=_serialize_query_params(query_params),
+        )
+
+    if response.status_code != 200:
+        _raise_http_exception("getConfigurations", response)
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return (
+        GetConfigurationsResponse(**body)
+        if body is not None
+        else GetConfigurationsResponse()
     )
 
 

@@ -37,15 +37,23 @@ class MissingApiKeyError(ValueError):
     project API key when no ingestion key is configured, so it names the
     ingestion key only when neither is. An operation that takes the data plane
     key accepts no other key, so it names the data plane key whenever that key
-    is absent.
+    is absent. An operation that needs several keys at once, such as
+    ``evaluate()`` with ``project_id``, names every key that is missing in one
+    error.
 
     Attributes:
-        key_kind: The kind of key the operation requires.
+        key_kind: The kind of key the operation requires. When several keys
+            are missing, the first of them.
+        key_kinds: Every kind of key that is missing, in the order given.
     """
 
-    def __init__(self, key_kind: ApiKeyKind) -> None:
-        super().__init__(_MISSING_API_KEY_MESSAGES[key_kind])
+    def __init__(self, key_kind: ApiKeyKind, *more_key_kinds: ApiKeyKind) -> None:
+        key_kinds = (key_kind, *more_key_kinds)
+        super().__init__(
+            "; ".join(_MISSING_API_KEY_MESSAGES[kind] for kind in key_kinds)
+        )
         self.key_kind = key_kind
+        self.key_kinds = key_kinds
 
 
 class BaseAPI:

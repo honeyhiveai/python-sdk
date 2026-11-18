@@ -1,5 +1,33 @@
 # Python SDK Changelog
 
+## [1.9.0] - 2026-11-18
+
+### Added
+
+- **Evaluator management**
+  - New `client.evaluators` namespace with `create`, `list`, `get`, `replace`, `archive`, `list_versions`, `get_version`, `publish`, and `unpublish`, and an `_async` variant of each. Every call needs a data plane API key (`data_plane_api_key` / `HH_DATA_PLANE_API_KEY`) and never falls back to the project API key. The evaluator request, response, and definition models can be imported from `honeyhive.models`.
+- **Project-scoped `evaluate()`**
+  - `evaluate()` accepts `project_id` and `data_plane_api_key`. With `project_id`, the run, dataset, and result requests go out with the data plane API key, and the traces go out with the ingestion API key. Both keys are required. The project API key does not stand in for the ingestion key here.
+- **Project-scoped experiment results**
+  - `get_run_result()`, `get_run_metrics()`, and `compare_runs()` now honor `project_id` when the client has a data plane API key. If the client has only a project API key, these calls ignore `project_id`, keep using that key's project, and emit a `DeprecationWarning`.
+  - `aggregate_function` now also accepts `median`, `p90`, `p95`, `p99`, and `count`. With `project_id`, any other value is replaced with `average` and a `UserWarning` is emitted.
+- **Project-scoped event reads**
+  - `client.events` `export()`, `list()`, `list_events()`, `get_events()`, and their `_async` variants accept an optional keyword-only `project_id`. With `project_id`, the call targets that project and is sent with the data plane API key, which needs `project.event.get`. On this path, `limit` is capped at 1000 and `projections` is ignored.
+
+### Changed
+
+- **`evaluate()` checks keys before it runs**
+  - If a required key is missing, `evaluate()` now raises `MissingApiKeyError` before it sends anything or runs your function on any datapoint. With `project_id`, one error names every missing key.
+- **`MissingApiKeyError` can name several keys**
+  - The new `key_kinds` attribute lists every missing key. `key_kind` still holds the first one.
+- **Failed run completion with a data plane key raises**
+  - With `project_id`, if the API refuses the run update (401, 403, or 404), `evaluate()` now raises an `HTTPException` with a note that the key needs `project.experiment_run.put`. Before, it only logged the failure, and the run stayed pending.
+
+### Deprecated
+
+- **`evaluate()`, experiment result helpers, and event reads without `project_id`**
+  - These calls still use the project API key but now emit a `DeprecationWarning`, and they stop working in v2.0. Pass `project_id` and configure a data plane API key. For `evaluate()`, also configure an ingestion API key. The `project` argument to `client.events.export()` is ignored and emits a `DeprecationWarning`.
+
 ## [1.8.1] - 2026-10-30
 
 ### Changed

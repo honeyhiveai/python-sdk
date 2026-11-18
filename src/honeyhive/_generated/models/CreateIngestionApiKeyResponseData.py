@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -25,6 +25,6 @@ class CreateIngestionApiKeyResponseData(BaseModel):
 
     description: Optional[str] = Field(validation_alias="description")
 
-    root_scope_type: str = Field(validation_alias="root_scope_type")
+    root_scope_type: Literal["project"] = Field(validation_alias="root_scope_type")
 
     root_scope_id: str = Field(validation_alias="root_scope_id")

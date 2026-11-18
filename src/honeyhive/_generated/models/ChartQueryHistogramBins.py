@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -17,7 +17,7 @@ class ChartQueryHistogramBins(BaseModel):
         "protected_namespaces": (),
     }
 
-    mode: str = Field(validation_alias="mode")
+    mode: Literal["count"] = Field(validation_alias="mode")
 
     count: Optional[int] = Field(validation_alias="count", default=None)
 

@@ -21,9 +21,10 @@ from uuid import UUID
 import httpx
 
 from honeyhive._generated.api_config import HTTPException
+from honeyhive.api._base import ApiKeyKind, MissingApiKeyError
 from honeyhive.api.client import HoneyHive
 from honeyhive.experiments.evaluators import evaluator as evaluator_class
-from honeyhive.experiments.results import get_run_result
+from honeyhive.experiments.results import _get_run_result
 from honeyhive.experiments.utils import (
     prepare_external_dataset,
     prepare_run_request_data,
@@ -680,8 +681,17 @@ def _update_run_with_results(  # pylint: disable=too-many-branches
     external_dataset_id: str,
     client: Any,
     verbose: bool,
+    project_id: Optional[str] = None,
 ) -> None:
-    """Update run with session IDs and final status."""
+    """Update run with session IDs and final status.
+
+    A failed update is logged and the run stays pending, so the caller still
+    gets its results.
+
+    Raises:
+        HTTPException: With ``project_id``, the API refused the data plane API
+            key (401, 403 or 404).
+    """
     # Collect session IDs from execution results
     session_ids = []
     for result in execution_results:
@@ -732,11 +742,26 @@ def _update_run_with_results(  # pylint: disable=too-many-branches
 
         # Use experiments API with PutExperimentRunRequest
         update_request = PutExperimentRunRequest(**update_data)
-        client.experiments._update_run(run_id, update_request)
+        client.experiments._update_run(run_id, update_request, project_id=project_id)
 
         if verbose and session_ids:
             logger.info("Linked %d sessions to run %s", len(session_ids), run_id)
     except Exception as e:
+        # A data plane key can hold the permission to create a run without
+        # the permission to update it, and the API answers a missing
+        # permission with 404. A refusal fails again on every later call, so
+        # it stops this one.
+        if (
+            project_id is not None
+            and isinstance(e, HTTPException)
+            and e.status_code in (401, 403, 404)
+        ):
+            e.add_note(
+                f"Run {run_id} stays pending. The data plane API key needs "
+                "project.experiment_run.put to complete it."
+            )
+            raise
+
         # Enhanced error logging for 400 errors
         error_msg = str(e)
         error_type = type(e).__name__
@@ -1102,6 +1127,48 @@ def _attach_metrics_to_span(results: List[EvaluatorMetricResult], tracer: Any) -
         logger.warning("Failed to attach evaluator metrics to chain span: %s", str(e))
 
 
+_PROJECT_ID_REMEDY = (
+    "Pass project_id, and configure a data plane API key with "
+    "data_plane_api_key or the HH_DATA_PLANE_API_KEY environment variable, and "
+    "an ingestion API key with ingestion_api_key or the HH_INGESTION_API_KEY "
+    "environment variable."
+)
+
+
+def _require_evaluate_keys(client: Any, project_id: Optional[str]) -> None:
+    """Refuse an ``evaluate()`` call that lacks a key it needs, before it sends.
+
+    With ``project_id`` the data plane key and the ingestion key work as a
+    pair: the first sends the run, dataset and result requests, and the second
+    sends the traces. The project API key stands in for neither. A tracer
+    without an ingestion key would send the traces with the project key, or
+    with no key would run every datapoint and export nothing, so the missing
+    key is an error here instead. Without ``project_id`` the project API key
+    sends every request.
+
+    Raises:
+        MissingApiKeyError: A key the call needs is not configured. It names
+            every missing key.
+    """
+    if project_id is None:
+        if not client.api_key:
+            raise MissingApiKeyError("project")
+        return
+    missing: List[ApiKeyKind] = []
+    if not client.data_plane_api_key:
+        missing.append("data_plane")
+    if not client.ingestion_api_key:
+        missing.append("ingestion")
+    if not missing:
+        return
+    error = MissingApiKeyError(*missing)
+    if "ingestion" in missing and client.api_key:
+        error.add_note(
+            "With project_id, evaluate() does not send traces with the project API key."
+        )
+    raise error
+
+
 def evaluate(  # pylint: disable=too-many-locals,too-many-branches
     function: Callable,
     *,
@@ -1111,6 +1178,8 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
     instrumentors: Optional[List[Callable[[], Any]]] = None,
     api_key: Optional[str] = None,
     ingestion_api_key: Optional[str] = None,
+    project_id: Optional[str] = None,
+    data_plane_api_key: Optional[str] = None,
     server_url: Optional[str] = None,
     project: Optional[str] = None,
     name: Optional[str] = None,
@@ -1131,6 +1200,22 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
     5. Retrieves aggregated results from backend
 
     Accepted keys:
+        With ``project_id``, both of these:
+
+        - Data plane fine-grained API key: creates and updates the run, reads
+          the dataset, and reads the run results. It needs
+          ``project.experiment_run.post``, ``project.experiment_run.put`` and
+          ``project.experiment_run.get``, and with ``dataset_id`` also
+          ``project.dataset.list`` and ``project.datapoint.get``. A missing
+          permission fails the step that needs it. For
+          ``project.experiment_run.put`` and ``project.experiment_run.get``,
+          that is after the function has run on every datapoint.
+        - Ingestion API key: sends the traces and session results. It must
+          belong to the project that ``project_id`` names. A key from another
+          project sends them there, and the run then has no events.
+
+        Without ``project_id`` (deprecated):
+
         - Project API key, required: creates and updates the run, reads the
           dataset, and reads the run results.
         - Ingestion API key, optional: sends the traces and session results.
@@ -1147,18 +1232,25 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
             return a new instrumentor instance when called. This ensures each
             datapoint gets its own tracer and instrumentor instance for proper
             trace routing. Example: [lambda: OpenAIInstrumentor()]
-        api_key: HoneyHive API key (or set the HH_API_KEY env var)
+        api_key: Project API key (or set the HH_API_KEY env var). Used only
+            without project_id, which is deprecated.
         ingestion_api_key: Ingestion API key used to send the experiment's traces
-            (or set the HH_INGESTION_API_KEY env var). Run creation and results
-            still use api_key. When unset, api_key sends the traces too.
+            (or set the HH_INGESTION_API_KEY env var). Required with project_id.
+            Without project_id it is optional, and api_key sends the traces
+            when it is unset.
+        project_id: The project the experiment runs in. Omitting it runs the
+            experiment in the project API key's project, which is deprecated.
+        data_plane_api_key: Data plane API key (or set the
+            HH_DATA_PLANE_API_KEY env var). Required with project_id.
         server_url: HoneyHive server URL (or set the HH_API_URL env var)
-        project: Deprecated and ignored. Project scope is determined by the API key.
+        project: Deprecated and ignored. Use project_id.
         name: Experiment run name (auto-generated if not provided)
         run_id: Experiment run ID to send to the backend (auto-generated UUID if not
             provided). The backend's returned run_id is always honored as the final ID.
         max_workers: ThreadPool size for concurrent execution (default: 10)
-        aggregate_function: Backend aggregation function
-            ("average", "sum", "min", "max")
+        aggregate_function: Backend aggregation function: "average", "min",
+            "max", "median", "p90", "p95", "p99", "sum" or "count". Any other
+            value is treated as "average".
         verbose: Enable verbose logging
         print_results: Print formatted results table after evaluation
             (default: True)
@@ -1168,6 +1260,10 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
 
     Raises:
         ValueError: If neither dataset nor dataset_id provided, or both provided
+        MissingApiKeyError: If a key the call needs is not configured. With
+            project_id, it names each of the data plane and ingestion keys
+            that is missing. Without project_id, it names the project key.
+            Nothing has been sent and the function has not run.
 
     Examples:
         >>> from honeyhive import HoneyHive
@@ -1192,7 +1288,9 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
         >>> result = evaluate(
         ...     function=my_function,  # or my_async_function
         ...     dataset=dataset,
-        ...     api_key="hh_...",
+        ...     project_id="...",
+        ...     data_plane_api_key="hh_fgdp_...",
+        ...     ingestion_api_key="hh_ingst_...",
         ...     name="My Experiment"
         ... )
         >>>
@@ -1200,11 +1298,11 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
         >>> print(f"Passed: {len(result.passed)}")
         >>> print(f"Metrics: {result.metrics.list_metrics()}")
         >>>
-        >>> # HoneyHive dataset
+        >>> # HoneyHive dataset, with the keys read from the environment
         >>> result = evaluate(
         ...     function=my_function,
         ...     dataset_id="ds-123",
-        ...     api_key="hh_..."
+        ...     project_id="..."
         ... )
         >>>
         >>> # With instrumentors for automatic LLM tracing
@@ -1212,7 +1310,7 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
         >>> result = evaluate(
         ...     function=my_function,
         ...     dataset=dataset,
-        ...     api_key="hh_...",
+        ...     project_id="...",
         ...     instrumentors=[lambda: OpenAIInstrumentor()]
         ... )
     """
@@ -1224,7 +1322,14 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
     if project is not None:
         warnings.warn(
             "The 'project' argument to evaluate() is deprecated and ignored. "
-            "Project scope is determined by the API key.",
+            f"{_PROJECT_ID_REMEDY}",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+    if project_id is None:
+        warnings.warn(
+            "Calling evaluate() without project_id is deprecated and will stop "
+            f"working in v2.0. {_PROJECT_ID_REMEDY}",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -1232,8 +1337,12 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
     # The client here and the per-datapoint tracers each resolve the keys and
     # URL from these same arguments, so evaluate() forwards them as given.
     client = HoneyHive(
-        api_key=api_key, ingestion_api_key=ingestion_api_key, base_url=server_url
+        api_key=api_key,
+        ingestion_api_key=ingestion_api_key,
+        data_plane_api_key=data_plane_api_key,
+        base_url=server_url,
     )
+    _require_evaluate_keys(client, project_id)
 
     # Step 1: Prepare dataset
     if dataset is not None:
@@ -1256,10 +1365,11 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
             logger.info("DEBUG - Input dataset_id type: %s", type(dataset_id))
             logger.info("DEBUG - Is EXT- dataset: %s", dataset_id.startswith("EXT-"))
 
-        # The dataset metadata comes through the list core, which never warns,
-        # because evaluate() takes no project_id and its caller could not act
-        # on a deprecation warning.
-        ds_response = client.datasets._list(dataset_id=dataset_id)
+        # The dataset metadata comes through the list core, which never warns.
+        # evaluate() has already warned its caller about a missing project_id.
+        ds_response = client.datasets._list(
+            dataset_id=dataset_id, project_id=project_id
+        )
         dataset_list = []
         datapoint_ids = []
 
@@ -1269,9 +1379,8 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
         dataset_obj = ds_response.datasets[0]
 
         # Dataset.datapoints is List[str] (IDs only), fetch each datapoint.
-        # The fetch goes through the core, which never warns, because
-        # evaluate() takes no project_id and its caller could not act on a
-        # deprecation warning. It returns a typed GetDatapointResponse
+        # The fetch goes through the core, which never warns, for the same
+        # reason as the dataset read. It returns a typed GetDatapointResponse
         # Pydantic model whose `.datapoint` field is List[Datapoint].
         #
         # Catch ONLY the exception types that represent a fetch failure
@@ -1283,7 +1392,7 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
         if dataset_obj.datapoints:
             for dp_id in dataset_obj.datapoints:
                 try:
-                    dp_response = client.datapoints._get(dp_id)
+                    dp_response = client.datapoints._get(dp_id, project_id=project_id)
                 except (HTTPException, httpx.HTTPError) as e:
                     logger.warning("Failed to fetch datapoint %s: %s", dp_id, str(e))
                     continue
@@ -1368,7 +1477,7 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
 
     # Create run via API (experiments API handles runs)
     run_request = PostExperimentRunRequest(**run_data)
-    run_response = client.experiments._create_run(run_request)
+    run_response = client.experiments._create_run(run_request, project_id=project_id)
 
     # Use backend-generated run_id if available
     if hasattr(run_response, "run_id") and run_response.run_id:
@@ -1429,6 +1538,7 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
         external_dataset_id=external_dataset_id,
         client=client,
         verbose=verbose,
+        project_id=project_id,
     )
 
     # Step 7: Retrieve aggregated results from backend
@@ -1437,10 +1547,11 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
             "Retrieving aggregated results with %s aggregation", aggregate_function
         )
 
-    result_summary = get_run_result(
+    result_summary = _get_run_result(
         client=client,
         run_id=run_id,
         aggregate_function=aggregate_function,
+        project_id=project_id,
     )
 
     if verbose:

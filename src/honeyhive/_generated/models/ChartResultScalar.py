@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -21,7 +21,7 @@ class ChartResultScalar(BaseModel):
         "protected_namespaces": (),
     }
 
-    kind: str = Field(validation_alias="kind")
+    kind: Literal["scalar"] = Field(validation_alias="kind")
 
     meta: ChartResultScalarMeta = Field(validation_alias="meta")
 

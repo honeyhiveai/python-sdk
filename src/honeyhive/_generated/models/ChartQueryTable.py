@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -20,7 +20,7 @@ class ChartQueryTable(BaseModel):
         "protected_namespaces": (),
     }
 
-    kind: str = Field(validation_alias="kind")
+    kind: Literal["table"] = Field(validation_alias="kind")
 
     group_by: List[str] = Field(validation_alias="group_by")
 

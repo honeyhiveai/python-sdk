@@ -3,8 +3,8 @@
 Usage:
     from honeyhive.api import HoneyHive
 
-    client = HoneyHive(api_key="hh_...")
-    configs = client.configurations.list()
+    client = HoneyHive(data_plane_api_key="hh_fgdp_...")
+    configs = client.configurations.list(project_id="your-project-id")
 """
 
 from ._base import MissingApiKeyError
@@ -12,6 +12,7 @@ from .client import (
     ConfigurationsAPI,
     DatapointsAPI,
     DatasetsAPI,
+    EvaluatorsAPI,
     EventsAPI,
     ExperimentsAPI,
     HoneyHive,
@@ -31,6 +32,7 @@ __all__ = [
     "ConfigurationsAPI",
     "DatapointsAPI",
     "DatasetsAPI",
+    "EvaluatorsAPI",
     "EventsAPI",
     "ExperimentsAPI",
     "MetricsAPI",

@@ -7,18 +7,21 @@ Usage::
 
     from honeyhive.api import HoneyHive
 
-    client = HoneyHive(api_key="your-api-key")
+    client = HoneyHive(data_plane_api_key="your-data-plane-api-key")
 
     # Sync usage
-    configs = client.configurations.list()
+    configs = client.configurations.list(project_id="your-project-id")
 
     # Async usage
-    configs = await client.configurations.list_async()
+    configs = await client.configurations.list_async(project_id="your-project-id")
 """
 
 import asyncio
+import json
 import logging
+import math
 import os
+import re
 import sys
 import warnings
 from typing import (
@@ -54,6 +57,9 @@ from honeyhive._generated.services import Charts_service as charts_svc
 from honeyhive._generated.services import Configurations_service as configs_svc
 from honeyhive._generated.services import Datapoints_service as datapoints_svc
 from honeyhive._generated.services import Datasets_service as datasets_svc
+from honeyhive._generated.services import (
+    Evaluators_service as evaluators_svc,
+)
 from honeyhive._generated.services import Events_service as events_svc
 from honeyhive._generated.services import Experiments_service as experiments_svc
 from honeyhive._generated.services import Metric_Versions_service as metric_versions_svc
@@ -67,6 +73,9 @@ from honeyhive._generated.services import (
     async_Datapoints_service as datapoints_svc_async,
 )
 from honeyhive._generated.services import async_Datasets_service as datasets_svc_async
+from honeyhive._generated.services import (
+    async_Evaluators_service as evaluators_svc_async,
+)
 from honeyhive._generated.services import async_Events_service as events_svc_async
 from honeyhive._generated.services import (
     async_Experiments_service as experiments_svc_async,
@@ -95,6 +104,8 @@ from honeyhive.models import (
     CreateDatapointResponse,
     CreateDatasetRequest,
     CreateDatasetResponse,
+    CreateEvaluatorRequest,
+    CreateEvaluatorResponse,
     CreateMetricRequest,
     CreateMetricResponse,
     CreateMetricVersionRequest,
@@ -103,6 +114,7 @@ from honeyhive.models import (
     DeleteConfigurationResponse,
     DeleteDatapointResponse,
     DeleteDatasetResponse,
+    DeleteEvaluatorResponse,
     DeleteExperimentRunResponse,
     DeleteMetricResponse,
     DeployMetricVersionResponse,
@@ -113,6 +125,7 @@ from honeyhive.models import (
     GetDatapointResponse,
     GetDatapointsResponse,
     GetDatasetsResponse,
+    GetEvaluatorResponse,
     GetEventsQuery,
     GetEventsResponse,
     GetEventsSchemaResponse,
@@ -120,6 +133,8 @@ from honeyhive.models import (
     GetExperimentRunResponse,
     GetExperimentRunsResponse,
     GetMetricVersionsResponse,
+    ListEvaluatorsResponse,
+    ListEvaluatorVersionsResponse,
     MetricItem,
     Pagination,
     PostEventBatchRequest,
@@ -129,10 +144,14 @@ from honeyhive.models import (
     PostExperimentRunRequest,
     PostExperimentRunResponse,
     PostSessionStartResponse,
+    PublishEvaluatorResponse,
     PutExperimentRunRequest,
     PutExperimentRunResponse,
     RemoveDatapointResponse,
+    ReplaceUpdateEvaluatorRequest,
+    ReplaceUpdateEvaluatorResponse,
     StartSessionRequest,
+    UnpublishEvaluatorResponse,
     UpdateChartRequest,
     UpdateChartResponse,
     UpdateConfigurationRequest,
@@ -235,15 +254,18 @@ def _chunk_list(items: List[T], size: int) -> List[List[T]]:
     return [items[i : i + size] for i in range(0, len(items), size)]
 
 
-def _warn_call_without_project_id(namespace: str, method: str) -> None:
+def _warn_call_without_project_id(
+    namespace: str, method: str, *, stacklevel: int = 4
+) -> None:
     """Warn that a method taking ``project_id`` was called without it.
 
     A ``DeprecationWarning`` is shown only when it is attributed to the
-    caller's code. ``stacklevel`` counts this helper, the calling method, and
-    the timestamp wrapper ``BaseAPI`` puts around every public method, so the
-    warning lands on the line that called the method. Calling this from
-    anywhere but the body of a public method of a ``BaseAPI`` subclass, such as
-    from a private helper that method calls, misattributes it.
+    caller's code. The default ``stacklevel`` counts this helper, the calling
+    method, and the timestamp wrapper ``BaseAPI`` puts around every public
+    method, so the warning lands on the line that called the method. That is
+    right only in the body of a public method of a ``BaseAPI`` subclass. A
+    caller anywhere else passes its own count: this helper, plus every SDK
+    frame between it and the code that called the SDK.
 
     The message names v2.0, as every other deprecation in this SDK does. That
     is this package's next major version, and the other HoneyHive SDKs number
@@ -255,8 +277,125 @@ def _warn_call_without_project_id(namespace: str, method: str) -> None:
         "key with data_plane_api_key or the HH_DATA_PLANE_API_KEY environment "
         "variable.",
         DeprecationWarning,
+        stacklevel=stacklevel,
+    )
+
+
+def _warn_ignored_project_argument() -> None:
+    """Warn that a method was given a ``project`` argument it ignores.
+
+    The ``stacklevel`` counts the frames ``_warn_call_without_project_id``
+    counts by default, so this is called only from the body of a public method
+    of a ``BaseAPI`` subclass.
+    """
+    warnings.warn(
+        "The 'project' parameter is ignored. It is deprecated and will be "
+        "removed in v2.0. Name the project with project_id, which takes the "
+        "project's ID.",
+        DeprecationWarning,
         stacklevel=4,
     )
+
+
+# The bounds the older export operation gives a date range that has only one.
+# The project-scoped search requires both.
+_SEARCH_EARLIEST = "1970-01-01T00:00:00.000Z"
+_SEARCH_LATEST = "2099-12-31T23:59:59.999Z"
+
+_SEARCH_LIMIT_DEFAULT = 1000
+_SEARCH_LIMIT_MAX = 1000
+_SEARCH_PAGE_DEFAULT = 1
+
+_LEADING_INTEGER = re.compile(r"\s*([+-]?[0-9]+)")
+
+
+def _search_count(value: Any, default: int) -> Union[int, float]:
+    """A ``limit`` or ``page`` argument as the older export operation reads it.
+
+    A string counts by its leading integer, so ``"12abc"`` is 12. A ``bool`` is
+    not a number. A value that is not a number, or is not above zero, becomes
+    ``default``.
+    """
+    number: Union[int, float, None] = None
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        number = value
+    elif isinstance(value, str):
+        match = _LEADING_INTEGER.match(value)
+        if match:
+            number = int(match.group(1))
+    if number is None or number <= 0:
+        return default
+    if isinstance(number, float) and not math.isfinite(number):
+        return default
+    return number
+
+
+def _search_date_range(date_range: Any) -> Optional[Dict[str, str]]:
+    """An export ``date_range`` as the project-scoped search takes it.
+
+    The bounds come from ``$gte`` and ``$lte``, or from ``gte`` and ``lte``
+    where those are absent. A number bound is absent, as the older export
+    operation reads it. With one bound absent, the range runs to the widest
+    value the search accepts. With both absent there is no range. A JSON
+    string is read as the object it holds. The timestamps are sent as given.
+
+    Raises:
+        TypeError: A bound is neither a string nor a number. The older export
+            request fails to encode such a bound, so a call that passes one
+            fails with or without ``project_id``.
+    """
+    if isinstance(date_range, str):
+        try:
+            date_range = json.loads(date_range)
+        except ValueError:
+            return None
+    if not isinstance(date_range, dict):
+        return None
+
+    def bound(key: str, bare_key: str) -> Optional[str]:
+        value = date_range.get(key)
+        if value is None:
+            key, value = bare_key, date_range.get(bare_key)
+        if value is None or isinstance(value, str):
+            return value
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            return None
+        raise TypeError(
+            f"date_range[{key!r}] must be an ISO 8601 timestamp string, not "
+            f"{type(value).__name__}"
+        )
+
+    start = bound("$gte", "gte")
+    end = bound("$lte", "lte")
+    if not start and not end:
+        return None
+    return {
+        "start_time": _SEARCH_EARLIEST if start is None else start,
+        "end_time": _SEARCH_LATEST if end is None else end,
+    }
+
+
+def _scoped_search_body(
+    filters_data: List[Dict[str, Any]], date_range: Any, limit: Any, page: Any
+) -> Dict[str, Any]:
+    """The project-scoped search body for the arguments of an export call.
+
+    The search refuses what the older export operation accepts and corrects,
+    so each rule here must match that operation's: the date range keys and the
+    bound it fills in, and the ``limit`` and ``page`` it substitutes and caps.
+    A call that works without ``project_id`` then works with it. The body
+    never carries ``project`` or ``projections``, which the older operation
+    ignores and the search refuses.
+    """
+    body: Dict[str, Any] = {
+        "filters": filters_data,
+        "limit": min(_search_count(limit, _SEARCH_LIMIT_DEFAULT), _SEARCH_LIMIT_MAX),
+        "page": _search_count(page, _SEARCH_PAGE_DEFAULT),
+    }
+    search_date_range = _search_date_range(date_range)
+    if search_date_range is not None:
+        body["dateRange"] = search_date_range
+    return body
 
 
 def _split_dataset_update(
@@ -601,30 +740,332 @@ class ChartsAPI(BaseAPI):
         )
 
 
+class EvaluatorsAPI(BaseAPI):
+    """Project-scoped evaluator management using a data plane fine-grained key."""
+
+    def create(
+        self, request: CreateEvaluatorRequest, *, project_id: str
+    ) -> CreateEvaluatorResponse:
+        """Create an evaluator and its first version.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project.evaluator.post``;
+            ``publish=True`` also requires ``project.evaluator.publish``
+        """
+        return evaluators_svc.createEvaluator(
+            self._data_plane_api_config, project_id=project_id, data=request
+        )
+
+    async def create_async(
+        self, request: CreateEvaluatorRequest, *, project_id: str
+    ) -> CreateEvaluatorResponse:
+        """Asynchronously create an evaluator and its first version.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project.evaluator.post``;
+            ``publish=True`` also requires ``project.evaluator.publish``
+        """
+        return await evaluators_svc_async.createEvaluator(
+            self._data_plane_api_config, project_id=project_id, data=request
+        )
+
+    def list(
+        self,
+        *,
+        project_id: str,
+        page: Optional[int] = None,
+        limit: Optional[int] = None,
+    ) -> ListEvaluatorsResponse:
+        """List active evaluators with their latest definitions.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project.evaluator.list``
+        """
+        return evaluators_svc.listEvaluators(
+            self._data_plane_api_config, project_id=project_id, page=page, limit=limit
+        )
+
+    async def list_async(
+        self,
+        *,
+        project_id: str,
+        page: Optional[int] = None,
+        limit: Optional[int] = None,
+    ) -> ListEvaluatorsResponse:
+        """Asynchronously list active evaluators with their latest definitions.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project.evaluator.list``
+        """
+        return await evaluators_svc_async.listEvaluators(
+            self._data_plane_api_config, project_id=project_id, page=page, limit=limit
+        )
+
+    def get(
+        self, evaluator_id_or_slug: str, *, project_id: str
+    ) -> GetEvaluatorResponse:
+        """Get the latest evaluator version by ID or slug.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project.evaluator.get``
+        """
+        return evaluators_svc.getEvaluator(
+            self._data_plane_api_config,
+            project_id=project_id,
+            evaluator_id_or_slug=evaluator_id_or_slug,
+        )
+
+    async def get_async(
+        self, evaluator_id_or_slug: str, *, project_id: str
+    ) -> GetEvaluatorResponse:
+        """Asynchronously get the latest evaluator version by ID or slug.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project.evaluator.get``
+        """
+        return await evaluators_svc_async.getEvaluator(
+            self._data_plane_api_config,
+            project_id=project_id,
+            evaluator_id_or_slug=evaluator_id_or_slug,
+        )
+
+    def replace(
+        self,
+        evaluator_id_or_slug: str,
+        request: ReplaceUpdateEvaluatorRequest,
+        *,
+        project_id: str,
+    ) -> ReplaceUpdateEvaluatorResponse:
+        """Replace the complete evaluator definition.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project.evaluator.update``;
+            ``publish=True`` also requires ``project.evaluator.publish``
+        """
+        return evaluators_svc.replaceEvaluator(
+            self._data_plane_api_config,
+            project_id=project_id,
+            evaluator_id_or_slug=evaluator_id_or_slug,
+            data=request,
+        )
+
+    async def replace_async(
+        self,
+        evaluator_id_or_slug: str,
+        request: ReplaceUpdateEvaluatorRequest,
+        *,
+        project_id: str,
+    ) -> ReplaceUpdateEvaluatorResponse:
+        """Asynchronously replace the complete evaluator definition.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project.evaluator.update``;
+            ``publish=True`` also requires ``project.evaluator.publish``
+        """
+        return await evaluators_svc_async.replaceEvaluator(
+            self._data_plane_api_config,
+            project_id=project_id,
+            evaluator_id_or_slug=evaluator_id_or_slug,
+            data=request,
+        )
+
+    def archive(
+        self, evaluator_id_or_slug: str, *, project_id: str
+    ) -> DeleteEvaluatorResponse:
+        """Archive an evaluator and clear its publication pointer.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project.evaluator.delete``
+        """
+        return evaluators_svc.archiveEvaluator(
+            self._data_plane_api_config,
+            project_id=project_id,
+            evaluator_id_or_slug=evaluator_id_or_slug,
+        )
+
+    async def archive_async(
+        self, evaluator_id_or_slug: str, *, project_id: str
+    ) -> DeleteEvaluatorResponse:
+        """Asynchronously archive an evaluator and clear its publication pointer.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project.evaluator.delete``
+        """
+        return await evaluators_svc_async.archiveEvaluator(
+            self._data_plane_api_config,
+            project_id=project_id,
+            evaluator_id_or_slug=evaluator_id_or_slug,
+        )
+
+    def list_versions(
+        self,
+        evaluator_id_or_slug: str,
+        *,
+        project_id: str,
+        page: Optional[int] = None,
+        limit: Optional[int] = None,
+    ) -> ListEvaluatorVersionsResponse:
+        """List immutable evaluator versions in descending order.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project.evaluator.list``
+        """
+        return evaluators_svc.listEvaluatorVersions(
+            self._data_plane_api_config,
+            project_id=project_id,
+            evaluator_id_or_slug=evaluator_id_or_slug,
+            page=page,
+            limit=limit,
+        )
+
+    async def list_versions_async(
+        self,
+        evaluator_id_or_slug: str,
+        *,
+        project_id: str,
+        page: Optional[int] = None,
+        limit: Optional[int] = None,
+    ) -> ListEvaluatorVersionsResponse:
+        """Asynchronously list immutable evaluator versions in descending order.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project.evaluator.list``
+        """
+        return await evaluators_svc_async.listEvaluatorVersions(
+            self._data_plane_api_config,
+            project_id=project_id,
+            evaluator_id_or_slug=evaluator_id_or_slug,
+            page=page,
+            limit=limit,
+        )
+
+    def get_version(
+        self, evaluator_id_or_slug: str, version: int, *, project_id: str
+    ) -> GetEvaluatorResponse:
+        """Get a specific immutable evaluator version.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project.evaluator.get``
+        """
+        return evaluators_svc.getEvaluatorVersion(
+            self._data_plane_api_config,
+            project_id=project_id,
+            evaluator_id_or_slug=evaluator_id_or_slug,
+            version=version,
+        )
+
+    async def get_version_async(
+        self, evaluator_id_or_slug: str, version: int, *, project_id: str
+    ) -> GetEvaluatorResponse:
+        """Asynchronously get a specific immutable evaluator version.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project.evaluator.get``
+        """
+        return await evaluators_svc_async.getEvaluatorVersion(
+            self._data_plane_api_config,
+            project_id=project_id,
+            evaluator_id_or_slug=evaluator_id_or_slug,
+            version=version,
+        )
+
+    def publish(
+        self, evaluator_id_or_slug: str, version: int, *, project_id: str
+    ) -> PublishEvaluatorResponse:
+        """Publish an existing evaluator version.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project.evaluator.publish``
+        """
+        return evaluators_svc.publishEvaluator(
+            self._data_plane_api_config,
+            project_id=project_id,
+            evaluator_id_or_slug=evaluator_id_or_slug,
+            version=version,
+        )
+
+    async def publish_async(
+        self, evaluator_id_or_slug: str, version: int, *, project_id: str
+    ) -> PublishEvaluatorResponse:
+        """Asynchronously publish an existing evaluator version.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project.evaluator.publish``
+        """
+        return await evaluators_svc_async.publishEvaluator(
+            self._data_plane_api_config,
+            project_id=project_id,
+            evaluator_id_or_slug=evaluator_id_or_slug,
+            version=version,
+        )
+
+    def unpublish(
+        self, evaluator_id_or_slug: str, *, project_id: str
+    ) -> UnpublishEvaluatorResponse:
+        """Clear the evaluator publication pointer.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project.evaluator.publish``
+        """
+        return evaluators_svc.unpublishEvaluator(
+            self._data_plane_api_config,
+            project_id=project_id,
+            evaluator_id_or_slug=evaluator_id_or_slug,
+        )
+
+    async def unpublish_async(
+        self, evaluator_id_or_slug: str, *, project_id: str
+    ) -> UnpublishEvaluatorResponse:
+        """Asynchronously clear the evaluator publication pointer.
+
+        Accepted keys:
+            Data plane fine-grained API key with ``project.evaluator.publish``
+        """
+        return await evaluators_svc_async.unpublishEvaluator(
+            self._data_plane_api_config,
+            project_id=project_id,
+            evaluator_id_or_slug=evaluator_id_or_slug,
+        )
+
+
 class ConfigurationsAPI(BaseAPI):
-    """Configurations API."""
+    """Configurations API.
+
+    A method that takes ``project_id`` sends the request with the data plane
+    API key when given it, naming the project in the path. Without it, the
+    request acts on the project API key's project, is sent with that key, and
+    issues a ``DeprecationWarning``.
+
+    Each such public method, alias included, warns in its own name and then
+    calls its private core, which sends the request and never warns. SDK code
+    that reaches the operation calls the core, so the warning reaches only a
+    caller who can pass ``project_id``.
+
+    Only the methods that list configurations take ``project_id``. Creating,
+    updating and deleting a configuration take the project API key.
+    """
 
     # Sync methods
-    def list(self, project: Optional[str] = None) -> List[ConfigurationItem]:
+    def list(
+        self, project: Optional[str] = None, *, project_id: Optional[str] = None
+    ) -> List[ConfigurationItem]:
         """List configurations.
 
         Accepted keys:
-            Project API key
+            Data plane fine-grained API key with ``project.config.list``, with
+            ``project_id``; Project API key without ``project_id`` (deprecated)
 
-        Note:
-            The v1 API does not currently support project filtering.
+        Args:
+            project: Ignored. Deprecated in v1.0 and will be removed in v2.0.
+                ``project_id`` names the project.
+            project_id: The project to list configurations in. Without it, the
+                call lists the project key's project, which is deprecated.
         """
         if project is not None:
-            warnings.warn(
-                "The 'project' parameter is no longer supported for "
-                "configurations.list() and will be removed in v2.0.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-        del project
-        # Preserve the high-level SDK list surface by unwrapping the transport envelope.
-        response = configs_svc.getConfigurations(self._api_config)
-        return response.configurations
+            _warn_ignored_project_argument()
+        if project_id is None:
+            _warn_call_without_project_id("configurations", "list")
+        return self._list(project_id=project_id)
 
     def create(
         self, request: CreateConfigurationRequest
@@ -658,26 +1099,25 @@ class ConfigurationsAPI(BaseAPI):
 
     # Async methods
     async def list_async(
-        self, project: Optional[str] = None
+        self, project: Optional[str] = None, *, project_id: Optional[str] = None
     ) -> List[ConfigurationItem]:
         """List configurations asynchronously.
 
         Accepted keys:
-            Project API key
+            Data plane fine-grained API key with ``project.config.list``, with
+            ``project_id``; Project API key without ``project_id`` (deprecated)
 
-        Note:
-            The v1 API does not currently support project filtering.
+        Args:
+            project: Ignored. Deprecated in v1.0 and will be removed in v2.0.
+                ``project_id`` names the project.
+            project_id: The project to list configurations in. Without it, the
+                call lists the project key's project, which is deprecated.
         """
         if project is not None:
-            warnings.warn(
-                "The 'project' parameter is no longer supported for "
-                "configurations.list() and will be removed in v2.0.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-        del project
-        response = await configs_svc_async.getConfigurations(self._api_config)
-        return response.configurations
+            _warn_ignored_project_argument()
+        if project_id is None:
+            _warn_call_without_project_id("configurations", "list_async")
+        return await self._list_async(project_id=project_id)
 
     async def create_async(
         self, request: CreateConfigurationRequest
@@ -714,14 +1154,22 @@ class ConfigurationsAPI(BaseAPI):
         )
 
     # Backwards compatible aliases
-    def get_configuration(self, id: str) -> List[ConfigurationItem]:
+    def get_configuration(
+        self, id: str, *, project_id: Optional[str] = None
+    ) -> List[ConfigurationItem]:
         """Get a configuration (backwards compatible alias).
 
+        No operation gets one configuration, so this returns every
+        configuration in the project, whatever ``id`` is.
+
         Accepted keys:
-            Project API key
+            Data plane fine-grained API key with ``project.config.list``, with
+            ``project_id``; Project API key without ``project_id`` (deprecated)
         """
         del id
-        return self.list()  # No single-get endpoint, returns all
+        if project_id is None:
+            _warn_call_without_project_id("configurations", "get_configuration")
+        return self._list(project_id=project_id)
 
     def create_configuration(
         self, request: CreateConfigurationRequest
@@ -752,14 +1200,42 @@ class ConfigurationsAPI(BaseAPI):
         return self.delete(id)
 
     def list_configurations(
-        self, project: Optional[str] = None
+        self, project: Optional[str] = None, *, project_id: Optional[str] = None
     ) -> List[ConfigurationItem]:
         """List configurations (backwards compatible alias).
 
         Accepted keys:
-            Project API key
+            Data plane fine-grained API key with ``project.config.list``, with
+            ``project_id``; Project API key without ``project_id`` (deprecated)
         """
-        return self.list(project)
+        if project is not None:
+            _warn_ignored_project_argument()
+        if project_id is None:
+            _warn_call_without_project_id("configurations", "list_configurations")
+        return self._list(project_id=project_id)
+
+    # ---- Cores: send the request, never warn ----
+
+    def _list(self, *, project_id: Optional[str] = None) -> List[ConfigurationItem]:
+        if project_id is None:
+            response = configs_svc.getConfigurationsLegacy(self._api_config)
+        else:
+            response = configs_svc.getConfigurations(
+                self._data_plane_api_config, project_id=project_id
+            )
+        # The public methods return the list the response wraps.
+        return response.configurations
+
+    async def _list_async(
+        self, *, project_id: Optional[str] = None
+    ) -> List[ConfigurationItem]:
+        if project_id is None:
+            response = await configs_svc_async.getConfigurationsLegacy(self._api_config)
+        else:
+            response = await configs_svc_async.getConfigurations(
+                self._data_plane_api_config, project_id=project_id
+            )
+        return response.configurations
 
 
 class DatapointsAPI(BaseAPI):
@@ -1761,7 +2237,17 @@ class EventsAPI(BaseAPI):
 
     Event reads and writes now go through Data Plane endpoints. Legacy helpers
     like list() and get_by_session_id() are retained for backward compatibility
-    on top of the export endpoint.
+    on top of export().
+
+    A method that takes ``project_id`` sends the request with the data plane
+    API key when given it, naming the project in the path. Without it, the
+    request acts on the project API key's project, is sent with that key, and
+    issues a ``DeprecationWarning``.
+
+    Each such public method, alias included, warns in its own name and then
+    calls its private core, which sends the request and never warns. SDK code
+    that reaches the operation calls the core, so the warning reaches only a
+    caller who can pass ``project_id``.
     """
 
     def __init__(
@@ -1769,9 +2255,10 @@ class EventsAPI(BaseAPI):
         api_config: APIConfig,
         ingestion_api_key: str = "",
         *,
+        data_plane_api_key: str = "",
         retry_config: Optional[RetryConfig] = None,
     ) -> None:
-        super().__init__(api_config, ingestion_api_key)
+        super().__init__(api_config, ingestion_api_key, data_plane_api_key)
         self._retry_config = RetryConfig.from_optional(retry_config)
 
     # Supported parameters for getEvents() method
@@ -1791,21 +2278,28 @@ class EventsAPI(BaseAPI):
         query: Optional[Union[GetEventsQuery, Dict[str, Any]]] = None,
         *,
         data: Optional[Union[GetEventsQuery, Dict[str, Any]]] = None,
+        project_id: Optional[str] = None,
     ) -> GetEventsResponse:
         """Get events via the legacy list helper.
 
         Accepted keys:
-            Project API key
+            Data plane fine-grained API key with ``project.event.get``, with
+            ``project_id``; Project API key without ``project_id`` (deprecated)
 
         Args:
             query: Query parameters as GetEventsQuery model or dict.
-                   Supported fields: dateRange, filters, projections,
-                   ignore_order, limit, page, evaluation_id
+                   Fields applied: dateRange, filters, limit, page.
+                   projections, ignore_order and evaluation_id are accepted
+                   and not applied.
             data: Backwards compatible alias for query.
+            project_id: The project to read events from. Without it, the call
+                reads the project key's project, which is deprecated.
 
         Returns:
             GetEventsResponse with matching events
         """
+        if project_id is None:
+            _warn_call_without_project_id("events", "list")
         # Support the legacy `data=` keyword while keeping the canonical `query=`
         # interface aligned with the current wrapper signature.
         payload = data if data is not None else query
@@ -1818,19 +2312,21 @@ class EventsAPI(BaseAPI):
         else:
             payload_data = payload
 
-        # Filter data to only include supported parameters for the legacy list()
-        # helper. The canonical spec exposes event reads through export().
         filtered_data = {
             k: v
             for k, v in payload_data.items()
             if k in self._GET_EVENTS_SUPPORTED_PARAMS
         }
-        export_response = self.export(
+        # evaluation_id and ignore_order are accepted and not sent, with or
+        # without project_id, so a query returns the same events on both
+        # paths. Sending them changes what an existing call returns.
+        export_response = self._export(
             filters=filtered_data.get("filters"),
             date_range=filtered_data.get("dateRange"),
             projections=filtered_data.get("projections"),
             limit=filtered_data.get("limit", 1000),
             page=filtered_data.get("page", 1),
+            project_id=project_id,
         )
         return GetEventsResponse(
             events=export_response.events,
@@ -1856,7 +2352,8 @@ class EventsAPI(BaseAPI):
         Events are returned sorted by start_time in chronological order.
 
         Accepted keys:
-            Project API key
+            Project API key (deprecated). It takes no ``project_id``, so it
+            cannot use a data plane API key. ``export()`` can.
 
         Args:
             session_id: The session ID to fetch events for.
@@ -1878,32 +2375,35 @@ class EventsAPI(BaseAPI):
                         value="abc-123",
                         type="string",
                     )
-                ]
+                ],
+                project_id="your-project-id",
             )
             for event in response.events:
-                print(event["event_name"])
+                print(event.event_name)
         """
         logger.debug(
             "get_by_session_id called: session_id=%s limit=%d",
             session_id,
             limit,
         )
+        # The timestamp wrapper BaseAPI puts around every public method is a
+        # frame between this method and its caller.
         warnings.warn(
             "events.get_by_session_id() is deprecated and kept for backward "
             "compatibility only. Use events.export() with a session_id filter "
             "instead.",
             DeprecationWarning,
-            stacklevel=2,
+            stacklevel=3,
         )
         if project is not None:
             warnings.warn(
                 "The 'project' parameter is deprecated and will be removed in v2.0. "
                 "The project comes from the API key.",
                 DeprecationWarning,
-                stacklevel=2,
+                stacklevel=3,
             )
 
-        result = self.export(
+        result = self._export(
             project=project,
             filters=[
                 EventFilter(
@@ -1914,7 +2414,7 @@ class EventsAPI(BaseAPI):
                 )
             ],
             limit=limit,
-            _sort_by_time=True,  # Enable time-based sorting
+            sort_by_time=True,
         )
         logger.debug(
             "get_by_session_id result: session_id=%s events=%d total=%d",
@@ -1958,31 +2458,39 @@ class EventsAPI(BaseAPI):
         limit: int = 1000,
         page: int = 1,
         _sort_by_time: bool = False,
+        project_id: Optional[str] = None,
     ) -> EventExportResponse:
-        """Export events via POST /events/export (Data Plane).
+        """Export events.
 
-        This is the primary method for retrieving events from HoneyHive.
-        It uses the Data Plane endpoint which supports filtering by session_id,
-        event_type, and other fields.
+        This is the primary method for retrieving events from HoneyHive. It
+        supports filtering by session_id, event_type, and other fields.
 
         Accepted keys:
-            Project API key
+            Data plane fine-grained API key with ``project.event.get``, with
+            ``project_id``; Project API key without ``project_id`` (deprecated)
 
         Args:
-            project: Project name associated with the events. Deprecated in v1.0
-                and will be removed in v2.0. The project comes from the API
-                key.
+            project: Ignored. Deprecated in v1.0 and will be removed in v2.0.
+                ``project_id`` names the project.
             filters: List of EventFilter objects or dicts with filter criteria.
                 Each filter should have: field, operator, value, type.
-            date_range: Optional date range filter with '$gte' and '$lte' keys
-                containing ISO timestamp strings.
-            projections: Optional list of fields to include in the response.
-            limit: Maximum number of results (default 1000, max 7500).
+            date_range: Optional date range filter with '$gte' and '$lte' keys.
+                Each value is an ISO 8601 UTC timestamp that ends in ``Z``.
+            projections: Ignored by the server. Kept so that a call that
+                passes it still runs.
+            limit: Maximum number of results (default 1000, capped at 1000).
             page: Page number for pagination (default 1).
             _sort_by_time: Internal flag to sort events by start_time (default False).
+            project_id: The project to export events from. Without it, the
+                call reads the project key's project, which is deprecated.
 
         Returns:
             EventExportResponse with events list and total_events count.
+
+        Raises:
+            MissingApiKeyError: With ``project_id``, no data plane API key is
+                configured. Without it, no project API key is. Nothing has
+                been sent.
 
         Example::
 
@@ -1998,11 +2506,12 @@ class EventsAPI(BaseAPI):
                         type="string"
                     )
                 ],
-                limit=100
+                limit=100,
+                project_id="your-project-id",
             )
 
             for event in response.events:
-                print(event["event_name"])
+                print(event.event_name)
 
             # Export with date range
             response = client.events.export(
@@ -2010,97 +2519,134 @@ class EventsAPI(BaseAPI):
                 date_range={
                     "$gte": "2024-01-01T00:00:00Z",
                     "$lte": "2024-01-31T23:59:59Z"
-                }
+                },
+                project_id="your-project-id",
             )
         """
         if project is not None:
-            warnings.warn(
-                "The 'project' parameter is deprecated and will be removed in v2.0. "
-                "The project comes from the API key.",
-                DeprecationWarning,
-                stacklevel=2,
+            _warn_ignored_project_argument()
+        if project_id is None:
+            _warn_call_without_project_id("events", "export")
+        return self._export(
+            project=project,
+            filters=filters,
+            date_range=date_range,
+            projections=projections,
+            limit=limit,
+            page=page,
+            sort_by_time=_sort_by_time,
+            project_id=project_id,
+        )
+
+    # ---- Cores: send the request, never warn ----
+
+    def _export_request(
+        self,
+        *,
+        project: Optional[str],
+        filters: Optional[List[Union[EventFilter, Dict[str, Any]]]],
+        date_range: Any,
+        projections: Optional[List[str]],
+        limit: Any,
+        page: Any,
+        project_id: Optional[str],
+    ) -> Tuple[APIConfig, str, Dict[str, Any]]:
+        """The configuration, path and body an export is sent with.
+
+        With ``project_id`` they are the project-scoped search's and the data
+        plane key. Without it they are the older export operation's and the
+        project key.
+
+        Raises:
+            MissingApiKeyError: The key the request takes is not configured.
+        """
+        filters_data: List[Dict[str, Any]] = []
+        for f in filters or []:
+            if isinstance(f, EventFilter):
+                filters_data.append(f.to_dict())
+            elif isinstance(f, dict):
+                filters_data.append(f)
+
+        if project_id is not None:
+            return (
+                self._data_plane_api_config,
+                f"/v1/projects/{project_id}/events/search",
+                _scoped_search_body(filters_data, date_range, limit, page),
             )
 
-        # Build filters array
-        filters_data = []
-        if filters:
-            for f in filters:
-                if isinstance(f, EventFilter):
-                    filters_data.append(f.to_dict())
-                elif isinstance(f, dict):
-                    filters_data.append(f)
-
-        # Build request body
         request_body: Dict[str, Any] = {
             "filters": filters_data,
             "limit": limit,
             "page": page,
         }
-
-        # Only include project if provided (for backwards compatibility)
         if project is not None:
             request_body["project"] = project
-
         if date_range:
             request_body["dateRange"] = date_range
         if projections:
             request_body["projections"] = projections
+        return self._api_config, "/v1/events/export", request_body
 
-        # Make direct request to /events/export (bypasses generated model issues)
-        api_config = self._api_config
-        base_path = api_config.base_path
-        headers = api_config.get_default_headers()
-
-        # Log outgoing request metadata
+    def _export_response(
+        self, data: Dict[str, Any], *, sort_by_time: bool
+    ) -> EventExportResponse:
+        """The response of either export request as the public methods return it."""
+        events = data.get("events", [])
+        total_events = data.get("totalEvents", data.get("count", 0))
         logger.debug(
-            "export request: POST %s/v1/events/export limit=%d page=%d",
-            base_path,
-            limit,
-            page,
+            "export result: %d events, total_events=%d", len(events), total_events
+        )
+        if sort_by_time and events:
+            events = self._sort_events_by_time(events)
+        return EventExportResponse(events=events, total_events=total_events)
+
+    def _export(
+        self,
+        *,
+        project: Optional[str] = None,
+        filters: Optional[List[Union[EventFilter, Dict[str, Any]]]] = None,
+        date_range: Any = None,
+        projections: Optional[List[str]] = None,
+        limit: Any = 1000,
+        page: Any = 1,
+        sort_by_time: bool = False,
+        project_id: Optional[str] = None,
+    ) -> EventExportResponse:
+        """Export events. ``export()`` documents the arguments."""
+        api_config, path, request_body = self._export_request(
+            project=project,
+            filters=filters,
+            date_range=date_range,
+            projections=projections,
+            limit=limit,
+            page=page,
+            project_id=project_id,
+        )
+        headers = api_config.get_default_headers()
+        logger.debug(
+            "export request: POST %s%s limit=%s page=%s",
+            api_config.base_path,
+            path,
+            request_body["limit"],
+            request_body["page"],
         )
 
-        # Retry 408/429/500/502/503/504 and transport timeouts. Budget comes
-        # from HoneyHive(retry_config=...) or HH_MAX_RETRIES. The other API
-        # methods do not retry.
+        # The generated functions apply the client's default timeout and never
+        # retry, and a large export outlasts that timeout. This request retries
+        # 408/429/500/502/503/504 and transport timeouts, on the budget from
+        # HoneyHive(retry_config=...) or HH_MAX_RETRIES.
         with httpx.Client(
-            base_url=base_path,
+            base_url=api_config.base_path,
             verify=api_config.verify,
             timeout=EXPORT_TIMEOUT,
         ) as client:
             response = self._retry_config.execute(
                 lambda: client.request(
-                    "POST",
-                    "/v1/events/export",
-                    headers=headers,
-                    json=request_body,
+                    "POST", path, headers=headers, json=request_body
                 ),
                 operation="export()",
             )
-
-        data = response.json()
-        events = data.get("events", [])
-        total_events = data.get("totalEvents", data.get("count", 0))
-
-        logger.debug(
-            "export result: %d events, total_events=%d",
-            len(events),
-            total_events,
-        )
-        if not events:
-            logger.debug(
-                "export returned empty events list; limit=%d page=%d",
-                limit,
-                page,
-            )
-
-        # Sort events by start_time if requested (fixes jumbled order issue)
-        if _sort_by_time and events:
-            events = self._sort_events_by_time(events)
-
-        return EventExportResponse(
-            events=events,
-            total_events=total_events,
-        )
+        return self._export_response(response.json(), sort_by_time=sort_by_time)
 
     def _sort_events_by_time(
         self, events: List[Dict[str, Any]]
@@ -2143,36 +2689,46 @@ class EventsAPI(BaseAPI):
 
     # Async methods
     async def list_async(
-        self, query: Union[GetEventsQuery, Dict[str, Any]]
+        self,
+        query: Union[GetEventsQuery, Dict[str, Any]],
+        *,
+        project_id: Optional[str] = None,
     ) -> GetEventsResponse:
         """Get events asynchronously via the legacy list helper.
 
         Accepted keys:
-            Project API key
+            Data plane fine-grained API key with ``project.event.get``, with
+            ``project_id``; Project API key without ``project_id`` (deprecated)
 
         Args:
             query: Query parameters as GetEventsQuery model or dict.
+            project_id: The project to read events from. Without it, the call
+                reads the project key's project, which is deprecated.
 
         Returns:
             GetEventsResponse with matching events
         """
+        if project_id is None:
+            _warn_call_without_project_id("events", "list_async")
         # Convert to dict if Pydantic model
         if hasattr(query, "model_dump"):
             data = query.model_dump(exclude_none=True)
         else:
             data = query
 
-        # Filter data to only include supported parameters for the legacy list()
-        # helper. The canonical spec exposes event reads through export().
         filtered_data = {
             k: v for k, v in data.items() if k in self._GET_EVENTS_SUPPORTED_PARAMS
         }
-        export_response = await self.export_async(
+        # evaluation_id and ignore_order are accepted and not sent, with or
+        # without project_id, so a query returns the same events on both
+        # paths. Sending them changes what an existing call returns.
+        export_response = await self._export_async(
             filters=filtered_data.get("filters"),
             date_range=filtered_data.get("dateRange"),
             projections=filtered_data.get("projections"),
             limit=filtered_data.get("limit", 1000),
             page=filtered_data.get("page", 1),
+            project_id=project_id,
         )
         return GetEventsResponse(
             events=export_response.events,
@@ -2198,7 +2754,8 @@ class EventsAPI(BaseAPI):
         Events are returned sorted by start_time in chronological order.
 
         Accepted keys:
-            Project API key
+            Project API key (deprecated). It takes no ``project_id``, so it
+            cannot use a data plane API key. ``export_async()`` can.
 
         Args:
             session_id: The session ID to fetch events for.
@@ -2215,22 +2772,24 @@ class EventsAPI(BaseAPI):
             session_id,
             limit,
         )
+        # The timestamp wrapper BaseAPI puts around every public method is a
+        # frame between this method and its caller.
         warnings.warn(
             "events.get_by_session_id_async() is deprecated and kept for backward "
             "compatibility only. Use events.export_async() with a session_id "
             "filter instead.",
             DeprecationWarning,
-            stacklevel=2,
+            stacklevel=3,
         )
         if project is not None:
             warnings.warn(
                 "The 'project' parameter is deprecated and will be removed in v2.0. "
                 "The project comes from the API key.",
                 DeprecationWarning,
-                stacklevel=2,
+                stacklevel=3,
             )
 
-        result = await self.export_async(
+        result = await self._export_async(
             project=project,
             filters=[
                 EventFilter(
@@ -2241,7 +2800,7 @@ class EventsAPI(BaseAPI):
                 )
             ],
             limit=limit,
-            _sort_by_time=True,  # Enable time-based sorting
+            sort_by_time=True,
         )
         logger.debug(
             "get_by_session_id_async result: session_id=%s events=%d total=%d",
@@ -2293,116 +2852,96 @@ class EventsAPI(BaseAPI):
         limit: int = 1000,
         page: int = 1,
         _sort_by_time: bool = False,
+        project_id: Optional[str] = None,
     ) -> EventExportResponse:
-        """Export events via POST /events/export asynchronously (Data Plane).
+        """Export events asynchronously.
 
         Async version of export(). See export() for full documentation.
 
         Accepted keys:
-            Project API key
+            Data plane fine-grained API key with ``project.event.get``, with
+            ``project_id``; Project API key without ``project_id`` (deprecated)
 
         Args:
-            project: Project name associated with the events. Deprecated in v1.0
-                and will be removed in v2.0. The project comes from the API
-                key.
+            project: Ignored. Deprecated in v1.0 and will be removed in v2.0.
+                ``project_id`` names the project.
             filters: List of EventFilter objects or dicts with filter criteria.
-            date_range: Optional date range filter.
-            projections: Optional list of fields to include in the response.
-            limit: Maximum number of results (default 1000, max 7500).
+            date_range: Optional date range filter with '$gte' and '$lte' keys.
+                Each value is an ISO 8601 UTC timestamp that ends in ``Z``.
+            projections: Ignored by the server. Kept so that a call that
+                passes it still runs.
+            limit: Maximum number of results (default 1000, capped at 1000).
             page: Page number for pagination (default 1).
             _sort_by_time: Internal flag to sort events by start_time (default False).
+            project_id: The project to export events from. Without it, the
+                call reads the project key's project, which is deprecated.
 
         Returns:
             EventExportResponse with events list and total_events count.
+
+        Raises:
+            MissingApiKeyError: With ``project_id``, no data plane API key is
+                configured. Without it, no project API key is. Nothing has
+                been sent.
         """
         if project is not None:
-            warnings.warn(
-                "The 'project' parameter is deprecated and will be removed in v2.0. "
-                "The project comes from the API key.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-
-        # Build filters array
-        filters_data = []
-        if filters:
-            for f in filters:
-                if isinstance(f, EventFilter):
-                    filters_data.append(f.to_dict())
-                elif isinstance(f, dict):
-                    filters_data.append(f)
-
-        # Build request body
-        request_body: Dict[str, Any] = {
-            "filters": filters_data,
-            "limit": limit,
-            "page": page,
-        }
-
-        # Only include project if provided (for backwards compatibility)
-        if project is not None:
-            request_body["project"] = project
-
-        if date_range:
-            request_body["dateRange"] = date_range
-        if projections:
-            request_body["projections"] = projections
-
-        # Make direct async request to /events/export
-        api_config = self._api_config
-        base_path = api_config.base_path
-        headers = api_config.get_default_headers()
-
-        # Log outgoing request metadata
-        logger.debug(
-            "export_async request: POST %s/v1/events/export limit=%d page=%d",
-            base_path,
-            limit,
-            page,
+            _warn_ignored_project_argument()
+        if project_id is None:
+            _warn_call_without_project_id("events", "export_async")
+        return await self._export_async(
+            project=project,
+            filters=filters,
+            date_range=date_range,
+            projections=projections,
+            limit=limit,
+            page=page,
+            sort_by_time=_sort_by_time,
+            project_id=project_id,
         )
 
-        # Retry 408/429/500/502/503/504 and transport timeouts. Budget comes
-        # from HoneyHive(retry_config=...) or HH_MAX_RETRIES. The other API
-        # methods do not retry.
+    async def _export_async(
+        self,
+        *,
+        project: Optional[str] = None,
+        filters: Optional[List[Union[EventFilter, Dict[str, Any]]]] = None,
+        date_range: Any = None,
+        projections: Optional[List[str]] = None,
+        limit: Any = 1000,
+        page: Any = 1,
+        sort_by_time: bool = False,
+        project_id: Optional[str] = None,
+    ) -> EventExportResponse:
+        """Export events asynchronously, as ``_export`` does."""
+        api_config, path, request_body = self._export_request(
+            project=project,
+            filters=filters,
+            date_range=date_range,
+            projections=projections,
+            limit=limit,
+            page=page,
+            project_id=project_id,
+        )
+        headers = api_config.get_default_headers()
+        logger.debug(
+            "export_async request: POST %s%s limit=%s page=%s",
+            api_config.base_path,
+            path,
+            request_body["limit"],
+            request_body["page"],
+        )
+
         async with httpx.AsyncClient(
-            base_url=base_path,
+            base_url=api_config.base_path,
             verify=api_config.verify,
             timeout=EXPORT_TIMEOUT,
         ) as client:
             response = await self._retry_config.execute_async(
                 lambda: client.request(
-                    "POST",
-                    "/v1/events/export",
-                    headers=headers,
-                    json=request_body,
+                    "POST", path, headers=headers, json=request_body
                 ),
                 operation="export_async()",
             )
-
-        data = response.json()
-        events = data.get("events", [])
-        total_events = data.get("totalEvents", data.get("count", 0))
-
-        logger.debug(
-            "export_async result: %d events, total_events=%d",
-            len(events),
-            total_events,
-        )
-        if not events:
-            logger.debug(
-                "export_async returned empty events list; limit=%d page=%d",
-                limit,
-                page,
-            )
-
-        # Sort events by start_time if requested (fixes jumbled order issue)
-        if _sort_by_time and events:
-            events = self._sort_events_by_time(events)
-
-        return EventExportResponse(
-            events=events,
-            total_events=total_events,
-        )
+        return self._export_response(response.json(), sort_by_time=sort_by_time)
 
     # Backwards compatible aliases
     def create_event(self, request: PostEventRequest) -> PostEventResponse:
@@ -2435,33 +2974,42 @@ class EventsAPI(BaseAPI):
         projections: Optional[List[str]] = None,
         limit: int = 1000,
         page: int = 1,
+        project_id: Optional[str] = None,
     ) -> EventExportResponse:
         """List events via export endpoint (backwards compatible alias).
 
-        This is a backwards compatible alias for export(). Uses the Data Plane
-        POST /events/export endpoint.
+        This is a backwards compatible alias for export().
 
         Accepted keys:
-            Project API key
+            Data plane fine-grained API key with ``project.event.get``, with
+            ``project_id``; Project API key without ``project_id`` (deprecated)
 
         Args:
-            project: Project name. Deprecated in v1.0 and will be removed in v2.0.
+            project: Ignored. Deprecated in v1.0 and will be removed in v2.0.
+                ``project_id`` names the project.
             filters: List of EventFilter objects or dicts.
             date_range: Optional date range filter.
-            projections: Optional list of fields to include.
-            limit: Maximum number of results (default 1000).
+            projections: Ignored by the server.
+            limit: Maximum number of results (default 1000, capped at 1000).
             page: Page number (default 1).
+            project_id: The project to export events from. Without it, the
+                call reads the project key's project, which is deprecated.
 
         Returns:
             EventExportResponse with events and total count.
         """
-        return self.export(
+        if project is not None:
+            _warn_ignored_project_argument()
+        if project_id is None:
+            _warn_call_without_project_id("events", "list_events")
+        return self._export(
             project=project,
             filters=filters,
             date_range=date_range,
             projections=projections,
             limit=limit,
             page=page,
+            project_id=project_id,
         )
 
     def get_events(
@@ -2473,33 +3021,42 @@ class EventsAPI(BaseAPI):
         projections: Optional[List[str]] = None,
         limit: int = 1000,
         page: int = 1,
+        project_id: Optional[str] = None,
     ) -> EventExportResponse:
         """Get events via export endpoint (backwards compatible alias).
 
-        This is a backwards compatible alias for export(). Uses the Data Plane
-        POST /events/export endpoint.
+        This is a backwards compatible alias for export().
 
         Accepted keys:
-            Project API key
+            Data plane fine-grained API key with ``project.event.get``, with
+            ``project_id``; Project API key without ``project_id`` (deprecated)
 
         Args:
-            project: Project name. Deprecated in v1.0 and will be removed in v2.0.
+            project: Ignored. Deprecated in v1.0 and will be removed in v2.0.
+                ``project_id`` names the project.
             filters: List of EventFilter objects or dicts.
             date_range: Optional date range filter.
-            projections: Optional list of fields to include.
-            limit: Maximum number of results (default 1000).
+            projections: Ignored by the server.
+            limit: Maximum number of results (default 1000, capped at 1000).
             page: Page number (default 1).
+            project_id: The project to export events from. Without it, the
+                call reads the project key's project, which is deprecated.
 
         Returns:
             EventExportResponse with events and total count.
         """
-        return self.export(
+        if project is not None:
+            _warn_ignored_project_argument()
+        if project_id is None:
+            _warn_call_without_project_id("events", "get_events")
+        return self._export(
             project=project,
             filters=filters,
             date_range=date_range,
             projections=projections,
             limit=limit,
             page=page,
+            project_id=project_id,
         )
 
     async def list_events_async(
@@ -2511,22 +3068,32 @@ class EventsAPI(BaseAPI):
         projections: Optional[List[str]] = None,
         limit: int = 1000,
         page: int = 1,
+        project_id: Optional[str] = None,
     ) -> EventExportResponse:
         """List events asynchronously (backwards compatible alias for export_async).
 
         Accepted keys:
-            Project API key
+            Data plane fine-grained API key with ``project.event.get``, with
+            ``project_id``; Project API key without ``project_id`` (deprecated)
 
         Args:
-            project: Project name. Deprecated in v1.0 and will be removed in v2.0.
+            project: Ignored. Deprecated in v1.0 and will be removed in v2.0.
+                ``project_id`` names the project.
+            project_id: The project to export events from. Without it, the
+                call reads the project key's project, which is deprecated.
         """
-        return await self.export_async(
+        if project is not None:
+            _warn_ignored_project_argument()
+        if project_id is None:
+            _warn_call_without_project_id("events", "list_events_async")
+        return await self._export_async(
             project=project,
             filters=filters,
             date_range=date_range,
             projections=projections,
             limit=limit,
             page=page,
+            project_id=project_id,
         )
 
     async def get_events_async(
@@ -2538,22 +3105,32 @@ class EventsAPI(BaseAPI):
         projections: Optional[List[str]] = None,
         limit: int = 1000,
         page: int = 1,
+        project_id: Optional[str] = None,
     ) -> EventExportResponse:
         """Get events asynchronously (backwards compatible alias for export_async).
 
         Accepted keys:
-            Project API key
+            Data plane fine-grained API key with ``project.event.get``, with
+            ``project_id``; Project API key without ``project_id`` (deprecated)
 
         Args:
-            project: Project name. Deprecated in v1.0 and will be removed in v2.0.
+            project: Ignored. Deprecated in v1.0 and will be removed in v2.0.
+                ``project_id`` names the project.
+            project_id: The project to export events from. Without it, the
+                call reads the project key's project, which is deprecated.
         """
-        return await self.export_async(
+        if project is not None:
+            _warn_ignored_project_argument()
+        if project_id is None:
+            _warn_call_without_project_id("events", "get_events_async")
+        return await self._export_async(
             project=project,
             filters=filters,
             date_range=date_range,
             projections=projections,
             limit=limit,
             page=page,
+            project_id=project_id,
         )
 
 
@@ -4021,18 +4598,20 @@ class HoneyHive:
 
     Example::
 
-        client = HoneyHive(api_key="your-api-key")
+        client = HoneyHive(data_plane_api_key="your-data-plane-api-key")
 
         # Sync
-        configs = client.configurations.list()
+        configs = client.configurations.list(project_id="your-project-id")
 
         # Async
-        configs = await client.configurations.list_async()
+        configs = await client.configurations.list_async(project_id="your-project-id")
 
     Attributes:
         configurations: API for managing configurations.
         datapoints: API for managing datapoints.
         datasets: API for managing datasets.
+        evaluators: Manage evaluator definitions and versions with a data plane key.
+        evaluations: Backwards-compatible alias of experiments.
         events: API for managing events.
         experiments: API for managing experiment runs.
         metrics: API for managing metrics.
@@ -4206,7 +4785,12 @@ class HoneyHive:
         self.charts = ChartsAPI(
             self._api_config, data_plane_api_key=self._data_plane_api_key
         )
-        self.configurations = ConfigurationsAPI(self._api_config)
+        self.evaluators = EvaluatorsAPI(
+            self._api_config, data_plane_api_key=self._data_plane_api_key
+        )
+        self.configurations = ConfigurationsAPI(
+            self._api_config, data_plane_api_key=self._data_plane_api_key
+        )
         self.datapoints = DatapointsAPI(
             self._api_config, data_plane_api_key=self._data_plane_api_key
         )
@@ -4216,6 +4800,7 @@ class HoneyHive:
         self.events = EventsAPI(
             self._api_config,
             self._ingestion_api_key,
+            data_plane_api_key=self._data_plane_api_key,
             retry_config=self._retry_config,
         )
         self.experiments = ExperimentsAPI(

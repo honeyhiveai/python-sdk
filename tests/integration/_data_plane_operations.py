@@ -5,8 +5,9 @@ plane key: those whose ``security`` names the ``DataPlaneApiKey`` scheme. Each
 names a project in its path. The SDK exposes some of them through ``HoneyHive``
 wrappers, and each wrapper passes the data plane configuration. ``OPERATIONS``
 ties the two together: keyed by operationId, each value performs the operation
-through the public wrapper on a client holding only a data plane key, and
-checks its effect with a client holding only the project key.
+through the public wrapper on a client holding only a data plane key. Entries
+verify effects through a project-key route when available; evaluator entries
+use the data plane key because no project-key route exists.
 
 Two tests consume it. ``tests/unit/test_data_plane_operations_match_the_spec.py``
 asserts its keys equal the wrapped data plane operations (the spec's set,
@@ -21,6 +22,7 @@ and have no entry.
 import time
 import uuid
 from datetime import datetime, timedelta, timezone
+from functools import partial
 from typing import Callable, Dict
 
 import pytest
@@ -33,12 +35,15 @@ from honeyhive.models import (
     BatchCreateDatapointsResponse,
     ChartQueryRequest,
     CreateChartRequest,
+    CreateConfigurationRequest,
     CreateDatapointRequest,
     CreateDatasetRequest,
+    CreateEvaluatorRequest,
     DatapointMapping,
     PostEventRequest,
     PostExperimentRunRequest,
     PutExperimentRunRequest,
+    ReplaceUpdateEvaluatorRequest,
     UpdateChartRequest,
     UpdateDatapointRequest,
     UpdateDatasetRequest,
@@ -47,8 +52,8 @@ from honeyhive.models import (
 DATA_PLANE_SCHEME = "DataPlaneApiKey"
 
 # (client holding only a data plane key, client holding only the project key,
-# the id of the project both keys act on) -> None. An entry asserts its own
-# effect.
+# the id of the project both keys act on) -> None. Entries assert their own
+# effects using the project-key route when available, otherwise the data plane key.
 Entry = Callable[[HoneyHive, HoneyHive, str], None]
 
 
@@ -683,14 +688,142 @@ def compare_run_events(
         _delete_run_quietly(project_client, new_run_id)
 
 
+def _archive_evaluator_quietly(
+    data_plane: HoneyHive, evaluator_id: str, project_id: str
+) -> None:
+    """Clean up without masking the operation assertion or its exception."""
+    try:
+        data_plane.evaluators.archive(evaluator_id, project_id=project_id)
+    except Exception as exc:
+        print(f"Evaluator cleanup failed for {evaluator_id}: {exc}")
+
+
+def evaluator_operation(
+    operation: str, data_plane: HoneyHive, project_client: HoneyHive, project_id: str
+) -> None:
+    """Exercise an evaluator operation on a disposable human evaluator."""
+    del project_client
+    human_config: dict[str, object] = {
+        "name": "Example evaluator",
+        "metadata": {},
+        "score_schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "properties": {"score": {"type": "boolean"}},
+            "required": ["score"],
+            "additionalProperties": False,
+        },
+    }
+    definition: dict[str, object] = {"type": "human", "human": human_config}
+    created = data_plane.evaluators.create(
+        CreateEvaluatorRequest.model_validate(
+            {
+                "slug": "sdk-evaluator-" + uuid.uuid4().hex,
+                "definition": definition,
+            }
+        ),
+        project_id=project_id,
+    )
+    evaluator_id = created.data.id
+    try:
+        if operation == "create":
+            assert created.success and created.data.version == 1
+        elif operation == "list":
+            listed = data_plane.evaluators.list(project_id=project_id, limit=100)
+            assert evaluator_id in {item.id for item in listed.data}
+        elif operation == "get":
+            fetched = data_plane.evaluators.get(
+                created.data.slug, project_id=project_id
+            )
+            assert fetched.data.id == evaluator_id
+        elif operation == "replace":
+            replacement = dict(definition)
+            replacement["human"] = {**human_config, "name": "Updated evaluator"}
+            updated = data_plane.evaluators.replace(
+                evaluator_id,
+                ReplaceUpdateEvaluatorRequest.model_validate(
+                    {"definition": replacement}
+                ),
+                project_id=project_id,
+            )
+            assert updated.data.version == 2
+        elif operation == "list_versions":
+            versions = data_plane.evaluators.list_versions(
+                evaluator_id, project_id=project_id
+            )
+            assert [item.version for item in versions.data] == [1]
+        elif operation == "get_version":
+            fetched = data_plane.evaluators.get_version(
+                evaluator_id, 1, project_id=project_id
+            )
+            assert fetched.data.version == 1
+        elif operation == "publish":
+            published = data_plane.evaluators.publish(
+                evaluator_id, 1, project_id=project_id
+            )
+            assert published.data.published_version == 1
+        elif operation == "unpublish":
+            data_plane.evaluators.publish(evaluator_id, 1, project_id=project_id)
+            unpublished = data_plane.evaluators.unpublish(
+                evaluator_id, project_id=project_id
+            )
+            assert unpublished.data.published_version is None
+        elif operation == "archive":
+            archived = data_plane.evaluators.archive(
+                evaluator_id, project_id=project_id
+            )
+            assert archived.data.is_active is False
+        else:
+            raise ValueError(f"Unsupported evaluator operation: {operation}")
+    finally:
+        _archive_evaluator_quietly(data_plane, evaluator_id, project_id)
+
+
+def get_configurations(
+    data_plane: HoneyHive, project_client: HoneyHive, project_id: str
+) -> None:
+    """``configurations.list``: a configuration made on the project key is in the project's list.
+
+    The data plane key cannot create or delete a configuration, so both go
+    through the project key.
+    """
+    created = project_client.configurations.create(
+        CreateConfigurationRequest(
+            name=f"data-plane-key-{uuid.uuid4().hex[:8]}",
+            provider="openai",
+            parameters={"call_type": "chat", "model": "gpt-4o"},
+        )
+    )
+    configuration_id = created.insertedId
+    try:
+        listed = data_plane.configurations.list(project_id=project_id)
+
+        assert configuration_id in {configuration.id for configuration in listed}
+    finally:
+        try:
+            project_client.configurations.delete(configuration_id)
+        except Exception as exc:  # noqa: BLE001 - cleanup must not raise
+            print(f"Configuration cleanup failed for {configuration_id}: {exc}")
+
+
 # Keyed by operationId. A wrapped data plane operation missing here fails the
 # unit guard; an entry for an operation the shim does not wrap fails it too.
 OPERATIONS: Dict[str, Entry] = {
+    "createEvaluator": partial(evaluator_operation, "create"),
+    "listEvaluators": partial(evaluator_operation, "list"),
+    "getEvaluator": partial(evaluator_operation, "get"),
+    "replaceEvaluator": partial(evaluator_operation, "replace"),
+    "archiveEvaluator": partial(evaluator_operation, "archive"),
+    "listEvaluatorVersions": partial(evaluator_operation, "list_versions"),
+    "getEvaluatorVersion": partial(evaluator_operation, "get_version"),
+    "publishEvaluator": partial(evaluator_operation, "publish"),
+    "unpublishEvaluator": partial(evaluator_operation, "unpublish"),
     "getCharts": get_charts,
     "getChart": get_chart,
     "createChart": create_chart,
     "updateChart": update_chart,
     "deleteChart": delete_chart,
+    "getConfigurations": get_configurations,
     "getDatapoints": get_datapoints,
     "queryChart": query_chart,
     "getDatapoint": get_datapoint,

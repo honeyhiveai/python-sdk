@@ -18,12 +18,12 @@ from tests.integration._spec_operations import (
     spec_client_facing_twins,
 )
 
-# Scoped operations no wrapper calls, each with the reason the SDK offers no
-# project-scoped form of the capability.
+# Scoped operations no wrapper calls through a generated function, each with
+# the reason.
 UNWRAPPED: Dict[str, str] = {
     "searchEvents": (
-        "its methods take no project and post to an older operation that "
-        "accepts requests the scoped operation refuses"
+        "events.export() and the methods over it send this operation's request "
+        "themselves, to keep export's read timeout, retries and response type"
     ),
     "getEvent": "the SDK wraps neither operation of the pair",
 }

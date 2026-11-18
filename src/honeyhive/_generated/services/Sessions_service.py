@@ -159,3 +159,82 @@ def createSessionEventBatch(
     return (
         SessionTracesResponse(**body) if body is not None else SessionTracesResponse()
     )
+
+
+def createSessionDeletionRequest(
+    api_config_override: Optional[APIConfig] = None,
+    *,
+    project_id: str,
+    data: CreateSessionDeletionRequestRequest,
+) -> CreateSessionDeletionRequestResponse:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/v1/projects/{project_id}/sessions/deletion_requests"
+    headers = api_config.get_default_headers()
+    query_params: Dict[str, Any] = {}
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
+        response = client.request(
+            "post",
+            httpx.URL(path),
+            headers=headers,
+            params=_serialize_query_params(query_params),
+            json=data.model_dump(exclude_none=True),
+        )
+
+    if response.status_code != 200:
+        _raise_http_exception("createSessionDeletionRequest", response)
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return (
+        CreateSessionDeletionRequestResponse(**body)
+        if body is not None
+        else CreateSessionDeletionRequestResponse()
+    )
+
+
+def getSessionDeletionRequest(
+    api_config_override: Optional[APIConfig] = None,
+    *,
+    project_id: str,
+    deletion_request_id: str,
+) -> GetSessionDeletionRequestResponse:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/v1/projects/{project_id}/sessions/deletion_requests/{deletion_request_id}"
+    headers = api_config.get_default_headers()
+    query_params: Dict[str, Any] = {}
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    with httpx.Client(
+        base_url=base_path, verify=api_config.verify, timeout=api_config.timeout
+    ) as client:
+        response = client.request(
+            "get",
+            httpx.URL(path),
+            headers=headers,
+            params=_serialize_query_params(query_params),
+        )
+
+    if response.status_code != 200:
+        _raise_http_exception("getSessionDeletionRequest", response)
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return (
+        GetSessionDeletionRequestResponse(**body)
+        if body is not None
+        else GetSessionDeletionRequestResponse()
+    )

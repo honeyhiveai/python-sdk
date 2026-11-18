@@ -289,6 +289,8 @@ The `HoneyHive` API client selects a credential per operation:
 
 See [API Keys](https://docs.honeyhive.ai/v2/workspace/api-keys) to create the credentials your workload needs. A tracing-only process can use an ingestion key alone. Data plane fine-grained keys cannot send telemetry.
 
+`evaluate()` sends requests of both kinds: the run, dataset and results on a project-scoped route, and the traces through ingestion. With `project_id` it needs a data plane key and an ingestion key together, and the classic project key does not stand in for the ingestion key there. Without `project_id` it uses the classic project key, which is deprecated.
+
 #### Data plane API key
 
 Set `HH_DATA_PLANE_API_KEY` to a complete `hh_fgdp_` key, or pass `data_plane_api_key` to `HoneyHive()`. For supported methods, pass `project_id` even when the key is rooted at that project:
@@ -309,12 +311,26 @@ For a method with both legacy and scoped routes, omitting `project_id` selects t
 
 A wrong key type or incomplete value in `data_plane_api_key` or `ingestion_api_key` (or their environment variables) raises `ValueError` at initialization. A call whose required credential is absent raises `MissingApiKeyError` before sending a request.
 
+#### Evaluator management
+
+Evaluator methods require a data plane fine-grained key and an explicit project ID:
+
+```python
+from honeyhive.api import HoneyHive
+
+client = HoneyHive()  # Reads HH_DATA_PLANE_API_KEY.
+evaluators = client.evaluators.list(project_id="your-project-id", page=1, limit=20)
+evaluator = client.evaluators.get("example-evaluator", project_id="your-project-id")
+```
+
+The namespace provides `create`, `list`, `get`, `replace`, `archive`, `list_versions`, `get_version`, `publish`, and `unpublish`, each with an `_async` counterpart. Create accepts `CreateEvaluatorRequest` and replace accepts `ReplaceUpdateEvaluatorRequest`, both exported from `honeyhive.models`. Grant the matching `project.evaluator.*` permissions; saving with `publish=True` also requires `project.evaluator.publish`.
+
 ### Environment Variables
 
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `HH_API_KEY` | Classic project API key for operations that still require it; also used for ingestion when `HH_INGESTION_API_KEY` is unset | Required for classic project-key operations |
-| `HH_INGESTION_API_KEY` | Ingestion API key (`hh_ingst_...`) used to send traces and events; `HH_API_KEY` is used when unset | Optional |
+| `HH_INGESTION_API_KEY` | Ingestion API key (`hh_ingst_...`) used to send traces and events; `HH_API_KEY` is used when unset | Optional, except that `evaluate()` with `project_id` requires it |
 | `HH_DATA_PLANE_API_KEY` | Fine-grained data plane API key (`hh_fgdp_...`) for operations on a project-scoped route | Required when `project_id` selects a method's scoped route |
 | `HH_API_URL` | API base URL | `https://api.dp1.us.honeyhive.ai` |
 | `HH_SOURCE` | Source environment | `production` |

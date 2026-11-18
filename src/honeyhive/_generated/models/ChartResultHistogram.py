@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -20,7 +20,7 @@ class ChartResultHistogram(BaseModel):
         "protected_namespaces": (),
     }
 
-    kind: str = Field(validation_alias="kind")
+    kind: Literal["histogram"] = Field(validation_alias="kind")
 
     meta: ChartResultHistogramMeta = Field(validation_alias="meta")
 

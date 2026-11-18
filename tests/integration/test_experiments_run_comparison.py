@@ -180,7 +180,6 @@ class TestExperimentsRunComparison:
             client=integration_client,
             new_run_id=run_b.run_id,
             old_run_id=run_a.run_id,
-            project_id=real_project,
             aggregate_function="average",
         )
         assert comparison is not None
@@ -266,7 +265,6 @@ class TestExperimentsRunComparison:
                 client=integration_client,
                 new_run_id=run_b.run_id,
                 old_run_id=run_a.run_id,
-                project_id=real_project,
                 aggregate_function="average",
             )
             assert comparison is not None
@@ -411,7 +409,6 @@ class TestExperimentsRunComparison:
             client=integration_client,
             new_run_id=improved.run_id,
             old_run_id=baseline.run_id,
-            project_id=real_project,
             aggregate_function="average",
         )
 
@@ -620,7 +617,6 @@ class TestExperimentsRunComparison:
                 client=integration_client,
                 new_run_id=improved.run_id,
                 old_run_id=baseline.run_id,
-                project_id=real_project,
                 aggregate_function="average",
             )
             assert comparison is not None
@@ -721,7 +717,6 @@ class TestExperimentsRunComparison:
                 client=integration_client,
                 new_run_id=improved.run_id,
                 old_run_id=baseline.run_id,
-                project_id=real_project,
                 aggregate_function="average",
             )
             assert comparison is not None
@@ -824,7 +819,6 @@ class TestExperimentsRunComparison:
                 client=integration_client,
                 new_run_id=improved.run_id,
                 old_run_id=baseline.run_id,
-                project_id=real_project,
                 aggregate_function="average",
             )
             assert comparison is not None

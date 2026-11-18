@@ -168,13 +168,15 @@ class TestProjectDeprecationIntegration:
                 limit=10,
             )
 
-            # No deprecation warnings should be raised
+            # The call names no project_id, so it warns about that and
+            # nothing else.
             deprecation_warnings = [
-                warning
+                str(warning.message)
                 for warning in w
                 if issubclass(warning.category, DeprecationWarning)
             ]
-            assert len(deprecation_warnings) == 0
+            assert len(deprecation_warnings) == 1
+            assert "without project_id" in deprecation_warnings[0]
 
         # Should still get events
         assert response is not None

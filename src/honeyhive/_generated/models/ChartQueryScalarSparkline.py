@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -18,6 +18,8 @@ class ChartQueryScalarSparkline(BaseModel):
         "protected_namespaces": (),
     }
 
-    interval: Optional[str] = Field(validation_alias="interval", default=None)
+    interval: Optional[Literal["auto"]] = Field(
+        validation_alias="interval", default=None
+    )
 
     max_points: Optional[int] = Field(validation_alias="max_points", default=None)

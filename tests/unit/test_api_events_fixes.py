@@ -190,13 +190,17 @@ class TestProjectDeprecationWarning:
                 warnings.simplefilter("always")
                 events_api.export(project="test-project", filters=[])
 
-                assert len(w) == 1
-                assert issubclass(w[0].category, DeprecationWarning)
-                assert "project" in str(w[0].message)
-                assert "deprecated" in str(w[0].message).lower()
+                project_warnings = [
+                    warning
+                    for warning in w
+                    if "'project' parameter" in str(warning.message)
+                ]
+                assert len(project_warnings) == 1
+                assert issubclass(project_warnings[0].category, DeprecationWarning)
+                assert "deprecated" in str(project_warnings[0].message).lower()
 
-    def test_export_without_project_no_deprecation_warning(self) -> None:
-        """Test that export() without project parameter doesn't show warning."""
+    def test_export_without_project_gives_no_project_warning(self) -> None:
+        """export() without project warns about project_id only."""
         mock_config = MagicMock()
         mock_config.base_path = "https://api.dp1.us.honeyhive.ai"
         mock_config.get_access_token.return_value = "test-token"
@@ -216,13 +220,9 @@ class TestProjectDeprecationWarning:
                 warnings.simplefilter("always")
                 events_api.export(filters=[])
 
-                # No deprecation warnings should be raised
-                deprecation_warnings = [
-                    warning
-                    for warning in w
-                    if issubclass(warning.category, DeprecationWarning)
-                ]
-                assert len(deprecation_warnings) == 0
+                [warning] = w
+                assert issubclass(warning.category, DeprecationWarning)
+                assert "without project_id" in str(warning.message)
 
     def test_get_by_session_id_with_project_shows_deprecation_warning(self) -> None:
         """Test that get_by_session_id() warns for compat mode and project."""
@@ -310,7 +310,7 @@ class TestConfigurationsDeprecationWarning:
         mock_response.configurations = []
 
         with patch(
-            "honeyhive.api.client.configs_svc.getConfigurations",
+            "honeyhive.api.client.configs_svc.getConfigurationsLegacy",
             return_value=mock_response,
         ) as mock_get_configurations:
             with warnings.catch_warnings(record=True) as w:
@@ -319,9 +319,13 @@ class TestConfigurationsDeprecationWarning:
 
                 assert result == []
                 assert mock_get_configurations.called
-                assert len(w) == 1
-                assert issubclass(w[0].category, DeprecationWarning)
-                assert "project" in str(w[0].message)
+                project_warnings = [
+                    warning
+                    for warning in w
+                    if "'project' parameter" in str(warning.message)
+                ]
+                assert len(project_warnings) == 1
+                assert issubclass(project_warnings[0].category, DeprecationWarning)
 
     @pytest.mark.asyncio
     async def test_list_async_with_project_shows_deprecation_warning(self) -> None:
@@ -336,7 +340,7 @@ class TestConfigurationsDeprecationWarning:
         mock_response.configurations = []
 
         with patch(
-            "honeyhive.api.client.configs_svc_async.getConfigurations",
+            "honeyhive.api.client.configs_svc_async.getConfigurationsLegacy",
             new=AsyncMock(return_value=mock_response),
         ) as mock_get_configurations:
             with warnings.catch_warnings(record=True) as w:
@@ -345,9 +349,13 @@ class TestConfigurationsDeprecationWarning:
 
                 assert result == []
                 assert mock_get_configurations.called
-                assert len(w) == 1
-                assert issubclass(w[0].category, DeprecationWarning)
-                assert "project" in str(w[0].message)
+                project_warnings = [
+                    warning
+                    for warning in w
+                    if "'project' parameter" in str(warning.message)
+                ]
+                assert len(project_warnings) == 1
+                assert issubclass(project_warnings[0].category, DeprecationWarning)
 
     @pytest.mark.asyncio
     async def test_list_async_with_legacy_filters_shows_deprecation_warning(

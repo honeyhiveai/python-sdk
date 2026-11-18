@@ -60,6 +60,17 @@ def spec_operations_declaring(scheme: str) -> FrozenSet[str]:
     )
 
 
+def spec_parameter_enum(operation_id: str, parameter: str) -> FrozenSet[str]:
+    """The values the spec lets ``parameter`` of ``operation_id`` take."""
+    for operation in _spec_operations():
+        if operation["operationId"] != operation_id:
+            continue
+        for declared in operation.get("parameters") or []:
+            if declared.get("name") == parameter:
+                return frozenset(declared["schema"]["enum"])
+    raise KeyError(f"{operation_id} declares no enum for {parameter}")
+
+
 def spec_client_facing_twins() -> Dict[str, str]:
     """Each twin pair the TypeScript SDK emits, as flat operationId to scoped operationId.
 

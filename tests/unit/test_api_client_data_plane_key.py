@@ -131,6 +131,30 @@ class TestNamespaceConfiguration:
             _ = charts._data_plane_api_config
 
 
+class TestMissingApiKeyError:
+    """The error an operation raises names every key it is missing."""
+
+    def test_one_key_is_named_as_before(self) -> None:
+        """A single missing key keeps its message and its ``key_kind``."""
+        error = MissingApiKeyError("data_plane")
+
+        assert str(error) == (
+            "Missing data plane API key: provide data_plane_api_key or set the "
+            "HH_DATA_PLANE_API_KEY environment variable"
+        )
+        assert error.key_kind == "data_plane"
+        assert error.key_kinds == ("data_plane",)
+
+    def test_several_keys_are_named_in_one_error(self) -> None:
+        """Each key's message appears, and ``key_kind`` is the first of them."""
+        error = MissingApiKeyError("data_plane", "ingestion")
+
+        assert "HH_DATA_PLANE_API_KEY" in str(error)
+        assert "HH_INGESTION_API_KEY" in str(error)
+        assert error.key_kind == "data_plane"
+        assert error.key_kinds == ("data_plane", "ingestion")
+
+
 class TestChartQuery:
     """``charts.query`` sends the request with the data plane key only."""
 

@@ -16,15 +16,22 @@ TestRunEvaluatorsForDatapoint, TestApplyInlineEvaluators).
 """
 
 import threading
-from typing import Any, Collection, Dict
-from unittest.mock import Mock, call, patch
+import warnings
+from typing import Any, Collection, Dict, Tuple
+from unittest.mock import ANY, Mock, call, patch
 
 import httpx
 import pytest
 from opentelemetry.instrumentation.instrumentor import BaseInstrumentor
 
+from honeyhive import MissingApiKeyError
 from honeyhive._generated.api_config import HTTPException
-from honeyhive.experiments.core import ExperimentContext, evaluate, run_experiment
+from honeyhive.experiments.core import (
+    ExperimentContext,
+    _update_run_with_results,
+    evaluate,
+    run_experiment,
+)
 from honeyhive.experiments.results import compare_runs, get_run_metrics, get_run_result
 
 # Tests updated to match current implementation (base_url instead of server_url)
@@ -38,6 +45,19 @@ from honeyhive.experiments.results import compare_runs, get_run_metrics, get_run
 # Justification: Testing behavior, pytest fixture patterns, comprehensive coverage
 # Justification: Mock setup and test names require descriptive length
 # Justification: Mock objects have dynamic attributes
+
+
+PROJECT_ID = "project-123"
+PROJECT_KEY = "hh_" + "x" * 32
+INGESTION_KEY = "hh_ingst_" + "A" * 24 + "_" + "b" * 64
+DATA_PLANE_KEY = "hh_fgdp_" + "A" * 24 + "_" + "b" * 64
+
+# The environment variable each kind of missing key is reported by.
+MISSING_KEY_VARIABLES = {
+    "project": "HH_API_KEY",
+    "ingestion": "HH_INGESTION_API_KEY",
+    "data_plane": "HH_DATA_PLANE_API_KEY",
+}
 
 
 class TestExperimentContext:
@@ -489,29 +509,226 @@ class TestEvaluate:
                 api_key="test-key",
             )
 
-    @patch.dict("os.environ", {}, clear=True)  # Clear all env vars
-    @patch("honeyhive.experiments.core.HoneyHive")
-    def test_validation_no_api_key_no_env_var(
-        self, mock_honeyhive_class: Mock, simple_function: Any
+    @pytest.mark.parametrize(
+        "keys, missing, noted",
+        [
+            pytest.param(
+                {"project_id": PROJECT_ID, "ingestion_api_key": INGESTION_KEY},
+                ("data_plane",),
+                False,
+                id="project_id-without-a-data-plane-key",
+            ),
+            pytest.param(
+                {"project_id": PROJECT_ID, "data_plane_api_key": DATA_PLANE_KEY},
+                ("ingestion",),
+                False,
+                id="project_id-without-an-ingestion-key",
+            ),
+            pytest.param(
+                {
+                    "project_id": PROJECT_ID,
+                    "data_plane_api_key": DATA_PLANE_KEY,
+                    "api_key": PROJECT_KEY,
+                },
+                ("ingestion",),
+                True,
+                id="project_id-with-a-project-key-in-place-of-the-ingestion-key",
+            ),
+            pytest.param(
+                {"project_id": PROJECT_ID},
+                ("data_plane", "ingestion"),
+                False,
+                id="project_id-with-neither-key",
+            ),
+            pytest.param(
+                {"ingestion_api_key": INGESTION_KEY},
+                ("project",),
+                False,
+                id="no-project_id-and-no-project-key",
+            ),
+        ],
+    )
+    @patch("honeyhive.experiments.core.run_experiment")
+    @patch("honeyhive.experiments.core.prepare_external_dataset")
+    def test_missing_key_is_refused_before_anything_runs(
+        self,
+        mock_prepare_external: Mock,
+        mock_run_experiment: Mock,
+        keys: Dict[str, str],
+        missing: Tuple[str, ...],
+        noted: bool,
     ) -> None:
-        """Test that evaluate works without explicit api_key if no env var set (client handles it)."""
-        # The evaluate function no longer validates api_key presence
-        # It's passed to HoneyHive client which handles missing keys gracefully
-        mock_client = Mock()
-        mock_client.experiments._create_run.side_effect = Exception("No API key")
-        mock_honeyhive_class.return_value = mock_client
+        """Each key evaluate() needs is checked before it prepares or sends.
 
-        with pytest.raises(Exception):  # Client will raise error, not evaluate
+        With project_id the data plane and ingestion keys work as a pair, and
+        one error names every key of the pair that is missing. The project key
+        stands in for neither, and the error says so when one is configured.
+        """
+        function = Mock(return_value={"output": "test"})
+
+        with patch.dict("os.environ", {}, clear=True):
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                with pytest.raises(MissingApiKeyError) as exc_info:
+                    evaluate(function=function, dataset=[{"inputs": {}}], **keys)
+
+        assert exc_info.value.key_kinds == missing
+        message = str(exc_info.value)
+        for kind in missing:
+            assert MISSING_KEY_VARIABLES[kind] in message
+        notes = getattr(exc_info.value, "__notes__", [])
+        assert bool(notes) is noted
+        if noted:
+            assert "does not send traces with the project API key" in notes[0]
+        mock_prepare_external.assert_not_called()
+        mock_run_experiment.assert_not_called()
+        function.assert_not_called()
+
+    @patch("honeyhive.experiments.core._get_run_result")
+    @patch("honeyhive.experiments.core.run_experiment")
+    @patch("honeyhive.experiments.core.ExperimentContext")
+    @patch("honeyhive.experiments.core.prepare_run_request_data")
+    @patch("honeyhive.experiments.core.uuid.uuid4")
+    @patch("honeyhive.experiments.core.HoneyHive")
+    def test_evaluate_with_project_id_names_the_project_in_every_request(
+        self,
+        mock_honeyhive_class: Mock,
+        mock_uuid: Mock,
+        mock_prepare_run: Mock,
+        mock_context_class: Mock,
+        mock_run_experiment: Mock,
+        mock_get_result: Mock,
+        simple_function: Any,
+    ) -> None:
+        """With project_id, every core and the result fetch receive it, unwarned."""
+        mock_uuid.return_value = Mock(hex="abc123")
+        mock_prepare_run.return_value = {
+            "name": "test-experiment",
+            "dataset_id": "ds-123",
+            "event_ids": [],
+        }
+
+        mock_client = Mock()
+        mock_client.data_plane_api_key = DATA_PLANE_KEY
+        mock_client.ingestion_api_key = INGESTION_KEY
+        mock_client.datasets._list.return_value = Mock(
+            datasets=[Mock(datapoints=["dp-1"])]
+        )
+        mock_client.datapoints._get.return_value = Mock(
+            datapoint=[Mock(inputs={"x": 1}, ground_truth={"y": 2}, id="dp-1")]
+        )
+        mock_client.experiments._create_run.return_value = Mock(run_id="run-789")
+        mock_honeyhive_class.return_value = mock_client
+        mock_context_class.return_value = Mock()
+        mock_run_experiment.return_value = [
+            {"datapoint_id": "dp-1", "outputs": {"result": "A"}},
+        ]
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            result = evaluate(
+                function=simple_function,
+                dataset_id="ds-123",
+                project_id=PROJECT_ID,
+                data_plane_api_key=DATA_PLANE_KEY,
+                ingestion_api_key=INGESTION_KEY,
+                max_workers=1,
+                aggregate_function="median",
+                print_results=False,
+            )
+
+        assert result == mock_get_result.return_value
+        assert not [w for w in caught if issubclass(w.category, DeprecationWarning)]
+        mock_honeyhive_class.assert_called_once_with(
+            api_key=None,
+            ingestion_api_key=INGESTION_KEY,
+            data_plane_api_key=DATA_PLANE_KEY,
+            base_url=None,
+        )
+        mock_client.datasets._list.assert_called_once_with(
+            dataset_id="ds-123", project_id=PROJECT_ID
+        )
+        mock_client.datapoints._get.assert_called_once_with(
+            "dp-1", project_id=PROJECT_ID
+        )
+        mock_client.experiments._create_run.assert_called_once_with(
+            ANY, project_id=PROJECT_ID
+        )
+        mock_client.experiments._update_run.assert_called_once_with(
+            "run-789", ANY, project_id=PROJECT_ID
+        )
+        mock_get_result.assert_called_once_with(
+            client=mock_client,
+            run_id="run-789",
+            aggregate_function="median",
+            project_id=PROJECT_ID,
+        )
+
+    @patch("honeyhive.experiments.core._get_run_result")
+    @patch("honeyhive.experiments.core.run_experiment")
+    @patch("honeyhive.experiments.core.ExperimentContext")
+    @patch("honeyhive.experiments.core.prepare_run_request_data")
+    @patch("honeyhive.experiments.core.prepare_external_dataset")
+    @patch("honeyhive.experiments.core.uuid.uuid4")
+    @patch("honeyhive.experiments.core.HoneyHive")
+    def test_evaluate_without_project_id_warns_its_caller_once(
+        self,
+        mock_honeyhive_class: Mock,
+        mock_uuid: Mock,
+        mock_prepare_external: Mock,
+        mock_prepare_run: Mock,
+        mock_context_class: Mock,
+        mock_run_experiment: Mock,
+        mock_get_result: Mock,
+        simple_function: Any,
+    ) -> None:
+        """Without project_id the caller gets one warning naming both keys.
+
+        The run still goes to the project key: every core and the result fetch
+        are told there is no project_id, and none of them warns again.
+        """
+        mock_uuid.return_value = Mock(hex="abc123")
+        mock_prepare_external.return_value = ("EXT-ds-123", ["dp-1"])
+        mock_prepare_run.return_value = {"name": "test", "event_ids": []}
+        mock_client = Mock()
+        mock_client.experiments._create_run.return_value = Mock(run_id="run-123")
+        mock_honeyhive_class.return_value = mock_client
+        mock_context_class.return_value = Mock()
+        mock_run_experiment.return_value = [
+            {"datapoint_id": "dp-1", "outputs": {"result": "A"}},
+        ]
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
             evaluate(
                 function=simple_function,
-                dataset=[{"inputs": {}}],
+                dataset=[{"inputs": {"x": 1}}],
+                api_key="test-key",
+                print_results=False,
             )
+
+        deprecations = [w for w in caught if issubclass(w.category, DeprecationWarning)]
+        assert len(deprecations) == 1
+        message = str(deprecations[0].message)
+        assert "evaluate() without project_id" in message
+        assert "HH_DATA_PLANE_API_KEY" in message
+        assert "HH_INGESTION_API_KEY" in message
+        assert deprecations[0].filename == __file__
+        mock_client.experiments._create_run.assert_called_once_with(
+            ANY, project_id=None
+        )
+        mock_client.experiments._update_run.assert_called_once_with(
+            "run-123", ANY, project_id=None
+        )
+        assert mock_get_result.call_args.kwargs["project_id"] is None
 
     def test_project_argument_emits_deprecation_warning(
         self, simple_function: Any
     ) -> None:
-        """Test that passing project emits DeprecationWarning and does not require project."""
-        with pytest.warns(DeprecationWarning, match="project.*deprecated"):
+        """Passing project warns, names project_id as the remedy, and is ignored."""
+        with pytest.warns(
+            DeprecationWarning, match="'project' argument.*Pass project_id"
+        ):
             with patch("honeyhive.experiments.core.HoneyHive") as mock_honeyhive_class:
                 mock_client = Mock()
                 mock_client.experiments._create_run.side_effect = Exception(
@@ -526,7 +743,7 @@ class TestEvaluate:
                         project="legacy-project",
                     )
 
-    @patch("honeyhive.experiments.core.get_run_result")
+    @patch("honeyhive.experiments.core._get_run_result")
     @patch("honeyhive.experiments.core.run_experiment")
     @patch("honeyhive.experiments.core.ExperimentContext")
     @patch("honeyhive.experiments.core.prepare_run_request_data")
@@ -601,21 +818,23 @@ class TestEvaluate:
 
         # Verify
         assert result == mock_result
-        # Both reads go through cores, which never warn: evaluate() takes no
-        # project_id, so its caller could not act on a deprecation warning.
-        mock_client.datasets._list.assert_called_once_with(dataset_id="ds-123")
+        # Both reads go through cores, which never warn: evaluate() warns its
+        # caller once itself. Without project_id every core is told so.
+        mock_client.datasets._list.assert_called_once_with(
+            dataset_id="ds-123", project_id=None
+        )
         mock_client.datasets.list.assert_not_called()
         mock_client.datasets.get_dataset.assert_not_called()
         assert mock_client.datapoints._get.call_args_list == [
-            call("dp-1"),
-            call("dp-2"),
+            call("dp-1", project_id=None),
+            call("dp-2", project_id=None),
         ]
         mock_client.datapoints.get_datapoint.assert_not_called()
         mock_client.datapoints.get.assert_not_called()
         mock_run_experiment.assert_called_once()
         mock_get_result.assert_called_once()
 
-    @patch("honeyhive.experiments.core.get_run_result")
+    @patch("honeyhive.experiments.core._get_run_result")
     @patch("honeyhive.experiments.core.run_experiment")
     @patch("honeyhive.experiments.core.ExperimentContext")
     @patch("honeyhive.experiments.core.prepare_run_request_data")
@@ -699,7 +918,7 @@ class TestEvaluate:
         assert result == mock_result
         assert mock_client.datapoints._get.call_count == 2
 
-    @patch("honeyhive.experiments.core.get_run_result")
+    @patch("honeyhive.experiments.core._get_run_result")
     @patch("honeyhive.experiments.core.run_experiment")
     @patch("honeyhive.experiments.core.ExperimentContext")
     @patch("honeyhive.experiments.core.prepare_run_request_data")
@@ -751,7 +970,7 @@ class TestEvaluate:
                 api_key="test-key",
             )
 
-    @patch("honeyhive.experiments.core.get_run_result")
+    @patch("honeyhive.experiments.core._get_run_result")
     @patch("honeyhive.experiments.core.run_experiment")
     @patch("honeyhive.experiments.core.ExperimentContext")
     @patch("honeyhive.experiments.core.prepare_run_request_data")
@@ -817,7 +1036,7 @@ class TestEvaluate:
         assert result == mock_result
         assert mock_client.datapoints._get.call_count == 2
 
-    @patch("honeyhive.experiments.core.get_run_result")
+    @patch("honeyhive.experiments.core._get_run_result")
     @patch("honeyhive.experiments.core.run_experiment")
     @patch("honeyhive.experiments.core.ExperimentContext")
     @patch("honeyhive.experiments.core.prepare_run_request_data")
@@ -873,7 +1092,7 @@ class TestEvaluate:
         # Confirm we did try every datapoint before raising.
         assert mock_client.datapoints._get.call_count == 3
 
-    @patch("honeyhive.experiments.core.get_run_result")
+    @patch("honeyhive.experiments.core._get_run_result")
     @patch("honeyhive.experiments.core.run_experiment")
     @patch("honeyhive.experiments.core.ExperimentContext")
     @patch("honeyhive.experiments.core.prepare_run_request_data")
@@ -933,7 +1152,7 @@ class TestEvaluate:
         assert result == mock_result
         mock_client.experiments._update_run.assert_called_once()
 
-    @patch("honeyhive.experiments.core.get_run_result")
+    @patch("honeyhive.experiments.core._get_run_result")
     @patch("honeyhive.experiments.core.run_experiment")
     @patch("honeyhive.experiments.core.ExperimentContext")
     @patch("honeyhive.experiments.core.prepare_run_request_data")
@@ -1000,7 +1219,7 @@ class TestEvaluate:
             "HH_API_URL": "https://env.example.test",
         },
     )
-    @patch("honeyhive.experiments.core.get_run_result")
+    @patch("honeyhive.experiments.core._get_run_result")
     @patch("honeyhive.experiments.core.run_experiment")
     @patch("honeyhive.experiments.core.ExperimentContext")
     @patch("honeyhive.experiments.core.prepare_run_request_data")
@@ -1061,7 +1280,7 @@ class TestEvaluate:
         assert mock_run_experiment.call_args[1]["ingestion_api_key"] is None
         assert result == mock_result
 
-    @patch("honeyhive.experiments.core.get_run_result")
+    @patch("honeyhive.experiments.core._get_run_result")
     @patch("honeyhive.experiments.core.run_experiment")
     @patch("honeyhive.experiments.core.ExperimentContext")
     @patch("honeyhive.experiments.core.prepare_run_request_data")
@@ -1116,7 +1335,7 @@ class TestEvaluate:
         assert call_kwargs["api_key"] == "test-key"
         assert result == mock_result
 
-    @patch("honeyhive.experiments.core.get_run_result")
+    @patch("honeyhive.experiments.core._get_run_result")
     @patch("honeyhive.experiments.core.run_experiment")
     @patch("honeyhive.experiments.core.ExperimentContext")
     @patch("honeyhive.experiments.core.prepare_run_request_data")
@@ -1164,7 +1383,7 @@ class TestEvaluate:
         assert client_kwargs["ingestion_api_key"] == ingestion_key
         assert mock_run_experiment.call_args[1]["ingestion_api_key"] == ingestion_key
 
-    @patch("honeyhive.experiments.core.get_run_result")
+    @patch("honeyhive.experiments.core._get_run_result")
     @patch("honeyhive.experiments.core.run_experiment")
     @patch("honeyhive.experiments.core.ExperimentContext")
     @patch("honeyhive.experiments.core.prepare_run_request_data")
@@ -1647,12 +1866,67 @@ class TestInstrumentorsSupport:
         assert results[0]["status"] == "success"
 
 
+class TestUpdateRunWithResults:
+    """Which failed run updates stop ``evaluate()``."""
+
+    @staticmethod
+    def update(error: Exception, project_id: Any) -> None:
+        """Run the update against a client whose update raises ``error``."""
+        client = Mock()
+        client.experiments._update_run.side_effect = error
+        _update_run_with_results(
+            "run-1",
+            run_name="run",
+            execution_results=[],
+            external_dataset_id="dataset-1",
+            client=client,
+            verbose=False,
+            project_id=project_id,
+        )
+
+    @pytest.mark.parametrize("status_code", [401, 403, 404])
+    def test_a_refused_data_plane_key_raises(self, status_code: int) -> None:
+        """With project_id, a refusal reaches the caller and names the permission."""
+        with pytest.raises(HTTPException) as exc_info:
+            self.update(HTTPException(status_code, "refused"), PROJECT_ID)
+
+        assert exc_info.value.status_code == status_code
+        (note,) = exc_info.value.__notes__
+        assert "run-1" in note
+        assert "project.experiment_run.put" in note
+
+    @pytest.mark.parametrize(
+        "error",
+        [
+            HTTPException(400, "bad request"),
+            HTTPException(503, "service unavailable"),
+            httpx.ConnectError("connection refused"),
+        ],
+    )
+    def test_another_failure_with_project_id_is_swallowed(
+        self, error: Exception
+    ) -> None:
+        """A failure that is not a refusal leaves the run pending and returns."""
+        self.update(error, PROJECT_ID)
+
+    @pytest.mark.parametrize("status_code", [401, 403, 404])
+    def test_without_project_id_nothing_raises(self, status_code: int) -> None:
+        """The project key's update keeps swallowing every failure."""
+        self.update(HTTPException(status_code, "refused"), None)
+
+
 class TestResultsBackwardCompatibility:
-    """Positional project_id must remain at its original index."""
+    """Positional project_id must remain at its original index.
+
+    Every client here holds no data plane API key, which is the client these
+    calls were written against: ``project_id`` is ignored with a warning and
+    the project key's request is sent.
+    """
 
     def test_get_run_result_positional_project_and_aggregate(self) -> None:
         """Legacy 4-arg positional call still routes aggregate_function correctly."""
         mock_client = Mock()
+        mock_client.data_plane_api_key = ""
         mock_client.experiments._get_result.return_value = {
             "status": "completed",
             "success": True,
@@ -1662,16 +1936,17 @@ class TestResultsBackwardCompatibility:
             "datapoints": [],
         }
 
-        with pytest.warns(DeprecationWarning, match="project_id.*deprecated"):
+        with pytest.warns(DeprecationWarning, match="project_id.*ignored"):
             get_run_result(mock_client, "run-123", "my-project", "median")
 
         mock_client.experiments._get_result.assert_called_once_with(
-            run_id="run-123", aggregate_function="median"
+            run_id="run-123", aggregate_function="median", project_id=None
         )
 
     def test_get_run_result_three_arg_positional_project(self) -> None:
         """Legacy 3-arg call passes project_id positionally, not aggregate_function."""
         mock_client = Mock()
+        mock_client.data_plane_api_key = ""
         mock_client.experiments._get_result.return_value = {
             "status": "completed",
             "success": True,
@@ -1681,36 +1956,41 @@ class TestResultsBackwardCompatibility:
             "datapoints": [],
         }
 
-        with pytest.warns(DeprecationWarning, match="project_id.*deprecated"):
+        with pytest.warns(DeprecationWarning, match="project_id.*ignored"):
             get_run_result(mock_client, "run-123", "my-project")
 
         mock_client.experiments._get_result.assert_called_once_with(
-            run_id="run-123", aggregate_function="average"
+            run_id="run-123", aggregate_function="average", project_id=None
         )
 
     def test_compare_runs_positional_project_and_aggregate(self) -> None:
         """Legacy positional compare_runs(project_id, aggregate_function) still works."""
         mock_client = Mock()
+        mock_client.data_plane_api_key = ""
         mock_client.experiments._compare_runs.return_value = {
             "commonDatapoints": [],
             "metrics": [],
         }
 
-        with pytest.warns(DeprecationWarning, match="project_id.*deprecated"):
+        with pytest.warns(DeprecationWarning, match="project_id.*ignored"):
             compare_runs(mock_client, "run-new", "run-old", "my-project", "median")
 
         mock_client.experiments._compare_runs.assert_called_once_with(
             new_run_id="run-new",
             old_run_id="run-old",
             aggregate_function="median",
+            project_id=None,
         )
 
     def test_get_run_metrics_positional_project(self) -> None:
         """Legacy 3-arg get_run_metrics(client, run_id, project_id) still works."""
         mock_client = Mock()
+        mock_client.data_plane_api_key = ""
         mock_client.experiments._get_result.return_value = {"metrics": {}}
 
-        with pytest.warns(DeprecationWarning, match="project_id.*deprecated"):
+        with pytest.warns(DeprecationWarning, match="project_id.*ignored"):
             get_run_metrics(mock_client, "run-123", "my-project")
 
-        mock_client.experiments._get_result.assert_called_once_with(run_id="run-123")
+        mock_client.experiments._get_result.assert_called_once_with(
+            run_id="run-123", project_id=None
+        )

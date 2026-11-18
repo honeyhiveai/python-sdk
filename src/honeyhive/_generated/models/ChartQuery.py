@@ -1,18 +1,24 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Annotated, TypeAlias, Union
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from .ChartQueryCategorical import ChartQueryCategorical
+from .ChartQueryHistogram import ChartQueryHistogram
+from .ChartQueryScalar import ChartQueryScalar
+from .ChartQueryScatter import ChartQueryScatter
+from .ChartQueryTable import ChartQueryTable
+from .ChartQueryTimeSeries import ChartQueryTimeSeries
 
 __all__ = ["ChartQuery"]
 
-
-class ChartQuery(BaseModel):
-    """
-    ChartQuery model
-    """
-
-    model_config = {
-        "populate_by_name": True,
-        "validate_assignment": True,
-        "extra": "allow",
-        "protected_namespaces": (),
-    }
+ChartQuery: TypeAlias = Annotated[
+    Union[
+        ChartQueryTimeSeries,
+        ChartQueryCategorical,
+        ChartQueryScalar,
+        ChartQueryHistogram,
+        ChartQueryTable,
+        ChartQueryScatter,
+    ],
+    Field(discriminator="kind"),
+]
