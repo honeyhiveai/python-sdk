@@ -1,5 +1,28 @@
 # Python SDK Changelog
 
+## [1.10.0] - 2026-11-25
+
+### Added
+
+- **Project-scoped metric listing**
+  - `client.metrics.list()`, `list_async()`, `list_metrics()`, and `get_metric()` accept an optional keyword-only `project_id`. With `project_id`, the call targets that project and is sent with the data plane API key (`data_plane_api_key` / `HH_DATA_PLANE_API_KEY`).
+- **Project-scoped `create_evaluation_run()`**
+  - `create_evaluation_run()` accepts an optional keyword-only `project_id`. With `project_id`, the run is created in that project with the data plane API key.
+- **Evaluator results on events**
+  - The `Event` and `PostSessionRequest` models have a new optional `evaluations` field that holds the latest evaluator score for each evaluator slug.
+
+### Changed
+
+- **Metric updates and deletes use the current endpoints**
+  - `client.metrics.update()`, `delete()`, and their `_async` variants now call the current metrics endpoints, which take the metric ID in the URL path, instead of the deprecated ones. The method signatures and the `UpdateMetricRequest` model are unchanged.
+- **"Classic API key" naming**
+  - The `MissingApiKeyError` message and the docs now call the `api_key` / `HH_API_KEY` credential the classic API key instead of the project API key. The parameter and environment variable names are unchanged.
+
+### Deprecated
+
+- **Metric listing and `create_evaluation_run()` without `project_id`**
+  - These calls still use the classic API key, but they now emit a `DeprecationWarning`, and they stop working in v2.0. Pass `project_id` and configure a data plane API key.
+
 ## [1.9.0] - 2026-11-18
 
 ### Added

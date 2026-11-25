@@ -579,7 +579,7 @@ class TestEvaluate:
         notes = getattr(exc_info.value, "__notes__", [])
         assert bool(notes) is noted
         if noted:
-            assert "does not send traces with the project API key" in notes[0]
+            assert "does not send traces with the classic API key" in notes[0]
         mock_prepare_external.assert_not_called()
         mock_run_experiment.assert_not_called()
         function.assert_not_called()

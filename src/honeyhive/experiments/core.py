@@ -307,7 +307,7 @@ def run_experiment(
     - Python 3.11+ GIL improvements for I/O
 
     Accepted keys:
-        Ingestion API key; Project API key (deprecated)
+        Ingestion API key; Classic API key (deprecated)
 
     Args:
         function: User function to execute against each datapoint. Can be either
@@ -1164,7 +1164,7 @@ def _require_evaluate_keys(client: Any, project_id: Optional[str]) -> None:
     error = MissingApiKeyError(*missing)
     if "ingestion" in missing and client.api_key:
         error.add_note(
-            "With project_id, evaluate() does not send traces with the project API key."
+            "With project_id, evaluate() does not send traces with the classic API key."
         )
     raise error
 
@@ -1216,10 +1216,10 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
 
         Without ``project_id`` (deprecated):
 
-        - Project API key, required: creates and updates the run, reads the
+        - Classic API key, required: creates and updates the run, reads the
           dataset, and reads the run results.
         - Ingestion API key, optional: sends the traces and session results.
-          Without it, the project key sends them.
+          Without it, the classic key sends them.
 
     Args:
         function: User function to execute against each datapoint. Can be either
@@ -1232,14 +1232,14 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
             return a new instrumentor instance when called. This ensures each
             datapoint gets its own tracer and instrumentor instance for proper
             trace routing. Example: [lambda: OpenAIInstrumentor()]
-        api_key: Project API key (or set the HH_API_KEY env var). Used only
+        api_key: Classic API key (or set the HH_API_KEY env var). Used only
             without project_id, which is deprecated.
         ingestion_api_key: Ingestion API key used to send the experiment's traces
             (or set the HH_INGESTION_API_KEY env var). Required with project_id.
             Without project_id it is optional, and api_key sends the traces
             when it is unset.
         project_id: The project the experiment runs in. Omitting it runs the
-            experiment in the project API key's project, which is deprecated.
+            experiment in the classic API key's project, which is deprecated.
         data_plane_api_key: Data plane API key (or set the
             HH_DATA_PLANE_API_KEY env var). Required with project_id.
         server_url: HoneyHive server URL (or set the HH_API_URL env var)
@@ -1262,7 +1262,7 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
         ValueError: If neither dataset nor dataset_id provided, or both provided
         MissingApiKeyError: If a key the call needs is not configured. With
             project_id, it names each of the data plane and ingestion keys
-            that is missing. Without project_id, it names the project key.
+            that is missing. Without project_id, it names the classic key.
             Nothing has been sent and the function has not run.
 
     Examples:

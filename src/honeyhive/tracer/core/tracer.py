@@ -28,7 +28,7 @@ class HoneyHiveTracer(HoneyHiveTracerBase, TracerOperationsMixin, TracerContextM
     automatic error recovery, and graceful degradation.
 
     Accepted keys:
-        Ingestion API key; Project API key (deprecated)
+        Ingestion API key; Classic API key (deprecated)
 
     Example:
         >>> # New Pydantic config approach (recommended)

@@ -34,9 +34,11 @@ from typing import (
     Tuple,
     TypeVar,
     Union,
+    cast,
 )
 
 import httpx
+from pydantic import Field
 
 # A version check rather than a try/except, so the type checker sees a typed
 # decorator on every Python version the SDK supports.
@@ -50,6 +52,7 @@ from honeyhive._generated.models import (
     GetExperimentRunMetricsResponse as _GetExperimentRunMetricsResponse,
 )
 from honeyhive._generated.models import UpdateDatasetRequest as UpdateDatasetBody
+from honeyhive._generated.models import UpdateMetricRequest as UpdateMetricBody
 
 # Import async services
 # Import sync services
@@ -297,6 +300,22 @@ def _warn_ignored_project_argument() -> None:
     )
 
 
+def _warn_ignored_metric_filters(method: str) -> None:
+    """Warn that a metrics list method was given ``project`` or ``name``, which it ignores.
+
+    The ``stacklevel`` counts the frames ``_warn_call_without_project_id``
+    counts by default, so this is called only from the body of a public method
+    of a ``BaseAPI`` subclass. ``method`` names that method, so an alias warns
+    in its own name.
+    """
+    warnings.warn(
+        "The 'project' and 'name' parameters are no longer supported for "
+        f"metrics.{method}() and will be removed in v2.0.",
+        DeprecationWarning,
+        stacklevel=4,
+    )
+
+
 # The bounds the older export operation gives a date range that has only one.
 # The project-scoped search requires both.
 _SEARCH_EARLIEST = "1970-01-01T00:00:00.000Z"
@@ -414,12 +433,37 @@ def _split_dataset_update(
     return request.dataset_id, body
 
 
+class _MetricUpdateBody(UpdateMetricRequest):
+    """A metric update request whose dump leaves out ``id``."""
+
+    id: str = Field(validation_alias="id", exclude=True)
+
+
+def _split_metric_update(
+    request: UpdateMetricRequest,
+) -> Tuple[str, UpdateMetricBody]:
+    """The metric an update request names, and the body without it.
+
+    The path-id operation takes ``metric_id`` in its path and refuses it in
+    the body. The body is the request's own JSON without ``id``. The id is
+    not checked here: an empty one sends a request the server refuses, and
+    raising before sending would change the exception a caller catches.
+    """
+    body = _MetricUpdateBody.model_construct(**dict(request))
+    # The generated function only calls ``model_dump(exclude_none=True)`` on
+    # ``data``. This body keeps the request's types for ``threshold`` and
+    # ``categories``, so that dump keeps the nulls nested in them. Validating
+    # into the generated model drops those nulls, and the server refuses a
+    # category without its ``score``.
+    return request.id, cast(UpdateMetricBody, body)
+
+
 class ChartsAPI(BaseAPI):
     """Charts API.
 
     Every method takes an optional ``project_id``. With it, the request names
     the project in its path and is sent with the data plane API key. Without
-    it, the request acts on the project API key's project, is sent with that
+    it, the request acts on the classic API key's project, is sent with that
     key, and issues a ``DeprecationWarning``.
 
     Each public method warns and then calls its private core, which sends the
@@ -431,12 +475,12 @@ class ChartsAPI(BaseAPI):
         """List the charts in a project.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
 
         Args:
             project_id: The project whose charts are listed. Omitting it lists
-                the project API key's charts, which is deprecated.
+                the classic API key's charts, which is deprecated.
         """
         if project_id is None:
             _warn_call_without_project_id("charts", "list")
@@ -448,13 +492,13 @@ class ChartsAPI(BaseAPI):
         """Get a chart by ID.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
 
         Args:
             chart_id: The chart to get.
             project_id: The project that owns the chart. Omitting it reads from
-                the project API key's project, which is deprecated.
+                the classic API key's project, which is deprecated.
         """
         if project_id is None:
             _warn_call_without_project_id("charts", "get")
@@ -466,13 +510,13 @@ class ChartsAPI(BaseAPI):
         """Create a chart.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
 
         Args:
             request: The chart to create.
             project_id: The project the chart is created in. Omitting it creates
-                it in the project API key's project, which is deprecated.
+                it in the classic API key's project, which is deprecated.
         """
         if project_id is None:
             _warn_call_without_project_id("charts", "create")
@@ -488,14 +532,14 @@ class ChartsAPI(BaseAPI):
         """Update a chart. Only the fields set in ``request`` are changed.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
 
         Args:
             chart_id: The chart to update.
             request: The fields to change.
             project_id: The project that owns the chart. Omitting it updates it
-                in the project API key's project, which is deprecated.
+                in the classic API key's project, which is deprecated.
         """
         if project_id is None:
             _warn_call_without_project_id("charts", "update")
@@ -507,13 +551,13 @@ class ChartsAPI(BaseAPI):
         """Delete a chart and remove it from the project's dashboards.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
 
         Args:
             chart_id: The chart to delete.
             project_id: The project that owns the chart. Omitting it deletes it
-                from the project API key's project, which is deprecated.
+                from the classic API key's project, which is deprecated.
         """
         if project_id is None:
             _warn_call_without_project_id("charts", "delete")
@@ -525,7 +569,7 @@ class ChartsAPI(BaseAPI):
         """List the charts in a project asynchronously. See ``list()``.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -538,7 +582,7 @@ class ChartsAPI(BaseAPI):
         """Get a chart by ID asynchronously. See ``get()``.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -551,7 +595,7 @@ class ChartsAPI(BaseAPI):
         """Create a chart asynchronously. See ``create()``.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -568,7 +612,7 @@ class ChartsAPI(BaseAPI):
         """Update a chart asynchronously. See ``update()``.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -581,7 +625,7 @@ class ChartsAPI(BaseAPI):
         """Delete a chart asynchronously. See ``delete()``.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -1033,7 +1077,7 @@ class ConfigurationsAPI(BaseAPI):
 
     A method that takes ``project_id`` sends the request with the data plane
     API key when given it, naming the project in the path. Without it, the
-    request acts on the project API key's project, is sent with that key, and
+    request acts on the classic API key's project, is sent with that key, and
     issues a ``DeprecationWarning``.
 
     Each such public method, alias included, warns in its own name and then
@@ -1042,7 +1086,7 @@ class ConfigurationsAPI(BaseAPI):
     caller who can pass ``project_id``.
 
     Only the methods that list configurations take ``project_id``. Creating,
-    updating and deleting a configuration take the project API key.
+    updating and deleting a configuration take the classic API key.
     """
 
     # Sync methods
@@ -1053,13 +1097,13 @@ class ConfigurationsAPI(BaseAPI):
 
         Accepted keys:
             Data plane fine-grained API key with ``project.config.list``, with
-            ``project_id``; Project API key without ``project_id`` (deprecated)
+            ``project_id``; Classic API key without ``project_id`` (deprecated)
 
         Args:
             project: Ignored. Deprecated in v1.0 and will be removed in v2.0.
                 ``project_id`` names the project.
             project_id: The project to list configurations in. Without it, the
-                call lists the project key's project, which is deprecated.
+                call lists the classic key's project, which is deprecated.
         """
         if project is not None:
             _warn_ignored_project_argument()
@@ -1073,7 +1117,7 @@ class ConfigurationsAPI(BaseAPI):
         """Create a configuration.
 
         Accepted keys:
-            Project API key
+            Classic API key
         """
         return configs_svc.createConfiguration(self._api_config, data=request)
 
@@ -1083,7 +1127,7 @@ class ConfigurationsAPI(BaseAPI):
         """Update a configuration.
 
         Accepted keys:
-            Project API key
+            Classic API key
         """
         return configs_svc.updateConfiguration(
             self._api_config, configId=id, data=request
@@ -1093,7 +1137,7 @@ class ConfigurationsAPI(BaseAPI):
         """Delete a configuration.
 
         Accepted keys:
-            Project API key
+            Classic API key
         """
         return configs_svc.deleteConfiguration(self._api_config, configId=id)
 
@@ -1105,13 +1149,13 @@ class ConfigurationsAPI(BaseAPI):
 
         Accepted keys:
             Data plane fine-grained API key with ``project.config.list``, with
-            ``project_id``; Project API key without ``project_id`` (deprecated)
+            ``project_id``; Classic API key without ``project_id`` (deprecated)
 
         Args:
             project: Ignored. Deprecated in v1.0 and will be removed in v2.0.
                 ``project_id`` names the project.
             project_id: The project to list configurations in. Without it, the
-                call lists the project key's project, which is deprecated.
+                call lists the classic key's project, which is deprecated.
         """
         if project is not None:
             _warn_ignored_project_argument()
@@ -1125,7 +1169,7 @@ class ConfigurationsAPI(BaseAPI):
         """Create a configuration asynchronously.
 
         Accepted keys:
-            Project API key
+            Classic API key
         """
         return await configs_svc_async.createConfiguration(
             self._api_config, data=request
@@ -1137,7 +1181,7 @@ class ConfigurationsAPI(BaseAPI):
         """Update a configuration asynchronously.
 
         Accepted keys:
-            Project API key
+            Classic API key
         """
         return await configs_svc_async.updateConfiguration(
             self._api_config, configId=id, data=request
@@ -1147,7 +1191,7 @@ class ConfigurationsAPI(BaseAPI):
         """Delete a configuration asynchronously.
 
         Accepted keys:
-            Project API key
+            Classic API key
         """
         return await configs_svc_async.deleteConfiguration(
             self._api_config, configId=id
@@ -1164,7 +1208,7 @@ class ConfigurationsAPI(BaseAPI):
 
         Accepted keys:
             Data plane fine-grained API key with ``project.config.list``, with
-            ``project_id``; Project API key without ``project_id`` (deprecated)
+            ``project_id``; Classic API key without ``project_id`` (deprecated)
         """
         del id
         if project_id is None:
@@ -1177,7 +1221,7 @@ class ConfigurationsAPI(BaseAPI):
         """Create a configuration (backwards compatible alias).
 
         Accepted keys:
-            Project API key
+            Classic API key
         """
         return self.create(request)
 
@@ -1187,7 +1231,7 @@ class ConfigurationsAPI(BaseAPI):
         """Update a configuration (backwards compatible alias).
 
         Accepted keys:
-            Project API key
+            Classic API key
         """
         return self.update(id, request)
 
@@ -1195,7 +1239,7 @@ class ConfigurationsAPI(BaseAPI):
         """Delete a configuration (backwards compatible alias).
 
         Accepted keys:
-            Project API key
+            Classic API key
         """
         return self.delete(id)
 
@@ -1206,7 +1250,7 @@ class ConfigurationsAPI(BaseAPI):
 
         Accepted keys:
             Data plane fine-grained API key with ``project.config.list``, with
-            ``project_id``; Project API key without ``project_id`` (deprecated)
+            ``project_id``; Classic API key without ``project_id`` (deprecated)
         """
         if project is not None:
             _warn_ignored_project_argument()
@@ -1243,7 +1287,7 @@ class DatapointsAPI(BaseAPI):
 
     A method that takes ``project_id`` sends the request with the data plane
     API key when given it, naming the project in the path. Without it, the
-    request acts on the project API key's project, is sent with that key, and
+    request acts on the classic API key's project, is sent with that key, and
     issues a ``DeprecationWarning``.
 
     Each such public method, alias included, warns in its own name and then
@@ -1266,14 +1310,14 @@ class DatapointsAPI(BaseAPI):
         batched to stay within URL length limits and the results are merged.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
 
         Args:
             datapoint_ids: Optional list of datapoint IDs to fetch.
             dataset_name: Optional dataset name to filter by.
             project_id: The project whose datapoints are listed. Omitting it
-                lists the project API key's datapoints, which is deprecated.
+                lists the classic API key's datapoints, which is deprecated.
         """
         if project_id is None:
             _warn_call_without_project_id("datapoints", "list")
@@ -1283,13 +1327,13 @@ class DatapointsAPI(BaseAPI):
         """Get a datapoint by ID.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
 
         Args:
             id: The datapoint to get.
             project_id: The project that owns the datapoint. Omitting it reads
-                from the project API key's project, which is deprecated.
+                from the classic API key's project, which is deprecated.
         """
         if project_id is None:
             _warn_call_without_project_id("datapoints", "get")
@@ -1301,7 +1345,7 @@ class DatapointsAPI(BaseAPI):
         """Create a datapoint.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -1318,7 +1362,7 @@ class DatapointsAPI(BaseAPI):
         ``project.dataset.post`` when ``request.dataset_id`` is set.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -1335,7 +1379,7 @@ class DatapointsAPI(BaseAPI):
         """Update a datapoint.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -1348,13 +1392,13 @@ class DatapointsAPI(BaseAPI):
         """Delete a datapoint and remove it from every dataset that holds it.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
 
         Args:
             id: The datapoint to delete.
             project_id: The project that owns the datapoint. Omitting it deletes
-                it from the project API key's project, which is deprecated.
+                it from the classic API key's project, which is deprecated.
         """
         if project_id is None:
             _warn_call_without_project_id("datapoints", "delete")
@@ -1371,7 +1415,7 @@ class DatapointsAPI(BaseAPI):
         """List datapoints asynchronously. See ``list()``.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -1386,7 +1430,7 @@ class DatapointsAPI(BaseAPI):
         """Get a datapoint by ID asynchronously. See ``get()``.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -1399,7 +1443,7 @@ class DatapointsAPI(BaseAPI):
         """Create a datapoint asynchronously.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -1412,7 +1456,7 @@ class DatapointsAPI(BaseAPI):
         """Create datapoints from events asynchronously. See ``create_batch()``.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -1429,7 +1473,7 @@ class DatapointsAPI(BaseAPI):
         """Update a datapoint asynchronously.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -1442,7 +1486,7 @@ class DatapointsAPI(BaseAPI):
         """Delete a datapoint asynchronously. See ``delete()``.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -1456,7 +1500,7 @@ class DatapointsAPI(BaseAPI):
         """Get a datapoint by ID (backwards compatible alias for get()).
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -1469,7 +1513,7 @@ class DatapointsAPI(BaseAPI):
         """Create a datapoint (backwards compatible alias for create()).
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -1486,7 +1530,7 @@ class DatapointsAPI(BaseAPI):
         """Update a datapoint (backwards compatible alias for update()).
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -1499,7 +1543,7 @@ class DatapointsAPI(BaseAPI):
         """Delete a datapoint (backwards compatible alias for delete()).
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -1516,7 +1560,7 @@ class DatapointsAPI(BaseAPI):
         """List datapoints (backwards compatible alias for list()).
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -1733,7 +1777,7 @@ class DatasetsAPI(BaseAPI):
 
     A method that takes ``project_id`` sends the request with the data plane
     API key when given it, naming the project in the path. Without it, the
-    request acts on the project API key's project, is sent with that key, and
+    request acts on the classic API key's project, is sent with that key, and
     issues a ``DeprecationWarning``.
 
     Each such public method, alias included, warns in its own name and then
@@ -1753,14 +1797,14 @@ class DatasetsAPI(BaseAPI):
         """List datasets.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
 
         Args:
             dataset_id: Optional dataset ID to fetch.
             name: Optional dataset name to filter by.
             project_id: The project whose datasets are listed. Omitting it lists
-                the project API key's datasets, which is deprecated.
+                the classic API key's datasets, which is deprecated.
         """
         if project_id is None:
             _warn_call_without_project_id("datasets", "list")
@@ -1772,7 +1816,7 @@ class DatasetsAPI(BaseAPI):
         """Create a dataset.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -1785,13 +1829,13 @@ class DatasetsAPI(BaseAPI):
         """Update a dataset.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
 
         Args:
             request: The fields to update, with the dataset's ``dataset_id``.
             project_id: The project that owns the dataset. Omitting it updates
-                it in the project API key's project, which is deprecated.
+                it in the classic API key's project, which is deprecated.
         """
         if project_id is None:
             _warn_call_without_project_id("datasets", "update")
@@ -1803,13 +1847,13 @@ class DatasetsAPI(BaseAPI):
         """Delete a dataset.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
 
         Args:
             id: The dataset to delete.
             project_id: The project that owns the dataset. Omitting it deletes
-                it from the project API key's project, which is deprecated.
+                it from the classic API key's project, which is deprecated.
         """
         if project_id is None:
             _warn_call_without_project_id("datasets", "delete")
@@ -1825,14 +1869,14 @@ class DatasetsAPI(BaseAPI):
         """Add datapoints to a dataset.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
 
         Args:
             dataset_id: The unique identifier of the dataset to add datapoints to.
             request: The request containing data and mapping for the datapoints.
             project_id: The project that owns the dataset. Omitting it adds to
-                the dataset in the project API key's project, which is
+                the dataset in the classic API key's project, which is
                 deprecated.
 
         Returns:
@@ -1852,14 +1896,14 @@ class DatasetsAPI(BaseAPI):
         """Remove a datapoint from a dataset.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
 
         Args:
             dataset_id: The unique identifier of the dataset.
             datapoint_id: The unique identifier of the datapoint to remove.
             project_id: The project that owns the dataset. Omitting it removes
-                the datapoint from the dataset in the project API key's
+                the datapoint from the dataset in the classic API key's
                 project, which is deprecated.
 
         Returns:
@@ -1880,7 +1924,7 @@ class DatasetsAPI(BaseAPI):
         """List datasets asynchronously. See ``list()``.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -1893,7 +1937,7 @@ class DatasetsAPI(BaseAPI):
         """Create a dataset asynchronously.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -1906,7 +1950,7 @@ class DatasetsAPI(BaseAPI):
         """Update a dataset asynchronously. See ``update()``.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -1919,7 +1963,7 @@ class DatasetsAPI(BaseAPI):
         """Delete a dataset asynchronously. See ``delete()``.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -1936,7 +1980,7 @@ class DatasetsAPI(BaseAPI):
         """Add datapoints to a dataset asynchronously. See ``add_datapoints()``.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -1955,7 +1999,7 @@ class DatasetsAPI(BaseAPI):
         """Remove a datapoint from a dataset asynchronously. See ``remove_datapoint()``.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -1974,7 +2018,7 @@ class DatasetsAPI(BaseAPI):
         single-dataset operation.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -1987,7 +2031,7 @@ class DatasetsAPI(BaseAPI):
         """Create a dataset (backwards compatible alias for create()).
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -2000,7 +2044,7 @@ class DatasetsAPI(BaseAPI):
         """Update a dataset (backwards compatible alias for update()).
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -2013,7 +2057,7 @@ class DatasetsAPI(BaseAPI):
         """Delete a dataset (backwards compatible alias for delete()).
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -2030,7 +2074,7 @@ class DatasetsAPI(BaseAPI):
         """List datasets (backwards compatible alias).
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -2241,7 +2285,7 @@ class EventsAPI(BaseAPI):
 
     A method that takes ``project_id`` sends the request with the data plane
     API key when given it, naming the project in the path. Without it, the
-    request acts on the project API key's project, is sent with that key, and
+    request acts on the classic API key's project, is sent with that key, and
     issues a ``DeprecationWarning``.
 
     Each such public method, alias included, warns in its own name and then
@@ -2284,7 +2328,7 @@ class EventsAPI(BaseAPI):
 
         Accepted keys:
             Data plane fine-grained API key with ``project.event.get``, with
-            ``project_id``; Project API key without ``project_id`` (deprecated)
+            ``project_id``; Classic API key without ``project_id`` (deprecated)
 
         Args:
             query: Query parameters as GetEventsQuery model or dict.
@@ -2293,7 +2337,7 @@ class EventsAPI(BaseAPI):
                    and not applied.
             data: Backwards compatible alias for query.
             project_id: The project to read events from. Without it, the call
-                reads the project key's project, which is deprecated.
+                reads the classic key's project, which is deprecated.
 
         Returns:
             GetEventsResponse with matching events
@@ -2352,7 +2396,7 @@ class EventsAPI(BaseAPI):
         Events are returned sorted by start_time in chronological order.
 
         Accepted keys:
-            Project API key (deprecated). It takes no ``project_id``, so it
+            Classic API key (deprecated). It takes no ``project_id``, so it
             cannot use a data plane API key. ``export()`` can.
 
         Args:
@@ -2428,7 +2472,7 @@ class EventsAPI(BaseAPI):
         """Create an event.
 
         Accepted keys:
-            Ingestion API key; Project API key (deprecated)
+            Ingestion API key; Classic API key (deprecated)
         """
         return events_svc.createEventLegacy(self._ingestion_api_config, data=request)
 
@@ -2436,7 +2480,7 @@ class EventsAPI(BaseAPI):
         """Update an event.
 
         Accepted keys:
-            Ingestion API key; Project API key (deprecated)
+            Ingestion API key; Classic API key (deprecated)
         """
         return events_svc.updateEventLegacy(self._ingestion_api_config, data=data)
 
@@ -2444,7 +2488,7 @@ class EventsAPI(BaseAPI):
         """Create events in batch.
 
         Accepted keys:
-            Ingestion API key; Project API key (deprecated)
+            Ingestion API key; Classic API key (deprecated)
         """
         return events_svc.createEventBatchLegacy(self._ingestion_api_config, data=data)
 
@@ -2467,7 +2511,7 @@ class EventsAPI(BaseAPI):
 
         Accepted keys:
             Data plane fine-grained API key with ``project.event.get``, with
-            ``project_id``; Project API key without ``project_id`` (deprecated)
+            ``project_id``; Classic API key without ``project_id`` (deprecated)
 
         Args:
             project: Ignored. Deprecated in v1.0 and will be removed in v2.0.
@@ -2482,14 +2526,14 @@ class EventsAPI(BaseAPI):
             page: Page number for pagination (default 1).
             _sort_by_time: Internal flag to sort events by start_time (default False).
             project_id: The project to export events from. Without it, the
-                call reads the project key's project, which is deprecated.
+                call reads the classic key's project, which is deprecated.
 
         Returns:
             EventExportResponse with events list and total_events count.
 
         Raises:
             MissingApiKeyError: With ``project_id``, no data plane API key is
-                configured. Without it, no project API key is. Nothing has
+                configured. Without it, no classic API key is. Nothing has
                 been sent.
 
         Example::
@@ -2698,12 +2742,12 @@ class EventsAPI(BaseAPI):
 
         Accepted keys:
             Data plane fine-grained API key with ``project.event.get``, with
-            ``project_id``; Project API key without ``project_id`` (deprecated)
+            ``project_id``; Classic API key without ``project_id`` (deprecated)
 
         Args:
             query: Query parameters as GetEventsQuery model or dict.
             project_id: The project to read events from. Without it, the call
-                reads the project key's project, which is deprecated.
+                reads the classic key's project, which is deprecated.
 
         Returns:
             GetEventsResponse with matching events
@@ -2754,7 +2798,7 @@ class EventsAPI(BaseAPI):
         Events are returned sorted by start_time in chronological order.
 
         Accepted keys:
-            Project API key (deprecated). It takes no ``project_id``, so it
+            Classic API key (deprecated). It takes no ``project_id``, so it
             cannot use a data plane API key. ``export_async()`` can.
 
         Args:
@@ -2814,7 +2858,7 @@ class EventsAPI(BaseAPI):
         """Create an event asynchronously.
 
         Accepted keys:
-            Ingestion API key; Project API key (deprecated)
+            Ingestion API key; Classic API key (deprecated)
         """
         return await events_svc_async.createEventLegacy(
             self._ingestion_api_config, data=request
@@ -2824,7 +2868,7 @@ class EventsAPI(BaseAPI):
         """Update an event asynchronously.
 
         Accepted keys:
-            Ingestion API key; Project API key (deprecated)
+            Ingestion API key; Classic API key (deprecated)
         """
         return await events_svc_async.updateEventLegacy(
             self._ingestion_api_config, data=data
@@ -2836,7 +2880,7 @@ class EventsAPI(BaseAPI):
         """Create events in batch asynchronously.
 
         Accepted keys:
-            Ingestion API key; Project API key (deprecated)
+            Ingestion API key; Classic API key (deprecated)
         """
         return await events_svc_async.createEventBatchLegacy(
             self._ingestion_api_config, data=data
@@ -2860,7 +2904,7 @@ class EventsAPI(BaseAPI):
 
         Accepted keys:
             Data plane fine-grained API key with ``project.event.get``, with
-            ``project_id``; Project API key without ``project_id`` (deprecated)
+            ``project_id``; Classic API key without ``project_id`` (deprecated)
 
         Args:
             project: Ignored. Deprecated in v1.0 and will be removed in v2.0.
@@ -2874,14 +2918,14 @@ class EventsAPI(BaseAPI):
             page: Page number for pagination (default 1).
             _sort_by_time: Internal flag to sort events by start_time (default False).
             project_id: The project to export events from. Without it, the
-                call reads the project key's project, which is deprecated.
+                call reads the classic key's project, which is deprecated.
 
         Returns:
             EventExportResponse with events list and total_events count.
 
         Raises:
             MissingApiKeyError: With ``project_id``, no data plane API key is
-                configured. Without it, no project API key is. Nothing has
+                configured. Without it, no classic API key is. Nothing has
                 been sent.
         """
         if project is not None:
@@ -2948,7 +2992,7 @@ class EventsAPI(BaseAPI):
         """Create an event (backwards compatible alias for create()).
 
         Accepted keys:
-            Ingestion API key; Project API key (deprecated)
+            Ingestion API key; Classic API key (deprecated)
         """
         return self.create(request)
 
@@ -2959,7 +3003,7 @@ class EventsAPI(BaseAPI):
         into the model, because ``update()`` sends a model.
 
         Accepted keys:
-            Ingestion API key; Project API key (deprecated)
+            Ingestion API key; Classic API key (deprecated)
         """
         if not isinstance(data, UpdateEventRequest):
             data = UpdateEventRequest.model_validate(data)
@@ -2982,7 +3026,7 @@ class EventsAPI(BaseAPI):
 
         Accepted keys:
             Data plane fine-grained API key with ``project.event.get``, with
-            ``project_id``; Project API key without ``project_id`` (deprecated)
+            ``project_id``; Classic API key without ``project_id`` (deprecated)
 
         Args:
             project: Ignored. Deprecated in v1.0 and will be removed in v2.0.
@@ -2993,7 +3037,7 @@ class EventsAPI(BaseAPI):
             limit: Maximum number of results (default 1000, capped at 1000).
             page: Page number (default 1).
             project_id: The project to export events from. Without it, the
-                call reads the project key's project, which is deprecated.
+                call reads the classic key's project, which is deprecated.
 
         Returns:
             EventExportResponse with events and total count.
@@ -3029,7 +3073,7 @@ class EventsAPI(BaseAPI):
 
         Accepted keys:
             Data plane fine-grained API key with ``project.event.get``, with
-            ``project_id``; Project API key without ``project_id`` (deprecated)
+            ``project_id``; Classic API key without ``project_id`` (deprecated)
 
         Args:
             project: Ignored. Deprecated in v1.0 and will be removed in v2.0.
@@ -3040,7 +3084,7 @@ class EventsAPI(BaseAPI):
             limit: Maximum number of results (default 1000, capped at 1000).
             page: Page number (default 1).
             project_id: The project to export events from. Without it, the
-                call reads the project key's project, which is deprecated.
+                call reads the classic key's project, which is deprecated.
 
         Returns:
             EventExportResponse with events and total count.
@@ -3074,13 +3118,13 @@ class EventsAPI(BaseAPI):
 
         Accepted keys:
             Data plane fine-grained API key with ``project.event.get``, with
-            ``project_id``; Project API key without ``project_id`` (deprecated)
+            ``project_id``; Classic API key without ``project_id`` (deprecated)
 
         Args:
             project: Ignored. Deprecated in v1.0 and will be removed in v2.0.
                 ``project_id`` names the project.
             project_id: The project to export events from. Without it, the
-                call reads the project key's project, which is deprecated.
+                call reads the classic key's project, which is deprecated.
         """
         if project is not None:
             _warn_ignored_project_argument()
@@ -3111,13 +3155,13 @@ class EventsAPI(BaseAPI):
 
         Accepted keys:
             Data plane fine-grained API key with ``project.event.get``, with
-            ``project_id``; Project API key without ``project_id`` (deprecated)
+            ``project_id``; Classic API key without ``project_id`` (deprecated)
 
         Args:
             project: Ignored. Deprecated in v1.0 and will be removed in v2.0.
                 ``project_id`` names the project.
             project_id: The project to export events from. Without it, the
-                call reads the project key's project, which is deprecated.
+                call reads the classic key's project, which is deprecated.
         """
         if project is not None:
             _warn_ignored_project_argument()
@@ -3139,7 +3183,7 @@ class ExperimentsAPI(BaseAPI):
 
     A method that takes ``project_id`` sends the request with the data plane
     API key when given it, naming the project in the path. Without it, the
-    request acts on the project API key's project, is sent with that key, and
+    request acts on the classic API key's project, is sent with that key, and
     issues a ``DeprecationWarning``.
 
     Each such public method warns in its own name and then calls its private
@@ -3159,7 +3203,7 @@ class ExperimentsAPI(BaseAPI):
         """Get the events schema across a project's experiment runs, or of one run.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
 
         Args:
@@ -3167,7 +3211,7 @@ class ExperimentsAPI(BaseAPI):
             evaluation_id: Filter by evaluation/run ID: the schema covers that
                 one run.
             project_id: The project whose runs the schema covers. Omitting it
-                reads the project API key's project, which is deprecated.
+                reads the classic API key's project, which is deprecated.
         """
         if project_id is None:
             _warn_call_without_project_id("experiments", "get_schema")
@@ -3215,7 +3259,7 @@ class ExperimentsAPI(BaseAPI):
         batched to stay within URL length limits and the results are merged.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
 
         Args:
@@ -3229,7 +3273,7 @@ class ExperimentsAPI(BaseAPI):
             sort_by: Sort by field.
             sort_order: Sort order (asc/desc).
             project_id: The project whose runs are listed. Omitting it lists the
-                project API key's runs, which is deprecated.
+                classic API key's runs, which is deprecated.
         """
         if project_id is None:
             _warn_call_without_project_id("experiments", "list_runs")
@@ -3301,13 +3345,13 @@ class ExperimentsAPI(BaseAPI):
         """Get an experiment run by ID.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
 
         Args:
             run_id: The run to get.
             project_id: The project the run is read from. Omitting it reads
-                from the project API key's project, which is deprecated.
+                from the classic API key's project, which is deprecated.
         """
         if project_id is None:
             _warn_call_without_project_id("experiments", "get_run")
@@ -3324,7 +3368,7 @@ class ExperimentsAPI(BaseAPI):
         """Get the event metrics of an experiment run.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
 
         Args:
@@ -3333,7 +3377,7 @@ class ExperimentsAPI(BaseAPI):
             filters: Filters to apply, as a JSON string or a list of filter
                 objects.
             project_id: The project that holds the run. Omitting it reads from
-                the project API key's project, which is deprecated.
+                the classic API key's project, which is deprecated.
         """
         if project_id is None:
             _warn_call_without_project_id("experiments", "get_run_metrics")
@@ -3345,13 +3389,13 @@ class ExperimentsAPI(BaseAPI):
         """Create an experiment run.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
 
         Args:
             request: The run to create.
             project_id: The project the run is created in. Omitting it creates
-                it in the project API key's project, which is deprecated.
+                it in the classic API key's project, which is deprecated.
         """
         if project_id is None:
             _warn_call_without_project_id("experiments", "create_run")
@@ -3367,14 +3411,14 @@ class ExperimentsAPI(BaseAPI):
         """Update an experiment run.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
 
         Args:
             run_id: The run to update.
             request: The fields to update.
             project_id: The project that holds the run. Omitting it updates the
-                run in the project API key's project, which is deprecated.
+                run in the classic API key's project, which is deprecated.
         """
         if project_id is None:
             _warn_call_without_project_id("experiments", "update_run")
@@ -3386,13 +3430,13 @@ class ExperimentsAPI(BaseAPI):
         """Delete an experiment run.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
 
         Args:
             run_id: The run to delete.
             project_id: The project that holds the run. Omitting it deletes the
-                run in the project API key's project, which is deprecated.
+                run in the classic API key's project, which is deprecated.
         """
         if project_id is None:
             _warn_call_without_project_id("experiments", "delete_run")
@@ -3409,7 +3453,7 @@ class ExperimentsAPI(BaseAPI):
         """Get the events schema across a project's experiment runs, or of one run, asynchronously.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
 
         Args:
@@ -3417,7 +3461,7 @@ class ExperimentsAPI(BaseAPI):
             evaluation_id: Filter by evaluation/run ID: the schema covers that
                 one run.
             project_id: The project whose runs the schema covers. Omitting it
-                reads the project API key's project, which is deprecated.
+                reads the classic API key's project, which is deprecated.
         """
         if project_id is None:
             _warn_call_without_project_id("experiments", "get_schema_async")
@@ -3464,7 +3508,7 @@ class ExperimentsAPI(BaseAPI):
         """List experiment runs asynchronously. See ``list_runs()``.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -3534,7 +3578,7 @@ class ExperimentsAPI(BaseAPI):
         """Get the event metrics of an experiment run asynchronously.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
 
         Args:
@@ -3543,7 +3587,7 @@ class ExperimentsAPI(BaseAPI):
             filters: Filters to apply, as a JSON string or a list of filter
                 objects.
             project_id: The project that holds the run. Omitting it reads from
-                the project API key's project, which is deprecated.
+                the classic API key's project, which is deprecated.
         """
         if project_id is None:
             _warn_call_without_project_id("experiments", "get_run_metrics_async")
@@ -3557,7 +3601,7 @@ class ExperimentsAPI(BaseAPI):
         """Get an experiment run by ID asynchronously. See ``get_run()``.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -3570,7 +3614,7 @@ class ExperimentsAPI(BaseAPI):
         """Create an experiment run asynchronously. See ``create_run()``.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -3587,7 +3631,7 @@ class ExperimentsAPI(BaseAPI):
         """Update an experiment run asynchronously. See ``update_run()``.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -3600,7 +3644,7 @@ class ExperimentsAPI(BaseAPI):
         """Delete an experiment run asynchronously. See ``delete_run()``.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -3618,7 +3662,7 @@ class ExperimentsAPI(BaseAPI):
         """Get experiment run result.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
 
         Args:
@@ -3630,7 +3674,7 @@ class ExperimentsAPI(BaseAPI):
                 unknown value falls back to ``average``.
             filters: Optional filters to apply.
             project_id: The project that holds the run. Omitting it reads the
-                project API key's project, which is deprecated.
+                classic API key's project, which is deprecated.
         """
         if project_id is None:
             _warn_call_without_project_id("experiments", "get_result")
@@ -3676,7 +3720,7 @@ class ExperimentsAPI(BaseAPI):
         """Compare two experiment runs.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
 
         Args:
@@ -3685,7 +3729,7 @@ class ExperimentsAPI(BaseAPI):
             aggregate_function: Aggregation function to apply.
             filters: Optional filters to apply.
             project_id: The project that holds both runs. Omitting it compares
-                runs in the project API key's project, which is deprecated.
+                runs in the classic API key's project, which is deprecated.
         """
         if project_id is None:
             _warn_call_without_project_id("experiments", "compare_runs")
@@ -3708,7 +3752,7 @@ class ExperimentsAPI(BaseAPI):
         """Get experiment run result asynchronously. See ``get_result()``.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -3754,7 +3798,7 @@ class ExperimentsAPI(BaseAPI):
         """Compare two experiment runs asynchronously.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
 
         Args:
@@ -3763,7 +3807,7 @@ class ExperimentsAPI(BaseAPI):
             aggregate_function: Aggregation function to apply.
             filters: Optional filters to apply.
             project_id: The project that holds both runs. Omitting it compares
-                runs in the project API key's project, which is deprecated.
+                runs in the classic API key's project, which is deprecated.
         """
         if project_id is None:
             _warn_call_without_project_id("experiments", "compare_runs_async")
@@ -3787,7 +3831,7 @@ class ExperimentsAPI(BaseAPI):
         """Get experiment run result (alias for get_result).
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
         """
         if project_id is None:
@@ -3811,7 +3855,7 @@ class ExperimentsAPI(BaseAPI):
         """Compare events between two experiment runs.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
 
         Args:
@@ -3823,7 +3867,7 @@ class ExperimentsAPI(BaseAPI):
             limit: Maximum number of results.
             page: Page number for pagination.
             project_id: The project that holds both runs. Omitting it reads the
-                project API key's project, which is deprecated.
+                classic API key's project, which is deprecated.
         """
         if project_id is None:
             _warn_call_without_project_id("experiments", "compare_run_events")
@@ -3889,7 +3933,7 @@ class ExperimentsAPI(BaseAPI):
         """Compare events between two experiment runs asynchronously.
 
         Accepted keys:
-            Data plane fine-grained API key with ``project_id``; Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
             without ``project_id`` (deprecated)
 
         Args:
@@ -3901,7 +3945,7 @@ class ExperimentsAPI(BaseAPI):
             limit: Maximum number of results.
             page: Page number for pagination.
             project_id: The project that holds both runs. Omitting it reads the
-                project API key's project, which is deprecated.
+                classic API key's project, which is deprecated.
         """
         if project_id is None:
             _warn_call_without_project_id("experiments", "compare_run_events_async")
@@ -4273,7 +4317,21 @@ class ExperimentsAPI(BaseAPI):
 
 
 class MetricsAPI(BaseAPI):
-    """Metrics API."""
+    """Metrics API.
+
+    A method that takes ``project_id`` sends the request with the data plane
+    API key when given it, naming the project in the path. Without it, the
+    request acts on the classic API key's project, is sent with that key, and
+    issues a ``DeprecationWarning``.
+
+    Each such public method, alias included, warns in its own name and then
+    calls its private core, which sends the request and never warns. SDK code
+    that reaches the operation calls the core, so the warning reaches only a
+    caller who can pass ``project_id``.
+
+    Only the methods that list metrics take ``project_id``. Creating, updating
+    and deleting a metric take the classic API key.
+    """
 
     # Sync methods
     def list(
@@ -4281,32 +4339,35 @@ class MetricsAPI(BaseAPI):
         project: Optional[str] = None,
         name: Optional[str] = None,
         type: Optional[str] = None,
+        *,
+        project_id: Optional[str] = None,
     ) -> List[MetricItem]:
         """List metrics.
 
         Accepted keys:
-            Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
+            without ``project_id`` (deprecated)
+
+        Args:
+            project: Ignored. Deprecated, and will be removed in v2.0.
+            name: Ignored. Deprecated, and will be removed in v2.0.
+            type: Optional metric type to filter by.
+            project_id: The project whose metrics are listed. Omitting it lists
+                the classic API key's metrics, which is deprecated.
         """
         # Keep the legacy filters in the public signature for back-compat, but
         # warn because the dataplane metrics list endpoint no longer honors them.
         if project is not None or name is not None:
-            warnings.warn(
-                "The 'project' and 'name' parameters are no longer supported for "
-                "metrics.list() and will be removed in v2.0.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-        # The regenerated client only supports filtering by metric type or ID.
-        del project, name
-        # Preserve the high-level SDK list surface by unwrapping the transport envelope.
-        response = metrics_svc.getMetrics(self._api_config, type=type)
-        return response.metrics
+            _warn_ignored_metric_filters("list")
+        if project_id is None:
+            _warn_call_without_project_id("metrics", "list")
+        return self._list(type=type, project_id=project_id)
 
     def create(self, request: CreateMetricRequest) -> CreateMetricResponse:
         """Create a metric.
 
         Accepted keys:
-            Project API key
+            Classic API key
         """
         return metrics_svc.createMetric(self._api_config, data=request)
 
@@ -4314,17 +4375,20 @@ class MetricsAPI(BaseAPI):
         """Update a metric.
 
         Accepted keys:
-            Project API key
+            Classic API key
         """
-        return metrics_svc.updateMetricLegacy(self._api_config, data=request)
+        metric_id, body = _split_metric_update(request)
+        return metrics_svc.updateMetric(
+            self._api_config, metric_id=metric_id, data=body
+        )
 
     def delete(self, id: str) -> DeleteMetricResponse:
         """Delete a metric.
 
         Accepted keys:
-            Project API key
+            Classic API key
         """
-        return metrics_svc.deleteMetricLegacy(self._api_config, metric_id=id)
+        return metrics_svc.deleteMetric(self._api_config, metric_id=id)
 
     # Async methods
     async def list_async(
@@ -4332,30 +4396,28 @@ class MetricsAPI(BaseAPI):
         project: Optional[str] = None,
         name: Optional[str] = None,
         type: Optional[str] = None,
+        *,
+        project_id: Optional[str] = None,
     ) -> List[MetricItem]:
-        """List metrics asynchronously.
+        """List metrics asynchronously. See ``list()``.
 
         Accepted keys:
-            Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
+            without ``project_id`` (deprecated)
         """
         # Keep the legacy filters in the public signature for back-compat, but
         # warn because the dataplane metrics list endpoint no longer honors them.
         if project is not None or name is not None:
-            warnings.warn(
-                "The 'project' and 'name' parameters are no longer supported for "
-                "metrics.list() and will be removed in v2.0.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-        del project, name
-        response = await metrics_svc_async.getMetrics(self._api_config, type=type)
-        return response.metrics
+            _warn_ignored_metric_filters("list_async")
+        if project_id is None:
+            _warn_call_without_project_id("metrics", "list_async")
+        return await self._list_async(type=type, project_id=project_id)
 
     async def create_async(self, request: CreateMetricRequest) -> CreateMetricResponse:
         """Create a metric asynchronously.
 
         Accepted keys:
-            Project API key
+            Classic API key
         """
         return await metrics_svc_async.createMetric(self._api_config, data=request)
 
@@ -4363,37 +4425,48 @@ class MetricsAPI(BaseAPI):
         """Update a metric asynchronously.
 
         Accepted keys:
-            Project API key
+            Classic API key
         """
-        return await metrics_svc_async.updateMetricLegacy(
-            self._api_config, data=request
+        metric_id, body = _split_metric_update(request)
+        return await metrics_svc_async.updateMetric(
+            self._api_config, metric_id=metric_id, data=body
         )
 
     async def delete_async(self, id: str) -> DeleteMetricResponse:
         """Delete a metric asynchronously.
 
         Accepted keys:
-            Project API key
+            Classic API key
         """
-        return await metrics_svc_async.deleteMetricLegacy(
-            self._api_config, metric_id=id
-        )
+        return await metrics_svc_async.deleteMetric(self._api_config, metric_id=id)
 
     # Backwards compatible aliases
-    def get_metric(self, id: str) -> List[MetricItem]:
+    def get_metric(
+        self, id: str, *, project_id: Optional[str] = None
+    ) -> List[MetricItem]:
         """Get a metric (backwards compatible alias).
 
+        Returns the metrics list filtered to ``id``, which is empty when the
+        project holds no metric by that id.
+
         Accepted keys:
-            Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
+            without ``project_id`` (deprecated)
+
+        Args:
+            id: The metric to get.
+            project_id: The project that owns the metric. Omitting it gets the
+                metric from the classic API key's project, which is deprecated.
         """
-        response = metrics_svc.getMetrics(self._api_config, id=id)
-        return response.metrics
+        if project_id is None:
+            _warn_call_without_project_id("metrics", "get_metric")
+        return self._list(id=id, project_id=project_id)
 
     def create_metric(self, request: CreateMetricRequest) -> CreateMetricResponse:
         """Create a metric (backwards compatible alias).
 
         Accepted keys:
-            Project API key
+            Classic API key
         """
         return self.create(request)
 
@@ -4401,7 +4474,7 @@ class MetricsAPI(BaseAPI):
         """Update a metric (backwards compatible alias).
 
         Accepted keys:
-            Project API key
+            Classic API key
         """
         return self.update(request)
 
@@ -4409,7 +4482,7 @@ class MetricsAPI(BaseAPI):
         """Delete a metric (backwards compatible alias).
 
         Accepted keys:
-            Project API key
+            Classic API key
         """
         return self.delete(id)
 
@@ -4418,13 +4491,57 @@ class MetricsAPI(BaseAPI):
         project: Optional[str] = None,
         name: Optional[str] = None,
         type: Optional[str] = None,
+        *,
+        project_id: Optional[str] = None,
     ) -> List[MetricItem]:
-        """List metrics (backwards compatible alias).
+        """List metrics (backwards compatible alias). See ``list()``.
 
         Accepted keys:
-            Project API key
+            Data plane fine-grained API key with ``project_id``; Classic API key
+            without ``project_id`` (deprecated)
         """
-        return self.list(project=project, name=name, type=type)
+        # Keep the legacy filters in the public signature for back-compat, but
+        # warn because the dataplane metrics list endpoint no longer honors them.
+        if project is not None or name is not None:
+            _warn_ignored_metric_filters("list_metrics")
+        if project_id is None:
+            _warn_call_without_project_id("metrics", "list_metrics")
+        return self._list(type=type, project_id=project_id)
+
+    # ---- Cores: send the request, never warn ----
+
+    def _list(
+        self,
+        type: Optional[str] = None,
+        id: Optional[str] = None,
+        *,
+        project_id: Optional[str] = None,
+    ) -> List[MetricItem]:
+        if project_id is None:
+            response = metrics_svc.getMetricsLegacy(self._api_config, type=type, id=id)
+        else:
+            response = metrics_svc.getMetrics(
+                self._data_plane_api_config, project_id=project_id, type=type, id=id
+            )
+        # The public methods return the list the response wraps.
+        return response.metrics
+
+    async def _list_async(
+        self,
+        type: Optional[str] = None,
+        id: Optional[str] = None,
+        *,
+        project_id: Optional[str] = None,
+    ) -> List[MetricItem]:
+        if project_id is None:
+            response = await metrics_svc_async.getMetricsLegacy(
+                self._api_config, type=type, id=id
+            )
+        else:
+            response = await metrics_svc_async.getMetrics(
+                self._data_plane_api_config, project_id=project_id, type=type, id=id
+            )
+        return response.metrics
 
 
 class MetricVersionsAPI(BaseAPI):
@@ -4440,7 +4557,7 @@ class MetricVersionsAPI(BaseAPI):
         """List all versions for a metric, oldest-first.
 
         Accepted keys:
-            Project API key
+            Classic API key
         """
         return metric_versions_svc.getMetricVersions(
             self._api_config, metric_id=metric_id
@@ -4455,7 +4572,7 @@ class MetricVersionsAPI(BaseAPI):
         version as deployed in the same transaction.
 
         Accepted keys:
-            Project API key
+            Classic API key
         """
         return metric_versions_svc.createMetricVersion(
             self._api_config, metric_id=metric_id, data=request
@@ -4465,7 +4582,7 @@ class MetricVersionsAPI(BaseAPI):
         """Deploy an existing version of a metric, replacing the live version.
 
         Accepted keys:
-            Project API key
+            Classic API key
         """
         return metric_versions_svc.deployMetricVersion(
             self._api_config, metric_id=metric_id, version_name=version_name
@@ -4476,7 +4593,7 @@ class MetricVersionsAPI(BaseAPI):
         """List all versions for a metric asynchronously.
 
         Accepted keys:
-            Project API key
+            Classic API key
         """
         return await metric_versions_svc_async.getMetricVersions(
             self._api_config, metric_id=metric_id
@@ -4488,7 +4605,7 @@ class MetricVersionsAPI(BaseAPI):
         """Create a new version of a metric asynchronously.
 
         Accepted keys:
-            Project API key
+            Classic API key
         """
         return await metric_versions_svc_async.createMetricVersion(
             self._api_config, metric_id=metric_id, data=request
@@ -4500,7 +4617,7 @@ class MetricVersionsAPI(BaseAPI):
         """Deploy an existing version of a metric asynchronously.
 
         Accepted keys:
-            Project API key
+            Classic API key
         """
         return await metric_versions_svc_async.deployMetricVersion(
             self._api_config, metric_id=metric_id, version_name=version_name
@@ -4541,7 +4658,7 @@ class SessionsAPI(BaseAPI):
         """Start a new session.
 
         Accepted keys:
-            Ingestion API key; Project API key (deprecated)
+            Ingestion API key; Classic API key (deprecated)
         """
         request = self._coerce_start_session_request(data)
         return sessions_svc.startSessionLegacy(self._ingestion_api_config, data=request)
@@ -4553,7 +4670,7 @@ class SessionsAPI(BaseAPI):
         """Start a new session asynchronously.
 
         Accepted keys:
-            Ingestion API key; Project API key (deprecated)
+            Ingestion API key; Classic API key (deprecated)
         """
         request = self._coerce_start_session_request(data)
         return await sessions_svc_async.startSessionLegacy(
@@ -4567,7 +4684,7 @@ class SessionsAPI(BaseAPI):
         """Create/start a session (backwards compatible alias for start()).
 
         Accepted keys:
-            Ingestion API key; Project API key (deprecated)
+            Ingestion API key; Classic API key (deprecated)
         """
         return self.start(request)
 
@@ -4577,7 +4694,7 @@ class SessionsAPI(BaseAPI):
         """Start a session (backwards compatible alias for start()).
 
         Accepted keys:
-            Ingestion API key; Project API key (deprecated)
+            Ingestion API key; Classic API key (deprecated)
         """
         return self.start(request)
 
@@ -4589,10 +4706,10 @@ class HoneyHive:
     sync and async methods.
 
     Each method's "Accepted keys" section names the API keys it can send. A
-    project API key is passed as ``api_key``, an ingestion API key as
+    classic API key is passed as ``api_key``, an ingestion API key as
     ``ingestion_api_key``, and a data plane fine-grained API key as
-    ``data_plane_api_key``. Where a method names a typed key beside a project
-    API key, the project API key is deprecated. Each key type, and where to
+    ``data_plane_api_key``. Where a method names a typed key beside a classic
+    API key, the classic API key is deprecated. Each key type, and where to
     create one, is described at
     <https://docs.honeyhive.ai/v2/workspace/api-keys#key-types>.
 
@@ -4806,7 +4923,9 @@ class HoneyHive:
         self.experiments = ExperimentsAPI(
             self._api_config, data_plane_api_key=self._data_plane_api_key
         )
-        self.metrics = MetricsAPI(self._api_config)
+        self.metrics = MetricsAPI(
+            self._api_config, data_plane_api_key=self._data_plane_api_key
+        )
         self.metric_versions = MetricVersionsAPI(self._api_config)
         self.sessions = SessionsAPI(self._api_config, self._ingestion_api_key)
 

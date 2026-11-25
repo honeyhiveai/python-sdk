@@ -224,7 +224,7 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
         :type requests_session: Optional[requests.Session]
 
         Accepted keys:
-            Ingestion API key; Project API key (deprecated)
+            Ingestion API key; Classic API key (deprecated)
         """
         # Multi-instance architecture uses safe_log() for all logging
         # No direct logger assignment needed - safe_log handles per-instance logging
@@ -601,7 +601,7 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
         This is a simple pass-through to __init__ for backwards compatibility.
 
         Accepted keys:
-            Ingestion API key; Project API key (deprecated)
+            Ingestion API key; Classic API key (deprecated)
 
         Args:
             config: Pydantic tracer configuration

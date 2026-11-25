@@ -280,7 +280,7 @@ class TestMetricsDeprecationWarning:
         mock_response.metrics = []
 
         with patch(
-            "honeyhive.api.client.metrics_svc.getMetrics",
+            "honeyhive.api.client.metrics_svc.getMetricsLegacy",
             return_value=mock_response,
         ) as mock_get_metrics:
             with warnings.catch_warnings(record=True) as w:
@@ -289,10 +289,16 @@ class TestMetricsDeprecationWarning:
 
                 assert result == []
                 assert mock_get_metrics.called
-                assert len(w) == 1
-                assert issubclass(w[0].category, DeprecationWarning)
-                assert "project" in str(w[0].message)
-                assert "name" in str(w[0].message)
+                filter_warnings = [
+                    warning
+                    for warning in w
+                    if "'project' and 'name' parameters" in str(warning.message)
+                ]
+                assert len(filter_warnings) == 1
+                assert issubclass(filter_warnings[0].category, DeprecationWarning)
+                # Attributed to the caller, so Python's default filters show it
+                # in a script.
+                assert filter_warnings[0].filename == __file__
 
 
 class TestConfigurationsDeprecationWarning:
@@ -372,7 +378,7 @@ class TestConfigurationsDeprecationWarning:
         mock_response.metrics = []
 
         with patch(
-            "honeyhive.api.client.metrics_svc_async.getMetrics",
+            "honeyhive.api.client.metrics_svc_async.getMetricsLegacy",
             new=AsyncMock(return_value=mock_response),
         ) as mock_get_metrics:
             with warnings.catch_warnings(record=True) as w:
@@ -384,10 +390,16 @@ class TestConfigurationsDeprecationWarning:
 
                 assert result == []
                 assert mock_get_metrics.called
-                assert len(w) == 1
-                assert issubclass(w[0].category, DeprecationWarning)
-                assert "project" in str(w[0].message)
-                assert "name" in str(w[0].message)
+                filter_warnings = [
+                    warning
+                    for warning in w
+                    if "'project' and 'name' parameters" in str(warning.message)
+                ]
+                assert len(filter_warnings) == 1
+                assert issubclass(filter_warnings[0].category, DeprecationWarning)
+                # Attributed to the caller, so Python's default filters show it
+                # in a script.
+                assert filter_warnings[0].filename == __file__
 
     def test_get_by_session_id_without_project_shows_compat_warning(self) -> None:
         """Test that get_by_session_id() warns that export() is preferred."""

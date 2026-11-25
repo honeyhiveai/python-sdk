@@ -16,7 +16,7 @@ ApiKeyKind = Literal["project", "ingestion", "data_plane"]
 
 _MISSING_API_KEY_MESSAGES: Dict[ApiKeyKind, str] = {
     "project": (
-        "Missing project API key: provide api_key or set the HH_API_KEY "
+        "Missing classic API key: provide api_key or set the HH_API_KEY "
         "environment variable"
     ),
     "ingestion": (
@@ -34,7 +34,7 @@ class MissingApiKeyError(ValueError):
     """Raised by an operation when no key it can use is configured.
 
     It is raised before anything is sent. An ingestion operation uses the
-    project API key when no ingestion key is configured, so it names the
+    classic API key when no ingestion key is configured, so it names the
     ingestion key only when neither is. An operation that takes the data plane
     key accepts no other key, so it names the data plane key whenever that key
     is absent. An operation that needs several keys at once, such as

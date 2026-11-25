@@ -140,10 +140,11 @@ class UpdateDatasetRequest(LegacyUpdateDatasetRequest):
     pass
 
 
-# Public name for metric update requests. The canonical spec renamed this
-# to the new PUT /metrics/{metric_id} shape (no id in the body), but the
-# Python SDK still calls the legacy PUT /metrics endpoint to avoid breaking
-# customers who pass `id` in the request body.
+# Public name for metric update requests. It carries the metric's `id`, which
+# `MetricsAPI.update` sends in the URL path, with the other fields as the
+# body. It extends the body-id model because the path-id body model has no
+# `id` and types `threshold` and `categories` as models, while callers read
+# those fields back as the dicts and lists they set.
 class UpdateMetricRequest(LegacyUpdateMetricRequest):
     pass
 

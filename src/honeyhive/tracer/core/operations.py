@@ -634,7 +634,7 @@ class TracerOperationsMixin(TracerOperationsInterface):
         handling, automatic session management, and comprehensive error recovery.
 
         Accepted keys:
-            Ingestion API key; Project API key (deprecated)
+            Ingestion API key; Classic API key (deprecated)
 
         Args:
             event_name: Name of the event

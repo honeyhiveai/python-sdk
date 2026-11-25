@@ -15,9 +15,8 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Union
 
-from honeyhive.api.client import HoneyHive
-from honeyhive.experiments.models import ExperimentResultSummary
-from honeyhive.models import PostExperimentRunRequest
+from honeyhive.api.client import HoneyHive, _warn_call_without_project_id
+from honeyhive.models import PostExperimentRunRequest, PostExperimentRunResponse
 
 # Config import removed - not used in this module
 
@@ -754,25 +753,38 @@ def create_evaluation_run(
     _results: List[EvaluationResult],
     metadata: Optional[Dict[str, Any]] = None,
     client: Optional[HoneyHive] = None,
-) -> Optional[ExperimentResultSummary]:
+    *,
+    project_id: Optional[str] = None,
+) -> Optional[PostExperimentRunResponse]:
     """Create an evaluation run in HoneyHive.
+
+    Accepted keys:
+        Data plane fine-grained API key with ``project_id``; Classic API key
+        without ``project_id`` (deprecated)
 
     Args:
         name: Name of the evaluation run
-        project: Project name
+        project: Project name. The API ignores it. The run's project is
+            ``project_id``, or the classic API key's project without it.
         results: List of evaluation results
         metadata: Additional metadata
         client: HoneyHive client instance
+        project_id: The project the run is created in. Omitting it creates it
+            in the classic API key's project, which is deprecated.
 
     Returns:
-        Created evaluation run or None if failed
+        Created evaluation run or None if failed, including when the key the
+        request needs is not configured
     """
+    if project_id is None:
+        # _warn_call_without_project_id adds its own frame to the count.
+        _warn_call_without_project_id(
+            "evaluation.evaluators", "create_evaluation_run", stacklevel=3
+        )
+
     if client is None:
         try:
             client = HoneyHive()
-            if not client.api_key:
-                logger.warning("No API key found - set HH_API_KEY")
-                return None
         except Exception as e:
             logger.warning("Could not create HoneyHive client: %s", e)
             return None
@@ -788,7 +800,7 @@ def create_evaluation_run(
             # Create run request with minimal required data
             run_request = PostExperimentRunRequest(
                 name=name,
-                project=project,  # This should be a valid UUID string
+                project=project,
                 event_ids=[],  # Empty list for now - in production you'd want \
                 # actual event IDs
                 dataset_id=None,
@@ -802,8 +814,9 @@ def create_evaluation_run(
             # Fallback: return None instead of crashing
             return None
 
-        # Submit to API (experiments API handles runs)
-        response = client.experiments._create_run(run_request)
+        # Raises MissingApiKeyError before sending when the key this request needs
+        # is not configured. This function reports that as None, like any failure.
+        response = client.experiments._create_run(run_request, project_id=project_id)
 
         logger.info(
             "Created evaluation run: %s",

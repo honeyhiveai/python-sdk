@@ -619,7 +619,7 @@ class UnifiedEnrichSpan:
         :rtype: UnifiedEnrichSpan
 
         Accepted keys:
-            Ingestion API key; Project API key (deprecated)
+            Ingestion API key; Classic API key (deprecated)
         """
         # Store all arguments for later use
         self._attributes = attributes

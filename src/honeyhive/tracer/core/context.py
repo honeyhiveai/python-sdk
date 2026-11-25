@@ -137,7 +137,7 @@ class TracerContextMixin(TracerContextInterface):
         add user properties, feedback, metrics, or custom metadata to sessions.
 
         Accepted keys:
-            Ingestion API key; Project API key (deprecated)
+            Ingestion API key; Classic API key (deprecated)
 
         Args:
             session_id: Optional explicit session ID to enrich.
@@ -281,7 +281,7 @@ class TracerContextMixin(TracerContextInterface):
             servers, use :meth:`create_session` instead.
 
         Accepted keys:
-            Ingestion API key; Project API key (deprecated)
+            Ingestion API key; Classic API key (deprecated)
 
         Returns:
             Session ID if successful, None otherwise
@@ -339,7 +339,7 @@ class TracerContextMixin(TracerContextInterface):
         - No race conditions between concurrent requests
 
         Accepted keys:
-            Ingestion API key; Project API key (deprecated)
+            Ingestion API key; Classic API key (deprecated)
 
         Args:
             session_name: Name for the session. Auto-generated if not provided.
@@ -495,7 +495,7 @@ class TracerContextMixin(TracerContextInterface):
         This is the recommended method for async web servers.
 
         Accepted keys:
-            Ingestion API key; Project API key (deprecated)
+            Ingestion API key; Classic API key (deprecated)
 
         Args:
             session_name: Name for the session. Auto-generated if not provided.
@@ -628,7 +628,7 @@ class TracerContextMixin(TracerContextInterface):
         managed via OpenTelemetry baggage.
 
         Accepted keys:
-            Ingestion API key; Project API key (deprecated)
+            Ingestion API key; Classic API key (deprecated)
 
         Args:
             session_name: Name for the session
@@ -828,7 +828,7 @@ class TracerContextMixin(TracerContextInterface):
         the currently active span with metadata, metrics, or custom attributes.
 
         Accepted keys:
-            Ingestion API key; Project API key (deprecated)
+            Ingestion API key; Classic API key (deprecated)
 
         Args:
             attributes: Span attributes to add directly (dict of key-value pairs)

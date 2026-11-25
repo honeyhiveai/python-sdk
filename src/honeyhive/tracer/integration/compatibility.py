@@ -40,7 +40,7 @@ def enrich_session(
     function using dynamic tracer discovery and flexible metadata handling.
 
     Accepted keys:
-        Ingestion API key; Project API key (deprecated)
+        Ingestion API key; Classic API key (deprecated)
 
     Args:
         session_id: The session ID to enrich

@@ -32,6 +32,10 @@ class PostSessionRequest(BaseModel):
 
     metrics: Optional[Dict[str, Any]] = Field(validation_alias="metrics", default=None)
 
+    evaluations: Optional[Dict[str, Any]] = Field(
+        validation_alias="evaluations", default=None
+    )
+
     metadata: Optional[Dict[str, Any]] = Field(
         validation_alias="metadata", default=None
     )

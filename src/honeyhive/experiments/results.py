@@ -13,7 +13,7 @@ Backend Endpoints, with ``project_id`` and a data plane API key:
 - GET /projects/:project_id/runs/:run_id/summary - Get aggregated result
 - GET /projects/:project_id/runs/:new_run_id/compare/:old_run_id - Compare runs
 
-Backend Endpoints, with the project API key (deprecated):
+Backend Endpoints, with the classic API key (deprecated):
 - GET /runs/:run_id/result - Get aggregated result
 - GET /runs/:new_run_id/compare-with/:old_run_id - Compare runs
 """
@@ -68,7 +68,7 @@ def _resolve_project_id(
     if not client.data_plane_api_key and client.api_key:
         warnings.warn(
             f"The 'project_id' argument to {function}() needs a data plane API "
-            "key and is ignored without one, so this call uses the project API "
+            "key and is ignored without one, so this call uses the classic API "
             "key, which is deprecated and will stop working in v2.0. Configure "
             "a data plane API key with data_plane_api_key or the "
             "HH_DATA_PLANE_API_KEY environment variable.",
@@ -118,14 +118,14 @@ def get_run_result(
 
     Accepted keys:
         Data plane fine-grained API key with ``project.experiment_run.get``,
-        with ``project_id``; Project API key without ``project_id``
+        with ``project_id``; Classic API key without ``project_id``
         (deprecated)
 
     Args:
         client: HoneyHive API client
         run_id: Experiment run ID
-        project_id: The project that holds the run. A client with a project
-            API key and no data plane API key ignores it and reads the project
+        project_id: The project that holds the run. A client with a classic
+            API key and no data plane API key ignores it and reads the classic
             key's project, which is deprecated.
         aggregate_function: Aggregation function: "average", "min", "max",
             "median", "p90", "p95", "p99", "sum" or "count". Any other value
@@ -204,14 +204,14 @@ def get_run_metrics(
 
     Accepted keys:
         Data plane fine-grained API key with ``project.experiment_run.get``,
-        with ``project_id``; Project API key without ``project_id``
+        with ``project_id``; Classic API key without ``project_id``
         (deprecated)
 
     Args:
         client: HoneyHive API client
         run_id: Experiment run ID
-        project_id: The project that holds the run. A client with a project
-            API key and no data plane API key ignores it and reads the project
+        project_id: The project that holds the run. A client with a classic
+            API key and no data plane API key ignores it and reads the classic
             key's project, which is deprecated.
 
     Returns:
@@ -252,7 +252,7 @@ def compare_runs(
 
     Accepted keys:
         Data plane fine-grained API key with ``project.experiment_run.get``,
-        with ``project_id``; Project API key without ``project_id``
+        with ``project_id``; Classic API key without ``project_id``
         (deprecated)
 
     Args:
@@ -260,8 +260,8 @@ def compare_runs(
         new_run_id: New experiment run ID
         old_run_id: Old experiment run ID
         project_id: The project that holds both runs. A client with a
-            project API key and no data plane API key ignores it and compares
-            runs in the project key's project, which is deprecated.
+            classic API key and no data plane API key ignores it and compares
+            runs in the classic key's project, which is deprecated.
         aggregate_function: Aggregation function: "average", "min", "max",
             "median", "p90", "p95", "p99", "sum" or "count". Any other value
             is treated as "average".

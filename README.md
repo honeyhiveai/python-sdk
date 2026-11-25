@@ -289,7 +289,7 @@ The `HoneyHive` API client selects a credential per operation:
 
 See [API Keys](https://docs.honeyhive.ai/v2/workspace/api-keys) to create the credentials your workload needs. A tracing-only process can use an ingestion key alone. Data plane fine-grained keys cannot send telemetry.
 
-`evaluate()` sends requests of both kinds: the run, dataset and results on a project-scoped route, and the traces through ingestion. With `project_id` it needs a data plane key and an ingestion key together, and the classic project key does not stand in for the ingestion key there. Without `project_id` it uses the classic project key, which is deprecated.
+`evaluate()` sends requests of both kinds: the run, dataset and results on a project-scoped route, and the traces through ingestion. With `project_id` it needs a data plane key and an ingestion key together, and the classic key does not stand in for the ingestion key there. Without `project_id` it uses the classic key, which is deprecated.
 
 #### Data plane API key
 
@@ -307,7 +307,7 @@ print(charts.data)
 
 This example requires `project.chart.list`. Set `PROJECT_ID` to the project ID from **Settings > Project > API Keys > Data Plane**. Set `HH_API_URL` or pass `base_url` to `HoneyHive()` if the project's data plane URL differs from the default.
 
-For a method with both legacy and scoped routes, omitting `project_id` selects the legacy route and classic project key, even if a data plane key is configured. Omitting `project_id` from such a method is deprecated. Passing `project_id` selects the scoped route and requires a data plane key; there is no fallback to `api_key` or `HH_API_KEY`. See the [credential matrix](https://docs.honeyhive.ai/v2/workspace/api-keys#using-a-data-plane-key).
+For a method with both legacy and scoped routes, omitting `project_id` selects the legacy route and classic key, even if a data plane key is configured. Omitting `project_id` from such a method is deprecated. Passing `project_id` selects the scoped route and requires a data plane key; there is no fallback to `api_key` or `HH_API_KEY`. See the [credential matrix](https://docs.honeyhive.ai/v2/workspace/api-keys#using-a-data-plane-key).
 
 A wrong key type or incomplete value in `data_plane_api_key` or `ingestion_api_key` (or their environment variables) raises `ValueError` at initialization. A call whose required credential is absent raises `MissingApiKeyError` before sending a request.
 
@@ -329,7 +329,7 @@ The namespace provides `create`, `list`, `get`, `replace`, `archive`, `list_vers
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `HH_API_KEY` | Classic project API key for operations that still require it; also used for ingestion when `HH_INGESTION_API_KEY` is unset | Required for classic project-key operations |
+| `HH_API_KEY` | Classic API key for operations that still require it; also used for ingestion when `HH_INGESTION_API_KEY` is unset | Required for classic-key operations |
 | `HH_INGESTION_API_KEY` | Ingestion API key (`hh_ingst_...`) used to send traces and events; `HH_API_KEY` is used when unset | Optional, except that `evaluate()` with `project_id` requires it |
 | `HH_DATA_PLANE_API_KEY` | Fine-grained data plane API key (`hh_fgdp_...`) for operations on a project-scoped route | Required when `project_id` selects a method's scoped route |
 | `HH_API_URL` | API base URL | `https://api.dp1.us.honeyhive.ai` |

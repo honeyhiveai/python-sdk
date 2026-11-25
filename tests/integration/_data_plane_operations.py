@@ -39,6 +39,7 @@ from honeyhive.models import (
     CreateDatapointRequest,
     CreateDatasetRequest,
     CreateEvaluatorRequest,
+    CreateMetricRequest,
     DatapointMapping,
     PostEventRequest,
     PostExperimentRunRequest,
@@ -806,6 +807,36 @@ def get_configurations(
             print(f"Configuration cleanup failed for {configuration_id}: {exc}")
 
 
+def get_metrics(
+    data_plane: HoneyHive, project_client: HoneyHive, project_id: str
+) -> None:
+    """``metrics.list``: a metric made on the project key is listed by its id.
+
+    The data plane key cannot create or delete a metric, so both go through the
+    project key. ``get_metric`` sends the list filtered by id.
+    """
+    name = f"data_plane_key_{uuid.uuid4().hex[:8]}"
+    created = project_client.metrics.create(
+        CreateMetricRequest(
+            name=name,
+            type="PYTHON",
+            criteria="def evaluate(generation, metadata):\n    return len(generation)",
+            return_type="float",
+            scale=100,
+        )
+    )
+    metric_id = created.metric_id
+    try:
+        listed = data_plane.metrics.get_metric(metric_id, project_id=project_id)
+
+        assert [(metric.id, metric.name) for metric in listed] == [(metric_id, name)]
+    finally:
+        try:
+            project_client.metrics.delete(metric_id)
+        except Exception as exc:  # noqa: BLE001 - cleanup must not raise
+            print(f"Metric cleanup failed for {metric_id}: {exc}")
+
+
 # Keyed by operationId. A wrapped data plane operation missing here fails the
 # unit guard; an entry for an operation the shim does not wrap fails it too.
 OPERATIONS: Dict[str, Entry] = {
@@ -824,6 +855,7 @@ OPERATIONS: Dict[str, Entry] = {
     "updateChart": update_chart,
     "deleteChart": delete_chart,
     "getConfigurations": get_configurations,
+    "getMetrics": get_metrics,
     "getDatapoints": get_datapoints,
     "queryChart": query_chart,
     "getDatapoint": get_datapoint,

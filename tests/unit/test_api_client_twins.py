@@ -126,7 +126,10 @@ class Case:
     ``<namespace>_svc_async`` in ``honeyhive.api.client``. ``legacy_namespace``
     names the legacy function's module stem when it differs. ``response`` is
     what the patched functions return, for a method that copies the response
-    rather than returning it as is.
+    rather than returning it as is. ``answers`` names the response attribute a
+    method returns in place of the response. ``core_args`` are the core's
+    positional arguments, for a method whose public positionals include ones
+    the core does not take.
     """
 
     namespace: str
@@ -140,6 +143,8 @@ class Case:
     # What the patched functions return: a dict a wrapper copies through, or
     # the model a wrapper answers as ``response.model_dump()``.
     response: Optional[Union[BaseModel, Dict[str, Any]]] = None
+    answers: Optional[str] = None
+    core_args: Optional[Tuple[Any, ...]] = None
 
 
 CASES = [
@@ -436,6 +441,20 @@ CASES = [
             "page": 2,
         },
     ),
+    # The ignored `project` and `name` positionals are passed as None, so the
+    # keyword-only check's extra positional has no parameter left to bind to
+    # and nothing but the missing project_id warns.
+    Case(
+        "metrics",
+        "list",
+        (None, None, "PYTHON"),
+        "getMetrics",
+        {"project_id": "p1", "type": "PYTHON", "id": None},
+        "getMetricsLegacy",
+        {"type": "PYTHON", "id": None},
+        answers="metrics",
+        core_args=("PYTHON",),
+    ),
 ]
 
 
@@ -473,9 +492,16 @@ def _returns(case: Case) -> Dict[str, Any]:
     return {} if case.response is None else {"return_value": case.response}
 
 
+def _core_args(case: Case) -> Tuple[Any, ...]:
+    """The positional arguments the case's core takes."""
+    return case.args if case.core_args is None else case.core_args
+
+
 def _assert_answers(result: Any, case: Case, sent: MagicMock) -> None:
     """The wrapper answered what the generated function returned."""
-    if case.response is None:
+    if case.answers is not None:
+        assert result is getattr(sent.return_value, case.answers)
+    elif case.response is None:
         assert result is sent.return_value
     else:
         expected = (
@@ -543,7 +569,7 @@ class TestSync:
         ) as legacy:
             with warnings.catch_warnings():
                 warnings.simplefilter("error")
-                result = _core(client, case)(*case.args)
+                result = _core(client, case)(*_core_args(case))
 
         _assert_answers(result, case, legacy)
         _assert_sent(legacy, PROJECT_KEY, case.legacy_kwargs)
@@ -644,7 +670,7 @@ class TestAsync:
         ) as legacy:
             with warnings.catch_warnings():
                 warnings.simplefilter("error")
-                result = await _core(client, case, "_async")(*case.args)
+                result = await _core(client, case, "_async")(*_core_args(case))
 
         _assert_answers(result, case, legacy)
         _assert_sent(legacy, PROJECT_KEY, case.legacy_kwargs)
@@ -1041,6 +1067,58 @@ class TestAliases:
         )
         [warning] = caught
         assert "experiments.get_run_result() without project_id" in str(warning.message)
+        assert warning.filename == __file__
+
+    def test_list_metrics_with_project_id_sends_the_scoped_operation(self) -> None:
+        """With project_id the alias lists the project's metrics, and nothing warns."""
+        client = _client(api_key=PROJECT_KEY, data_plane_api_key=DATA_PLANE_KEY)
+        with patch.object(client_module.metrics_svc, "getMetrics") as scoped:
+            with warnings.catch_warnings():
+                warnings.simplefilter("error")
+                result = client.metrics.list_metrics(type="PYTHON", project_id="p1")
+
+        assert result is scoped.return_value.metrics
+        _assert_sent(
+            scoped, DATA_PLANE_KEY, {"project_id": "p1", "type": "PYTHON", "id": None}
+        )
+
+    def test_list_metrics_without_project_id_warns_in_its_own_name(self) -> None:
+        """Without project_id the alias calls the legacy function and names itself."""
+        client = _client(api_key=PROJECT_KEY, data_plane_api_key=DATA_PLANE_KEY)
+        with patch.object(client_module.metrics_svc, "getMetricsLegacy") as legacy:
+            with pytest.warns(DeprecationWarning) as caught:
+                result = client.metrics.list_metrics(type="PYTHON")
+
+        assert result is legacy.return_value.metrics
+        _assert_sent(legacy, PROJECT_KEY, {"type": "PYTHON", "id": None})
+        [warning] = caught
+        assert "metrics.list_metrics() without project_id" in str(warning.message)
+        assert warning.filename == __file__
+
+    def test_get_metric_with_project_id_sends_the_scoped_operation(self) -> None:
+        """With project_id the alias filters the project's metrics by id, and nothing warns."""
+        client = _client(api_key=PROJECT_KEY, data_plane_api_key=DATA_PLANE_KEY)
+        with patch.object(client_module.metrics_svc, "getMetrics") as scoped:
+            with warnings.catch_warnings():
+                warnings.simplefilter("error")
+                result = client.metrics.get_metric("m1", project_id="p1")
+
+        assert result is scoped.return_value.metrics
+        _assert_sent(
+            scoped, DATA_PLANE_KEY, {"project_id": "p1", "type": None, "id": "m1"}
+        )
+
+    def test_get_metric_without_project_id_warns_in_its_own_name(self) -> None:
+        """Without project_id the alias calls the legacy function and names itself."""
+        client = _client(api_key=PROJECT_KEY, data_plane_api_key=DATA_PLANE_KEY)
+        with patch.object(client_module.metrics_svc, "getMetricsLegacy") as legacy:
+            with pytest.warns(DeprecationWarning) as caught:
+                result = client.metrics.get_metric("m1")
+
+        assert result is legacy.return_value.metrics
+        _assert_sent(legacy, PROJECT_KEY, {"type": None, "id": "m1"})
+        [warning] = caught
+        assert "metrics.get_metric() without project_id" in str(warning.message)
         assert warning.filename == __file__
 
 

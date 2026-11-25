@@ -3,7 +3,13 @@
 import uuid
 from typing import Any
 
-from honeyhive.models import CreateMetricRequest, CreateMetricResponse, MetricItem
+from honeyhive.models import (
+    CreateMetricRequest,
+    CreateMetricResponse,
+    MetricItem,
+    UpdateMetricRequest,
+    UpdateMetricResponse,
+)
 
 
 def _python_metric_request(metric_name: str, description: str) -> CreateMetricRequest:
@@ -69,6 +75,34 @@ class TestMetricsAPI:
             assert retrieved_metric.type == "PYTHON"
             assert retrieved_metric.description == "Test metric for retrieval"
             assert retrieved_metric.return_type == "float"
+        finally:
+            integration_client.metrics.delete(created_metric.metric_id)
+
+    def test_update_metric(
+        self, integration_client: Any, integration_project_name: str
+    ) -> None:
+        """Test metric update by ID, verify the change reads back."""
+        test_id = str(uuid.uuid4())[:8]
+        metric_name = f"test_update_metric_{test_id}"
+
+        created_metric = integration_client.metrics.create(
+            _python_metric_request(metric_name, "Test metric before update")
+        )
+
+        try:
+            result = integration_client.metrics.update(
+                UpdateMetricRequest(
+                    id=created_metric.metric_id,
+                    description="Test metric after update",
+                )
+            )
+            assert isinstance(result, UpdateMetricResponse)
+            assert result.updated is True
+
+            metrics = integration_client.metrics.get_metric(created_metric.metric_id)
+            assert len(metrics) == 1
+            assert metrics[0].description == "Test metric after update"
+            assert metrics[0].name == metric_name
         finally:
             integration_client.metrics.delete(created_metric.metric_id)
 
